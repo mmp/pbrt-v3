@@ -1,0 +1,161 @@
+pbrt, Version 3
+===============
+
+This repository holds the current snapshot of the source code to the new
+version of pbrt that will be described in the forthcoming third edition of
+*Physically Based Rendering: From Theory to Implementation*.  As before,
+the code is available under the BSD license.
+
+Although the new version of the book won't be released until mid-2016,
+we're making the source code available now so that interested users can
+look at the code, try out the system, and possibly help us out. (See [how
+you can help](#how-you-can-help) for more information about contributing.)
+The initial release of the source code doesn't include updated
+documentation (and the book isn't out yet!), so you should only try it out
+if you're comfortable digging into source code.
+
+Some [example scenes are available for
+download](http://pbrt.org/pbrt-v3-scenes.tar.bz2).
+
+The [pbrt website](http://pbrt.org) has  general information about
+both *Physically Based Rendering* as well as pbrt-v2, the previous version
+of the system.
+
+Significant Changes
+-------------------
+
+The system has seen many changes since the second edition. To figure out
+how to use the new features, you may want to look at the example scene
+files in the `scenes/` directory and read through the source code to figure
+out the parameters and details of the following. (Better documentation will
+come once everything is finalized.)
+
+* Bidirectional path tracing: `Integrator "bdpt"` does proper bidirectional
+  path tracing with multiple importance sampling.
+* Metropolis sampling: `Integrator "mlt"` uses the bidirectional path
+  tracer with Hachisuka et al.'s "Multiplexed Metropolis Light Transport"
+  technique.
+* Improved numerical robustness for intersection calculations: epsilons are
+  small and provably conservative. [Section
+  draft](http://pbrt.org/fp-error-section.pdf)
+* Subsurface scattering: all new implementation, integrated into the path
+  tracing integrator.  See the `scenes/head` example scene.
+* Curve shape: thin ribbons described by bicubic Bezier curves. Great for
+  hair, fur, and grass.
+* PLY mesh support: meshes in PLY format can be used directly: `Shape
+  "plymesh" "string filename" "mesh.ply"`
+* Realistic camera model: tracing rays through lenses to make images! See
+  the `scenes/dragons` example scene.
+* Participating media: the boundaries of shapes are now used to delineate
+  the extent of regions of participating media in the scene.  See the
+  `scenes/medium-sphere` example scene.
+* New samplers: a much-improved Halton sampler, and an all-new Sobol'
+  sampler are both quite effective for path tracing and bidirectional path
+  tracing.
+* Fourier representation of measured materials: an implementation of Jakob
+  et al's [A Comprehensive Framework for Rendering Layered
+  Materials](http://www.cs.cornell.edu/projects/layered-sg14/). (See an
+  example in the `scenes/dragons` example scene).
+  * New versions of the BSDF files it uses can be generated with a visual
+    layer editor provided in a [special branch of the Mitsuba renderer](https://www.mitsuba-renderer.org/repos/mitsuba.git/files/layered-0.5.1).
+    To compile this branch, install PyQt (matching your system’s
+    Python Version) and compile Mitsuba with the -DDOUBLE_PRECISION flag
+    (see the documentation for details on building Mitsuba). After sourcing
+    the ’setpath.sh’ script on a terminal, enter the ‘editor’ directory and
+    run ‘main.py’ to launch the visual layer editor.
+* Improved microfacet models: specular transmission through microfacets,
+  and Heitz's improved importance sampling.
+* No external dependencies: thanks to 
+[Syoyo Fujita's tinyexr](https://github.com/syoyo/tinyexr),
+[Sean Barrett's stb_image_write.h](https://github.com/nothings/stb),
+[Diego Nehab's rply](http://www.impa.br/~diego/software/rply),
+and [Emil Mikulic's TARGA library](http://dmr.ath.cx/gfx/targa/), no
+  external libraries need to be compiled to build pbrt.
+
+Many other small things have been improved (parallelization scheme, image
+updates, statistics system, overall cleanliness of interfaces); see the
+source code for details.
+
+Building The System
+-------------------
+
+Currently only a makefile and [SCons](http://scons.org) build files are
+available.  If you have SCons installed, run `scons` from the `src/`
+directory to build the system; otherwise, run `make` from the `src/`
+directory.
+
+File Format Changes
+-------------------
+
+We've tried to keep the scene description file format as unchanged as
+possible.  However, progress in other parts of the system required changes
+to the scene description format.
+
+First, the "Renderer", "SurfaceIntegrator", and "VolumeIntegrator"
+directives have all been unified under "Integrator"; only a single
+integrator now needs to be specified.
+
+The following specific implementations were removed:
+
+* Accelerator "grid"
+  * Use "bvh" or "kdtree" instead.
+* Material "measured", "shinymetal"
+  * The new "fourier" material should now be used for measured BRDFs.
+  * Use "uber" in place of "shinymetal".
+* VolumeRegion: all
+  * Use the new participating media representation [described above](#significant-changes)
+* SurfaceIntegrator: photonmap, irradiancecache, igi, dipolesubsurface,
+  ambientocclusion, useprobes, diffuseprt, glossyprt
+  * Use "sppm" for the "photonmap".
+  * The "path" integrator now handles subsurface scattering directly.
+  * The others aren't as good as path tracing anyway. :-)
+* VolumeIntegrator: single, emission
+  * Use the "volpath" path tracing integrator.
+* Sampler: bestcandidate
+  * Use any other sampler.
+* Renderer: all
+  * Use "Integrator", as described above.
+
+How You Can Help
+----------------
+
+pbrt has benefited immensely both from its users who have extended it in
+interesting ways and found bugs as well as from the many sharp-eyed readers
+of the book over the years.  If you're interested in helping out with the
+third edition, some areas where we'd appreciate help are below.  We'll
+happily acknowledge contributors in the book's preface; we'll send a signed
+copy of the book to folks who make significant contributions.
+
+* Finding bugs: though we've tried to test thoroughly,
+there are certainly bugs in the code, and we'd like to find them before
+they are published in the book! The 
+[pbrt-v3 issue tracker](https://github.com/mmp/pbrt-v3/issues) is the best
+place to report anything suspicious you find.  Useful things to do include:
+  * Running various scenes through the renderer and checking the results.
+  * Using static code analysis tools (e.g. MSVC's /analyze) on the code
+  * Using dynamic tools like valgrind, Address Sanitizer, Thread Sanitizer,
+    etc. when rendering various scenes.
+* Improving the build: our Makefile doesn't even properly track
+dependencies. We also provide scons files, but scons isn't widely
+installed. There's no XCode project or MSVC build solution. We'd happily
+take improvements in this area!
+* Portability: the system has been developed on Linux and OS X using x86
+CPUs. It should be widely portable to other OSes and CPUs, but the only way
+to get those details right is for people to try it and let us know which
+targets don't currently work.
+* Images and figures: we'd like to refresh many of the figures in the book,
+but probably won't have time to get to all of them. If you can spend some
+time on making a nice scene or two that we can use for figures, that'd be a
+huge help. Specific areas of interest include: 
+  * Subsurface scattering: a human face, biological objects, ...
+  * Showing off complex light transport using bidirectional path
+  tracing.
+  * Illustrating materials: something to replace all the usage of the
+  killeroo in Chapters 8 and 9...
+  * Showing the capabilities of the new curves primitive: hair, fur, fields
+  of grass, ...
+  * It would be nice to have [MirageYM's 3D
+  Models](https://github.com/MirageYM/3DModels) available in pbrt's scene
+  format.
+  
+

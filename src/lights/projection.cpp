@@ -1,0 +1,134 @@
+
+/*
+    pbrt source code is Copyright(c) 1998-2015
+                        Matt Pharr, Greg Humphreys, and Wenzel Jakob.
+
+    This file is part of pbrt.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are
+    met:
+
+    - Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    - Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+    TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+    HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ */
+
+#include "stdafx.h"
+
+// lights/projection.cpp*
+#include "lights/projection.h"
+#include "sampling.h"
+#include "paramset.h"
+#include "imageio.h"
+
+// ProjectionLight Method Definitions
+ProjectionLight::ProjectionLight(const Transform &LightToWorld,
+                                 const Medium *medium,
+                                 const Spectrum &intensity,
+                                 const std::string &texname, Float fov)
+    : Light(LightFlags::DeltaPosition, LightToWorld, medium),
+      pLight(LightToWorld(Point3f(0, 0, 0))),
+      intensity(intensity) {
+    // Create _ProjectionLight_ MIP map
+    Point2i resolution;
+    std::unique_ptr<RGBSpectrum[]> texels = ReadImage(texname, &resolution);
+    if (texels)
+        projectionMap.reset(new MIPMap<RGBSpectrum>(resolution, texels.get()));
+
+    // Initialize _ProjectionLight_ projection matrix
+    Float aspect =
+        projectionMap ? (Float(resolution.x) / Float(resolution.y)) : 1.f;
+    if (aspect > 1.f)
+        screenBounds = Bounds2f(Point2f(-aspect, -1), Point2f(aspect, 1));
+    else
+        screenBounds =
+            Bounds2f(Point2f(-1, -1 / aspect), Point2f(1, 1 / aspect));
+    hither = 1e-3f;
+    yon = 1e30f;
+    lightProjection = Perspective(fov, hither, yon);
+
+    // Compute cosine of cone surrounding projection directions
+    Float opposite = std::tan(Radians(fov) / 2.f);
+    Float tanDiag = opposite * std::sqrt(1 + 1 / (aspect * aspect));
+    cosTotalWidth = std::cos(std::atan(tanDiag));
+}
+
+Spectrum ProjectionLight::Sample_L(const Interaction &ref,
+                                   const Point2f &sample, Vector3f *wi,
+                                   Float *pdf, VisibilityTester *vis) const {
+    *wi = Normalize(pLight - ref.p);
+    *pdf = 1.f;
+    *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
+    return intensity * Projection(-*wi) / DistanceSquared(pLight, ref.p);
+}
+
+Spectrum ProjectionLight::Projection(const Vector3f &w) const {
+    Vector3f wl = WorldToLight(w);
+    // Discard directions behind projection light
+    if (wl.z < hither) return 0.f;
+
+    // Project point onto projection plane and compute light
+    Point3f p = lightProjection(Point3f(wl.x, wl.y, wl.z));
+    if (!Inside(Point2f(p.x, p.y), screenBounds)) return 0.f;
+    if (!projectionMap) return 1;
+    Point2f st = Point2f(screenBounds.Offset(Point2f(p.x, p.y)));
+    return Spectrum(projectionMap->Lookup(st), SpectrumType::Illuminant);
+}
+
+Spectrum ProjectionLight::Power() const {
+    return (projectionMap
+                ? Spectrum(projectionMap->Lookup(Point2f(.5f, .5f), .5f),
+                           SpectrumType::Illuminant)
+                : Spectrum(1.f)) *
+           intensity * 2.f * Pi * (1.f - cosTotalWidth);
+}
+
+Spectrum ProjectionLight::Sample_L(const Point2f &sample1,
+                                   const Point2f &sample2, Float time, Ray *ray,
+                                   Normal3f *Ns, Float *pdfPos,
+                                   Float *pdfDir) const {
+    Vector3f v = UniformSampleCone(sample1, cosTotalWidth);
+    *ray = Ray(pLight, LightToWorld(v), Infinity, time, 0, medium);
+    *Ns = (Normal3f)ray->d;  /// same here
+    *pdfPos = 1.f;
+    *pdfDir = UniformConePdf(cosTotalWidth);
+    return intensity * Projection(ray->d);
+}
+
+Float ProjectionLight::Pdf(const Interaction &, const Vector3f &) const {
+    return 0.f;
+}
+
+void ProjectionLight::Pdf(const Ray &, const Normal3f &, Float *pdfPos,
+                          Float *pdfDir) const {
+    *pdfPos = 0.f;
+    *pdfDir = UniformConePdf(cosTotalWidth);
+}
+
+std::shared_ptr<ProjectionLight> CreateProjectionLight(
+    const Transform &light2world, const Medium *medium,
+    const ParamSet &paramSet) {
+    Spectrum I = paramSet.FindOneSpectrum("I", Spectrum(1.0));
+    Spectrum sc = paramSet.FindOneSpectrum("scale", Spectrum(1.0));
+    Float fov = paramSet.FindOneFloat("fov", 45.);
+    std::string texname = paramSet.FindOneFilename("mapname", "");
+    return std::make_shared<ProjectionLight>(light2world, medium, I * sc,
+                                             texname, fov);
+}
