@@ -6,6 +6,44 @@ PROJECT ( PBRT-V3 )
 # the presence of yacc/lex generated files whic
 # may be optionally generated, especially on
 # Windows which is a pain
+IF (WIN32)
+  SET ( PBRT_YACC_LEX_SOURCE
+    src/core/pbrtlex.cpp
+    src/core/pbrtparse.cpp
+    )
+ELSE()
+  FIND_PACKAGE ( BISON REQUIRED )
+  
+  IF(BISON_FOUND)
+    SET(BisonOutput ${CMAKE_BINARY_DIR}/pbrtparser.cpp)
+    ADD_CUSTOM_COMMAND(
+      OUTPUT ${BisonOutput}
+      COMMAND ${BISON_EXECUTABLE} -d -v -t
+              --output=${BisonOutput}
+              ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
+      COMMENT "Generating pbrtparser.cpp"
+      )
+  ENDIF()
+
+  FIND_PACKAGE ( FLEX REQUIRED )
+  IF(FLEX_FOUND)
+    SET(FlexOutput ${CMAKE_BINARY_DIR}/pbrtlex.cpp)
+    ADD_CUSTOM_COMMAND(
+      OUTPUT ${FlexOutput}
+      COMMAND ${FLEX_EXECUTABLE}
+              --outfile=${FlexOutput}
+              ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
+      COMMENT "Generating pbrtlex.cpp"
+      )
+  ENDIF()
+
+  SET ( PBRT_YACC_LEX_SOURCE
+    ${BisonOutput}
+    ${FlexOutput}
+    )
+
+ENDIF ()
+
 SET ( PBRT_CORE_SOURCE
   src/core/api.cpp
   src/core/camera.cpp
@@ -62,6 +100,7 @@ INCLUDE_DIRECTORIES ( src )
 INCLUDE_DIRECTORIES ( src/core )
 
 ADD_LIBRARY ( pbrt STATIC
+  ${PBRT_YACC_LEX_SOURCE}
   ${PBRT_CORE_SOURCE}
   ${PBRT_SOURCE}
   )
