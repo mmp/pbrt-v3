@@ -43,7 +43,7 @@ WARN=-Wall -Wno-deprecated-register
 CWD=$(shell pwd)
 CXXFLAGS=$(OPT) $(MARCH) $(INCLUDE) $(WARN) $(DEFS)
 CCFLAGS=$(CXXFLAGS)
-LIBS=$(LEXLIB) -lm $(CPPLIB)
+LIBS=$(LEXLIB) -lm $(CPPLIB) -lpthread
 
 LIB_CXXSRCS  = $(wildcard core/*.cpp) core/pbrtlex.cpp core/pbrtparse.cpp
 LIB_CXXSRCS += $(wildcard ext/*.cpp)
