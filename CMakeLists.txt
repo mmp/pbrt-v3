@@ -109,6 +109,23 @@ ADD_EXECUTABLE ( pbrt_exe
   src/main/pbrt.cpp
   )
 
+SET_TARGET_PROPERTIES ( pbrt_exe
+  PROPERTIES
+  OUTPUT_NAME pbrt
+  )
+
 TARGET_LINK_LIBRARIES ( pbrt_exe
   pbrt
+  )
+
+INSTALL ( TARGETS
+  pbrt_exe
+  DESTINATION
+  bin
+  )
+
+INSTALL ( TARGETS
+  pbrt
+  DESTINATION
+  lib
   )
