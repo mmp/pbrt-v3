@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pbrt-v3", "pbrt-v3\pbrt-v3.vcxproj", "{DB9FC55E-A2D8-4FEC-BAA3-71082FF1B55C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{1AC3C807-61FD-4CC3-B8B7-FA44B954AC37}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8A32C711-1528-4DEB-8501-942D91C94090}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pbrt", "pbrt\pbrt.vcxproj", "{E34F73D5-2609-4ED0-9F33-1BAF614C33B4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DB9FC55E-A2D8-4FEC-BAA3-71082FF1B55C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DB9FC55E-A2D8-4FEC-BAA3-71082FF1B55C}.Debug|Win32.Build.0 = Debug|Win32
+		{DB9FC55E-A2D8-4FEC-BAA3-71082FF1B55C}.Release|Win32.ActiveCfg = Release|Win32
+		{DB9FC55E-A2D8-4FEC-BAA3-71082FF1B55C}.Release|Win32.Build.0 = Release|Win32
+		{E34F73D5-2609-4ED0-9F33-1BAF614C33B4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E34F73D5-2609-4ED0-9F33-1BAF614C33B4}.Debug|Win32.Build.0 = Debug|Win32
+		{E34F73D5-2609-4ED0-9F33-1BAF614C33B4}.Release|Win32.ActiveCfg = Release|Win32
+		{E34F73D5-2609-4ED0-9F33-1BAF614C33B4}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
