@@ -145,8 +145,10 @@ bool Curve::Intersect(const Ray &r, Float *tHit,
     Float L0 = 0;
     for (int i = 0; i < 2; ++i)
         L0 = std::max(
-            L0, std::max(std::abs(cp[i].x - 2 * cp[i + 1].x + cp[i + 2].x),
-                         std::abs(cp[i].y - 2 * cp[i + 1].y + cp[i + 2].y)));
+            L0, std::max(
+                    std::max(std::abs(cp[i].x - 2 * cp[i + 1].x + cp[i + 2].x),
+                             std::abs(cp[i].y - 2 * cp[i + 1].y + cp[i + 2].y)),
+                    std::abs(cp[i].z - 2 * cp[i + 1].z + cp[i + 2].z)));
     Float eps =
         std::max(common->width[0], common->width[1]) * .05f;  // width / 20
 #define LOG4(x) (std::log(x) * 0.7213475108f)
