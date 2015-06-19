@@ -1285,7 +1285,7 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, Float *hitt0,
         if (tNear > tFar) std::swap(tNear, tFar);
 
         // Update _tFar_ to ensure robust ray--bounds intersection
-        tFar *= 1.f + 2 * gamma(2);
+        tFar *= 1.f + 2 * gamma(3);
         t0 = tNear > t0 ? tNear : t0;
         t1 = tFar < t1 ? tFar : t1;
         if (t0 > t1) return false;
