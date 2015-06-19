@@ -7001,7 +7001,7 @@ void DecompressZip(unsigned char *dst, unsigned long &uncompressedSize,
 int LoadEXR(float **out_rgba, int *width, int *height, const char *filename,
             const char **err) {
     if (out_rgba == NULL) {
-        if (*err) {
+        if (err) {
             (*err) = "Invalid argument.\n";
         }
         return -1;
@@ -7031,7 +7031,7 @@ int LoadEXR(float **out_rgba, int *width, int *height, const char *filename,
     }
 
     if (idxR == -1) {
-        if (*err) {
+        if (err) {
             (*err) = "R channel not found\n";
         }
 
@@ -7040,7 +7040,7 @@ int LoadEXR(float **out_rgba, int *width, int *height, const char *filename,
     }
 
     if (idxG == -1) {
-        if (*err) {
+        if (err) {
             (*err) = "G channel not found\n";
         }
         // @todo { free exrImage }
@@ -7048,7 +7048,7 @@ int LoadEXR(float **out_rgba, int *width, int *height, const char *filename,
     }
 
     if (idxB == -1) {
-        if (*err) {
+        if (err) {
             (*err) = "B channel not found\n";
         }
         // @todo { free exrImage }
@@ -7056,7 +7056,7 @@ int LoadEXR(float **out_rgba, int *width, int *height, const char *filename,
     }
 
     // if (idxA == -1) {
-    //  if (*err) {
+    //  if (err) {
     //    (*err) = "A channel not found\n";
     //  }
     //  // @todo { free exrImage }
@@ -7227,7 +7227,7 @@ int ParseEXRHeaderFromMemory(int *width, int *height,
 int LoadEXRFromMemory(float *out_rgba, const unsigned char *memory,
                       const char **err) {
     if (out_rgba == NULL || memory == NULL) {
-        if (*err) {
+        if (err) {
             (*err) = "Invalid argument.\n";
         }
         return -1;
@@ -7257,7 +7257,7 @@ int LoadEXRFromMemory(float *out_rgba, const unsigned char *memory,
     }
 
     if (idxR == -1) {
-        if (*err) {
+        if (err) {
             (*err) = "R channel not found\n";
         }
 
@@ -7266,7 +7266,7 @@ int LoadEXRFromMemory(float *out_rgba, const unsigned char *memory,
     }
 
     if (idxG == -1) {
-        if (*err) {
+        if (err) {
             (*err) = "G channel not found\n";
         }
         // @todo { free exrImage }
@@ -7274,7 +7274,7 @@ int LoadEXRFromMemory(float *out_rgba, const unsigned char *memory,
     }
 
     if (idxB == -1) {
-        if (*err) {
+        if (err) {
             (*err) = "B channel not found\n";
         }
         // @todo { free exrImage }
@@ -7282,7 +7282,7 @@ int LoadEXRFromMemory(float *out_rgba, const unsigned char *memory,
     }
 
     // if (idxA == -1) {
-    //  if (*err) {
+    //  if (err) {
     //    (*err) = "A channel not found\n";
     //  }
     //  // @todo { free exrImage }
@@ -7391,7 +7391,7 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
     int numScanlineBlocks = 1;  // 16 for ZIP compression.
     int compressionType = -1;
     int numChannels = -1;
-    unsigned char lineOrder = 1;
+    unsigned char lineOrder = 0;  // 0 -> increasing y; 1 -> decreasing
     std::vector<ChannelInfo> channels;
 
     // Read attributes
@@ -7602,7 +7602,7 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
 
                             float *image =
                                 reinterpret_cast<float **>(exrImage->images)[c];
-                            if (lineOrder == 1) {
+                            if (lineOrder == 0) {
                                 image += (lineNo + v) * dataWidth + u;
                             } else {
                                 image += (dataHeight - 1 - (lineNo + v)) *
@@ -7628,7 +7628,7 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
                             unsigned int *image =
                                 reinterpret_cast<unsigned int **>(
                                     exrImage->images)[c];
-                            if (lineOrder == 1) {
+                            if (lineOrder == 0) {
                                 image += (lineNo + v) * dataWidth + u;
                             } else {
                                 image += (dataHeight - 1 - (lineNo + v)) *
@@ -7652,7 +7652,7 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
 
                             float *image =
                                 reinterpret_cast<float **>(exrImage->images)[c];
-                            if (lineOrder == 1) {
+                            if (lineOrder == 0) {
                                 image += (lineNo + v) * dataWidth + u;
                             } else {
                                 image += (dataHeight - 1 - (lineNo + v)) *
@@ -7669,34 +7669,49 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
 
         } else if (compressionType == 0) {  // No compression
 
-            std::vector<unsigned short> srcBuf(numChannels * dataWidth);
-            memcpy(&srcBuf.at(0), dataPtr + 8,
-                   numChannels * dataWidth * sizeof(unsigned short));
-
             bool isBigEndian = IsBigEndian();
 
-            // scanline
             for (int c = 0; c < numChannels; c++) {
-                for (int u = 0; u < dataWidth; u++) {
-                    FP16 hf;
+                float *outLine =
+                    reinterpret_cast<float **>(exrImage->images)[c];
+                if (lineOrder == 0) {
+                    outLine += y * dataWidth;
+                } else {
+                    outLine += (dataHeight - 1 - y) * dataWidth;
+                }
 
-                    // Assume (A)BGR
-                    hf.u = srcBuf[c * dataWidth + u];
+                if (channels[c].pixelType == TINYEXR_PIXELTYPE_HALF) {
+                    const unsigned short *linePtr =
+                        reinterpret_cast<const unsigned short *>(
+                            dataPtr + 8 +
+                            c * dataWidth * sizeof(unsigned short));
 
-                    if (isBigEndian) {
-                        swap2(reinterpret_cast<unsigned short *>(&hf.u));
+                    for (int u = 0; u < dataWidth; u++) {
+                        FP16 hf;
+
+                        hf.u = linePtr[u];
+
+                        if (isBigEndian) {
+                            swap2(reinterpret_cast<unsigned short *>(&hf.u));
+                        }
+
+                        FP32 f32 = half_to_float(hf);
+
+                        outLine[u] = f32.f;
                     }
+                } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_FLOAT) {
+                    const float *linePtr = reinterpret_cast<const float *>(
+                        dataPtr + 8 + c * dataWidth * sizeof(float));
 
-                    FP32 f32 = half_to_float(hf);
+                    for (int u = 0; u < dataWidth; u++) {
+                        float val = linePtr[u];
 
-                    float *image =
-                        reinterpret_cast<float **>(exrImage->images)[c];
-                    if (lineOrder == 1) {
-                        image += y * dataWidth + u;
-                    } else {
-                        image += (dataHeight - 1 - y) * dataWidth + u;
+                        if (isBigEndian) {
+                            swap4(reinterpret_cast<unsigned int *>(&val));
+                        }
+
+                        outLine[u] = val;
                     }
-                    *image = f32.f;
                 }
             }
         }

@@ -142,20 +142,61 @@ void WriteImage(const std::string &name, const Float *rgb,
           name.c_str());
 }
 
+static Float convert(void *p, int offset, int type) {
+    switch (type) {
+    case TINYEXR_PIXELTYPE_UINT: {
+        int32_t *pix = (int32_t *)p;
+        return pix[offset];
+    }
+    case TINYEXR_PIXELTYPE_HALF:
+    case TINYEXR_PIXELTYPE_FLOAT: {
+        float *pix = (float *)p;
+        return pix[offset];
+    }
+    default:
+        Severe("Unexpected pixel type in EXR image");
+        return 0;
+    }
+}
+
 static RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
                                  int *height) {
-    float *pixels;
-    const char *err;
-    if (LoadEXR(&pixels, width, height, name.c_str(), &err)) {
+    EXRImage img;
+    const char *err = nullptr;
+    if (LoadMultiChannelEXRFromFile(&img, name.c_str(), &err) != 0) {
         Error("Unable to read \"%s\": %s", name.c_str(), err);
         return nullptr;
     }
-    RGBSpectrum *ret = new RGBSpectrum[*width * *height];
-    int rOffset = 0;
-    for (int y = 0; y < *height; ++y) {
-        int pOffset = (*height - 1 - y) * *width;
-        for (int x = 0; x < *width; ++x, ++pOffset, ++rOffset)
-            ret[rOffset] = RGBSpectrum::FromRGB(&pixels[4 * pOffset]);
+
+    *width = img.width;
+    *height = img.height;
+
+    int idxR = -1, idxG = -1, idxB = -1;
+    for (int c = 0; c < img.num_channels; c++) {
+        if (strcmp(img.channel_names[c], "R") == 0) {
+            idxR = c;
+        } else if (strcmp(img.channel_names[c], "G") == 0) {
+            idxG = c;
+        } else if (strcmp(img.channel_names[c], "B") == 0) {
+            idxB = c;
+        }
+    }
+
+    RGBSpectrum *ret = new RGBSpectrum[img.width * img.height];
+    int offset = 0;
+    for (int y = 0; y < img.height; ++y) {
+        for (int x = 0; x < img.width; ++x, ++offset) {
+            if (img.num_channels == 1)
+                ret[offset] =
+                    convert(img.images[0], offset, img.pixel_types[0]);
+            else {
+                Float rgb[3] = {
+                    convert(img.images[idxR], offset, img.pixel_types[idxR]),
+                    convert(img.images[idxG], offset, img.pixel_types[idxG]),
+                    convert(img.images[idxB], offset, img.pixel_types[idxB])};
+                ret[offset] = RGBSpectrum::FromRGB(rgb);
+            }
+        }
     }
     return ret;
 }
