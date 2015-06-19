@@ -141,33 +141,38 @@ struct Vertex {
 // Switch to a struct in debug mode to avoid a compiler error regarding
 // non-trivial constructors
 #ifdef NDEBUG
-    union
+    union InteractionAggregate
 #else
-    struct
+    struct InteractionAggregate
 #endif
         {
         EndpointInteraction ei;
         MediumInteraction mi;
         SurfaceInteraction isect;
-    };
+        
+        InteractionAggregate() : ei() {}
+        InteractionAggregate(const EndpointInteraction &   ei_) :       ei(ei_) {}
+        InteractionAggregate(const   MediumInteraction &   mi_) :       mi(mi_) {}
+        InteractionAggregate(const  SurfaceInteraction &isect_) : isect(isect_) {}
+    } interaction;
 
     // Vertex Public Methods
-    Vertex() : ei() {}
+    Vertex() = default;
     Vertex(VertexType type, const EndpointInteraction &ei,
            const Spectrum &weight)
-        : type(type), weight(weight), ei(ei) {}
+        : type(type), weight(weight), interaction(ei) {}
     Vertex(const SurfaceInteraction &isect, const Spectrum &weight)
-        : type(VertexType::Surface), weight(weight), isect(isect) {}
+        : type(VertexType::Surface), weight(weight), interaction(isect) {}
     Vertex(const MediumInteraction &mi, const Spectrum &weight)
-        : type(VertexType::Medium), weight(weight), mi(mi) {}
+        : type(VertexType::Medium), weight(weight), interaction(mi) {}
     const Interaction &GetInteraction() const {
         switch (type) {
         case VertexType::Medium:
-            return mi;
+            return interaction.mi;
         case VertexType::Surface:
-            return isect;
+            return interaction.isect;
         default:
-            return ei;
+            return interaction.ei;
         };
     }
     const Point3f &GetPosition() const { return GetInteraction().p; }
@@ -175,7 +180,7 @@ struct Vertex {
     const Normal3f &GetGeoNormal() const { return GetInteraction().n; }
     const Normal3f &GetShadingNormal() const {
         if (type == VertexType::Surface)
-            return isect.shading.n;
+            return interaction.isect.shading.n;
         else
             return GetInteraction().n;
     }
@@ -190,13 +195,13 @@ struct Vertex {
         Float pdf;
         switch (type) {
         case VertexType::Camera:
-            pdf = ei.camera->Pdf(ei, wn);
+            pdf = interaction.ei.camera->Pdf(interaction.ei, wn);
             break;
         case VertexType::Surface:
-            pdf = isect.bsdf->Pdf(wp, wn);
+            pdf = interaction.isect.bsdf->Pdf(wp, wn);
             break;
         case VertexType::Medium:
-            pdf = mi.phase->p(wp, wn);
+            pdf = interaction.mi.phase->p(wp, wn);
             break;
         default:
             Error("Vertex::Pdf(): Unimplemented");
@@ -211,9 +216,9 @@ struct Vertex {
         Vector3f wi = Normalize(next.GetPosition() - GetPosition());
         switch (type) {
         case VertexType::Surface:
-            return isect.bsdf->f(isect.wo, wi);
+            return interaction.isect.bsdf->f(interaction.isect.wo, wi);
         case VertexType::Medium:
-            return mi.phase->p(mi.wo, wi);
+            return interaction.mi.phase->p(interaction.mi.wo, wi);
         default:
             Error("Vertex::f(): Unimplemented");
             return Spectrum(0.f);
@@ -222,7 +227,7 @@ struct Vertex {
     bool IsConnectable() const {
         switch (type) {
         case VertexType::Surface:
-            return isect.bsdf->NumComponents(
+            return interaction.isect.bsdf->NumComponents(
                        BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION |
                                 BSDF_TRANSMISSION)) > 0;
         default:
@@ -232,21 +237,21 @@ struct Vertex {
     bool IsLight() const {
         return type == VertexType::Light ||
                (type == VertexType::Surface &&
-                isect.primitive->GetAreaLight() != nullptr);
+                interaction.isect.primitive->GetAreaLight() != nullptr);
     }
     bool IsDeltaLight() const {
-        return type == VertexType::Light && ei.light != nullptr &&
-               ::IsDeltaLight(ei.light->flags);
+        return type == VertexType::Light && interaction.ei.light != nullptr &&
+               ::IsDeltaLight(interaction.ei.light->flags);
     }
     bool IsInfiniteLight() const {
         return type == VertexType::Light &&
-               (ei.light == nullptr || ei.light->flags == LightFlags::Infinite);
+               (interaction.ei.light == nullptr || interaction.ei.light->flags == LightFlags::Infinite);
     }
     Float PdfLight(const Scene &scene, const Vertex &v) const {
         Assert(IsLight());
         const Light *light = type == VertexType::Light
-                                 ? ei.light
-                                 : isect.primitive->GetAreaLight();
+                                 ? interaction.ei.light
+                                 : interaction.isect.primitive->GetAreaLight();
         Vector3f d = v.GetPosition() - GetPosition();
         Float invL2 = 1.f / d.LengthSquared();
         d *= std::sqrt(invL2);
@@ -270,8 +275,8 @@ struct Vertex {
         Assert(IsLight());
         Vector3f d = Normalize(v.GetPosition() - GetPosition());
         const Light *light = type == VertexType::Light
-                                 ? ei.light
-                                 : isect.primitive->GetAreaLight();
+                                 ? interaction.ei.light
+                                 : interaction.isect.primitive->GetAreaLight();
         if (IsInfiniteLight()) {
             // Return solid angle density for infinite light sources
             return InfiniteLightDensity(scene, lightDistr, d);

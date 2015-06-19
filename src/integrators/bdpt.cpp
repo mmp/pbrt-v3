@@ -159,7 +159,7 @@ int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
     path[0] = Vertex(VertexType::Camera, EndpointInteraction(&camera, ray),
                      Spectrum(1.0f));
     return RandomWalk(scene, ray, sampler, arena, rayWeight,
-                      camera.Pdf(path[0].ei, ray.d), maxdepth - 1,
+                      camera.Pdf(path[0].interaction.ei, ray.d), maxdepth - 1,
                       TransportMode::Radiance, path + 1) +
            1;
 }
@@ -407,8 +407,8 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
         if (vt.IsLight()) {
             Spectrum Le;
             if (vt.type == VertexType::Surface) {
-                Le = vt.isect.primitive->GetAreaLight()->L(vt.isect,
-                                                           vt.isect.wo);
+                Le = vt.interaction.isect.primitive->GetAreaLight()->L(vt.interaction.isect,
+                                                                       vt.interaction.isect.wo);
             } else {
                 for (const auto &light : scene.lights)
                     Le += light->Le(
