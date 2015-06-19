@@ -50,7 +50,7 @@
 
 // Parallel Local Definitions
 static std::vector<std::thread> threads;
-static bool shutdown = false;
+static bool pbrtShutdown = false;
 static THREAD_LOCAL int threadIndex;
 class ParallelForLoop;
 static ParallelForLoop *workList = nullptr;
@@ -98,7 +98,7 @@ static std::condition_variable workListCondition;
 static void workerThreadFunc(int tIndex) {
     threadIndex = tIndex;
     std::unique_lock<std::mutex> lock(workListMutex);
-    while (!shutdown) {
+    while (!pbrtShutdown) {
         if (!workList) {
             // Sleep until there are more tasks to run
             workListCondition.wait(lock);
@@ -448,11 +448,11 @@ void TerminateWorkerThreads() {
 
     {
         std::lock_guard<std::mutex> lock(workListMutex);
-        shutdown = true;
+        pbrtShutdown = true;
         workListCondition.notify_all();
     }
 
     for (std::thread &thread : threads) thread.join();
     threads.erase(threads.begin(), threads.end());
-    shutdown = false;
+    pbrtShutdown = false;
 }
