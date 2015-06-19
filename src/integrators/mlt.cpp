@@ -167,8 +167,8 @@ Spectrum MLTIntegrator::EvaluateSample(const Scene &scene, MemoryArena &arena,
 
     sampler.SetStream(3, 1);
     if (GenerateLightSubpath(scene, sampler, arena, s,
-                             cameraSubpath[0].GetInteraction().time,
-                             *lightDistribution, lightSubpath) != s)
+                             cameraSubpath[0].GetTime(), *lightDistribution,
+                             lightSubpath) != s)
         return Spectrum(0.f);
 
     sampler.SetStream(3, 2);
@@ -204,7 +204,7 @@ void MLTIntegrator::Render(const Scene &scene) {
         progress.Done();
     }
     Distribution1D bootstrap(bootstrapWeights.get(), bootstrapSamples);
-    Float average = 0.0f;
+    Float average = 0.f;
     for (int i = 0; i < bootstrapSamples; ++i) average += bootstrapWeights[i];
     average /= nBootstrap;
 

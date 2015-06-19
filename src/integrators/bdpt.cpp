@@ -47,27 +47,6 @@ using std::endl;
 
 STAT_TIMER("Time/Rendering", renderingTime);
 
-// BDPT Helper Definitions
-template <typename Type>
-struct ScopedAssign {
-    Type *target, backup;
-    ScopedAssign(Type *ptr = nullptr, Type value = Type()) : target(ptr) {
-        if (target) {
-            backup = *target;
-            *target = value;
-        }
-    }
-    ScopedAssign &operator=(ScopedAssign &&other) {
-        target = other.target;
-        backup = other.backup;
-        other.target = nullptr;
-        return *this;
-    }
-    ~ScopedAssign() {
-        if (target) *target = backup;
-    }
-};
-
 // BDPT Infrastructure
 Float ShadingNormalCorrection(const SurfaceInteraction &isect,
                               const Vector3f &wo, const Vector3f &wi,
@@ -79,42 +58,57 @@ Float ShadingNormalCorrection(const SurfaceInteraction &isect,
         return 1.f;
 }
 
+Float ConvertDensity(const Vertex &cur, Float pdf, const Vertex &next) {
+    // Return solid angle density if _next_ is an infinite area light
+    if (next.IsInfiniteLight()) return pdf;
+    Vector3f d = next.GetPosition() - cur.GetPosition();
+    Float invL2 = 1.f / d.LengthSquared();
+    if (next.IsOnSurface())
+        pdf *= AbsDot(next.GetGeoNormal(), d * std::sqrt(invL2));
+    return pdf * invL2;
+}
+
 int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
-               MemoryArena &arena, Spectrum weight, Float pdfDir, int maxdepth,
+               MemoryArena &arena, Spectrum weight, Float pdfFwd, int maxdepth,
                TransportMode mode, Vertex *path) {
     int bounces = 0;
     if (maxdepth == 0) return 0;
     SurfaceInteraction isect;
     MediumInteraction mi;
-    Point3f rayOrigin = ray.o;
     while (true) {
         // Trace a ray and sample the medium, if any
         bool foundIntersection = scene.Intersect(ray, &isect);
         if (ray.medium) weight *= ray.medium->Sample(ray, sampler, arena, &mi);
         if (weight.IsBlack()) break;
         Vertex &vertex = path[bounces], &prev = path[bounces - 1];
+        Float pdfRev;
         if (mi.IsValid()) {
             // Handle the medium case
 
             // Record medium interaction in _path_ and compute forward density
             vertex = Vertex(mi, weight);
-            Float invDist2 = 1 / DistanceSquared(rayOrigin, mi.p);
-            vertex.pdfFwd = pdfDir * invDist2;
+            vertex.pdfFwd = ConvertDensity(prev, pdfFwd, vertex);
             if (++bounces >= maxdepth) break;
 
-            // Sample direction and compute reverse density of preceding vertex
+            // Sample direction and compute reverse density at preceding vertex
             Vector3f wi;
-            pdfDir = mi.phase->Sample_p(-ray.d, &wi, sampler.Get2D());
-            prev.pdfRev = pdfDir * invDist2;
-            if (prev.IsOnSurface())
-                prev.pdfRev *= AbsDot(prev.GetNormal(), ray.d);
+            pdfFwd = pdfRev = mi.phase->Sample_p(-ray.d, &wi, sampler.Get2D());
             ray = mi.SpawnRay(wi);
         } else {
             // Handle the surface case
-            if (!foundIntersection) break;
+            if (!foundIntersection) {
+                // Capture escaped rays when tracing from the camera
+                if (mode == TransportMode::Radiance) {
+                    vertex = Vertex(VertexType::Light, EndpointInteraction(ray),
+                                    weight);
+                    vertex.pdfFwd = pdfFwd;
+                    ++bounces;
+                }
+                break;
+            }
 
-            // Compute scattering functions for given _mode_ and skip over
-            // medium boundaries
+            // Compute scattering functions for _mode_ and skip over medium
+            // boundaries
             isect.ComputeScatteringFunctions(ray, arena, true, mode);
             if (!isect.bsdf) {
                 ray = isect.SpawnRay(ray.d);
@@ -122,29 +116,27 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             }
 
             // Fill _vertex_ with intersection information
-            Float invDist2 = 1 / DistanceSquared(rayOrigin, isect.p);
             vertex = Vertex(isect, weight);
-            vertex.pdfFwd = pdfDir * AbsDot(isect.n, ray.d) * invDist2;
+            vertex.pdfFwd = ConvertDensity(prev, pdfFwd, vertex);
             if (++bounces >= maxdepth) break;
 
             // Sample BSDF at current vertex and compute reverse probability
             Vector3f wi, wo = isect.wo;
             BxDFType flags;
-            Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdfDir,
+            Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdfFwd,
                                               BSDF_ALL, &flags);
-            if (f.IsBlack() || pdfDir == 0.f) break;
-            weight *= f * AbsDot(wi, isect.shading.n) / pdfDir;
-            prev.pdfRev = isect.bsdf->Pdf(wi, wo, BSDF_ALL) * invDist2;
-            if (prev.IsOnSurface())
-                prev.pdfRev *= AbsDot(prev.GetNormal(), ray.d);
+            if (f.IsBlack() || pdfFwd == 0.f) break;
+            weight *= f * AbsDot(wi, isect.shading.n) / pdfFwd;
+            pdfRev = isect.bsdf->Pdf(wi, wo, BSDF_ALL);
             if (flags & BSDF_SPECULAR) {
                 vertex.delta = true;
-                prev.pdfRev = pdfDir = 0;
+                pdfRev = pdfFwd = 0;
             }
             weight *= ShadingNormalCorrection(isect, wo, wi, mode);
             ray = isect.SpawnRay(wi);
         }
-        rayOrigin = ray.o;
+        // Compute reverse area density at preceding vertex
+        prev.pdfRev = ConvertDensity(vertex, pdfRev, prev);
     }
     return bounces;
 }
@@ -193,9 +185,20 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
     path[0] = Vertex(VertexType::Light,
                      EndpointInteraction(light.get(), ray, Nl), Le);
     path[0].pdfFwd = pdfPos * lightPdf;
-    return RandomWalk(scene, ray, sampler, arena, weight, pdfDir, maxdepth - 1,
-                      TransportMode::Importance, path + 1) +
-           1;
+    int nvertices =
+        RandomWalk(scene, ray, sampler, arena, weight, pdfDir, maxdepth - 1,
+                   TransportMode::Importance, path + 1);
+
+    // Correct sampling densities for infinite area lights
+    if (path[0].IsInfiniteLight()) {
+        path[0].pdfFwd = InfiniteLightDensity(scene, lightDistribution, ray.d);
+        if (nvertices > 0) {
+            path[1].pdfFwd = pdfPos;
+            if (path[1].IsOnSurface())
+                path[1].pdfFwd *= AbsDot(ray.d, path[1].GetGeoNormal());
+        }
+    }
+    return nvertices + 1;
 }
 
 Spectrum GeometryTerm(const Scene &scene, Sampler &sampler, const Vertex &v0,
@@ -203,14 +206,14 @@ Spectrum GeometryTerm(const Scene &scene, Sampler &sampler, const Vertex &v0,
     Vector3f d = v0.GetPosition() - v1.GetPosition();
     Float G = 1.f / d.LengthSquared();
     d *= std::sqrt(G);
-    if (v0.IsOnSurface()) G *= Dot(v0.GetNormal(), d);
-    if (v1.IsOnSurface()) G *= Dot(v1.GetNormal(), d);
+    if (v0.IsOnSurface()) G *= Dot(v0.GetShadingNormal(), d);
+    if (v1.IsOnSurface()) G *= Dot(v1.GetShadingNormal(), d);
     VisibilityTester vis(v0.GetInteraction(), v1.GetInteraction());
     return std::abs(G) * vis.T(scene, sampler);
 }
 
-Float MISWeight(Vertex *lightSubpath, Vertex *cameraSubpath, Vertex &sampled,
-                int s, int t, const Distribution1D &lightPdf) {
+Float MISWeight(const Scene &scene, Vertex *lightSubpath, Vertex *cameraSubpath,
+                Vertex &sampled, int s, int t, const Distribution1D &lightPdf) {
     if (s + t == 2) return 1.0f;
     Float sum = 0.f;
     // Determine connection vertices
@@ -223,24 +226,24 @@ Float MISWeight(Vertex *lightSubpath, Vertex *cameraSubpath, Vertex &sampled,
     ScopedAssign<Vertex> s0;
     ScopedAssign<bool> s1, s2;
     ScopedAssign<Float> s3, s4, s5, s6;
-
     if (s == 1 || t == 1)
         s0 = ScopedAssign<Vertex>((s == 1) ? vs : vt, sampled);
     if (vs) {
         s1 = ScopedAssign<bool>(&vs->delta, false),
-        s3 = ScopedAssign<Float>(&vs->pdfRev, vt->Pdf(vtPred, *vs));
+        s3 = ScopedAssign<Float>(&vs->pdfRev, vt->Pdf(scene, vtPred, *vs));
     }
-    if (vsPred) s5 = ScopedAssign<Float>(&vsPred->pdfRev, vs->Pdf(vt, *vsPred));
+    if (vsPred)
+        s5 = ScopedAssign<Float>(&vsPred->pdfRev, vs->Pdf(scene, vt, *vsPred));
     if (vt) {
         s2 = ScopedAssign<bool>(&vt->delta, false);
         s4 = ScopedAssign<Float>(
-            &vt->pdfRev,
-            s > 0 ? vs->Pdf(vsPred, *vt) : vt->PdfLightArea(*vtPred, lightPdf));
+            &vt->pdfRev, s > 0 ? vs->Pdf(scene, vsPred, *vt)
+                               : vt->PdfLightOrigin(scene, *vtPred, lightPdf));
     }
     if (vtPred)
         s6 = ScopedAssign<Float>(
             &vtPred->pdfRev,
-            s > 0 ? vt->Pdf(vs, *vtPred) : vt->PdfLightDir(*vtPred));
+            s > 0 ? vt->Pdf(scene, vs, *vtPred) : vt->PdfLight(scene, *vtPred));
 
     // Consider hypothetical connection strategies along the camera subpath
     auto p = [](float f) -> float { return f != 0 ? f : 1.0f; };
@@ -255,9 +258,9 @@ Float MISWeight(Vertex *lightSubpath, Vertex *cameraSubpath, Vertex &sampled,
     ratio = 1.0f;
     for (int i = s - 1; i >= 0; --i) {
         ratio *= p(lightSubpath[i].pdfRev) / p(lightSubpath[i].pdfFwd);
-        if (!lightSubpath[i].delta && (i == 0 || !lightSubpath[i - 1].delta) &&
-            (i != 0 || !lightSubpath[0].IsDeltaLight()))
-            sum += ratio;
+        bool delta_lightvertex =
+            i > 0 ? lightSubpath[i - 1].delta : lightSubpath[0].IsDeltaLight();
+        if (!lightSubpath[i].delta && !delta_lightvertex) sum += ratio;
     }
     return 1.f / (1.f + sum);
 }
@@ -338,8 +341,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
                         samplePos, cameraSubpath);
                     int nLight = GenerateLightSubpath(
                         scene, *bucketSampler, arena, maxdepth + 1,
-                        cameraSubpath[0].GetInteraction().time,
-                        *lightDistribution, lightSubpath);
+                        cameraSubpath[0].GetTime(), *lightDistribution,
+                        lightSubpath);
 
                     // Execute all connection strategies
                     Spectrum pixelWeight(0.f);
@@ -351,7 +354,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
                                 continue;
                             // Execute the $(s, t)$ connection strategy
                             Point2f finalSamplePos = samplePos;
-                            Float misWeight;
+                            Float misWeight = 0.f;
                             Spectrum weight = ConnectBDPT(
                                 scene, lightSubpath, cameraSubpath, s, t,
                                 *lightDistribution, camera.get(),
@@ -394,9 +397,11 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
                      const Distribution1D &lightDistribution,
                      const Camera *camera, Sampler &sampler, Point2f *samplePos,
                      Float *misWeight) {
-    Spectrum weight(0.0f);
+    Spectrum weight(0.f);
     Vertex sampled;
-    if (s == 0) {
+    if (t > 1 && s != 0 && cameraSubpath[t - 1].type == VertexType::Light) {
+        /* ignore */
+    } else if (s == 0) {
         // Directly connect a camera subpath to an intersected light source
         const Vertex &vt = cameraSubpath[t - 1];
         if (vt.IsLight()) {
@@ -407,7 +412,7 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
             } else {
                 for (const auto &light : scene.lights)
                     Le += light->Le(
-                        Ray(vt.GetPosition(), Vector3f(-vt.GetNormal())));
+                        Ray(vt.GetPosition(), -Vector3f(vt.GetGeoNormal())));
             }
             weight = Le * vt.weight;
         }
@@ -428,10 +433,11 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
                 sampled = Vertex(VertexType::Light,
                                  EndpointInteraction(vis.P1(), light.get()),
                                  lightWeight / (pdf * lightPdf));
-                sampled.pdfFwd = sampled.PdfLightArea(vt, lightDistribution);
+                sampled.pdfFwd =
+                    sampled.PdfLightOrigin(scene, vt, lightDistribution);
                 weight = vt.weight * vt.f(sampled) *
-                         AbsDot(wi, vt.GetNormal()) * vis.T(scene, sampler) *
-                         sampled.weight;
+                         AbsDot(wi, vt.GetShadingNormal()) *
+                         vis.T(scene, sampler) * sampled.weight;
             }
         }
     } else if (t == 1) {
@@ -449,8 +455,8 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
                     Vertex(VertexType::Camera,
                            EndpointInteraction(vis.P1(), camera), cameraWeight);
                 weight = vs.weight * vs.f(sampled) *
-                         AbsDot(wi, vs.GetNormal()) * vis.T(scene, sampler) *
-                         sampled.weight;
+                         AbsDot(wi, vs.GetShadingNormal()) *
+                         vis.T(scene, sampler) * sampled.weight;
             }
         }
     } else {
@@ -463,8 +469,8 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
         }
     }
     *misWeight =
-        weight.IsBlack() ? 0.f : MISWeight(lightSubpath, cameraSubpath, sampled,
-                                           s, t, lightDistribution);
+        weight.IsBlack() ? 0.f : MISWeight(scene, lightSubpath, cameraSubpath,
+                                           sampled, s, t, lightDistribution);
     return weight;
 }
 

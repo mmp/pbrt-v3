@@ -170,7 +170,7 @@ Spectrum PerspectiveCamera::Sample_We(const Interaction &ref,
                                       const Point2f &sample, Vector3f *wi,
                                       Float *pdf, Point2f *raster,
                                       VisibilityTester *vis) const {
-    // Uniformly sample a lens point _lensP_
+    // Uniformly sample a lens interaction _lensP_
     Point2f tmp = lensRadius * ConcentricSampleDisk(sample);
     Interaction lensP(CameraToWorld(ref.time, Point3f(tmp.x, tmp.y, 0)),
                       ref.time, medium);
