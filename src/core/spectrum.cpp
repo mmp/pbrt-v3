@@ -951,7 +951,7 @@ void Blackbody(const Float *lambda, int n, Float T, Float *Le) {
         Float lambda5 = (l * l) * (l * l) * l;
         Le[i] = (2. * h * c * c) /
                 (lambda5 * (std::exp((h * c) / (l * kb * T)) - 1.f));
-        Assert(!IsNaN(Le[i]));
+        Assert(!std::isnan(Le[i]));
     }
 }
 

@@ -207,16 +207,6 @@ static const Float PiOver4 = 0.785398163397448309616;
 #endif
 
 // Global Inline Functions
-template <typename T>
-typename std::enable_if<std::is_integral<T>::value, bool>::type IsNaN(T val) {
-    return false;
-}
-
-template <typename T>
-typename std::enable_if<!std::is_integral<T>::value, bool>::type IsNaN(T val) {
-    return std::isnan(val);
-}
-
 inline uint32_t FloatToBits(float f) {
     uint32_t ui;
     memcpy(&ui, &f, sizeof(float));

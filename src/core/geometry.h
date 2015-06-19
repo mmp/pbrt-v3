@@ -49,7 +49,7 @@ class Vector2 {
     // Vector2 Public Methods
     Vector2() { x = y = 0; }
     Vector2(T xx, T yy) : x(xx), y(yy) { Assert(!HasNaNs()); }
-    bool HasNaNs() const { return IsNaN(x) || IsNaN(y); }
+    bool HasNaNs() const { return std::isnan(x) || std::isnan(y); }
     explicit Vector2(const Point2<T> &p);
     explicit Vector2(const Point3<T> &p);
 #ifndef NDEBUG
@@ -99,7 +99,7 @@ class Vector2 {
     Vector2<T> operator*(T f) const { return Vector2<T>(f * x, f * y); }
 
     Vector2<T> &operator*=(T f) {
-        Assert(!IsNaN(f));
+        Assert(!std::isnan(f));
         x *= f;
         y *= f;
         return *this;
@@ -154,7 +154,9 @@ class Vector3 {
     }
     Vector3() { x = y = z = 0; }
     Vector3(T x, T y, T z) : x(x), y(y), z(z) { Assert(!HasNaNs()); }
-    bool HasNaNs() const { return IsNaN(x) || IsNaN(y) || IsNaN(z); }
+    bool HasNaNs() const {
+        return std::isnan(x) || std::isnan(y) || std::isnan(z);
+    }
     explicit Vector3(const Point3<T> &p);
 #ifndef NDEBUG
     // The default versions of these are fine for release builds; for debug
@@ -208,7 +210,7 @@ class Vector3 {
     }
     Vector3<T> operator*(T f) const { return Vector3<T>(f * x, f * y, f * z); }
     Vector3<T> &operator*=(T f) {
-        Assert(!IsNaN(f));
+        Assert(!std::isnan(f));
         x *= f;
         y *= f;
         z *= f;
@@ -355,7 +357,7 @@ class Point2 {
     }
     bool operator==(const Point2<T> &p) const { return x == p.x && y == p.y; }
     bool operator!=(const Point2<T> &p) const { return x != p.x || y != p.y; }
-    bool HasNaNs() const { return IsNaN(x) || IsNaN(y); }
+    bool HasNaNs() const { return std::isnan(x) || std::isnan(y); }
 
     // Point2 Public Data
     T x, y;
@@ -470,7 +472,9 @@ class Point3 {
     bool operator!=(const Point3<T> &p) const {
         return x != p.x || y != p.y || z != p.z;
     }
-    bool HasNaNs() const { return IsNaN(x) || IsNaN(y) || IsNaN(z); }
+    bool HasNaNs() const {
+        return std::isnan(x) || std::isnan(y) || std::isnan(z);
+    }
     Point3<T> operator-() const { return Point3<T>(-x, -y, -z); }
 
     // Point3 Public Data
@@ -514,7 +518,9 @@ class Normal3 {
         z -= n.z;
         return *this;
     }
-    bool HasNaNs() const { return IsNaN(x) || IsNaN(y) || IsNaN(z); }
+    bool HasNaNs() const {
+        return std::isnan(x) || std::isnan(y) || std::isnan(z);
+    }
     Normal3<T> operator*(T f) const { return Normal3<T>(f * x, f * y, f * z); }
 
     Normal3<T> &operator*=(T f) {
@@ -781,7 +787,9 @@ class Ray {
         Float time = 0.f, int depth = 0, const Medium *medium = nullptr)
         : o(o), d(d), tMax(tMax), time(time), depth(depth), medium(medium) {}
     Point3f operator()(Float t) const { return o + d * t; }
-    bool HasNaNs() const { return (o.HasNaNs() || d.HasNaNs() || IsNaN(tMax)); }
+    bool HasNaNs() const {
+        return (o.HasNaNs() || d.HasNaNs() || std::isnan(tMax));
+    }
     friend std::ostream &operator<<(std::ostream &os, const Ray &r) {
         os << "[o=" << r.o << ", d=" << r.d << ", tMax=" << r.tMax
            << ", time=" << r.time << ", depth=" << r.depth << "]";
