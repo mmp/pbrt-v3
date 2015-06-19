@@ -185,10 +185,15 @@ extern Options PbrtOptions;
 class TextureParams;
 
 // Global Constants
+#ifdef _MSC_VER
+#define MaxFloat std::numeric_limits<Float>::max()
+#define Infinity  std::numeric_limits<Float>::infinity()
+#define MachineEpsilon  (std::numeric_limits<Float>::epsilon() * 0.5)
+#else
 static constexpr Float MaxFloat = std::numeric_limits<Float>::max();
 static constexpr Float Infinity = std::numeric_limits<Float>::infinity();
-static constexpr Float MachineEpsilon =
-    std::numeric_limits<Float>::epsilon() * 0.5;
+static constexpr Float MachineEpsilon = std::numeric_limits<Float>::epsilon() * 0.5;
+#endif
 const Float ShadowEpsilon = 0.0001f;
 #ifdef M_PI
 #undef M_PI
@@ -378,6 +383,15 @@ inline Float Log2(Float x) {
     return std::log(x) * invLog2;
 }
 
+#if defined(_MSC_VER)
+uint32_t __inline __builtin_clz(uint32_t v)
+{
+	unsigned long leading_zero = 0;
+	_BitScanReverse(&leading_zero, v);
+	return 31 - leading_zero;
+}
+#endif
+
 inline int Log2Int(uint32_t v) { return 31 - __builtin_clz(v); }
 
 template <typename T>
@@ -406,14 +420,17 @@ inline int64_t RoundUpPow2(int64_t v) {
     return v + 1;
 }
 
+#if defined(_MSC_VER)
+inline int CountTrailingZeros(uint32_t v) {
+	unsigned long index;
+	_BitScanForward(&index, v);
+	return index;
+}
+#else
 inline int CountTrailingZeros(uint32_t v) {
     return __builtin_ctz(v);
-    /* MSVC should be:
-       unsigned long index;
-       _BitScanForward(&index, v);
-       return index;
-    */
 }
+#endif
 
 template <typename Predicate>
 int FindInterval(int size, const Predicate &pred) {
