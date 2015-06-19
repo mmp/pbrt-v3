@@ -47,7 +47,7 @@ static std::string searchDirectory;
 bool IsAbsolutePath(const std::string &filename) {
     if (filename.size() == 0) return false;
     return (filename[0] == '\\' || filename[0] == '/' ||
-            filename.find(':') != string::npos);
+            filename.find(':') != std::string::npos);
 }
 
 std::string AbsolutePath(const std::string &filename) {
