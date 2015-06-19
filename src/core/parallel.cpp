@@ -36,7 +36,9 @@
 #include "parallel.h"
 #include "memory.h"
 #include "stats.h"
-#ifndef PBRT_IS_WINDOWS
+#ifdef PBRT_IS_WINDOWS
+#include <windows.h>
+#else
 #include <sys/sysctl.h>
 #endif  // PBRT_IS_WINDOWS
 #ifdef PBRT_IS_LINUX
