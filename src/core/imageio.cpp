@@ -242,7 +242,7 @@ void WriteImageTGA(const std::string &name, const uint8_t *pixels, int xRes,
                    int yRes, int totalXRes, int totalYRes, int xOffset,
                    int yOffset) {
     // Reformat to BGR layout.
-    std::unique_ptr<uint8_t> outBuf(new uint8_t[3 * xRes * yRes]);
+    std::unique_ptr<uint8_t[]> outBuf(new uint8_t[3 * xRes * yRes]);
     uint8_t *dst = outBuf.get();
     const uint8_t *src = pixels;
     for (int y = 0; y < yRes; ++y) {
