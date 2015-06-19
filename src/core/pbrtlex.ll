@@ -43,7 +43,7 @@
 
 struct ParamArray;
 
-#if defined(PBRT_IS_WINDOWS)
+#if defined(PBRT_IS_MSVC)
 #pragma warning(disable:4244)
 #pragma warning(disable:4065)
 #pragma warning(disable:4018)
