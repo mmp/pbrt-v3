@@ -6,7 +6,6 @@
 #include "rng.h"
 #include "ext/tinyexr.h"
 
-#if 0
 union FP32 {
     uint u;
     float f;
@@ -200,4 +199,3 @@ TEST(EXR, Randoms) {
 
    CompareImages(image, readImage, true);
 }
-#endif
