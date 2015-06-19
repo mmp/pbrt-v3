@@ -3,7 +3,7 @@ CMAKE_MINIMUM_REQUIRED ( VERSION 2.8 )
 PROJECT ( PBRT-V3 )
 
 IF (APPLE)
-  SET ( CMAKE_CXX_FLAGS "-std=c++11" )
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 ENDIF()
 
 # src/core/*.cpp are handled differently due to
