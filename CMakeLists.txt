@@ -2,6 +2,10 @@ CMAKE_MINIMUM_REQUIRED ( VERSION 2.8 )
 
 PROJECT ( PBRT-V3 )
 
+IF (APPLE)
+  SET ( CMAKE_CXX_FLAGS "-std=c++11" )
+ENDIF()
+
 # src/core/*.cpp are handled differently due to
 # the presence of yacc/lex generated files whic
 # may be optionally generated, especially on
