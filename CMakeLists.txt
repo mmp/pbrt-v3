@@ -2,6 +2,8 @@ CMAKE_MINIMUM_REQUIRED ( VERSION 2.8 )
 
 PROJECT ( PBRT-V3 )
 
+ENABLE_TESTING()
+
 SET ( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 
 FIND_PACKAGE ( ZLIB REQUIRED )
@@ -205,6 +207,25 @@ TARGET_LINK_LIBRARIES ( tifftoexr
   )
 
 # Unit test
+
+FILE ( GLOB PBRT_TEST_SOURCE
+  src/tests/*.cpp
+  src/tests/gtest/*.cc 
+  )
+
+ADD_EXECUTABLE ( pbrt_test
+  ${PBRT_TEST_SOURCE}
+  )
+
+TARGET_LINK_LIBRARIES ( pbrt_test
+  pbrt
+  )
+
+ADD_TEST ( pbrt_unit_test
+  pbrt_test
+  )
+
+# Installation
 
 INSTALL ( TARGETS
   pbrt_exe
