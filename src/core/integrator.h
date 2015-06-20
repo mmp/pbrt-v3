@@ -56,16 +56,6 @@ class Integrator {
     virtual void Render(const Scene &scene) = 0;
 };
 
-Spectrum SpecularReflect(const RayDifferential &ray,
-                         const SurfaceInteraction &isect,
-                         const SamplerIntegrator &integrator,
-                         const Scene &scene, Sampler &sampler,
-                         MemoryArena &arena);
-Spectrum SpecularTransmit(const RayDifferential &ray,
-                          const SurfaceInteraction &isect,
-                          const SamplerIntegrator &integrator,
-                          const Scene &scene, Sampler &sampler,
-                          MemoryArena &arena);
 Distribution1D *ComputeLightSamplingCDF(const Scene &scene);
 Spectrum UniformSampleAllLights(const Interaction &isect, const Scene &scene,
                                 Sampler &sampler,
@@ -84,18 +74,29 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
 class SamplerIntegrator : public Integrator {
   public:
     // SamplerIntegrator Public Methods
-    SamplerIntegrator(std::shared_ptr<Sampler> sampler,
-                      std::shared_ptr<const Camera> camera)
-        : sampler(sampler), camera(camera) {}
+    SamplerIntegrator(std::shared_ptr<const Camera> camera,
+                      std::shared_ptr<Sampler> sampler)
+        : camera(camera), sampler(sampler) {}
     virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
                         Sampler &sampler, MemoryArena &arena) const = 0;
-    virtual void Preprocess(const Scene &scene) {}
+    virtual void Preprocess(const Scene &scene, Sampler &sampler) {}
     void Render(const Scene &scene);
+    Spectrum SpecularReflect(const RayDifferential &ray,
+                             const SurfaceInteraction &isect,
+                             const Scene &scene, Sampler &sampler,
+                             MemoryArena &arena) const;
+    Spectrum SpecularTransmit(const RayDifferential &ray,
+                              const SurfaceInteraction &isect,
+                              const Scene &scene, Sampler &sampler,
+                              MemoryArena &arena) const;
 
   protected:
     // SamplerIntegrator Protected Data
-    std::shared_ptr<Sampler> sampler;
     std::shared_ptr<const Camera> camera;
+
+  private:
+    // SamplerIntegrator Private Data
+    std::shared_ptr<Sampler> sampler;
 };
 
 #endif  // PBRT_CORE_INTEGRATOR_H

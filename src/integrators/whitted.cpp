@@ -40,13 +40,11 @@
 // WhittedIntegrator Method Definitions
 Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena) const {
-    Spectrum L(0.);
-    // Store intersection into _isect_ or return background radiance if none was
-    // found
+    Spectrum L = 0.;
+    // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;
     if (!scene.Intersect(ray, &isect)) {
-        for (uint32_t i = 0; i < scene.lights.size(); ++i)
-            L += scene.lights[i]->Le(ray);
+        for (const auto &light : scene.lights) L += light->Le(ray);
         return L;
     }
 
@@ -76,8 +74,8 @@ Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
     }
     if (ray.depth + 1 < maxDepth) {
         // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, isect, *this, scene, sampler, arena);
-        L += SpecularTransmit(ray, isect, *this, scene, sampler, arena);
+        L += SpecularReflect(ray, isect, scene, sampler, arena);
+        L += SpecularTransmit(ray, isect, scene, sampler, arena);
     }
     return L;
 }
@@ -86,5 +84,5 @@ WhittedIntegrator *CreateWhittedIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
-    return new WhittedIntegrator(maxDepth, sampler, camera);
+    return new WhittedIntegrator(maxDepth, camera, sampler);
 }

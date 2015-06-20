@@ -52,51 +52,11 @@ STAT_TIMER("Time/Rendering", renderingTime);
 Integrator::~Integrator() {}
 
 // Integrator Utility Functions
-Spectrum SpecularReflect(const RayDifferential &ray,
-                         const SurfaceInteraction &isect,
-                         const SamplerIntegrator &integrator,
-                         const Scene &scene, Sampler &sampler,
-                         MemoryArena &arena) {
-    Vector3f wo = isect.wo, wi;
-    const BSDF &bsdf = *isect.bsdf;
-    Float pdf;
-    const Point3f &p = isect.p;
-    const Normal3f &ns = isect.shading.n;
-    Spectrum f = bsdf.Sample_f(wo, &wi, sampler.Get2D(), &pdf,
-                               BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
-    Spectrum L = Spectrum(0.f);
-    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
-        // Compute ray differential _rd_ for specular reflection
-        RayDifferential rd = isect.SpawnRay(wi, ray.depth + 1);
-        if (ray.hasDifferentials) {
-            rd.hasDifferentials = true;
-            rd.rxOrigin = p + isect.dpdx;
-            rd.ryOrigin = p + isect.dpdy;
-            // Compute differential reflected directions
-            Normal3f dndx = isect.shading.dndu * isect.dudx +
-                            isect.shading.dndv * isect.dvdx;
-            Normal3f dndy = isect.shading.dndu * isect.dudy +
-                            isect.shading.dndv * isect.dvdy;
-            Vector3f dwodx = -ray.rxDirection - wo,
-                     dwody = -ray.ryDirection - wo;
-            Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
-            Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
-            rd.rxDirection =
-                wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
-            rd.ryDirection =
-                wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
-        }
-        Spectrum Li = integrator.Li(rd, scene, sampler, arena);
-        L = f * Li * AbsDot(wi, ns) / pdf;
-    }
-    return L;
-}
-
-Spectrum SpecularTransmit(const RayDifferential &ray,
-                          const SurfaceInteraction &isect,
-                          const SamplerIntegrator &integrator,
-                          const Scene &scene, Sampler &sampler,
-                          MemoryArena &arena) {
+Spectrum SamplerIntegrator::SpecularTransmit(const RayDifferential &ray,
+                                             const SurfaceInteraction &isect,
+                                             const Scene &scene,
+                                             Sampler &sampler,
+                                             MemoryArena &arena) const {
     Vector3f wo = isect.wo, wi;
     Float pdf;
     const Point3f &p = isect.p;
@@ -138,8 +98,7 @@ Spectrum SpecularTransmit(const RayDifferential &ray,
             rd.ryDirection =
                 wi + eta * dwody - Vector3f(mu * dndy + dmudy * ns);
         }
-        Spectrum Li = integrator.Li(rd, scene, sampler, arena);
-        L = f * Li * AbsDot(wi, ns) / pdf;
+        L = f * Li(rd, scene, sampler, arena) * AbsDot(wi, ns) / pdf;
     }
     return L;
 }
@@ -293,7 +252,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
 
 // SamplerIntegrator Method Definitions
 void SamplerIntegrator::Render(const Scene &scene) {
-    Preprocess(scene);
+    Preprocess(scene, *sampler);
     // Run parallel tasks to render the image
 
     // Compute number of tiles to use for parallel rendering
@@ -386,4 +345,43 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
     // Clean up after rendering and store final image
     camera->film->WriteImage();
+}
+
+Spectrum SamplerIntegrator::SpecularReflect(const RayDifferential &ray,
+                                            const SurfaceInteraction &isect,
+                                            const Scene &scene,
+                                            Sampler &sampler,
+                                            MemoryArena &arena) const {
+    Vector3f wo = isect.wo, wi;
+    const BSDF &bsdf = *isect.bsdf;
+    Float pdf;
+    const Point3f &p = isect.p;
+    const Normal3f &ns = isect.shading.n;
+    Spectrum f = bsdf.Sample_f(wo, &wi, sampler.Get2D(), &pdf,
+                               BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
+    Spectrum L = 0.f;
+    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
+        // Compute ray differential _rd_ for specular reflection
+        RayDifferential rd = isect.SpawnRay(wi, ray.depth + 1);
+        if (ray.hasDifferentials) {
+            rd.hasDifferentials = true;
+            rd.rxOrigin = p + isect.dpdx;
+            rd.ryOrigin = p + isect.dpdy;
+            // Compute differential reflected directions
+            Normal3f dndx = isect.shading.dndu * isect.dudx +
+                            isect.shading.dndv * isect.dvdx;
+            Normal3f dndy = isect.shading.dndu * isect.dudy +
+                            isect.shading.dndv * isect.dvdy;
+            Vector3f dwodx = -ray.rxDirection - wo,
+                     dwody = -ray.ryDirection - wo;
+            Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
+            Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
+            rd.rxDirection =
+                wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
+            rd.ryDirection =
+                wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
+        }
+        L = f * Li(rd, scene, sampler, arena) * AbsDot(wi, ns) / pdf;
+    }
+    return L;
 }

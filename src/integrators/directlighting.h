@@ -50,11 +50,11 @@ class DirectLightingIntegrator : public SamplerIntegrator {
   public:
     // DirectLightingIntegrator Public Methods
     DirectLightingIntegrator(LightStrategy ls, int maxDepth,
-                             std::shared_ptr<Sampler> sampler,
-                             std::shared_ptr<const Camera> camera);
+                             std::shared_ptr<const Camera> camera,
+                             std::shared_ptr<Sampler> sampler);
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena) const;
-    void Preprocess(const Scene &scene);
+    void Preprocess(const Scene &scene, Sampler &sampler);
 
   private:
     // DirectLightingIntegrator Private Data

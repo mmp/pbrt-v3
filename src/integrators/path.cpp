@@ -138,5 +138,5 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
-    return new PathIntegrator(maxDepth, sampler, camera);
+    return new PathIntegrator(maxDepth, camera, sampler);
 }
