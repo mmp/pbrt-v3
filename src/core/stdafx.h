@@ -34,13 +34,13 @@
 // header file for building precompiled headers under windows
 // a no-op on other architectures
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && 0
 
 #include "pbrt.h"
 #include "camera.h"
 #include "scene.h"
 #include "imageio.h"
-#include "intersection.h"
+// #include "intersection.h"
 #include "sampling.h"
 #include "sampler.h"
 #include "texture.h"
