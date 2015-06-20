@@ -3,3 +3,9 @@ src/build
 src/bin
 src/objs
 .sconsign.dblite
+/VS2013/pbrt-v3/Debug
+/VS2013/Debug
+/VS2013/pbrt-v3.v12.suo
+/VS2013/pbrt-v3.sdf
+/VS2013/pbrt-v3.opensdf
+/VS2013/ipch
