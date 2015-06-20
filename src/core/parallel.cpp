@@ -49,7 +49,7 @@
 // Parallel Local Definitions
 static std::vector<std::thread> threads;
 static bool shutdown = false;
-static __thread int threadIndex;
+static THREAD_LOCAL int threadIndex;
 class ParallelForLoop;
 static ParallelForLoop *workList = nullptr;
 static std::mutex workListMutex;

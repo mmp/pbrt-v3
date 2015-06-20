@@ -71,31 +71,21 @@
 #include <string.h>
 
 // Platform-specific definitions
+#include <stdint.h>
 #if defined(PBRT_IS_WINDOWS)
 #include <float.h>
-#if _MSC_VER >= 1600
-#include <stdint.h>
-#else
-typedef signed __int8 int8_t;
-typedef unsigned __int8 uint8_t;
-typedef signed __int16 int16_t;
-typedef unsigned __int16 uint16_t;
-typedef signed __int32 int32_t;
-typedef unsigned __int32 uint32_t;
-typedef signed __int64 int64_t;
-typedef unsigned __int64 uint64_t;
-#endif                           // _MSC_VER >= 1600
 #pragma warning(disable : 4305)  // double constant assigned to float
 #pragma warning(disable : 4244)  // int -> float conversion
 #pragma warning(disable : 4267)  // size_t -> unsigned int conversion
 #endif
 
-#if defined(PBRT_IS_LINUX) || defined(PBRT_IS_OSX)
-#include <stdint.h>
-#endif  // PBRT_IS_LINUX || PBRT_IS_OSX
-
 // Global Macros
 #define ALLOCA(TYPE, COUNT) (TYPE *) alloca((COUNT) * sizeof(TYPE))
+#ifdef MSC_VER
+#define THREAD_LOCAL thread_local
+#else
+#define THREAD_LOCAL __thread
+#endif
 
 // Global Forward Declarations
 class Scene;
@@ -187,12 +177,16 @@ class TextureParams;
 // Global Constants
 #ifdef _MSC_VER
 #define MaxFloat std::numeric_limits<Float>::max()
-#define Infinity  std::numeric_limits<Float>::infinity()
-#define MachineEpsilon  (std::numeric_limits<Float>::epsilon() * 0.5)
+#define Infinity std::numeric_limits<Float>::infinity()
 #else
 static constexpr Float MaxFloat = std::numeric_limits<Float>::max();
 static constexpr Float Infinity = std::numeric_limits<Float>::infinity();
-static constexpr Float MachineEpsilon = std::numeric_limits<Float>::epsilon() * 0.5;
+#endif
+#ifdef _MSC_VER
+#define MachineEpsilon (std::numeric_limits<Float>::epsilon() * 0.5)
+#else
+static constexpr Float MachineEpsilon =
+    std::numeric_limits<Float>::epsilon() * 0.5;
 #endif
 const Float ShadowEpsilon = 0.0001f;
 #ifdef M_PI
@@ -373,16 +367,15 @@ inline Float Log2(Float x) {
     return std::log(x) * invLog2;
 }
 
+inline int Log2Int(uint32_t v) {
 #if defined(_MSC_VER)
-uint32_t __inline __builtin_clz(uint32_t v)
-{
-	unsigned long leading_zero = 0;
-	_BitScanReverse(&leading_zero, v);
-	return 31 - leading_zero;
-}
+    DWORD lz = 0;
+    if (_BitScanReverse(&lz, v)) return lz;
+    return 0;
+#else
+    return 31 - __builtin_clz(v);
 #endif
-
-inline int Log2Int(uint32_t v) { return 31 - __builtin_clz(v); }
+}
 
 template <typename T>
 inline bool IsPowerOf2(T v) {
@@ -412,16 +405,17 @@ inline int64_t RoundUpPow2(int64_t v) {
 
 #if defined(_MSC_VER)
 inline int CountTrailingZeros(uint32_t v) {
-	unsigned long index;
-	_BitScanForward(&index, v);
-	return index;
+    unsigned long index;
+    if (_BitScanForward(&index, v))
+        return index;
+    else
+        return 32;
 }
-#else
-inline int CountTrailingZeros(uint32_t v) {
-    return __builtin_ctz(v);
-}
-#endif
 
+#else
+inline int CountTrailingZeros(uint32_t v) { return __builtin_ctz(v); }
+
+#endif
 template <typename Predicate>
 int FindInterval(int size, const Predicate &pred) {
     int first = 0, len = size;
