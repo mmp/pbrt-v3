@@ -8,47 +8,39 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 ENDIF()
 
-# src/core/*.cpp are handled differently due to
-# the presence of yacc/lex generated files which
-# may be optionally generated, especially on
-# Windows which is a pain
-IF (WIN32)
-  SET ( PBRT_YACC_LEX_SOURCE
-    src/core/pbrtlex.cpp
-    src/core/pbrtparse.cpp
-    )
-ELSE()
-  FIND_PACKAGE ( BISON REQUIRED )
-  
-  IF(BISON_FOUND)
-    SET(BisonOutput ${CMAKE_BINARY_DIR}/pbrtparser.cpp)
-    ADD_CUSTOM_COMMAND(
-      OUTPUT ${BisonOutput}
-      COMMAND ${BISON_EXECUTABLE} -d -v -t
-              --output=${BisonOutput}
-              ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
-      COMMENT "Generating pbrtparser.cpp"
-      )
-  ENDIF()
+# Optionally use Bison and Flex to regenerate parser files
+# Use pregenerated files otherwise (may be outdated)
+FIND_PACKAGE ( BISON )
+FIND_PACKAGE ( FLEX )
+IF(BISON_FOUND AND FLEX_FOUND)
+  SET(BisonOutput ${CMAKE_BINARY_DIR}/pbrtparser.cpp)
+  ADD_CUSTOM_COMMAND(
+    OUTPUT ${BisonOutput}
+    COMMAND ${BISON_EXECUTABLE} -d -v -t
+            --output=${BisonOutput}
+            ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
+    COMMENT "Generating pbrtparser.cpp"
+  )
 
-  FIND_PACKAGE ( FLEX REQUIRED )
-  IF(FLEX_FOUND)
-    SET(FlexOutput ${CMAKE_BINARY_DIR}/pbrtlex.cpp)
-    ADD_CUSTOM_COMMAND(
-      OUTPUT ${FlexOutput}
-      COMMAND ${FLEX_EXECUTABLE}
-              --outfile=${FlexOutput}
-              ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
-      COMMENT "Generating pbrtlex.cpp"
-      )
-  ENDIF()
+  SET(FlexOutput ${CMAKE_BINARY_DIR}/pbrtlex.cpp)
+  ADD_CUSTOM_COMMAND(
+    OUTPUT ${FlexOutput}
+    COMMAND ${FLEX_EXECUTABLE}
+            --outfile=${FlexOutput}
+            ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
+    COMMENT "Generating pbrtlex.cpp"
+  )
 
   SET ( PBRT_YACC_LEX_SOURCE
     ${BisonOutput}
     ${FlexOutput}
     )
-
-ENDIF ()
+ELSE()
+  SET ( PBRT_YACC_LEX_SOURCE
+    src/core/pbrtlex.cpp
+    src/core/pbrtparse.cpp
+    )
+ENDIF()
 
 SET ( PBRT_CORE_SOURCE
   src/core/api.cpp
