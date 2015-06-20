@@ -4,14 +4,12 @@ PROJECT ( PBRT-V3 )
 
 ENABLE_TESTING()
 
-SET ( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
-
 IF (APPLE)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 ENDIF()
 
 # src/core/*.cpp are handled differently due to
-# the presence of yacc/lex generated files whic
+# the presence of yacc/lex generated files which
 # may be optionally generated, especially on
 # Windows which is a pain
 IF (WIN32)

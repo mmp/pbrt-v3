@@ -86,11 +86,11 @@ page](http://www.cmake.org/download/).
 
 * For command-line builds on Linux and OS X, once you have cmake installed,
 create a new directory for the build, change to that directory, and run
-`cmake <path to pbrt-v3/CMakeLists.txt>`. A Makefile will be created in the
+`cmake <path to pbrt-v3>`. A Makefile will be created in that 
 current directory.  Run `make -j4`, and pbrt and some additional tools will
 be built.
 * To make an XCode project file on OS X, run `cmake -G Xcode <path to
-pbrt-v3/CMakeLists.txt>`.
+pbrt-v3>`.
 * Finally, on Windows, the cmake GUI will create MSVC solution files that
 you can load in MSVC.
 
