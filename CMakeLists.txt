@@ -6,15 +6,6 @@ ENABLE_TESTING()
 
 SET ( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 
-FIND_PACKAGE ( Threads REQUIRED )
-FIND_PACKAGE ( ZLIB REQUIRED )
-FIND_PACKAGE ( TIFF REQUIRED )
-FIND_PACKAGE ( ILMBase REQUIRED )
-FIND_PACKAGE ( OpenEXR REQUIRED )
-INCLUDE_DIRECTORIES ( ${TIFF_INCLUDE_DIR} )
-INCLUDE_DIRECTORIES ( ${ILMBASE_INCLUDE_DIRS} )
-INCLUDE_DIRECTORIES ( ${OPENEXR_INCLUDE_DIRS} )
-
 IF (APPLE)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 ENDIF()
@@ -145,14 +136,6 @@ ADD_EXECUTABLE ( chi2test
   src/tools/chi2test.cpp
   )
 
-ADD_EXECUTABLE ( exravg
-  src/tools/exravg.cpp
-  )
-
-ADD_EXECUTABLE ( exrcat
-  src/tools/exrcat.cpp
-  )
-
 ADD_EXECUTABLE ( exrdiff
   src/tools/exrdiff.cpp
   )
@@ -165,26 +148,12 @@ ADD_EXECUTABLE ( obj2pbrt
   src/tools/obj2pbrt.cpp
   )
 
-ADD_EXECUTABLE ( tifftoexr
-  src/tools/tifftoexr.cpp
-  )
-
 TARGET_LINK_LIBRARIES ( bsdftest
   pbrt
   )
 
 TARGET_LINK_LIBRARIES ( chi2test
   pbrt
-  )
-
-TARGET_LINK_LIBRARIES ( exravg
-  pbrt
-  )
-
-TARGET_LINK_LIBRARIES ( exrcat
-  pbrt
-  ${Ilmbase_HALF_LIBRARY}
-  ${Openexr_ILMIMF_LIBRARY}
   )
 
 TARGET_LINK_LIBRARIES ( exrdiff
@@ -197,14 +166,6 @@ TARGET_LINK_LIBRARIES ( hdrtoldr
 
 TARGET_LINK_LIBRARIES ( obj2pbrt
   pbrt
-  )
-
-TARGET_LINK_LIBRARIES ( tifftoexr
-  pbrt
-  ${TIFF_LIBRARY}
-  ${ZLIB_LIBRARY}
-  ${Ilmbase_HALF_LIBRARY}
-  ${Openexr_ILMIMF_LIBRARY}
   )
 
 # Unit test
@@ -233,12 +194,9 @@ INSTALL ( TARGETS
   pbrt_exe
   bsdftest
   chi2test
-  exravg
-  exrcat
   exrdiff
   hdrtoldr
   obj2pbrt
-  tifftoexr
   DESTINATION
   bin
   )

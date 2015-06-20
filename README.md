@@ -79,10 +79,20 @@ source code for details.
 Building The System
 -------------------
 
-Currently only a makefile and [SCons](http://scons.org) build files are
-available.  If you have SCons installed, run `scons` from the `src/`
-directory to build the system; otherwise, run `make` from the `src/`
-directory.
+pbrt uses [cmake](http://www.cmake.org/) for its build system.  On Linux
+and OS X, cmake is available via most package management systems.  For
+Windows, or to build it from source, see the [cmake downloads
+page](http://www.cmake.org/download/).
+
+* For command-line builds on Linux and OS X, once you have cmake installed,
+create a new directory for the build, change to that directory, and run
+`cmake <path to pbrt-v3/CMakeLists.txt>`. A Makefile will be created in the
+current directory.  Run `make -j4`, and pbrt and some additional tools will
+be built.
+* To make an XCode project file on OS X, run `cmake -G Xcode <path to
+pbrt-v3/CMakeLists.txt>`.
+* Finally, on Windows, the cmake GUI will create MSVC solution files that
+you can load in MSVC.
 
 File Format Changes
 -------------------
