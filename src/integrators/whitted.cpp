@@ -48,14 +48,14 @@ Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
         return L;
     }
 
-    // Compute scattering functions for surface interaction
-    isect.ComputeScatteringFunctions(ray, arena);
-
     // Compute emitted and reflected light at ray intersection point
 
     // Initialize common variables for Whitted integrator
-    const Normal3f &ns = isect.shading.n;
+    const Normal3f &n = isect.shading.n;
     Vector3f wo = isect.wo;
+
+    // Compute scattering functions for surface interaction
+    isect.ComputeScatteringFunctions(ray, arena);
 
     // Compute emitted light if ray hit an area light source
     L += isect.Le(wo);
@@ -70,7 +70,7 @@ Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
         if (Li.IsBlack() || pdf == 0.f) continue;
         Spectrum f = isect.bsdf->f(wo, wi);
         if (!f.IsBlack() && visibility.Unoccluded(scene))
-            L += f * Li * AbsDot(wi, ns) / pdf;
+            L += f * Li * AbsDot(wi, n) / pdf;
     }
     if (ray.depth + 1 < maxDepth) {
         // Trace rays for specular reflection and refraction
