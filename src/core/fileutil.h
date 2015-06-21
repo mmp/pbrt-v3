@@ -40,6 +40,7 @@
 #include "stdafx.h"
 
 // core/fileutil.h*
+#include "pbrt.h"
 #include <string>
 #include <string.h>
 

@@ -33,7 +33,6 @@
 #include "stdafx.h"
 
 // core/fileutil.cpp*
-#include "pbrt.h"
 #include "fileutil.h"
 #include <cstdlib>
 #include <climits>

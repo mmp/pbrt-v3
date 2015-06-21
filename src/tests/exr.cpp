@@ -1,7 +1,7 @@
 
 #include "tests/gtest/gtest.h"
-#include <stdint.h>
 #include <cmath>
+#include <stdint.h>
 
 #include "pbrt.h"
 #include "rng.h"
@@ -11,18 +11,18 @@ union FP32 {
     uint32_t u;
     float f;
     struct {
-        uint32_t Mantissa : 23;
-        uint32_t Exponent : 8;
-        uint32_t Sign : 1;
+        unsigned int Mantissa : 23;
+        unsigned int Exponent : 8;
+        unsigned int Sign : 1;
     };
 };
 
 union FP16 {
-    uint16_t u;
+    unsigned short u;
     struct {
-        uint32_t Mantissa : 10;
-        uint32_t Exponent : 5;
-        uint32_t Sign : 1;
+        unsigned int Mantissa : 10;
+        unsigned int Exponent : 5;
+        unsigned int Sign : 1;
     };
 };
 
@@ -38,7 +38,7 @@ static FP32 half_to_float_full(FP16 h)
     if (h.Exponent == 0) { // Denormal (will convert to normalized)
       // Adjust mantissa so it's normalized (and keep track of exp adjust)
       int e = -1;
-      uint32_t m = h.Mantissa;
+      unsigned int m = h.Mantissa;
       do {
         e++;
         m <<= 1;
