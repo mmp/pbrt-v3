@@ -473,7 +473,7 @@ class KajiyaKay : public BxDF {
           Kd(kd),
           Ks(ks) {
         Float e = (Float)1. / roughness;
-        if (e > 10000.f || isnan(e)) e = 10000.f;
+        if (e > 10000.f || std::isnan(e)) e = 10000.f;
         exponent = e;
     }
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const;

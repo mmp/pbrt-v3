@@ -43,7 +43,7 @@
 #include "pbrt.h"
 
 // Random Number Declarations
-#ifdef PBRT_IS_WINDOWS
+#ifdef PBRT_IS_MSVC
 // sadly, MSVC2008 (at least) doesn't support hexidecimal fp constants...
 static const Float OneMinusEpsilon = 0.9999999403953552f;
 #else

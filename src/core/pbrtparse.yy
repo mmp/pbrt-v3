@@ -36,11 +36,11 @@
 #include "paramset.h"
 #include <stdarg.h>
 
-#ifdef PBRT_IS_WINDOWS
+#ifdef PBRT_IS_MSVC
 #pragma warning(disable:4065)
 #pragma warning(disable:4996)
 #pragma warning(disable:4018)
-#endif // PBRT_IS_WINDOWS
+#endif // PBRT_IS_MSVC
 
 extern int yylex();
 extern void include_push(char *filename);

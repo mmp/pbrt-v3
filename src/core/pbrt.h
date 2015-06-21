@@ -49,6 +49,11 @@
 #elif defined(__OpenBSD__)
 #define PBRT_IS_OPENBSD
 #endif
+#if defined(_MSC_VER)
+#define PBRT_IS_MSVC
+#elif defined(__MINGW32__) // Defined for both 32 bit/64 bit MinGW
+#define PBRT_IS_MINGW
+#endif
 
 // Global Include Files
 #include <type_traits>
@@ -72,7 +77,7 @@
 
 // Platform-specific definitions
 #include <stdint.h>
-#if defined(PBRT_IS_WINDOWS)
+#if defined(PBRT_IS_MSVC)
 #include <float.h>
 #pragma warning(disable : 4305)  // double constant assigned to float
 #pragma warning(disable : 4244)  // int -> float conversion
@@ -198,7 +203,7 @@ static const Float Inv2Pi = 0.15915494309189533577;
 static const Float Inv4Pi = 0.07957747154594766788;
 static const Float PiOver2 = 1.57079632679489661923;
 static const Float PiOver4 = 0.785398163397448309616;
-#if defined(PBRT_IS_WINDOWS)
+#if defined(PBRT_IS_MSVC)
 #define alloca _alloca
 #endif
 #ifndef PBRT_L1_CACHE_LINE_SIZE
@@ -284,7 +289,7 @@ inline Float gamma(int n) {
 
 inline bool AtomicCompareAndExchange(volatile int32_t *v, int32_t newValue,
                                      int32_t oldValue) {
-#if defined(_MSC_VER)
+#if defined(PBRT_IS_MSVC)
     return _InterlockedCompareExchange(reinterpret_cast<volatile long *>(v),
                                        newValue, oldValue) == oldValue;
 #else
@@ -294,7 +299,7 @@ inline bool AtomicCompareAndExchange(volatile int32_t *v, int32_t newValue,
 
 inline bool AtomicCompareAndExchange(volatile int64_t *v, int64_t newValue,
                                      int64_t oldValue) {
-#if defined(_MSC_VER)
+#if defined(PBRT_IS_MSVC)
     return _InterlockedCompareExchange64(
                reinterpret_cast<volatile __int64 *>(v), newValue, oldValue) ==
            oldValue;
