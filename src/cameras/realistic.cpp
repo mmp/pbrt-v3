@@ -91,7 +91,7 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
     Float filmDiagonal = film->diagonal;
     int nSamples = 64;
     exitPupilBounds.resize(nSamples);
-    ParallelFor([&](const int i) {
+    ParallelFor([&](int i) {
         Float r = (Float)i / (Float)(nSamples - 1) * filmDiagonal / 2.f;
         exitPupilBounds[i] = BoundExitPupil(Point2f(r, 0));
     }, nSamples);

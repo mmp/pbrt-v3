@@ -132,7 +132,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         resampledImage.reset(new T[resPow2[0] * resPow2[1]]);
 
         // Apply _sWeights_ to zoom in $s$ direction
-        ParallelFor([&](const int t) {
+        ParallelFor([&](int t) {
             for (int s = 0; s < resPow2[0]; ++s) {
                 // Compute texel $(s,t)$ in $s$-zoomed image
                 resampledImage[t * resPow2[0] + s] = 0.f;
@@ -157,7 +157,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         int nThreads = MaxThreadIndex();
         for (int i = 0; i < nThreads; ++i)
             resampleBufs.push_back(new T[resPow2[1]]);
-        ParallelFor([&](const int s, const int threadIndex) {
+        ParallelFor([&](int s, int threadIndex) {
             T *workData = resampleBufs[threadIndex];
             for (int t = 0; t < resPow2[1]; ++t) {
                 workData[t] = 0.f;
@@ -193,7 +193,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         pyramid[i] = new BlockedArray<T>(sRes, tRes);
 
         // Filter four texels from finer level of pyramid
-        ParallelFor([&](const int t) {
+        ParallelFor([&](int t) {
             for (int s = 0; s < sRes; ++s)
                 (*pyramid[i])(s, t) =
                     .25f * (Texel(i - 1, 2 * s, 2 * t) +

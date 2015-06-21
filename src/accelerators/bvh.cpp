@@ -392,7 +392,7 @@ BVHBuildNode *BVHAccel::HLBVHBuild(
 
     // Compute Morton indices of primitives
     std::vector<MortonPrimitive> mortonPrims(primitiveInfo.size());
-    ParallelFor([&](const int i) {
+    ParallelFor([&](int i) {
         // Initialize _mortionPrims[i]_ for _i_th primitive
         constexpr int mortonBits = 10;
         constexpr int mortonScale = 1 << mortonBits;
@@ -425,7 +425,7 @@ BVHBuildNode *BVHAccel::HLBVHBuild(
     // Create LBVHs for treelets in parallel
     std::atomic<int> atomicTotal(0), orderedPrimsOffset(0);
     orderedPrims.resize(primitives.size());
-    ParallelFor([&](const int index) {
+    ParallelFor([&](int index) {
         // Generate _index_th LBVH treelet
         int nodesCreated = 0;
         const int firstBit = 29 - 12;

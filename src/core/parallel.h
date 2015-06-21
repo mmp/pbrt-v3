@@ -46,13 +46,13 @@
 #include <functional>
 
 // Parallel Declarations
-void ParallelFor(const std::function<void(const int)> &func, int count,
+void ParallelFor(const std::function<void(int)> &func, int count,
                  int chunkSize = 1);
-void ParallelFor(const std::function<void(const Point2i)> &func,
+void ParallelFor(const std::function<void(Point2i)> &func,
                  const Point2i &count);
-void ParallelFor(const std::function<void(const int, const int)> &func,
-                 int count, int chunkSize = 1);
-void ParallelFor(const std::function<void(const Point2i, const int)> &func,
+void ParallelFor(const std::function<void(int, int)> &func, int count,
+                 int chunkSize = 1);
+void ParallelFor(const std::function<void(Point2i, int)> &func,
                  const Point2i &count);
 int MaxThreadIndex();
 int NumSystemCores();

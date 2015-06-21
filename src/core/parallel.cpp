@@ -58,20 +58,19 @@ static std::mutex workListMutex;
 class ParallelForLoop {
   public:
     // ParallelForLoop Public Methods
-    ParallelForLoop(const std::function<void(const int)> &func1D, int maxIndex,
+    ParallelForLoop(const std::function<void(int)> &func1D, int maxIndex,
                     int chunkSize)
         : func1D(func1D), maxIndex(maxIndex), chunkSize(chunkSize) {}
-    ParallelForLoop(const std::function<void(const int, const int)> &f,
-                    int maxIndex, int chunkSize)
+    ParallelForLoop(const std::function<void(int, int)> &f, int maxIndex,
+                    int chunkSize)
         : func1DthreadIndex(f), maxIndex(maxIndex), chunkSize(chunkSize) {}
 
-    ParallelForLoop(const std::function<void(const Point2i)> &f,
-                    const Point2i &count)
+    ParallelForLoop(const std::function<void(Point2i)> &f, const Point2i &count)
         : func2D(f), maxIndex(count.x * count.y), chunkSize(1) {
         numX = count.x;
     }
 
-    ParallelForLoop(const std::function<void(const Point2i, const int)> &f,
+    ParallelForLoop(const std::function<void(Point2i, int)> &f,
                     const Point2i &count)
         : func2DthreadIndex(f), maxIndex(count.x * count.y), chunkSize(1) {
         numX = count.x;
@@ -80,10 +79,10 @@ class ParallelForLoop {
   public:
     // ParallelForLoop Private Data
     ParallelForLoop *next = nullptr;
-    std::function<void(const int)> func1D;
-    std::function<void(const int, const int)> func1DthreadIndex;
-    std::function<void(const Point2i)> func2D;
-    std::function<void(const Point2i, const int)> func2DthreadIndex;
+    std::function<void(int)> func1D;
+    std::function<void(int, int)> func1DthreadIndex;
+    std::function<void(Point2i)> func2D;
+    std::function<void(Point2i, int)> func2DthreadIndex;
     const int maxIndex, chunkSize;
     int nextIndex = 0, activeWorkers = 0;
     int numX = -1;
@@ -145,7 +144,7 @@ static void workerThreadFunc(int tIndex) {
 }
 
 // Parallel Definitions
-void ParallelFor(const std::function<void(const int)> &func, int count,
+void ParallelFor(const std::function<void(int)> &func, int count,
                  int chunkSize) {
     // Run iterations immediately if not using threads or if _count_ is small
     if (PbrtOptions.nCores == 1 || count < chunkSize) {
@@ -223,8 +222,8 @@ int MaxThreadIndex() {
     return 1 + threads.size();
 }
 
-void ParallelFor(const std::function<void(const int, const int)> &func,
-                 int count, int chunkSize) {
+void ParallelFor(const std::function<void(int, int)> &func, int count,
+                 int chunkSize) {
     if (PbrtOptions.nCores == 1 || count < chunkSize) {
         for (int i = 0; i < count; ++i) func(i, 0);
         return;
@@ -284,7 +283,7 @@ void ParallelFor(const std::function<void(const int, const int)> &func,
     }
 }
 
-void ParallelFor(const std::function<void(const Point2i)> &func,
+void ParallelFor(const std::function<void(Point2i)> &func,
                  const Point2i &count) {
     if (PbrtOptions.nCores == 1) {
         for (int y = 0; y < count.y; ++y)
@@ -346,7 +345,7 @@ void ParallelFor(const std::function<void(const Point2i)> &func,
     }
 }
 
-void ParallelFor(const std::function<void(const Point2i, const int)> &func,
+void ParallelFor(const std::function<void(Point2i, int)> &func,
                  const Point2i &count) {
     if (PbrtOptions.nCores == 1) {
         for (int y = 0; y < count.y; ++y)

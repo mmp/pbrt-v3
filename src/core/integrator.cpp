@@ -264,7 +264,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
     ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
         StatTimer timer(&renderingTime);
-        ParallelFor([&](const Point2i tile) {
+        ParallelFor([&](Point2i tile) {
             // Render section of image corresponding to _tile_
 
             // Allocate _MemoryArena_ for tile
