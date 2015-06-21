@@ -145,10 +145,6 @@ place to report anything suspicious you find.  Useful things to do include:
   * Using static code analysis tools (e.g. MSVC's /analyze) on the code
   * Using dynamic tools like valgrind, Address Sanitizer, Thread Sanitizer,
     etc. when rendering various scenes.
-* Improving the build: our Makefile doesn't even properly track
-dependencies. We also provide scons files, but scons isn't widely
-installed. There's no XCode project or MSVC build solution. We'd happily
-take improvements in this area!
 * Portability: the system has been developed on Linux and OS X using x86
 CPUs. It should be widely portable to other OSes and CPUs, but the only way
 to get those details right is for people to try it and let us know which
