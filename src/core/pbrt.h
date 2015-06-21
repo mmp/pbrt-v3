@@ -64,6 +64,7 @@
 #include <limits>
 #include <memory>
 #include <cinttypes>
+#include <algorithm>
 #include "error.h"
 #if !defined(PBRT_IS_OSX) && !defined(PBRT_IS_OPENBSD)
 #include <malloc.h>  // for _alloca, memalign
@@ -79,6 +80,7 @@
 #include <stdint.h>
 #if defined(PBRT_IS_MSVC)
 #include <float.h>
+#include <intrin.h>
 #pragma warning(disable : 4305)  // double constant assigned to float
 #pragma warning(disable : 4244)  // int -> float conversion
 #pragma warning(disable : 4267)  // size_t -> unsigned int conversion
@@ -86,7 +88,7 @@
 
 // Global Macros
 #define ALLOCA(TYPE, COUNT) (TYPE *) alloca((COUNT) * sizeof(TYPE))
-#ifdef MSC_VER
+#ifdef PBRT_IS_MSVC
 #define THREAD_LOCAL thread_local
 #else
 #define THREAD_LOCAL __thread
@@ -373,8 +375,8 @@ inline Float Log2(Float x) {
 }
 
 inline int Log2Int(uint32_t v) {
-#if defined(_MSC_VER)
-    DWORD lz = 0;
+#if defined(PBRT_IS_MSVC)
+    unsigned long lz = 0;
     if (_BitScanReverse(&lz, v)) return lz;
     return 0;
 #else
@@ -408,7 +410,7 @@ inline int64_t RoundUpPow2(int64_t v) {
     return v + 1;
 }
 
-#if defined(_MSC_VER)
+#if defined(PBRT_IS_MSVC)
 inline int CountTrailingZeros(uint32_t v) {
     unsigned long index;
     if (_BitScanForward(&index, v))

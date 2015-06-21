@@ -89,7 +89,7 @@ class GridDensityMedium : public Medium {
     const Float g;
     const int nx, ny, nz;
     const Transform WorldToMedium;
-    std::unique_ptr<const Float[]> density;
+    std::unique_ptr<Float[]> density;
     Float sigma_t;
     Float invMaxDensity;
 };
