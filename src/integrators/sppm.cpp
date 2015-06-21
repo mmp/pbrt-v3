@@ -41,6 +41,7 @@
 #include "camera.h"
 #include "film.h"
 #include "rng.h"
+#include "paramset.h"
 #include "progressreporter.h"
 #include "interaction.h"
 #include "sampling.h"
@@ -115,6 +116,19 @@ struct SPPMPixelListNode {
 };
 
 // SPPM Method Definitions
+Integrator *CreateSPPMIntegrator(const ParamSet &params,
+                                 std::shared_ptr<const Camera> camera) {
+    int nIterations = params.FindOneInt("numiterations", 4);
+    int maxDepth = params.FindOneInt("maxdepth", 5);
+    int direct = params.FindOneBool("directwithphotons", true);
+    int photonsPerIter = params.FindOneInt("photonsperiteration", -1);
+    int writeFreq = params.FindOneInt("imagewritefrequency", 1 << 31);
+    Float radius = params.FindOneFloat("radius", 1.f);
+    if (PbrtOptions.quickRender) nIterations = std::max(1, nIterations / 16);
+    return new SPPMIntegrator(camera, nIterations, photonsPerIter, maxDepth,
+                              radius, direct, writeFreq, camera->film);
+}
+
 SPPMIntegrator::SPPMIntegrator(std::shared_ptr<const Camera> &cam, int ni,
                                int ppi, int md, Float radius, bool direct,
                                int wf, const Film *film)

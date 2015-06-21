@@ -1202,17 +1202,7 @@ Integrator *RenderOptions::MakeIntegrator() const {
     } else if (IntegratorName == "mlt") {
         integrator = CreateMLTIntegrator(IntegratorParams, camera);
     } else if (IntegratorName == "sppm") {
-        int nIterations = IntegratorParams.FindOneInt("numiterations", 4);
-        int maxDepth = IntegratorParams.FindOneInt("maxdepth", 5);
-        int direct = IntegratorParams.FindOneBool("directwithphotons", true);
-        int photonsPerIter =
-            IntegratorParams.FindOneInt("photonsperiteration", -1);
-        int writeFreq =
-            IntegratorParams.FindOneInt("imagewritefrequency", 1 << 31);
-        Float radius = IntegratorParams.FindOneFloat("radius", 1.f);
-        integrator =
-            new SPPMIntegrator(camera, nIterations, photonsPerIter, maxDepth,
-                               radius, direct, writeFreq, camera->film);
+        integrator = CreateSPPMIntegrator(IntegratorParams, camera);
     } else
         Warning("Integrator \"%s\" unknown.", IntegratorName.c_str());
     IntegratorParams.ReportUnused();

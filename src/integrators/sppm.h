@@ -44,6 +44,8 @@
 #include "integrator.h"
 
 // SPPM Declarations
+Integrator *CreateSPPMIntegrator(const ParamSet &params,
+                                 std::shared_ptr<const Camera> camera);
 class SPPMIntegrator : public Integrator {
   public:
     // SPPMIntegrator Public Methods

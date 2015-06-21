@@ -270,6 +270,8 @@ MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,
     Float largeStepProbability =
         params.FindOneFloat("largestepprobability", 0.3f);
     Float sigma = params.FindOneFloat("sigma", .01f);
+    if (PbrtOptions.quickRender)
+        mutationsPerPixel = std::max((int64_t)1, mutationsPerPixel / 16);
     return new MLTIntegrator(camera, maxdepth, nBootstrap, nChains,
                              mutationsPerPixel, sigma, largeStepProbability);
 }
