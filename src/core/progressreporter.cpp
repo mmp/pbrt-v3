@@ -45,7 +45,7 @@
 #endif  // !PBRT_IS_WINDOWS
 
 // ProgressReporter Method Definitions
-ProgressReporter::ProgressReporter(int tw, const std::string &title)
+ProgressReporter::ProgressReporter(int64_t tw, const std::string &title)
     : totalWork(tw) {
     int barLength = TerminalWidth() - 28;
     totalPlusses = std::max(2, barLength - (int)title.size());
@@ -71,7 +71,7 @@ ProgressReporter::ProgressReporter(int tw, const std::string &title)
 
 ProgressReporter::~ProgressReporter() { delete[] buf; }
 
-void ProgressReporter::Update(int num) {
+void ProgressReporter::Update(int64_t num) {
     if (num == 0 || PbrtOptions.quiet) return;
     std::lock_guard<std::mutex> lock(mutex);
     workDone += num;
