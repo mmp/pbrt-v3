@@ -118,7 +118,7 @@ class MLTIntegrator : public Integrator {
     int64_t mutationsPerPixel;
     Float sigma;
     Float largeStepProb;
-    std::unique_ptr<Distribution1D> lightDistribution;
+    std::unique_ptr<Distribution1D> lightDistr;
 };
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,

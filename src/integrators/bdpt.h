@@ -76,16 +76,6 @@ struct EndpointInteraction : Interaction {
 // BDPT Helper Definitions
 struct Vertex;
 Float ConvertDensity(const Vertex &cur, Float pdfDir, const Vertex &next);
-inline Float InfiniteLightDensity(const Scene &scene,
-                                  const Distribution1D &lightDistr,
-                                  const Vector3f &d) {
-    Float pdf = 0;
-    for (size_t i = 0; i < scene.lights.size(); ++i)
-        if (scene.lights[i]->flags == LightFlags::Infinite)
-            pdf += scene.lights[i]->Pdf(Interaction(), -d) * lightDistr.func[i];
-    return pdf / (lightDistr.funcInt * lightDistr.Count());
-}
-
 template <typename Type>
 struct ScopedAssign {
     Type *target, backup;
@@ -105,6 +95,16 @@ struct ScopedAssign {
         if (target) *target = backup;
     }
 };
+
+inline Float InfiniteLightDensity(const Scene &scene,
+                                  const Distribution1D &lightDistr,
+                                  const Vector3f &d) {
+    Float pdf = 0;
+    for (size_t i = 0; i < scene.lights.size(); ++i)
+        if (scene.lights[i]->flags == LightFlags::Infinite)
+            pdf += scene.lights[i]->Pdf(Interaction(), -d) * lightDistr.func[i];
+    return pdf / (lightDistr.funcInt * lightDistr.Count());
+}
 
 // BDPT Declarations
 class BDPTIntegrator : public Integrator {
@@ -219,7 +219,7 @@ struct Vertex {
             return Spectrum(0.f);
         }
     }
-    bool IsConnectable() const {
+    bool IsConnectible() const {
         switch (type) {
         case VertexType::Surface:
             return isect.bsdf->NumComponents(
@@ -243,10 +243,6 @@ struct Vertex {
                (ei.light == nullptr || ei.light->flags == LightFlags::Infinite);
     }
     Float PdfLight(const Scene &scene, const Vertex &v) const {
-        Assert(IsLight());
-        const Light *light = type == VertexType::Light
-                                 ? ei.light
-                                 : isect.primitive->GetAreaLight();
         Vector3f d = v.GetPosition() - GetPosition();
         Float invL2 = 1.f / d.LengthSquared();
         d *= std::sqrt(invL2);
@@ -258,6 +254,11 @@ struct Vertex {
             scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
             pdf = 1.f / (Pi * worldRadius * worldRadius);
         } else {
+            // Get pointer _light_ to the light source
+            Assert(IsLight());
+            const Light *light = type == VertexType::Light
+                                     ? ei.light
+                                     : isect.primitive->GetAreaLight();
             light->Pdf(Ray(GetPosition(), d, GetTime()), GetGeoNormal(),
                        &unused, &pdf);
             pdf *= invL2;
@@ -267,16 +268,18 @@ struct Vertex {
     }
     Float PdfLightOrigin(const Scene &scene, const Vertex &v,
                          const Distribution1D &lightDistr) const {
-        Assert(IsLight());
         Vector3f d = Normalize(v.GetPosition() - GetPosition());
-        const Light *light = type == VertexType::Light
-                                 ? ei.light
-                                 : isect.primitive->GetAreaLight();
         if (IsInfiniteLight()) {
             // Return solid angle density for infinite light sources
             return InfiniteLightDensity(scene, lightDistr, d);
         } else {
             Float unused, pdfPos, pdfChoice = 0;
+            // Get pointer _light_ to the light source
+            Assert(IsLight());
+            const Light *light = type == VertexType::Light
+                                     ? ei.light
+                                     : isect.primitive->GetAreaLight();
+
             // Set _pdfChoice_ to the discrete probability of sampling _light_
             for (int i = 0; i < scene.lights.size(); ++i) {
                 if (scene.lights[i].get() == light) {
@@ -289,6 +292,19 @@ struct Vertex {
             light->Pdf(Ray(GetPosition(), d, GetTime()), GetGeoNormal(),
                        &pdfPos, &unused);
             return pdfPos * pdfChoice;
+        }
+    }
+    Spectrum Le(const Scene &scene, const Vertex &v) const {
+        Vector3f d = Normalize(v.GetPosition() - GetPosition());
+        if (IsInfiniteLight()) {
+            // Return emitted radiance for infinite light sources
+            Spectrum Le(0.f);
+            for (const auto &light : scene.lights)
+                Le += light->Le(Ray(GetPosition(), -d));
+            return Le;
+        } else {
+            const AreaLight *light = isect.primitive->GetAreaLight();
+            return light->L(isect, d);
         }
     }
     friend std::ostream &operator<<(std::ostream &os, const Vertex &v) {
@@ -308,7 +324,7 @@ struct Vertex {
             break;
         }
         os << "," << std::endl
-           << "  connectable = " << v.IsConnectable() << "," << std::endl
+           << "  connectible = " << v.IsConnectible() << "," << std::endl
            << "  p = " << v.GetPosition() << "," << std::endl
            << "  n = " << v.GetGeoNormal() << "," << std::endl
            << "  pdfFwd = " << v.pdfFwd << "," << std::endl
@@ -321,19 +337,18 @@ struct Vertex {
 
 extern int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
                                  MemoryArena &arena, int maxdepth,
-                                 const Camera &camera, Point2f &samplePos,
+                                 const Camera &camera, Point2f &rasterPos,
                                  Vertex *path);
 
 extern int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
                                 MemoryArena &arena, int maxdepth, Float time,
-                                const Distribution1D &lightDistribution,
-                                Vertex *path);
+                                const Distribution1D &lightDistr, Vertex *path);
 
 extern Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
                             Vertex *cameraSubpath, int s, int t,
-                            const Distribution1D &lightDistribution,
-                            const Camera *camera, Sampler &sampler,
-                            Point2f *samplePos, Float *misWeight);
+                            const Distribution1D &lightDistr,
+                            const Camera &camera, Sampler &sampler,
+                            Point2f *rasterPos, Float *misWeight);
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera);

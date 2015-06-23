@@ -156,9 +156,8 @@ void SPPMIntegrator::Render(const Scene &scene) {
     int nYBuckets = (pixelExtent.y + bucketSize - 1) / bucketSize;
     const int nPhotonTasks = nXBuckets * nYBuckets;
 
-    // Compute _lightDistribution_ for sampling lights proportional to power
-    std::unique_ptr<Distribution1D> lightDistribution(
-        ComputeLightSamplingCDF(scene));
+    // Compute _lightDistr_ for sampling lights proportional to power
+    std::unique_ptr<Distribution1D> lightDistr(ComputeLightSamplingCDF(scene));
     ProgressReporter progress(
         nIterations * (nXBuckets * nYBuckets + nPhotonTasks), "Rendering");
     for (int iter = 0; iter < nIterations; ++iter) {
@@ -325,8 +324,8 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     Float lightPdf;
                     Float lightSample =
                         RadicalInverse(haltonDim++, haltonIndex);
-                    int lightNum = lightDistribution->SampleDiscrete(
-                        lightSample, &lightPdf);
+                    int lightNum =
+                        lightDistr->SampleDiscrete(lightSample, &lightPdf);
                     const std::shared_ptr<Light> &light =
                         scene.lights[lightNum];
 
