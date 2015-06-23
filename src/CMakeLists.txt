@@ -25,6 +25,8 @@ add_definitions( /D__MWKM__ )
 #	Update PARSER during CMake Build file Generation
 #
 #	If YES, please provide FLEX/BISON binary locations below
+#	Windows's flex and bison available here:
+#	http://sourceforge.net/projects/winflexbison/
 #
 set( UPDATE_PARSER YES )
 set( FLEX_BIN c:/bin/winFlexBison/win_flex.exe )
