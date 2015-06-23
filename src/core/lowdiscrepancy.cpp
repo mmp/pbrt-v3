@@ -450,8 +450,13 @@ Float RadicalInverse(int baseIndex, uint64_t a) {
     switch (baseIndex) {
     case 0:
         // Compute base-2 radical inverse
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+		// VS2015_mwkm: Hex floating literals unsupported
+		return ReverseBits64(a) * ldexp(1, -64);
+#else
         return ReverseBits64(a) * 0x1p-64;
-    case 1:
+#endif
+	case 1:
         return RadicalInverseSpecialized<3>(a);
     case 2:
         return RadicalInverseSpecialized<5>(a);

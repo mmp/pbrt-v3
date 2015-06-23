@@ -99,7 +99,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
 {
-/* Line 2065 of yacc.c  */
+/* Line 2058 of yacc.c  */
 #line 159 "core/pbrtparse.yy"
 
 char string[1024];
@@ -107,7 +107,7 @@ Float num;
 ParamArray *ribarray;
 
 
-/* Line 2065 of yacc.c  */
+/* Line 2058 of yacc.c  */
 #line 112 "core/pbrtparse.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
