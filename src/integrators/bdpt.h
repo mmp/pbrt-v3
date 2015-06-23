@@ -140,7 +140,7 @@ struct Vertex {
     bool delta = false;
 // Switch to a struct in debug mode to avoid a compiler error regarding
 // non-trivial constructors
-#ifdef NDEBUG
+#if defined(NDEBUG) && !defined(PBRT_IS_MSVC)
     union
 #else
     struct
