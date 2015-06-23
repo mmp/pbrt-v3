@@ -166,7 +166,12 @@ void SPPMIntegrator::Render(const Scene &scene) {
         std::vector<MemoryArena> perThreadArenas(MaxThreadIndex());
         {
             StatTimer timer(&hitPointTimer);
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+			// VS2015_mwkm: ParallelFor ambiguous call
+			ParallelFor((const std::function<void(Point2i, int)>)[&](Point2i bucket, int threadIndex) {
+#else
             ParallelFor([&](Point2i bucket, int threadIndex) {
+#endif
                 MemoryArena &arena = perThreadArenas[threadIndex];
                 // Follow camera paths for _bucket_ in image for SPPM
                 int seed = bucket.y * nXBuckets + bucket.x;
@@ -273,7 +278,13 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 //    fprintf(stderr, "res %d (diag %f / %f)\n", gridRes[i],
                 //    diag[i], maxDiag);
             }
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+			// VS2015_mwkm: ParallelFor ambiguous call
+			ParallelFor((const std::function<void(int, int)>)[&](int pixelIndex, int threadIndex) {
+#else
             ParallelFor([&](int pixelIndex, int threadIndex) {
+#endif
+
                 MemoryArena &arena = perThreadArenas[threadIndex];
                 SPPMPixel &pixel = pixels[pixelIndex];
                 if (pixel.pathThroughput.IsBlack() == false) {
@@ -314,7 +325,12 @@ void SPPMIntegrator::Render(const Scene &scene) {
             int photonsPerTask = photonsPerIteration / nPhotonTasks;
             // constexpr int kMutexPoolSize = 32;
             // std::mutex gridMutexPool[kMutexPoolSize];
-            ParallelFor([&](int taskNum) {
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+			// VS2015_mwkm: ParallelFor ambiguous call
+			ParallelFor((const std::function<void(int)>)[&](int taskNum) {
+#else
+			ParallelFor([&](int taskNum) {
+#endif
                 MemoryArena arena;
                 uint64_t haltonIndex = taskNum + nPixels * iter;
                 photonPaths += photonsPerTask;
