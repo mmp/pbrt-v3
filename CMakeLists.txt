@@ -4,8 +4,19 @@ PROJECT ( PBRT-V3 )
 
 ENABLE_TESTING()
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+    "MinSizeRel" "RelWithDebInfo")
+endif()
+
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-deprecated-register")
+ENDIF()
+
+IF(MSVC)
+  ADD_DEFINITIONS (/D _CRT_SECURE_NO_WARNINGS)
 ENDIF()
 
 # Optionally use Bison and Flex to regenerate parser files
@@ -13,7 +24,7 @@ ENDIF()
 FIND_PACKAGE ( BISON )
 FIND_PACKAGE ( FLEX )
 IF(BISON_FOUND AND FLEX_FOUND)
-  SET(BisonOutput ${CMAKE_BINARY_DIR}/pbrtparser.cpp)
+  SET(BisonOutput ${CMAKE_BINARY_DIR}/pbrtparse.cpp)
   ADD_CUSTOM_COMMAND(
     OUTPUT ${BisonOutput} ${CMAKE_BINARY_DIR}/pbrtparse.hh
     COMMAND ${BISON_EXECUTABLE} -d -v -t
@@ -26,6 +37,7 @@ IF(BISON_FOUND AND FLEX_FOUND)
   SET(FlexOutput ${CMAKE_BINARY_DIR}/pbrtlex.cpp)
   ADD_CUSTOM_COMMAND(
     OUTPUT ${FlexOutput}
+    DEPENDS ${CMAKE_BINARY_DIR}/pbrtparse.hh
     COMMAND ${FLEX_EXECUTABLE}
             --outfile=${FlexOutput}
             ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
@@ -81,6 +93,48 @@ SET ( PBRT_CORE_SOURCE
   src/core/transform.cpp
   )
 
+SET ( PBRT_CORE_HEADERS
+  src/core/api.h
+  src/core/camera.h
+  src/core/efloat.h
+  src/core/error.h
+  src/core/fileutil.h
+  src/core/film.h
+  src/core/filter.h
+  src/core/floatfile.h
+  src/core/geometry.h
+  src/core/imageio.h
+  src/core/integrator.h
+  src/core/interaction.h
+  src/core/interpolation.h
+  src/core/light.h
+  src/core/lowdiscrepancy.h
+  src/core/material.h
+  src/core/medium.h
+  src/core/memory.h
+  src/core/microfacet.h
+  src/core/mipmap.h
+  src/core/parallel.h
+  src/core/paramset.h
+  src/core/parser.h
+  src/core/pbrt.h
+  src/core/primitive.h
+  src/core/progressreporter.h
+  src/core/quaternion.h
+  src/core/reflection.h
+  src/core/rng.h
+  src/core/sampler.h
+  src/core/sampling.h
+  src/core/scene.h
+  src/core/shape.h
+  src/core/sobolmatrices.h
+  src/core/spectrum.h
+  src/core/stats.h
+  src/core/stdafx.h
+  src/core/texture.h
+  src/core/transform.h
+  )
+
 FILE ( GLOB PBRT_SOURCE
   src/ext/*.cpp
   src/accelerators/*.cpp
@@ -101,6 +155,7 @@ INCLUDE_DIRECTORIES ( src/core )
 ADD_LIBRARY ( pbrt STATIC
   ${PBRT_YACC_LEX_SOURCE}
   ${PBRT_CORE_SOURCE}
+  ${PBRT_CORE_HEADERS}
   ${PBRT_SOURCE}
   )
 
