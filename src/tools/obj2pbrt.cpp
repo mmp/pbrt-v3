@@ -22,6 +22,10 @@
 #include <vector>
 #include <map>
 
+#if defined(__MWKM__)
+#include <algorithm>
+#endif
+
 namespace tinyobj {
 
 typedef struct

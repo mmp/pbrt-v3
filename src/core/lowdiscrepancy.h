@@ -140,8 +140,8 @@ inline void GrayCodeSample(const uint32_t *C0, const uint32_t *C1, uint32_t n,
 		p[i].x = v[0] * ldexpf(1, -32);
         p[i].y = v[1] * ldexpf(1, -32);
 #else
-		p[i].x = v[0] * 0x1p - 32f;
-		p[i].y = v[1] * 0x1p - 32f;
+		p[i].x = v[0] * 0x1p-32f;
+		p[i].y = v[1] * 0x1p-32f;
 #endif
 
 		v[0] ^= C0[31 - CountTrailingZeros(i + 1)];

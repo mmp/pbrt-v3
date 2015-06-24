@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGUID>{355EF445-5FB8-4A99-A1D7-85D53F051332}</ProjectGUID>
+    <ProjectGUID>{6625F914-C917-46D9-AB13-097D7C1FB0E6}</ProjectGUID>
     <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
     <ProjectName>libpbrt</ProjectName>
@@ -58,26 +58,26 @@
   <PropertyGroup Label="UserMacros" />
     <PropertyGroup>
       <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-      <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\Debug\</OutDir>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\lib\Debug\</OutDir>
       <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">libpbrt.dir\Debug\</IntDir>
       <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">libpbrt</TargetName>
       <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
-      <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\Release\</OutDir>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\lib\Release\</OutDir>
       <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">libpbrt.dir\Release\</IntDir>
       <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">libpbrt</TargetName>
       <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
-      <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\MinSizeRel\</OutDir>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\lib\MinSizeRel\</OutDir>
       <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">libpbrt.dir\MinSizeRel\</IntDir>
       <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">libpbrt</TargetName>
       <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
-      <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\RelWithDebInfo\</OutDir>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\lib\RelWithDebInfo\</OutDir>
       <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">libpbrt.dir\RelWithDebInfo\</IntDir>
       <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">libpbrt</TargetName>
       <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
     </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;../../core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <CompileAs>CompileAsCpp</CompileAs>
@@ -95,10 +95,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -108,7 +108,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;../../core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -125,10 +125,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -138,7 +138,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;../../core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -155,10 +155,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -168,7 +168,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../..;../../core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -185,10 +185,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -196,62 +196,6 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\..\CMakeLists.txt">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" -H../.. -B. --check-stamp-file X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCXXCompiler.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" -H../.. -B. --check-stamp-file X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCXXCompiler.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" -H../.. -B. --check-stamp-file X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCXXCompiler.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" -H../.. -B. --check-stamp-file X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCXXCompiler.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp</Outputs>
-      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
-    </CustomBuild>
-  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\accelerators\bvh.h" />
     <ClInclude Include="..\..\accelerators\kdtreeaccel.h" />
@@ -295,10 +239,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="..\..\core\transform.h" />
     <ClInclude Include="..\..\core\unistd.h" />
     <ClInclude Include="..\..\core\pbrt.h" />
-    <ClInclude Include="..\..\core\lowdiscrepancy.h" />
     <ClInclude Include="..\..\core\mipmap.h" />
     <ClInclude Include="..\..\core\progressreporter.h" />
     <ClInclude Include="..\..\core\rng.h" />
+    <ClInclude Include="..\..\core\lowdiscrepancy.h" />
     <ClInclude Include="..\..\ext\rply.h" />
     <ClInclude Include="..\..\ext\stb_image_write.h" />
     <ClInclude Include="..\..\ext\targa.h" />
@@ -483,9 +427,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="..\..\textures\wrinkled.cpp"  />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="X:/Develop/Repos_GitHub/pbrt-v3/src/build/VS2015/ZERO_CHECK.vcxproj">
-      <Project>7E3A694F-22B2-4DE1-A308-DDA175C0C5E3</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

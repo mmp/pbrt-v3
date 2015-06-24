@@ -11,7 +11,11 @@
 
 #	CMake 3.2.X required for VS2015 solution generation
 #
-cmake_minimum_required( VERSION 3.2 )
+if ( CMAKE_SYSTEM_NAME STREQUAL "Windows" )
+	cmake_minimum_required( VERSION 3.2 )
+else()
+	cmake_minimum_required( VERSION 2.8 )
+endif()
 
 #	
 #
@@ -21,7 +25,10 @@ project( pbrt-v3 CXX C )
 add_definitions( /D__MWKM__ )
 
 #	CMake configuration
-set(CMAKE_USE_RELATIVE_PATHS 1)
+set(CMAKE_USE_RELATIVE_PATHS ON)
+set(CMAKE_SUPPRESS_REGENERATION 1)
+set(CMAKE_BUILD_TYPE Release)
+
 
 #
 #	Update PARSER during CMake Build file Generation
@@ -167,15 +174,27 @@ set ( LIBPBRT_CXXSRCS
 )
 
 
+#	output directories
+#
+#	ARCHIVE for Static Library output
+#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "./lib/")
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "bin/")
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "bin/")
+
 #
 #	libpbrt and other Build Targets
 #
 
 #	Main Library
+
+
 add_library( libpbrt STATIC
 	${LIBPBRT_HEADERS}
 	${LIBPBRT_CXXSRCS}
 )
+
+set(CMAKE_BINARY_DIR ".")
+set_target_properties( libpbrt PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "lib/")
 
 #	pbrt executable
 add_executable( pbrt 
@@ -206,20 +225,28 @@ foreach( toolSource ${TOOLS_CXX} )
 endforeach()
 
 
-
-#
 #	include directories
 #
-include_directories (
-	"."
-	"core"
-)
+#include_directories (
+#	"./"
+#	"./core"
+#)
 
+
+
+#SET(EXECUTABLE_OUTPUT_PATH bin)
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build/VS2015/bin)
+#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build/VS2015/bin)
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build/VS2015/bin)
 
 #
 # compiler flags 
 #
+MESSAGE("Compiler ID: " ${CMAKE_CXX_COMPILER_ID} )
 if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC )
+
+	#	For AppVeyor CI / windows build
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /I../.. /I../../core" )
 
 	# Force to always compile with W3
 	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -236,12 +263,18 @@ if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC )
 	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -Werror=return-type -pedantic -std=c++11 -g")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../.. -I../../core" )
+
+	#	Seems most Linux CI is still gcc 4.6.x
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -std=c++11 -g")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -Werror=return-type -pedantic -std=c++11 -g")
+	MESSAGE("Configuring for " ${CMAKE_CXX_COMPILER_ID} )
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../.. -I../../core" )
+
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated-register -pedantic -std=c++11 -g")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 endif()

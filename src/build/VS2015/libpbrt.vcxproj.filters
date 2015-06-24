@@ -459,9 +459,6 @@
     <ClInclude Include="..\..\core\pbrt.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\core\lowdiscrepancy.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\core\mipmap.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -469,6 +466,9 @@
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\core\rng.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\lowdiscrepancy.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\ext\rply.h">
@@ -677,44 +677,41 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\..\CMakeLists.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="accelerators">
-      <UniqueIdentifier>{B5CBF7AD-6F09-4241-BDFE-D4F0E9EFAE4D}</UniqueIdentifier>
+      <UniqueIdentifier>{6F3BB96F-57BA-496F-B1D3-3E07470E2A66}</UniqueIdentifier>
     </Filter>
     <Filter Include="cameras">
-      <UniqueIdentifier>{37C42691-FE02-4A67-91C9-095D4EDB8CA3}</UniqueIdentifier>
+      <UniqueIdentifier>{014A5344-0EEE-474B-84E3-2FA6FBC26C87}</UniqueIdentifier>
     </Filter>
     <Filter Include="core">
-      <UniqueIdentifier>{566B23F1-B216-4DAB-A1A0-2F38F65E0981}</UniqueIdentifier>
+      <UniqueIdentifier>{9B0E380C-6C3B-4317-9DF0-842CEC31656D}</UniqueIdentifier>
     </Filter>
     <Filter Include="ext">
-      <UniqueIdentifier>{DCFA0CA5-B16D-438B-A447-09A385D7F37D}</UniqueIdentifier>
+      <UniqueIdentifier>{7CAD462C-0522-446B-ADDE-E1A365969220}</UniqueIdentifier>
     </Filter>
     <Filter Include="filters">
-      <UniqueIdentifier>{A9A69A45-93B4-4504-87FB-C036BEDDC1DE}</UniqueIdentifier>
+      <UniqueIdentifier>{FA834DAB-5288-476B-8D7D-B918C7E736DF}</UniqueIdentifier>
     </Filter>
     <Filter Include="integrators">
-      <UniqueIdentifier>{EBAB3847-8012-465E-9C61-ECAC3D7261DD}</UniqueIdentifier>
+      <UniqueIdentifier>{3AC531D7-16C9-4A80-B650-6080AE097EA0}</UniqueIdentifier>
     </Filter>
     <Filter Include="lights">
-      <UniqueIdentifier>{93DB1C7D-D7CB-4904-9F6A-5E790E0F98CE}</UniqueIdentifier>
+      <UniqueIdentifier>{C3242D3B-5E4D-4FF3-85F5-A15B04E2B806}</UniqueIdentifier>
     </Filter>
     <Filter Include="materials">
-      <UniqueIdentifier>{F08D13FF-AE89-42A0-AB2F-375CCE77F898}</UniqueIdentifier>
+      <UniqueIdentifier>{2AB11A89-05A5-485A-A100-EAEC7D7199BB}</UniqueIdentifier>
     </Filter>
     <Filter Include="media">
-      <UniqueIdentifier>{9E2ADC26-0307-4AA7-A289-B508066ACE25}</UniqueIdentifier>
+      <UniqueIdentifier>{CBE1E285-2F26-4F6D-9734-4D4D9ED2E215}</UniqueIdentifier>
     </Filter>
     <Filter Include="samplers">
-      <UniqueIdentifier>{305C325E-702D-484E-9496-DDC549D71973}</UniqueIdentifier>
+      <UniqueIdentifier>{C59BB573-3F04-4680-A8AD-418217581890}</UniqueIdentifier>
     </Filter>
     <Filter Include="shapes">
-      <UniqueIdentifier>{738FE810-F0C8-4A70-9CE5-6AC5ACD4FBAF}</UniqueIdentifier>
+      <UniqueIdentifier>{903D40BB-A6D9-4CBF-A752-5CA3FB874D7C}</UniqueIdentifier>
     </Filter>
     <Filter Include="textures">
-      <UniqueIdentifier>{98966C82-C779-4B57-ABC0-47770CDFB033}</UniqueIdentifier>
+      <UniqueIdentifier>{34651C0C-601E-47A4-B32B-59AD5B7D24F3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
