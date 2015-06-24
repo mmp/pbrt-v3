@@ -1,683 +1,683 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\accelerators\kdtreeaccel.cpp">
+    <ClCompile Include="..\..\accelerators\kdtreeaccel.cpp">
       <Filter>accelerators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\accelerators\bvh.cpp">
+    <ClCompile Include="..\..\accelerators\bvh.cpp">
       <Filter>accelerators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\environment.cpp">
+    <ClCompile Include="..\..\cameras\environment.cpp">
       <Filter>cameras</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\orthographic.cpp">
+    <ClCompile Include="..\..\cameras\orthographic.cpp">
       <Filter>cameras</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\perspective.cpp">
+    <ClCompile Include="..\..\cameras\perspective.cpp">
       <Filter>cameras</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\realistic.cpp">
+    <ClCompile Include="..\..\cameras\realistic.cpp">
       <Filter>cameras</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\api.cpp">
+    <ClCompile Include="..\..\core\api.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\camera.cpp">
+    <ClCompile Include="..\..\core\camera.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\efloat.cpp">
+    <ClCompile Include="..\..\core\efloat.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\error.cpp">
+    <ClCompile Include="..\..\core\error.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\fileutil.cpp">
+    <ClCompile Include="..\..\core\fileutil.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\filter.cpp">
+    <ClCompile Include="..\..\core\filter.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\floatfile.cpp">
+    <ClCompile Include="..\..\core\floatfile.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\geometry.cpp">
+    <ClCompile Include="..\..\core\geometry.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\imageio.cpp">
+    <ClCompile Include="..\..\core\imageio.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\interaction.cpp">
+    <ClCompile Include="..\..\core\interaction.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\interpolation.cpp">
+    <ClCompile Include="..\..\core\interpolation.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\light.cpp">
+    <ClCompile Include="..\..\core\light.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\material.cpp">
+    <ClCompile Include="..\..\core\material.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\medium.cpp">
+    <ClCompile Include="..\..\core\medium.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\memory.cpp">
+    <ClCompile Include="..\..\core\memory.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\microfacet.cpp">
+    <ClCompile Include="..\..\core\microfacet.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\parallel.cpp">
+    <ClCompile Include="..\..\core\parallel.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\paramset.cpp">
+    <ClCompile Include="..\..\core\paramset.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\parser.cpp">
+    <ClCompile Include="..\..\core\parser.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\primitive.cpp">
+    <ClCompile Include="..\..\core\primitive.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\quaternion.cpp">
+    <ClCompile Include="..\..\core\quaternion.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sampler.cpp">
+    <ClCompile Include="..\..\core\sampler.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sampling.cpp">
+    <ClCompile Include="..\..\core\sampling.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\scene.cpp">
+    <ClCompile Include="..\..\core\scene.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\shape.cpp">
+    <ClCompile Include="..\..\core\shape.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sobolmatrices.cpp">
+    <ClCompile Include="..\..\core\sobolmatrices.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\spectrum.cpp">
+    <ClCompile Include="..\..\core\spectrum.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\stats.cpp">
+    <ClCompile Include="..\..\core\stats.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\texture.cpp">
+    <ClCompile Include="..\..\core\texture.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\transform.cpp">
+    <ClCompile Include="..\..\core\transform.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\lowdiscrepancy.cpp">
+    <ClCompile Include="..\..\core\lowdiscrepancy.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\reflection.cpp">
+    <ClCompile Include="..\..\core\reflection.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\integrator.cpp">
+    <ClCompile Include="..\..\core\integrator.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\film.cpp">
+    <ClCompile Include="..\..\core\film.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\progressreporter.cpp">
+    <ClCompile Include="..\..\core\progressreporter.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\pbrtparse.cpp">
+    <ClCompile Include="..\..\core\pbrtparse.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\pbrtlex.cpp">
+    <ClCompile Include="..\..\core\pbrtlex.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\rply.cpp">
+    <ClCompile Include="..\..\ext\rply.cpp">
       <Filter>ext</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\targa.cpp">
+    <ClCompile Include="..\..\ext\targa.cpp">
       <Filter>ext</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\tinyexr.cpp">
+    <ClCompile Include="..\..\ext\tinyexr.cpp">
       <Filter>ext</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\box.cpp">
+    <ClCompile Include="..\..\filters\box.cpp">
       <Filter>filters</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\gaussian.cpp">
+    <ClCompile Include="..\..\filters\gaussian.cpp">
       <Filter>filters</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\mitchell.cpp">
+    <ClCompile Include="..\..\filters\mitchell.cpp">
       <Filter>filters</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\sinc.cpp">
+    <ClCompile Include="..\..\filters\sinc.cpp">
       <Filter>filters</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\triangle.cpp">
+    <ClCompile Include="..\..\filters\triangle.cpp">
       <Filter>filters</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\directlighting.cpp">
+    <ClCompile Include="..\..\integrators\directlighting.cpp">
       <Filter>integrators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\path.cpp">
+    <ClCompile Include="..\..\integrators\path.cpp">
       <Filter>integrators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\volpath.cpp">
+    <ClCompile Include="..\..\integrators\volpath.cpp">
       <Filter>integrators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\whitted.cpp">
+    <ClCompile Include="..\..\integrators\whitted.cpp">
       <Filter>integrators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\sppm.cpp">
+    <ClCompile Include="..\..\integrators\sppm.cpp">
       <Filter>integrators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\mlt.cpp">
+    <ClCompile Include="..\..\integrators\mlt.cpp">
       <Filter>integrators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\bdpt.cpp">
+    <ClCompile Include="..\..\integrators\bdpt.cpp">
       <Filter>integrators</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\diffuse.cpp">
+    <ClCompile Include="..\..\lights\diffuse.cpp">
       <Filter>lights</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\distant.cpp">
+    <ClCompile Include="..\..\lights\distant.cpp">
       <Filter>lights</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\goniometric.cpp">
+    <ClCompile Include="..\..\lights\goniometric.cpp">
       <Filter>lights</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\infinite.cpp">
+    <ClCompile Include="..\..\lights\infinite.cpp">
       <Filter>lights</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\point.cpp">
+    <ClCompile Include="..\..\lights\point.cpp">
       <Filter>lights</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\projection.cpp">
+    <ClCompile Include="..\..\lights\projection.cpp">
       <Filter>lights</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\spot.cpp">
+    <ClCompile Include="..\..\lights\spot.cpp">
       <Filter>lights</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\fourier.cpp">
+    <ClCompile Include="..\..\materials\fourier.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\glass.cpp">
+    <ClCompile Include="..\..\materials\glass.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\hair.cpp">
+    <ClCompile Include="..\..\materials\hair.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\kdsubsurface.cpp">
+    <ClCompile Include="..\..\materials\kdsubsurface.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\matte.cpp">
+    <ClCompile Include="..\..\materials\matte.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\metal.cpp">
+    <ClCompile Include="..\..\materials\metal.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\mirror.cpp">
+    <ClCompile Include="..\..\materials\mirror.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\mixmat.cpp">
+    <ClCompile Include="..\..\materials\mixmat.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\plastic.cpp">
+    <ClCompile Include="..\..\materials\plastic.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\substrate.cpp">
+    <ClCompile Include="..\..\materials\substrate.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\subsurface.cpp">
+    <ClCompile Include="..\..\materials\subsurface.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\translucent.cpp">
+    <ClCompile Include="..\..\materials\translucent.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\uber.cpp">
+    <ClCompile Include="..\..\materials\uber.cpp">
       <Filter>materials</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\media\grid.cpp">
+    <ClCompile Include="..\..\media\grid.cpp">
       <Filter>media</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\media\homogeneous.cpp">
+    <ClCompile Include="..\..\media\homogeneous.cpp">
       <Filter>media</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\halton.cpp">
+    <ClCompile Include="..\..\samplers\halton.cpp">
       <Filter>samplers</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\maxmin.cpp">
+    <ClCompile Include="..\..\samplers\maxmin.cpp">
       <Filter>samplers</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\random.cpp">
+    <ClCompile Include="..\..\samplers\random.cpp">
       <Filter>samplers</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\sobol.cpp">
+    <ClCompile Include="..\..\samplers\sobol.cpp">
       <Filter>samplers</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\stratified.cpp">
+    <ClCompile Include="..\..\samplers\stratified.cpp">
       <Filter>samplers</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\zerotwosequence.cpp">
+    <ClCompile Include="..\..\samplers\zerotwosequence.cpp">
       <Filter>samplers</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\cone.cpp">
+    <ClCompile Include="..\..\shapes\cone.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\curve.cpp">
+    <ClCompile Include="..\..\shapes\curve.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\cylinder.cpp">
+    <ClCompile Include="..\..\shapes\cylinder.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\disk.cpp">
+    <ClCompile Include="..\..\shapes\disk.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\heightfield.cpp">
+    <ClCompile Include="..\..\shapes\heightfield.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\hyperboloid.cpp">
+    <ClCompile Include="..\..\shapes\hyperboloid.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\loopsubdiv.cpp">
+    <ClCompile Include="..\..\shapes\loopsubdiv.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\nurbs.cpp">
+    <ClCompile Include="..\..\shapes\nurbs.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\paraboloid.cpp">
+    <ClCompile Include="..\..\shapes\paraboloid.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\plymesh.cpp">
+    <ClCompile Include="..\..\shapes\plymesh.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\triangle.cpp">
+    <ClCompile Include="..\..\shapes\triangle.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\sphere.cpp">
+    <ClCompile Include="..\..\shapes\sphere.cpp">
       <Filter>shapes</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\bilerp.cpp">
+    <ClCompile Include="..\..\textures\bilerp.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\checkerboard.cpp">
+    <ClCompile Include="..\..\textures\checkerboard.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\constant.cpp">
+    <ClCompile Include="..\..\textures\constant.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\dots.cpp">
+    <ClCompile Include="..\..\textures\dots.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\fbm.cpp">
+    <ClCompile Include="..\..\textures\fbm.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\imagemap.cpp">
+    <ClCompile Include="..\..\textures\imagemap.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\marble.cpp">
+    <ClCompile Include="..\..\textures\marble.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\mix.cpp">
+    <ClCompile Include="..\..\textures\mix.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\scale.cpp">
+    <ClCompile Include="..\..\textures\scale.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\uv.cpp">
+    <ClCompile Include="..\..\textures\uv.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\windy.cpp">
+    <ClCompile Include="..\..\textures\windy.cpp">
       <Filter>textures</Filter>
     </ClCompile>
-    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\wrinkled.cpp">
+    <ClCompile Include="..\..\textures\wrinkled.cpp">
       <Filter>textures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\accelerators\bvh.h">
+    <ClInclude Include="..\..\accelerators\bvh.h">
       <Filter>accelerators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\accelerators\kdtreeaccel.h">
+    <ClInclude Include="..\..\accelerators\kdtreeaccel.h">
       <Filter>accelerators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\environment.h">
+    <ClInclude Include="..\..\cameras\environment.h">
       <Filter>cameras</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\orthographic.h">
+    <ClInclude Include="..\..\cameras\orthographic.h">
       <Filter>cameras</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\perspective.h">
+    <ClInclude Include="..\..\cameras\perspective.h">
       <Filter>cameras</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\realistic.h">
+    <ClInclude Include="..\..\cameras\realistic.h">
       <Filter>cameras</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\api.h">
+    <ClInclude Include="..\..\core\api.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\camera.h">
+    <ClInclude Include="..\..\core\camera.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\efloat.h">
+    <ClInclude Include="..\..\core\efloat.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\error.h">
+    <ClInclude Include="..\..\core\error.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\fileutil.h">
+    <ClInclude Include="..\..\core\fileutil.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\film.h">
+    <ClInclude Include="..\..\core\film.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\filter.h">
+    <ClInclude Include="..\..\core\filter.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\floatfile.h">
+    <ClInclude Include="..\..\core\floatfile.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\geometry.h">
+    <ClInclude Include="..\..\core\geometry.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\imageio.h">
+    <ClInclude Include="..\..\core\imageio.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\integrator.h">
+    <ClInclude Include="..\..\core\integrator.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\interaction.h">
+    <ClInclude Include="..\..\core\interaction.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\interpolation.h">
+    <ClInclude Include="..\..\core\interpolation.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\light.h">
+    <ClInclude Include="..\..\core\light.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\material.h">
+    <ClInclude Include="..\..\core\material.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\medium.h">
+    <ClInclude Include="..\..\core\medium.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\memory.h">
+    <ClInclude Include="..\..\core\memory.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\microfacet.h">
+    <ClInclude Include="..\..\core\microfacet.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\parallel.h">
+    <ClInclude Include="..\..\core\parallel.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\paramset.h">
+    <ClInclude Include="..\..\core\paramset.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\parser.h">
+    <ClInclude Include="..\..\core\parser.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\primitive.h">
+    <ClInclude Include="..\..\core\primitive.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\quaternion.h">
+    <ClInclude Include="..\..\core\quaternion.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\reflection.h">
+    <ClInclude Include="..\..\core\reflection.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sampler.h">
+    <ClInclude Include="..\..\core\sampler.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sampling.h">
+    <ClInclude Include="..\..\core\sampling.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\scene.h">
+    <ClInclude Include="..\..\core\scene.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\shape.h">
+    <ClInclude Include="..\..\core\shape.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sobolmatrices.h">
+    <ClInclude Include="..\..\core\sobolmatrices.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\spectrum.h">
+    <ClInclude Include="..\..\core\spectrum.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\stats.h">
+    <ClInclude Include="..\..\core\stats.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\stdafx.h">
+    <ClInclude Include="..\..\core\stdafx.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\texture.h">
+    <ClInclude Include="..\..\core\texture.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\transform.h">
+    <ClInclude Include="..\..\core\transform.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\unistd.h">
+    <ClInclude Include="..\..\core\unistd.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\pbrt.h">
+    <ClInclude Include="..\..\core\pbrt.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\lowdiscrepancy.h">
+    <ClInclude Include="..\..\core\lowdiscrepancy.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\mipmap.h">
+    <ClInclude Include="..\..\core\mipmap.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\progressreporter.h">
+    <ClInclude Include="..\..\core\progressreporter.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\rng.h">
+    <ClInclude Include="..\..\core\rng.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\rply.h">
+    <ClInclude Include="..\..\ext\rply.h">
       <Filter>ext</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\stb_image_write.h">
+    <ClInclude Include="..\..\ext\stb_image_write.h">
       <Filter>ext</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\targa.h">
+    <ClInclude Include="..\..\ext\targa.h">
       <Filter>ext</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\tinyexr.h">
+    <ClInclude Include="..\..\ext\tinyexr.h">
       <Filter>ext</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\box.h">
+    <ClInclude Include="..\..\filters\box.h">
       <Filter>filters</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\gaussian.h">
+    <ClInclude Include="..\..\filters\gaussian.h">
       <Filter>filters</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\mitchell.h">
+    <ClInclude Include="..\..\filters\mitchell.h">
       <Filter>filters</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\sinc.h">
+    <ClInclude Include="..\..\filters\sinc.h">
       <Filter>filters</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\triangle.h">
+    <ClInclude Include="..\..\filters\triangle.h">
       <Filter>filters</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\directlighting.h">
+    <ClInclude Include="..\..\integrators\directlighting.h">
       <Filter>integrators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\path.h">
+    <ClInclude Include="..\..\integrators\path.h">
       <Filter>integrators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\sppm.h">
+    <ClInclude Include="..\..\integrators\sppm.h">
       <Filter>integrators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\volpath.h">
+    <ClInclude Include="..\..\integrators\volpath.h">
       <Filter>integrators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\whitted.h">
+    <ClInclude Include="..\..\integrators\whitted.h">
       <Filter>integrators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\bdpt.h">
+    <ClInclude Include="..\..\integrators\bdpt.h">
       <Filter>integrators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\mlt.h">
+    <ClInclude Include="..\..\integrators\mlt.h">
       <Filter>integrators</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\diffuse.h">
+    <ClInclude Include="..\..\lights\diffuse.h">
       <Filter>lights</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\distant.h">
+    <ClInclude Include="..\..\lights\distant.h">
       <Filter>lights</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\goniometric.h">
+    <ClInclude Include="..\..\lights\goniometric.h">
       <Filter>lights</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\infinite.h">
+    <ClInclude Include="..\..\lights\infinite.h">
       <Filter>lights</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\point.h">
+    <ClInclude Include="..\..\lights\point.h">
       <Filter>lights</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\projection.h">
+    <ClInclude Include="..\..\lights\projection.h">
       <Filter>lights</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\spot.h">
+    <ClInclude Include="..\..\lights\spot.h">
       <Filter>lights</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\fourier.h">
+    <ClInclude Include="..\..\materials\fourier.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\glass.h">
+    <ClInclude Include="..\..\materials\glass.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\hair.h">
+    <ClInclude Include="..\..\materials\hair.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\kdsubsurface.h">
+    <ClInclude Include="..\..\materials\kdsubsurface.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\matte.h">
+    <ClInclude Include="..\..\materials\matte.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\metal.h">
+    <ClInclude Include="..\..\materials\metal.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\mirror.h">
+    <ClInclude Include="..\..\materials\mirror.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\mixmat.h">
+    <ClInclude Include="..\..\materials\mixmat.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\plastic.h">
+    <ClInclude Include="..\..\materials\plastic.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\substrate.h">
+    <ClInclude Include="..\..\materials\substrate.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\subsurface.h">
+    <ClInclude Include="..\..\materials\subsurface.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\translucent.h">
+    <ClInclude Include="..\..\materials\translucent.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\uber.h">
+    <ClInclude Include="..\..\materials\uber.h">
       <Filter>materials</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\media\grid.h">
+    <ClInclude Include="..\..\media\grid.h">
       <Filter>media</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\media\homogeneous.h">
+    <ClInclude Include="..\..\media\homogeneous.h">
       <Filter>media</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\halton.h">
+    <ClInclude Include="..\..\samplers\halton.h">
       <Filter>samplers</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\maxmin.h">
+    <ClInclude Include="..\..\samplers\maxmin.h">
       <Filter>samplers</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\random.h">
+    <ClInclude Include="..\..\samplers\random.h">
       <Filter>samplers</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\sobol.h">
+    <ClInclude Include="..\..\samplers\sobol.h">
       <Filter>samplers</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\stratified.h">
+    <ClInclude Include="..\..\samplers\stratified.h">
       <Filter>samplers</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\zerotwosequence.h">
+    <ClInclude Include="..\..\samplers\zerotwosequence.h">
       <Filter>samplers</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\cone.h">
+    <ClInclude Include="..\..\shapes\cone.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\curve.h">
+    <ClInclude Include="..\..\shapes\curve.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\cylinder.h">
+    <ClInclude Include="..\..\shapes\cylinder.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\disk.h">
+    <ClInclude Include="..\..\shapes\disk.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\heightfield.h">
+    <ClInclude Include="..\..\shapes\heightfield.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\hyperboloid.h">
+    <ClInclude Include="..\..\shapes\hyperboloid.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\loopsubdiv.h">
+    <ClInclude Include="..\..\shapes\loopsubdiv.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\nurbs.h">
+    <ClInclude Include="..\..\shapes\nurbs.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\paraboloid.h">
+    <ClInclude Include="..\..\shapes\paraboloid.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\plymesh.h">
+    <ClInclude Include="..\..\shapes\plymesh.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\sphere.h">
+    <ClInclude Include="..\..\shapes\sphere.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\triangle.h">
+    <ClInclude Include="..\..\shapes\triangle.h">
       <Filter>shapes</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\bilerp.h">
+    <ClInclude Include="..\..\textures\bilerp.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\checkerboard.h">
+    <ClInclude Include="..\..\textures\checkerboard.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\constant.h">
+    <ClInclude Include="..\..\textures\constant.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\dots.h">
+    <ClInclude Include="..\..\textures\dots.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\fbm.h">
+    <ClInclude Include="..\..\textures\fbm.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\imagemap.h">
+    <ClInclude Include="..\..\textures\imagemap.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\marble.h">
+    <ClInclude Include="..\..\textures\marble.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\mix.h">
+    <ClInclude Include="..\..\textures\mix.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\scale.h">
+    <ClInclude Include="..\..\textures\scale.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\uv.h">
+    <ClInclude Include="..\..\textures\uv.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\windy.h">
+    <ClInclude Include="..\..\textures\windy.h">
       <Filter>textures</Filter>
     </ClInclude>
-    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\wrinkled.h">
+    <ClInclude Include="..\..\textures\wrinkled.h">
       <Filter>textures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt" />
+    <CustomBuild Include="..\..\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="accelerators">
