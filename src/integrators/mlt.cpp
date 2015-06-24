@@ -167,15 +167,15 @@ Spectrum MLTIntegrator::EvaluateSample(const Scene &scene, MemoryArena &arena,
 
     sampler.SetStream(3, 1);
     if (GenerateLightSubpath(scene, sampler, arena, s,
-                             cameraSubpath[0].GetTime(), *lightDistribution,
+                             cameraSubpath[0].GetTime(), *lightDistr,
                              lightSubpath) != s)
         return Spectrum(0.f);
 
     sampler.SetStream(3, 2);
     Float misWeight;
-    Spectrum weight = ConnectBDPT(scene, lightSubpath, cameraSubpath, s, t,
-                                  *lightDistribution, camera.get(), sampler,
-                                  samplePos, &misWeight);
+    Spectrum weight =
+        ConnectBDPT(scene, lightSubpath, cameraSubpath, s, t, *lightDistr,
+                    *camera, sampler, samplePos, &misWeight);
 
     arena.Reset();
 
@@ -183,7 +183,7 @@ Spectrum MLTIntegrator::EvaluateSample(const Scene &scene, MemoryArena &arena,
 }
 
 void MLTIntegrator::Render(const Scene &scene) {
-    lightDistribution =
+    lightDistr =
         std::unique_ptr<Distribution1D>(ComputeLightSamplingCDF(scene));
 
     int bootstrapSamples = nBootstrap * (maxdepth + 1);

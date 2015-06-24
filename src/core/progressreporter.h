@@ -48,9 +48,9 @@
 class ProgressReporter {
   public:
     // ProgressReporter Public Methods
-    ProgressReporter(int totalWork, const std::string &title);
+    ProgressReporter(int64_t totalWork, const std::string &title);
     ~ProgressReporter();
-    void Update(int num = 1);
+    void Update(int64_t num = 1);
     Float ElapsedMS() const {
         std::chrono::system_clock::time_point now =
             std::chrono::system_clock::now();
@@ -64,7 +64,7 @@ class ProgressReporter {
 
   private:
     // ProgressReporter Private Data
-    const int totalWork;
+    const int64_t totalWork;
     int workDone, plussesPrinted, totalPlusses;
     std::chrono::system_clock::time_point startTime;
     FILE *outFile;

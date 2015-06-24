@@ -63,7 +63,7 @@
 
 /* Copy the first part of user declarations.  */
 /* Line 371 of yacc.c  */
-#line 33 "core/pbrtparse.yy"
+#line 33 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
 
 #include "api.h"
 #include "pbrt.h"
@@ -190,7 +190,7 @@ static bool lookupType(const char *name, int *type, std::string &sname);
 
 
 /* Line 371 of yacc.c  */
-#line 194 "core/pbrtparse.cpp"
+#line 194 "/Users/mpharr/pbrt-3ed/b2/pbrtparse.cpp"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -210,8 +210,8 @@ static bool lookupType(const char *name, int *type, std::string &sname);
 
 /* In a future release of Bison, this section will be replaced
    by #include "pbrtparse.hpp".  */
-#ifndef YY_YY_CORE_PBRTPARSE_HPP_INCLUDED
-# define YY_YY_CORE_PBRTPARSE_HPP_INCLUDED
+#ifndef YY_YY_USERS_MPHARR_PBRT_3ED_B2_PBRTPARSE_HPP_INCLUDED
+# define YY_YY_USERS_MPHARR_PBRT_3ED_B2_PBRTPARSE_HPP_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 1
@@ -280,7 +280,7 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 387 of yacc.c  */
-#line 159 "core/pbrtparse.yy"
+#line 159 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
 
 char string[1024];
 Float num;
@@ -288,7 +288,7 @@ ParamArray *ribarray;
 
 
 /* Line 387 of yacc.c  */
-#line 292 "core/pbrtparse.cpp"
+#line 292 "/Users/mpharr/pbrt-3ed/b2/pbrtparse.cpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -311,12 +311,12 @@ int yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_YY_CORE_PBRTPARSE_HPP_INCLUDED  */
+#endif /* !YY_YY_USERS_MPHARR_PBRT_3ED_B2_PBRTPARSE_HPP_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 320 "core/pbrtparse.cpp"
+#line 320 "/Users/mpharr/pbrt-3ed/b2/pbrtparse.cpp"
 
 #ifdef short
 # undef short
@@ -1620,15 +1620,15 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-/* Line 1792 of yacc.c  */
-#line 184 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 184 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 3:
-/* Line 1792 of yacc.c  */
-#line 190 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 190 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     if (cur_array) Severe("MUH");
     cur_array = new ParamArray;
@@ -1636,8 +1636,8 @@ yyreduce:
     break;
 
   case 4:
-/* Line 1792 of yacc.c  */
-#line 198 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 198 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     cur_array->element_size = sizeof(const char *);
     cur_array->isString = true;
@@ -1645,8 +1645,8 @@ yyreduce:
     break;
 
   case 5:
-/* Line 1792 of yacc.c  */
-#line 206 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 206 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     cur_array->element_size = sizeof(Float);
     cur_array->isString = false;
@@ -1654,24 +1654,24 @@ yyreduce:
     break;
 
   case 6:
-/* Line 1792 of yacc.c  */
-#line 214 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 214 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     (yyval.ribarray) = (yyvsp[(1) - (1)].ribarray);
 }
     break;
 
   case 7:
-/* Line 1792 of yacc.c  */
-#line 220 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 220 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     (yyval.ribarray) = (yyvsp[(1) - (1)].ribarray);
 }
     break;
 
   case 8:
-/* Line 1792 of yacc.c  */
-#line 227 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 227 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     (yyval.ribarray) = cur_array;
     cur_array = nullptr;
@@ -1679,8 +1679,8 @@ yyreduce:
     break;
 
   case 9:
-/* Line 1792 of yacc.c  */
-#line 234 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 234 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     (yyval.ribarray) = cur_array;
     cur_array = nullptr;
@@ -1688,29 +1688,29 @@ yyreduce:
     break;
 
   case 10:
-/* Line 1792 of yacc.c  */
-#line 242 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 242 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 11:
-/* Line 1792 of yacc.c  */
-#line 248 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 248 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 12:
-/* Line 1792 of yacc.c  */
-#line 253 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 253 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 13:
-/* Line 1792 of yacc.c  */
-#line 259 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 259 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     char *to_add = strdup((yyvsp[(2) - (2)].string));
     AddArrayElement(&to_add);
@@ -1718,8 +1718,8 @@ yyreduce:
     break;
 
   case 14:
-/* Line 1792 of yacc.c  */
-#line 267 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 267 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     (yyval.ribarray) = cur_array;
     cur_array = nullptr;
@@ -1727,8 +1727,8 @@ yyreduce:
     break;
 
   case 15:
-/* Line 1792 of yacc.c  */
-#line 274 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 274 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     (yyval.ribarray) = cur_array;
     cur_array = nullptr;
@@ -1736,29 +1736,29 @@ yyreduce:
     break;
 
   case 16:
-/* Line 1792 of yacc.c  */
-#line 282 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 282 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 17:
-/* Line 1792 of yacc.c  */
-#line 288 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 288 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 18:
-/* Line 1792 of yacc.c  */
-#line 293 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 293 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 19:
-/* Line 1792 of yacc.c  */
-#line 299 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 299 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     Float to_add = (yyvsp[(2) - (2)].num);
     AddArrayElement(&to_add);
@@ -1766,15 +1766,15 @@ yyreduce:
     break;
 
   case 20:
-/* Line 1792 of yacc.c  */
-#line 307 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 307 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 21:
-/* Line 1792 of yacc.c  */
-#line 313 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 313 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     for (uint32_t i = 0; i < cur_paramlist.size(); ++i) {
         if (cur_paramlist[i].isString) {
@@ -1787,22 +1787,22 @@ yyreduce:
     break;
 
   case 22:
-/* Line 1792 of yacc.c  */
-#line 326 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 326 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 23:
-/* Line 1792 of yacc.c  */
-#line 331 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 331 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 24:
-/* Line 1792 of yacc.c  */
-#line 337 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 337 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     cur_paramlist.push_back(ParamListItem((yyvsp[(1) - (2)].string), (yyvsp[(2) - (2)].ribarray)));
     ArrayFree((yyvsp[(2) - (2)].ribarray));
@@ -1810,22 +1810,22 @@ yyreduce:
     break;
 
   case 25:
-/* Line 1792 of yacc.c  */
-#line 345 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 345 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 26:
-/* Line 1792 of yacc.c  */
-#line 350 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 350 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
 }
     break;
 
   case 27:
-/* Line 1792 of yacc.c  */
-#line 356 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 356 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -1835,32 +1835,32 @@ yyreduce:
     break;
 
   case 28:
-/* Line 1792 of yacc.c  */
-#line 365 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 365 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtActiveTransformAll();
 }
     break;
 
   case 29:
-/* Line 1792 of yacc.c  */
-#line 371 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 371 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtActiveTransformEndTime();
 }
     break;
 
   case 30:
-/* Line 1792 of yacc.c  */
-#line 377 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 377 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtActiveTransformStartTime();
 }
     break;
 
   case 31:
-/* Line 1792 of yacc.c  */
-#line 383 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 383 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Illuminant);
@@ -1870,24 +1870,24 @@ yyreduce:
     break;
 
   case 32:
-/* Line 1792 of yacc.c  */
-#line 392 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 392 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtAttributeBegin();
 }
     break;
 
   case 33:
-/* Line 1792 of yacc.c  */
-#line 398 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 398 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtAttributeEnd();
 }
     break;
 
   case 34:
-/* Line 1792 of yacc.c  */
-#line 404 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 404 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -1897,8 +1897,8 @@ yyreduce:
     break;
 
   case 35:
-/* Line 1792 of yacc.c  */
-#line 413 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 413 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     if (VerifyArrayLength((yyvsp[(2) - (2)].ribarray), 16, "ConcatTransform"))
         pbrtConcatTransform((Float *) (yyvsp[(2) - (2)].ribarray)->array);
@@ -1907,24 +1907,24 @@ yyreduce:
     break;
 
   case 36:
-/* Line 1792 of yacc.c  */
-#line 421 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 421 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtCoordinateSystem((yyvsp[(2) - (2)].string));
 }
     break;
 
   case 37:
-/* Line 1792 of yacc.c  */
-#line 427 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 427 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtCoordSysTransform((yyvsp[(2) - (2)].string));
 }
     break;
 
   case 38:
-/* Line 1792 of yacc.c  */
-#line 433 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 433 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -1934,24 +1934,24 @@ yyreduce:
     break;
 
   case 39:
-/* Line 1792 of yacc.c  */
-#line 442 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 442 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtIdentity();
 }
     break;
 
   case 40:
-/* Line 1792 of yacc.c  */
-#line 448 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 448 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
   include_push((yyvsp[(2) - (2)].string));
 }
     break;
 
   case 41:
-/* Line 1792 of yacc.c  */
-#line 454 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 454 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Illuminant);
@@ -1961,16 +1961,16 @@ yyreduce:
     break;
 
   case 42:
-/* Line 1792 of yacc.c  */
-#line 463 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 463 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtLookAt((yyvsp[(2) - (10)].num), (yyvsp[(3) - (10)].num), (yyvsp[(4) - (10)].num), (yyvsp[(5) - (10)].num), (yyvsp[(6) - (10)].num), (yyvsp[(7) - (10)].num), (yyvsp[(8) - (10)].num), (yyvsp[(9) - (10)].num), (yyvsp[(10) - (10)].num));
 }
     break;
 
   case 43:
-/* Line 1792 of yacc.c  */
-#line 469 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 469 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -1980,8 +1980,8 @@ yyreduce:
     break;
 
   case 44:
-/* Line 1792 of yacc.c  */
-#line 478 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 478 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -1991,8 +1991,8 @@ yyreduce:
     break;
 
   case 45:
-/* Line 1792 of yacc.c  */
-#line 487 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 487 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -2002,56 +2002,56 @@ yyreduce:
     break;
 
   case 46:
-/* Line 1792 of yacc.c  */
-#line 496 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 496 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtMediumInterface((yyvsp[(2) - (2)].string), (yyvsp[(2) - (2)].string));
 }
     break;
 
   case 47:
-/* Line 1792 of yacc.c  */
-#line 502 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 502 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtMediumInterface((yyvsp[(2) - (3)].string), (yyvsp[(3) - (3)].string));
 }
     break;
 
   case 48:
-/* Line 1792 of yacc.c  */
-#line 508 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 508 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtNamedMaterial((yyvsp[(2) - (2)].string));
 }
     break;
 
   case 49:
-/* Line 1792 of yacc.c  */
-#line 514 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 514 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtObjectBegin((yyvsp[(2) - (2)].string));
 }
     break;
 
   case 50:
-/* Line 1792 of yacc.c  */
-#line 520 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 520 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtObjectEnd();
 }
     break;
 
   case 51:
-/* Line 1792 of yacc.c  */
-#line 526 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 526 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtObjectInstance((yyvsp[(2) - (2)].string));
 }
     break;
 
   case 52:
-/* Line 1792 of yacc.c  */
-#line 532 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 532 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -2061,24 +2061,24 @@ yyreduce:
     break;
 
   case 53:
-/* Line 1792 of yacc.c  */
-#line 541 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 541 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtReverseOrientation();
 }
     break;
 
   case 54:
-/* Line 1792 of yacc.c  */
-#line 547 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 547 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtRotate((yyvsp[(2) - (5)].num), (yyvsp[(3) - (5)].num), (yyvsp[(4) - (5)].num), (yyvsp[(5) - (5)].num));
 }
     break;
 
   case 55:
-/* Line 1792 of yacc.c  */
-#line 553 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 553 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -2088,16 +2088,16 @@ yyreduce:
     break;
 
   case 56:
-/* Line 1792 of yacc.c  */
-#line 562 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 562 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtScale((yyvsp[(2) - (4)].num), (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
 }
     break;
 
   case 57:
-/* Line 1792 of yacc.c  */
-#line 568 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 568 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -2107,8 +2107,8 @@ yyreduce:
     break;
 
   case 58:
-/* Line 1792 of yacc.c  */
-#line 577 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 577 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -2118,8 +2118,8 @@ yyreduce:
     break;
 
   case 59:
-/* Line 1792 of yacc.c  */
-#line 586 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 586 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     ParamSet params;
     InitParamSet(params, SpectrumType::Reflectance);
@@ -2129,32 +2129,32 @@ yyreduce:
     break;
 
   case 60:
-/* Line 1792 of yacc.c  */
-#line 595 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 595 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtTransformBegin();
 }
     break;
 
   case 61:
-/* Line 1792 of yacc.c  */
-#line 601 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 601 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtTransformEnd();
 }
     break;
 
   case 62:
-/* Line 1792 of yacc.c  */
-#line 607 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 607 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtTransformTimes((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
 }
     break;
 
   case 63:
-/* Line 1792 of yacc.c  */
-#line 613 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 613 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     if (VerifyArrayLength( (yyvsp[(2) - (2)].ribarray), 16, "Transform" ))
         pbrtTransform( (Float *) (yyvsp[(2) - (2)].ribarray)->array );
@@ -2163,32 +2163,32 @@ yyreduce:
     break;
 
   case 64:
-/* Line 1792 of yacc.c  */
-#line 621 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 621 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtTranslate((yyvsp[(2) - (4)].num), (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
 }
     break;
 
   case 65:
-/* Line 1792 of yacc.c  */
-#line 627 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 627 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtWorldBegin();
 }
     break;
 
   case 66:
-/* Line 1792 of yacc.c  */
-#line 633 "core/pbrtparse.yy"
+/* Line 1807 of yacc.c  */
+#line 633 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
     {
     pbrtWorldEnd();
 }
     break;
 
 
-/* Line 1792 of yacc.c  */
-#line 2192 "core/pbrtparse.cpp"
+/* Line 1807 of yacc.c  */
+#line 2192 "/Users/mpharr/pbrt-3ed/b2/pbrtparse.cpp"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2420,7 +2420,7 @@ yyreturn:
 
 
 /* Line 2055 of yacc.c  */
-#line 638 "core/pbrtparse.yy"
+#line 638 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
 
 static const char *paramTypeToName(int type) {
     switch (type) {

@@ -30,8 +30,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_YY_CORE_PBRTPARSE_HPP_INCLUDED
-# define YY_YY_CORE_PBRTPARSE_HPP_INCLUDED
+#ifndef YY_YY_USERS_MPHARR_PBRT_3ED_B2_PBRTPARSE_HPP_INCLUDED
+# define YY_YY_USERS_MPHARR_PBRT_3ED_B2_PBRTPARSE_HPP_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 1
@@ -99,16 +99,16 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
 {
-/* Line 2058 of yacc.c  */
-#line 159 "core/pbrtparse.yy"
+/* Line 2065 of yacc.c  */
+#line 159 "/Users/mpharr/pbrt-3ed/src/core/pbrtparse.yy"
 
 char string[1024];
 Float num;
 ParamArray *ribarray;
 
 
-/* Line 2058 of yacc.c  */
-#line 112 "core/pbrtparse.hpp"
+/* Line 2065 of yacc.c  */
+#line 112 "/Users/mpharr/pbrt-3ed/b2/pbrtparse.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -131,4 +131,4 @@ int yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_YY_CORE_PBRTPARSE_HPP_INCLUDED  */
+#endif /* !YY_YY_USERS_MPHARR_PBRT_3ED_B2_PBRTPARSE_HPP_INCLUDED  */
