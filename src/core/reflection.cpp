@@ -937,8 +937,13 @@ void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
     t->radiusSamples[1] = 2.5e-3f;
     for (int i = 2; i < t->nRadiusSamples; ++i)
         t->radiusSamples[i] = t->radiusSamples[i - 1] * 1.2f;
-    ParallelFor([&](int i) {
-        // Compute the _i_-th diffusion profile
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+	// VS2015_mwkm: ParallelFor ambiguous call
+	ParallelFor( (const std::function<void(int)>)[&](int i) {
+#else
+	ParallelFor([&](int i) {
+#endif
+		// Compute the _i_-th diffusion profile
         Float albedo = (1 - std::exp(-8 * i / (Float)(t->nAlbedoSamples - 1))) /
                        (1 - std::exp(-8));
 

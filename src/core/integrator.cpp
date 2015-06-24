@@ -264,7 +264,12 @@ void SamplerIntegrator::Render(const Scene &scene) {
     ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
         StatTimer timer(&renderingTime);
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+		// VS2015_mwkm: ParallelFor ambiguous call
+		ParallelFor((const std::function<void(Point2i)>)[&](Point2i tile) {
+#else
         ParallelFor([&](Point2i tile) {
+#endif
             // Render section of image corresponding to _tile_
 
             // Allocate _MemoryArena_ for tile

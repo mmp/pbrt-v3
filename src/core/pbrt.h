@@ -84,7 +84,9 @@
 #pragma warning(disable : 4305)  // double constant assigned to float
 #pragma warning(disable : 4244)  // int -> float conversion
 #pragma warning(disable : 4267)  // size_t -> unsigned int conversion
+#pragma warning(disable : 4146)  // VS2015_mwkm: unary minus operator applied to unsigned type, result still unsigned
 #define constexpr const
+//#include <algorithm>	//	VS2015_mwkm, std::min() and std::max()
 #endif
 
 // Global Macros

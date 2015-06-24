@@ -104,7 +104,14 @@ inline uint32_t ReverseMultiplyGenerator(const uint32_t *C, uint32_t a) {
 
 inline Float SampleGeneratorMatrix(const uint32_t *C, uint32_t a,
                                    uint32_t scramble = 0) {
-    return (ReverseMultiplyGenerator(C, a) ^ scramble) * 0x1p-32f /* 1/2^32 */;
+
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+	// VS2015_mwkm: Hex floating literals unsupported	
+	return (ReverseMultiplyGenerator(C, a) ^ scramble) * ldexpf(1, -32) /* 1/2^32 */;
+#else
+	return (ReverseMultiplyGenerator(C, a) ^ scramble) * 0x1p-32f /* 1/2^32 */;
+#endif
+
 }
 
 inline uint32_t GrayCode(uint32_t v) { return (v >> 1) ^ v; }
@@ -113,8 +120,13 @@ inline void GrayCodeSample(const uint32_t *C, uint32_t n, uint32_t scramble,
                            Float *p) {
     uint32_t v = scramble;
     for (uint32_t i = 0; i < n; ++i) {
-        p[i] = v * 0x1p-32f /* 1/2^32 */;
-        v ^= C[31 - CountTrailingZeros(i + 1)];
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+		// VS2015_mwkm: Hex floating literals unsupported	
+		p[i] = v * ldexpf(1, -32); /* 1/2^32 */
+#else
+		p[i] = v * 0x1p-32f /* 1/2^32 */;
+#endif
+		v ^= C[31 - CountTrailingZeros(i + 1)];
     }
 }
 
@@ -122,9 +134,17 @@ inline void GrayCodeSample(const uint32_t *C0, const uint32_t *C1, uint32_t n,
                            const Point2i &scramble, Point2f *p) {
     uint32_t v[2] = {(uint32_t)scramble.x, (uint32_t)scramble.y};
     for (uint32_t i = 0; i < n; ++i) {
-        p[i].x = v[0] * 0x1p-32f;
-        p[i].y = v[1] * 0x1p-32f;
-        v[0] ^= C0[31 - CountTrailingZeros(i + 1)];
+
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+		// VS2015_mwkm: Hex floating literals unsupported	
+		p[i].x = v[0] * ldexpf(1, -32);
+        p[i].y = v[1] * ldexpf(1, -32);
+#else
+		p[i].x = v[0] * 0x1p - 32f;
+		p[i].y = v[1] * 0x1p - 32f;
+#endif
+
+		v[0] ^= C0[31 - CountTrailingZeros(i + 1)];
         v[1] ^= C1[31 - CountTrailingZeros(i + 1)];
     }
 }
@@ -213,7 +233,14 @@ inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
     for (int i = dimension * kSobolMatrixSize + kSobolMatrixSize - 1; a != 0;
          a >>= 1, --i)
         if (a & 1) v ^= SobolMatrices32[i];
+
+#if defined(PBRT_IS_MSVC) && (__MWKM__)
+	// VS2015_mwkm: Hex floating literals unsupported
+	return v * ldexpf(1, -32); /* 1/2^32 */
+#else
     return v * 0x1p-32f; /* 1/2^32 */
+#endif
+
 }
 
 inline double SobolSampleDouble(int64_t index, int dimension,
