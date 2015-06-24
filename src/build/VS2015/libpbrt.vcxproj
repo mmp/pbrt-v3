@@ -1,0 +1,493 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{355EF445-5FB8-4A99-A1D7-85D53F051332}</ProjectGUID>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>libpbrt</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+    <PropertyGroup>
+      <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\Debug\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">libpbrt.dir\Debug\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">libpbrt</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\Release\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">libpbrt.dir\Release\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">libpbrt</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\MinSizeRel\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">libpbrt.dir\MinSizeRel\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">libpbrt</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\RelWithDebInfo\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">libpbrt.dir\RelWithDebInfo\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">libpbrt</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+    </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat></DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat></DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__MWKM__;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>X:\Develop\Repos_GitHub\pbrt-v3\src\.;X:\Develop\Repos_GitHub\pbrt-v3\src\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HX:/Develop/Repos_GitHub/pbrt-v3/src -BX:/Develop/Repos_GitHub/pbrt-v3/src/build/VS2015 --check-stamp-file X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCXXCompiler.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HX:/Develop/Repos_GitHub/pbrt-v3/src -BX:/Develop/Repos_GitHub/pbrt-v3/src/build/VS2015 --check-stamp-file X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCXXCompiler.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HX:/Develop/Repos_GitHub/pbrt-v3/src -BX:/Develop/Repos_GitHub/pbrt-v3/src/build/VS2015 --check-stamp-file X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCXXCompiler.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HX:/Develop/Repos_GitHub/pbrt-v3/src -BX:/Develop/Repos_GitHub/pbrt-v3/src/build/VS2015 --check-stamp-file X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">X:/Develop/Repos_GitHub/pbrt-v3/src/CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCXXCompiler.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\3.2.3\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;X:\Develop\Repos_GitHub\pbrt-v3\src\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">X:\Develop\Repos_GitHub\pbrt-v3\src\build\VS2015\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\accelerators\bvh.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\accelerators\kdtreeaccel.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\environment.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\orthographic.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\perspective.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\realistic.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\api.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\camera.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\efloat.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\error.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\fileutil.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\film.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\filter.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\floatfile.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\geometry.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\imageio.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\integrator.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\interaction.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\interpolation.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\light.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\material.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\medium.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\memory.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\microfacet.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\parallel.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\paramset.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\parser.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\primitive.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\quaternion.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\reflection.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sampler.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sampling.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\scene.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\shape.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sobolmatrices.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\spectrum.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\stats.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\stdafx.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\texture.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\transform.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\unistd.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\pbrt.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\lowdiscrepancy.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\mipmap.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\progressreporter.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\rng.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\rply.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\stb_image_write.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\targa.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\tinyexr.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\box.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\gaussian.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\mitchell.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\sinc.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\triangle.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\directlighting.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\path.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\sppm.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\volpath.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\whitted.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\bdpt.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\mlt.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\diffuse.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\distant.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\goniometric.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\infinite.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\point.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\projection.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\spot.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\fourier.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\glass.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\hair.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\kdsubsurface.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\matte.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\metal.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\mirror.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\mixmat.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\plastic.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\substrate.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\subsurface.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\translucent.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\uber.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\media\grid.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\media\homogeneous.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\halton.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\maxmin.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\random.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\sobol.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\stratified.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\zerotwosequence.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\cone.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\curve.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\cylinder.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\disk.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\heightfield.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\hyperboloid.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\loopsubdiv.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\nurbs.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\paraboloid.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\plymesh.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\sphere.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\triangle.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\bilerp.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\checkerboard.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\constant.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\dots.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\fbm.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\imagemap.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\marble.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\mix.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\scale.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\uv.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\windy.h" />
+    <ClInclude Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\wrinkled.h" />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\accelerators\kdtreeaccel.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\accelerators\bvh.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\environment.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\orthographic.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\perspective.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\cameras\realistic.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\api.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\camera.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\efloat.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\error.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\fileutil.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\filter.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\floatfile.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\geometry.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\imageio.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\interaction.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\interpolation.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\light.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\material.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\medium.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\memory.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\microfacet.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\parallel.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\paramset.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\parser.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\primitive.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\quaternion.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sampler.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sampling.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\scene.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\shape.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\sobolmatrices.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\spectrum.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\stats.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\texture.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\transform.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\lowdiscrepancy.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\reflection.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\integrator.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\film.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\progressreporter.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\pbrtparse.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\core\pbrtlex.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\rply.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\targa.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\ext\tinyexr.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\box.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\gaussian.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\mitchell.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\sinc.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\filters\triangle.cpp" >
+      <ObjectFileName>$(IntDir)/filters/triangle.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\directlighting.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\path.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\volpath.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\whitted.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\sppm.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\mlt.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\integrators\bdpt.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\diffuse.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\distant.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\goniometric.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\infinite.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\point.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\projection.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\lights\spot.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\fourier.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\glass.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\hair.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\kdsubsurface.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\matte.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\metal.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\mirror.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\mixmat.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\plastic.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\substrate.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\subsurface.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\translucent.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\materials\uber.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\media\grid.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\media\homogeneous.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\halton.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\maxmin.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\random.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\sobol.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\stratified.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\samplers\zerotwosequence.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\cone.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\curve.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\cylinder.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\disk.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\heightfield.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\hyperboloid.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\loopsubdiv.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\nurbs.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\paraboloid.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\plymesh.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\triangle.cpp" >
+      <ObjectFileName>$(IntDir)/shapes/triangle.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\shapes\sphere.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\bilerp.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\checkerboard.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\constant.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\dots.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\fbm.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\imagemap.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\marble.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\mix.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\scale.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\uv.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\windy.cpp"  />
+    <ClCompile Include="X:\Develop\Repos_GitHub\pbrt-v3\src\textures\wrinkled.cpp"  />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="X:/Develop/Repos_GitHub/pbrt-v3/src/build/VS2015/ZERO_CHECK.vcxproj">
+      <Project>7E3A694F-22B2-4DE1-A308-DDA175C0C5E3</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
