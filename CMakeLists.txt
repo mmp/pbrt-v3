@@ -17,6 +17,8 @@ ENDIF()
 
 IF(MSVC)
   ADD_DEFINITIONS (/D _CRT_SECURE_NO_WARNINGS)
+ELSE(MSVC)
+  FIND_PACKAGE ( Threads )
 ENDIF()
 
 # Optionally use Bison and Flex to regenerate parser files
@@ -225,6 +227,7 @@ ADD_EXECUTABLE ( pbrt_test
   ${PBRT_TEST_SOURCE}
   )
 
+MESSAGE ( "CMAKE_THREAD_LIBS_INIT = ${CMAKE_THREAD_LIBS_INIT}" )
 TARGET_LINK_LIBRARIES ( pbrt_test
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
