@@ -99,6 +99,16 @@ struct LinearBVHNode {
 inline uint32_t LeftShift3(uint32_t x) {
     Assert(x <= (1 << 10));
     if (x == (1 << 10)) --x;
+#ifdef PBRT_IS_MSVC
+	x = (x | (x << 16)) & 0x030000FF;
+	// x = ---- --98 ---- ---- ---- ---- 7654 3210
+	x = (x | (x << 8))  & 0x0300F00F;
+	// x = ---- --98 ---- ---- 7654 ---- ---- 3210
+	x = (x | (x << 4))  & 0x030C30C3;
+	// x = ---- --98 ---- 76-- --54 ---- 32-- --10
+	x = (x | (x << 2))  & 0x09249249;
+	// x = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
+#else
     x = (x | (x << 16)) & 0b00000011000000000000000011111111;
     // x = ---- --98 ---- ---- ---- ---- 7654 3210
     x = (x | (x << 8)) & 0b00000011000000001111000000001111;
@@ -107,6 +117,7 @@ inline uint32_t LeftShift3(uint32_t x) {
     // x = ---- --98 ---- 76-- --54 ---- 32-- --10
     x = (x | (x << 2)) & 0b00001001001001001001001001001001;
     // x = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
+#endif
     return x;
 }
 
@@ -409,7 +420,11 @@ BVHBuildNode *BVHAccel::HLBVHBuild(
     // Find intervals of primitives for each treelet
     std::vector<LBVHTreelet> treeletsToBuild;
     for (int start = 0, end = 1; end <= (int)mortonPrims.size(); ++end) {
+#ifdef PBRT_IS_MSVC
+		uint32_t mask = 0x3FFC0000;
+#else
         uint32_t mask = 0b00111111111111000000000000000000;
+#endif
         if (end == (int)mortonPrims.size() ||
             ((mortonPrims[start].mortonCode & mask) !=
              (mortonPrims[end].mortonCode & mask))) {
