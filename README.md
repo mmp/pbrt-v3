@@ -1,9 +1,9 @@
 [![vs2015 Build status](https://ci.appveyor.com/api/projects/status/p8hd4pcn1ipvqrre/branch/appVeyor?svg=true)](https://ci.appveyor.com/project/mwkm/pbrt-v3-6c77e/branch/appVeyor)
-VS2015 RC build state via AppVeyor using CMake with "Visual Studio 14 2015 Win64" generator.
+VS2015 RC build state via AppVeyor using CMake with `"Visual Studio 14 2015 Win64"` generator.
 (CMakeLists.txt inside src folder)
 
 [![Build Status](https://travis-ci.org/mwkm/pbrt-v3.svg?branch=appVeyor)](https://travis-ci.org/mwkm/pbrt-v3)
-Linux (gcc 4.8.X) / OSX (Clang 6.X) build state via Travis-CI using CMake with "Unix Makefiles" generator.
+Linux (gcc 4.8.X) / OSX (Clang 6.X) build state via Travis-CI using CMake with `"Unix Makefiles"` generator.
 (CMakeLists.txt inside src folder)
 
 pbrt, Version 3
