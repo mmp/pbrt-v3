@@ -90,7 +90,7 @@
 // Global Macros
 #define ALLOCA(TYPE, COUNT) (TYPE *) alloca((COUNT) * sizeof(TYPE))
 #ifdef PBRT_IS_MSVC
-#define THREAD_LOCAL thread_local
+#define THREAD_LOCAL __declspec(thread)
 #else
 #define THREAD_LOCAL __thread
 #endif
