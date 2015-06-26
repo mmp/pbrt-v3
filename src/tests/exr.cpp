@@ -7,22 +7,45 @@
 #include "rng.h"
 #include "ext/tinyexr.h"
 
+#if defined(__LITTLE_ENDIAN__) || defined(__i386__) || defined(__x86_64__) || \
+    defined(WIN32)
+    #define IS_BIG_ENDIAN   (1)
+#elif defined(__BIG_ENDIAN__)
+    #define IS_BIG_ENDIAN   (0)
+#elif defined(__sparc) || defined(__sparc__)
+    #define IS_BIG_ENDIAN   (0)
+#else
+#error "Can't detect machine endian-ness at compile-time."
+#endif
+
 union FP32 {
     uint32_t u;
     float f;
     struct {
+#if !defined(IS_BIG_ENDIAN)
         unsigned int Mantissa : 23;
         unsigned int Exponent : 8;
         unsigned int Sign : 1;
+#else
+        unsigned int Sign : 1;
+        unsigned int Exponent : 8;
+        unsigned int Mantissa : 23;
+#endif
     };
 };
 
 union FP16 {
     unsigned short u;
     struct {
+#if !defined(IS_BIG_ENDIAN)
         unsigned int Mantissa : 10;
         unsigned int Exponent : 5;
         unsigned int Sign : 1;
+#else
+        unsigned int Sign : 1;
+        unsigned int Exponent : 5;
+        unsigned int Mantissa : 10;
+#endif
     };
 };
 
