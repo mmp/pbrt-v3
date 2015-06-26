@@ -22,7 +22,7 @@ union FP32 {
     uint32_t u;
     float f;
     struct {
-#if !defined(IS_BIG_ENDIAN)
+#if !IS_BIG_ENDIAN
         unsigned int Mantissa : 23;
         unsigned int Exponent : 8;
         unsigned int Sign : 1;
@@ -37,7 +37,7 @@ union FP32 {
 union FP16 {
     unsigned short u;
     struct {
-#if !defined(IS_BIG_ENDIAN)
+#if !IS_BIG_ENDIAN
         unsigned int Mantissa : 10;
         unsigned int Exponent : 5;
         unsigned int Sign : 1;
