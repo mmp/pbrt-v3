@@ -9,11 +9,11 @@
 
 #if defined(__LITTLE_ENDIAN__) || defined(__i386__) || defined(__x86_64__) || \
     defined(WIN32)
-    #define IS_BIG_ENDIAN   (1)
+    #define IS_BIG_ENDIAN   (0)
 #elif defined(__BIG_ENDIAN__)
-    #define IS_BIG_ENDIAN   (0)
+    #define IS_BIG_ENDIAN   (1)
 #elif defined(__sparc) || defined(__sparc__)
-    #define IS_BIG_ENDIAN   (0)
+    #define IS_BIG_ENDIAN   (1)
 #else
 #error "Can't detect machine endian-ness at compile-time."
 #endif
