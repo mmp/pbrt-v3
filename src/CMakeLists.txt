@@ -227,10 +227,10 @@ endforeach()
 
 #	include directories
 #
-#include_directories (
-#	"./"
-#	"./core"
-#)
+include_directories (
+	"./"
+	"./core"
+)
 
 
 
@@ -246,7 +246,7 @@ MESSAGE("Compiler ID: " ${CMAKE_CXX_COMPILER_ID} )
 if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC )
 
 	#	For AppVeyor CI / windows build
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /I../.. /I../../core" )
+#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /I../.. /I../../core" )
 
 	# Force to always compile with W3
 	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -263,7 +263,8 @@ if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC )
 	
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../.. -I../../core" )
+	MESSAGE("Configuring for " ${CMAKE_CXX_COMPILER_ID} )
+#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../.. -I../../core" )
 
 	#	Seems most Linux CI is still gcc 4.6.x
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -std=c++11 -g")
@@ -272,7 +273,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 	MESSAGE("Configuring for " ${CMAKE_CXX_COMPILER_ID} )
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../.. -I../../core" )
+#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../.. -I../../core" )
 
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated-register -pedantic -std=c++11 -g")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
