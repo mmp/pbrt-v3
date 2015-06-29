@@ -224,6 +224,26 @@ foreach( toolSource ${TOOLS_CXX} )
 	target_link_libraries( ${toolBinary} libpbrt )
 endforeach()
 
+file( GLOB PBRT_TEST_CXX
+	tests/*.cpp
+	tests/gtest/*.cc
+)
+
+add_executable( pbrt_test
+	${PBRT_TEST_CXX}
+)
+
+target_link_libraries( pbrt_test
+	libpbrt
+	${CMAKE_THREAD_LIBS_INIT}
+)
+
+add_test( pbrt_unit_test
+	pbrt_test
+)
+
+
+
 
 #	include directories
 #
