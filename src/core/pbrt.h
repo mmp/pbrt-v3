@@ -85,7 +85,8 @@
 #pragma warning(disable : 4244)  // int -> float conversion
 #pragma warning(disable : 4267)  // size_t -> unsigned int conversion
 #pragma warning(disable : 4146)  // VS2015_mwkm: unary minus operator applied to unsigned type, result still unsigned
-#define constexpr const
+//	mwkm
+//#define constexpr const
 //#include <algorithm>	//	VS2015_mwkm, std::min() and std::max()
 #endif
 
@@ -209,7 +210,8 @@ static const Float Inv4Pi = 0.07957747154594766788;
 static const Float PiOver2 = 1.57079632679489661923;
 static const Float PiOver4 = 0.785398163397448309616;
 #if defined(PBRT_IS_MSVC)
-#define alloca _alloca
+//	mwkm
+//#define alloca _alloca
 #endif
 #ifndef PBRT_L1_CACHE_LINE_SIZE
 #define PBRT_L1_CACHE_LINE_SIZE 64
@@ -381,7 +383,7 @@ inline int Log2Int(uint32_t v) {
 #if defined(PBRT_IS_MSVC)
     unsigned long lz = 0;
     if (_BitScanReverse(&lz, v)) return lz;
-    return 0;
+	return 0;
 #else
     return 31 - __builtin_clz(v);
 #endif

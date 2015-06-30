@@ -76,7 +76,7 @@ Bounds2i Film::GetSampleBounds() const {
                               Vector2f(0.5f, 0.5f) + filter->radius));
 #if defined(PBRT_IS_MSVC) && (__MWKM__)
 	// VS2015_mwkm: vs2015 not smart :(
-	return (Bounds2i)(Point2i(floatBounds.pMin), Point2i(floatBounds.pMax));
+	return Bounds2i(Point2i(floatBounds.pMin), Point2i(floatBounds.pMax));
 #else
 	return (Bounds2i)floatBounds;
 #endif
@@ -94,7 +94,7 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
     Vector2f halfPixel = Vector2f(0.5f, 0.5f);
 #if defined(PBRT_IS_MSVC) && (__MWKM__)
 	// VS2015_mwkm: vs2015 not smart :(
-	Bounds2f floatBounds = (Bounds2f)(Point2f(sampleBounds.pMin), Point2f(sampleBounds.pMax));
+	Bounds2f floatBounds = Bounds2f(Point2f(sampleBounds.pMin), Point2f(sampleBounds.pMax));
 #else
 	Bounds2f floatBounds = (Bounds2f)sampleBounds;
 #endif

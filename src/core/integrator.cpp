@@ -261,7 +261,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
     const int tileSize = 16;
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
-    ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
+
+	ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
         StatTimer timer(&renderingTime);
 #if defined(PBRT_IS_MSVC) && (__MWKM__)
@@ -271,6 +272,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
         ParallelFor([&](Point2i tile) {
 #endif
             // Render section of image corresponding to _tile_
+
 
             // Allocate _MemoryArena_ for tile
             MemoryArena arena;
