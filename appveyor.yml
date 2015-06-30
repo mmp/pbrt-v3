@@ -15,3 +15,6 @@ build:
   project: c:\pbrt-v3\src\build\VS2015\pbrt-v3.sln
   parallel: true
   verbosity: normal
+after_build:
+- cd c:\pbrt-v3\src\build\VS2015\Release
+- pbrt_test.exe

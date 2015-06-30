@@ -37,4 +37,6 @@ before_script:
 
 script:
   - make
+  - ./pbrt_test
+
 
