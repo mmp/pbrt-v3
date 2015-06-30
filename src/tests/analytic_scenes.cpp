@@ -13,6 +13,7 @@
 #include "integrators/bdpt.h"
 #include "integrators/directlighting.h"
 #include "integrators/mlt.h"
+#include "integrators/sppm.h"
 #include "integrators/path.h"
 #include "integrators/volpath.h"
 #include "lights/diffuse.h"
@@ -272,7 +273,8 @@ std::vector<TestIntegrator> GetIntegrators() {
   AnimatedTransform identity(new Transform, 0, new Transform, 1);
 
   for (auto scene : GetScenes()) {
-    // Path tracing integrators
+	 
+	  // Path tracing integrators
     for (auto sampler : GetSamplers(Bounds2i(Point2i(0,0), resolution))) {
       Filter *filter = new BoxFilter(Vector2f(0.5, 0.5));
       Film *film = new Film(resolution, Bounds2f(Point2f(0,0), Point2f(1,1)),
@@ -379,6 +381,7 @@ std::vector<TestIntegrator> GetIntegrators() {
               "MLT, depth 8, Perspective, " + scene.description,
               scene});
     }
+
   }
 
   return integrators;

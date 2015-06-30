@@ -217,7 +217,6 @@ void MLTIntegrator::Render(const Scene &scene) {
         mutationsPerPixel * (int64_t)camera->film->GetSampleBounds().Area();
     int64_t mutationsPerChain = nMutations / nChains;
     Film &film = *camera->film;
-
     {
         StatTimer timer(&renderingTime);
         ProgressReporter progress(nMutations / 100, "Rendering");
@@ -264,6 +263,7 @@ void MLTIntegrator::Render(const Scene &scene) {
                 film.Splat(currentPos, currentValue / currentValue.y());
                 if (i % 100 == 0) progress.Update();
             }
+
         }, nChains);
         progress.Done();
     }
