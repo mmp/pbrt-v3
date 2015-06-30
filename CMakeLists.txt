@@ -159,6 +159,8 @@ ADD_LIBRARY ( pbrt STATIC
   ${PBRT_SOURCE}
   )
 
+FIND_PACKAGE ( Threads )
+
 # Main renderer
 ADD_EXECUTABLE ( pbrt_exe
   src/main/pbrt.cpp
@@ -171,6 +173,7 @@ SET_TARGET_PROPERTIES ( pbrt_exe
 
 TARGET_LINK_LIBRARIES ( pbrt_exe
   pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 # Tools
