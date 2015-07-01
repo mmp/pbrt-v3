@@ -1,11 +1,5 @@
 *~
-appveyor.yml
-.travis.yml
 src/build
 src/bin
 src/objs
-src/CMakeLists.txt
 .sconsign.dblite
-/src/core/pbrtparse.hh.BAK
-/src/core/pbrtparse.cpp.BAK
-/src/core/pbrtlex.cpp.BAK
