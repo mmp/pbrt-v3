@@ -3,3 +3,6 @@ src/build
 src/bin
 src/objs
 .sconsign.dblite
+/src/core/pbrtparse.hh.BAK
+/src/core/pbrtparse.cpp.BAK
+/src/core/pbrtlex.cpp.BAK
