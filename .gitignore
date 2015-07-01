@@ -1,7 +1,6 @@
 *~
 appveyor.yml
 .travis.yml
-README.md
 src/build
 src/bin
 src/objs
