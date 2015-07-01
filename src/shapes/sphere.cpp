@@ -68,7 +68,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit,
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;
-    if (t0.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) {
         tShapeHit = t1;
         if (tShapeHit.UpperBound() > ray.tMax) return false;
     }
@@ -175,7 +175,7 @@ bool Sphere::IntersectP(const Ray &r) const {
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;
-    if (t0.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) {
         tShapeHit = t1;
         if (tShapeHit.UpperBound() > ray.tMax) return false;
     }

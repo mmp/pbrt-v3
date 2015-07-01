@@ -186,6 +186,10 @@ ADD_EXECUTABLE ( exrdiff
   src/tools/exrdiff.cpp
   )
 
+ADD_EXECUTABLE ( exravg
+  src/tools/exravg.cpp
+  )
+
 ADD_EXECUTABLE ( hdrtoldr
   src/tools/hdrtoldr.cpp
   )
@@ -203,6 +207,10 @@ TARGET_LINK_LIBRARIES ( chi2test
   )
 
 TARGET_LINK_LIBRARIES ( exrdiff
+  pbrt
+  )
+
+TARGET_LINK_LIBRARIES ( exravg
   pbrt
   )
 

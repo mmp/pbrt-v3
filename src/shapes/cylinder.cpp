@@ -38,19 +38,9 @@
 #include "efloat.h"
 
 // Cylinder Method Definitions
-Cylinder::Cylinder(const Transform *o2w, const Transform *w2o, bool ro,
-                   Float rad, Float z0, Float z1, Float pm)
-    : Shape(o2w, w2o, ro) {
-    radius = rad;
-    zMin = std::min(z0, z1);
-    zMax = std::max(z0, z1);
-    phiMax = Radians(Clamp(pm, 0, 360));
-}
-
 Bounds3f Cylinder::ObjectBound() const {
-    Point3f p1 = Point3f(-radius, -radius, zMin);
-    Point3f p2 = Point3f(radius, radius, zMax);
-    return Bounds3f(p1, p2);
+    return Bounds3f(Point3f(-radius, -radius, zMin),
+                    Point3f(radius, radius, zMax));
 }
 
 bool Cylinder::Intersect(const Ray &r, Float *tHit,
@@ -77,7 +67,7 @@ bool Cylinder::Intersect(const Ray &r, Float *tHit,
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;
-    if (t0.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) {
         tShapeHit = t1;
         if (tShapeHit.UpperBound() > ray.tMax) return false;
     }
@@ -173,7 +163,7 @@ bool Cylinder::IntersectP(const Ray &r) const {
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;
-    if (t0.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) {
         tShapeHit = t1;
         if (tShapeHit.UpperBound() > ray.tMax) return false;
     }

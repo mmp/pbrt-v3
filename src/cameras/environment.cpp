@@ -88,9 +88,8 @@ EnvironmentCamera *CreateEnvironmentCamera(const ParamSet &params,
             screen.pMax.x = sw[1];
             screen.pMin.y = sw[2];
             screen.pMax.y = sw[3];
-        } else {
+        } else
             Error("\"screenwindow\" should have four values");
-        }
     }
     (void)lensradius;     // don't need this
     (void)focaldistance;  // don't need this

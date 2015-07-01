@@ -163,9 +163,8 @@ OrthographicCamera *CreateOrthographicCamera(const ParamSet &params,
             screen.pMax.x = sw[1];
             screen.pMin.y = sw[2];
             screen.pMax.y = sw[3];
-        } else {
+        } else
             Error("\"screenwindow\" should have four values");
-        }
     }
     return new OrthographicCamera(cam2world, screen, shutteropen, shutterclose,
                                   lensradius, focaldistance, film, medium);

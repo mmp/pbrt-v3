@@ -142,6 +142,7 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
         *ObjectToWorld, nTriangles, vertexIndices, nVertices, p, s, n, uv,
         alphaMask);
     std::vector<std::shared_ptr<Shape>> tris;
+    tris.reserve(nTriangles);
     for (int i = 0; i < nTriangles; ++i)
         tris.push_back(std::make_shared<Triangle>(ObjectToWorld, WorldToObject,
                                                   reverseOrientation, mesh, i));
@@ -239,7 +240,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit,
     else if (det > 0 && (tScaled <= 0 || tScaled > ray.tMax * det))
         return false;
 
-    // Compute barycentric coordinates and $t$ value
+    // Compute barycentric coordinates and $t$ value for triangle intersection
     Float invDet = 1 / det;
     Float b0 = e0 * invDet;
     Float b1 = e1 * invDet;
@@ -400,31 +401,34 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit,
     // Override surface normal in _isect_ for triangle
     isect->n = isect->shading.n = Normal3f(Normalize(Cross(dp02, dp12)));
     if (mesh->n || mesh->s) {
-        // Initialize _Triangle_ shading geometry with _n_ and _s_
+        // Initialize _Triangle_ shading geometry
 
-        // Use _n_ and _s_ to compute shading tangents for triangle, _ss_ and
-        // _ts_
+        // Compute shading normal _ns_ for triangle
         Normal3f ns;
-        Vector3f ss, ts;
         if (mesh->n)
             ns = Normalize(b0 * mesh->n[v[0]] + b1 * mesh->n[v[1]] +
                            b2 * mesh->n[v[2]]);
         else
             ns = isect->n;
+
+        // Compute shading tangent _ss_ for triangle
+        Vector3f ss;
         if (mesh->s)
             ss = Normalize(b0 * mesh->s[v[0]] + b1 * mesh->s[v[1]] +
                            b2 * mesh->s[v[2]]);
         else
             ss = Normalize(isect->dpdu);
-        ts = Cross(ss, ns);
+
+        // Compute shading bitangent _ts_ for triangle and adjust _ss_
+        Vector3f ts = Cross(ss, ns);
         if (ts.LengthSquared() > 0.f) {
             ts = Normalize(ts);
             ss = Cross(ts, ns);
         } else
             CoordinateSystem((Vector3f)ns, &ss, &ts);
-        Normal3f dndu, dndv;
 
         // Compute $\dndu$ and $\dndv$ for triangle shading geometry
+        Normal3f dndu, dndv;
         if (mesh->n) {
             // Compute deltas for triangle partial derivatives of normal
             Vector2f duv02 = uv[0] - uv[2];
@@ -435,9 +439,9 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit,
             if (determinant == 0)
                 dndu = dndv = Normal3f(0, 0, 0);
             else {
-                Float invdet = 1 / determinant;
-                dndu = (duv12[1] * dn1 - duv02[1] * dn2) * invdet;
-                dndv = (-duv12[0] * dn1 + duv02[0] * dn2) * invdet;
+                Float invDet = 1 / determinant;
+                dndu = (duv12[1] * dn1 - duv02[1] * dn2) * invDet;
+                dndv = (-duv12[0] * dn1 + duv02[0] * dn2) * invDet;
             }
         } else
             dndu = dndv = Normal3f(0, 0, 0);
@@ -445,10 +449,9 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit,
     }
 
     // Ensure correct orientation of the geometric normal
-    bool flip = ReverseOrientation ^ TransformSwapsHandedness;
     if (mesh->n)
         isect->n = Faceforward(isect->n, isect->shading.n);
-    else if (flip)
+    else if (ReverseOrientation ^ TransformSwapsHandedness)
         isect->n = isect->shading.n = -isect->n;
     *tHit = t;
     ++nHits;
@@ -528,7 +531,7 @@ bool Triangle::IntersectP(const Ray &ray) const {
     else if (det > 0 && (tScaled <= 0 || tScaled > ray.tMax * det))
         return false;
 
-    // Compute barycentric coordinates and $t$ value
+    // Compute barycentric coordinates and $t$ value for triangle intersection
     Float invDet = 1 / det;
     Float b0 = e0 * invDet;
     Float b1 = e1 * invDet;

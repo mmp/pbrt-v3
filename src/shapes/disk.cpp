@@ -62,9 +62,6 @@ bool Disk::Intersect(const Ray &r, Float *tHit,
     if (dist2 > radius * radius || dist2 < innerRadius * innerRadius)
         return false;
 
-    // Refine disk intersection point
-    pHit.z = height;
-
     // Test disk $\phi$ value against $\phimax$
     Float phi = std::atan2(pHit.y, pHit.x);
     if (phi < 0) phi += 2 * Pi;
@@ -79,6 +76,9 @@ bool Disk::Intersect(const Ray &r, Float *tHit,
     Vector3f dpdv =
         Vector3f(pHit.x, pHit.y, 0.) * (innerRadius - radius) / rHit;
     Normal3f dndu(0, 0, 0), dndv(0, 0, 0);
+
+    // Refine disk intersection point
+    pHit.z = height;
 
     // Compute error bounds for disk intersection
     Vector3f pError(0., 0., 0.);
@@ -110,9 +110,6 @@ bool Disk::IntersectP(const Ray &r) const {
     Float dist2 = pHit.x * pHit.x + pHit.y * pHit.y;
     if (dist2 > radius * radius || dist2 < innerRadius * innerRadius)
         return false;
-
-    // Refine disk intersection point
-    pHit.z = height;
 
     // Test disk $\phi$ value against $\phimax$
     Float phi = std::atan2(pHit.y, pHit.x);

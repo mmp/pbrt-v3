@@ -910,11 +910,6 @@ int MaxDimension(const Vector3<T> &v) {
 }
 
 template <typename T>
-Vector3<T> Permute(const Vector3<T> &v, int x, int y, int z) {
-    return Vector3<T>(v[x], v[y], v[z]);
-}
-
-template <typename T>
 Vector3<T> Min(const Vector3<T> &p1, const Vector3<T> &p2) {
     return Vector3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
                       std::min(p1.z, p2.z));
@@ -924,6 +919,11 @@ template <typename T>
 Vector3<T> Max(const Vector3<T> &p1, const Vector3<T> &p2) {
     return Vector3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y),
                       std::max(p1.z, p2.z));
+}
+
+template <typename T>
+Vector3<T> Permute(const Vector3<T> &v, int x, int y, int z) {
+    return Vector3<T>(v[x], v[y], v[z]);
 }
 
 template <typename T>
@@ -1281,7 +1281,7 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, Float *hitt0,
         Float tNear = (pMin[i] - ray.o[i]) * invRayDir;
         Float tFar = (pMax[i] - ray.o[i]) * invRayDir;
 
-        // Update parametric interval from slab intersection $t$s
+        // Update parametric interval from slab intersection $t$ values
         if (tNear > tFar) std::swap(tNear, tFar);
 
         // Update _tFar_ to ensure robust ray--bounds intersection
