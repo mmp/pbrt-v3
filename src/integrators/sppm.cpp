@@ -291,11 +291,10 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                 SPPMPixelListNode *node =
                                     arena.Alloc<SPPMPixelListNode>();
                                 node->pixel = &pixel;
-                                do {
-                                    node->next = grid[h];
-                                } while (std::atomic_compare_exchange_weak(
-                                             &grid[h], &node->next, node) ==
-                                         false);
+                                node->next = grid[h];
+                                while (grid[h].compare_exchange_weak(
+                                           node->next, node) == false)
+                                    ;
                             }
                         }
                     }
