@@ -314,7 +314,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
     // Render and write the output image to disk
     {
         StatTimer timer(&renderingTime);
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: ParallelFor ambiguous call
 		ParallelFor((const std::function<void(Point2i)>)[&](Point2i bucket) {
 #else

@@ -132,7 +132,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         resampledImage.reset(new T[resPow2[0] * resPow2[1]]);
 
         // Apply _sWeights_ to zoom in $s$ direction
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: ParallelFor ambiguous call
 		ParallelFor( (const std::function<void(int)>) [&](int t) {
 #else
@@ -163,7 +163,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         for (int i = 0; i < nThreads; ++i)
             resampleBufs.push_back(new T[resPow2[1]]);
 
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: ParallelFor ambiguous call
 		ParallelFor( (const std::function<void(int, int)>) [&](int s, int threadIndex) {
 #else
@@ -204,7 +204,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         pyramid[i] = new BlockedArray<T>(sRes, tRes);
 
         // Filter four texels from finer level of pyramid
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: ParallelFor ambiguous call
 		ParallelFor( (const std::function<void(int)>) [&](int t) {
 #else

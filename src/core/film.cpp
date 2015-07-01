@@ -74,7 +74,7 @@ Bounds2i Film::GetSampleBounds() const {
                                Vector2f(0.5f, 0.5f) - filter->radius),
                          Ceil(Point2f(croppedPixelBounds.pMax) -
                               Vector2f(0.5f, 0.5f) + filter->radius));
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 	// VS2015_mwkm: vs2015 not smart :(
 	return Bounds2i(Point2i(floatBounds.pMin), Point2i(floatBounds.pMax));
 #else
@@ -92,7 +92,7 @@ Point2f Film::GetPhysicalSize() const {
 std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
     // Bound image pixels that samples in _SampleBounds_ contribute to
     Vector2f halfPixel = Vector2f(0.5f, 0.5f);
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 	// VS2015_mwkm: vs2015 not smart :(
 	Bounds2f floatBounds = Bounds2f(Point2f(sampleBounds.pMin), Point2f(sampleBounds.pMax));
 #else

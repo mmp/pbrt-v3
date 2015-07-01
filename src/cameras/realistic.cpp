@@ -76,7 +76,7 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
             }
         }
 
-#if defined(PBRT_IS_WINDOWS) && defined(__MWKM__)
+#if defined(PBRT_IS_WINDOWS)
 		// VS2015 mwkm: vs2015 syntax error :(
 		LensElementInterface	tmpInterface;
 		tmpInterface.curvatureRadius = lensData[i] * (Float).001;
@@ -104,7 +104,7 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
     Float filmDiagonal = film->diagonal;
     int nSamples = 64;
     exitPupilBounds.resize(nSamples);
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 	// VS2015_mwkm: ParallelFor ambiguous call
 	ParallelFor((const std::function<void(int)>)[&](int i) {
 #else

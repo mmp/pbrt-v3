@@ -22,7 +22,7 @@
 #include <vector>
 #include <map>
 
-#if defined(__MWKM__)
+#if defined(_MSC_VER)
 #include <algorithm>
 #endif
 

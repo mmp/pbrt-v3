@@ -190,7 +190,7 @@ void MLTIntegrator::Render(const Scene &scene) {
     std::unique_ptr<Float[]> bootstrapWeights(new Float[bootstrapSamples]);
     {
         ProgressReporter progress(nBootstrap, "Generating bootstrap paths");
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: ParallelFor ambiguous call
 		ParallelFor((const std::function<void(int)>)[&](int i) {
 #else
@@ -220,7 +220,7 @@ void MLTIntegrator::Render(const Scene &scene) {
     {
         StatTimer timer(&renderingTime);
         ProgressReporter progress(nMutations / 100, "Rendering");
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: ParallelFor ambiguous call
 		ParallelFor((const std::function<void(int)>)[&](int taskNum) {
 #else

@@ -217,7 +217,7 @@ bool Sphere::Sample(const Point2f &sample, Interaction *it) const {
     it->n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
     if (ReverseOrientation) it->n *= -1.f;
     Vector3f pObjError =
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: unable to resolve '*' operator
         Float(16.f * MachineEpsilon) * Vector3f(radius, radius, radius);
 #else

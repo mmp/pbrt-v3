@@ -937,7 +937,7 @@ void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
     t->radiusSamples[1] = 2.5e-3f;
     for (int i = 2; i < t->nRadiusSamples; ++i)
         t->radiusSamples[i] = t->radiusSamples[i - 1] * 1.2f;
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 	// VS2015_mwkm: ParallelFor ambiguous call
 	ParallelFor( (const std::function<void(int)>)[&](int i) {
 #else

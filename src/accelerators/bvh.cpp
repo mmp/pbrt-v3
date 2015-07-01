@@ -393,7 +393,7 @@ BVHBuildNode *BVHAccel::HLBVHBuild(
     // Compute Morton indices of primitives
     std::vector<MortonPrimitive> mortonPrims(primitiveInfo.size());
 
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 	// VS2015_mwkm: ParallelFor ambiguous call	
 	ParallelFor( (const std::function<void(int)>) [&](int i) {
 #else
@@ -432,7 +432,7 @@ BVHBuildNode *BVHAccel::HLBVHBuild(
     std::atomic<int> atomicTotal(0), orderedPrimsOffset(0);
     orderedPrims.resize(primitives.size());
 
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 	// VS2015_mwkm: ParallelFor ambiguous call	
 	ParallelFor( (const std::function<void(int)>) [&](int index) {
 #else

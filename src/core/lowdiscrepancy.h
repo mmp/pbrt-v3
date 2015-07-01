@@ -105,7 +105,7 @@ inline uint32_t ReverseMultiplyGenerator(const uint32_t *C, uint32_t a) {
 inline Float SampleGeneratorMatrix(const uint32_t *C, uint32_t a,
                                    uint32_t scramble = 0) {
 
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 	// VS2015_mwkm: Hex floating literals unsupported	
 	return (ReverseMultiplyGenerator(C, a) ^ scramble) * ldexpf(1, -32) /* 1/2^32 */;
 #else
@@ -120,7 +120,7 @@ inline void GrayCodeSample(const uint32_t *C, uint32_t n, uint32_t scramble,
                            Float *p) {
     uint32_t v = scramble;
     for (uint32_t i = 0; i < n; ++i) {
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: Hex floating literals unsupported	
 		p[i] = v * ldexpf(1, -32); /* 1/2^32 */
 #else
@@ -135,7 +135,7 @@ inline void GrayCodeSample(const uint32_t *C0, const uint32_t *C1, uint32_t n,
     uint32_t v[2] = {(uint32_t)scramble.x, (uint32_t)scramble.y};
     for (uint32_t i = 0; i < n; ++i) {
 
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: Hex floating literals unsupported	
 		p[i].x = v[0] * ldexpf(1, -32);
         p[i].y = v[1] * ldexpf(1, -32);
@@ -234,7 +234,7 @@ inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
          a >>= 1, --i)
         if (a & 1) v ^= SobolMatrices32[i];
 
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 	// VS2015_mwkm: Hex floating literals unsupported
 	return v * ldexpf(1, -32); /* 1/2^32 */
 #else

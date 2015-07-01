@@ -83,7 +83,7 @@ class RNG {
         }
     }
     Float UniformFloat() {
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 		// VS2015_mwkm: Hex floating literals unsupported
 		return std::min( OneMinusEpsilon, Float(UniformUInt32() * ldexp(1,-32)) );
 #else

@@ -165,7 +165,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         std::vector<MemoryArena> perThreadArenas(MaxThreadIndex());
         {
             StatTimer timer(&hitPointTimer);
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 			// VS2015_mwkm: ParallelFor ambiguous call
 			ParallelFor((const std::function<void(Point2i, int)>)[&](Point2i bucket, int threadIndex) {
 #else
@@ -277,7 +277,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 //    fprintf(stderr, "res %d (diag %f / %f)\n", gridRes[i],
                 //    diag[i], maxDiag);
             }
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 			// VS2015_mwkm: ParallelFor ambiguous call
 			ParallelFor((const std::function<void(int, int)>)[&](int pixelIndex, int threadIndex) {
 #else
@@ -324,7 +324,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
             int photonsPerTask = photonsPerIteration / nPhotonTasks;
             // constexpr int kMutexPoolSize = 32;
             // std::mutex gridMutexPool[kMutexPoolSize];
-#if defined(PBRT_IS_MSVC) && (__MWKM__)
+#if defined(PBRT_IS_MSVC)
 			// VS2015_mwkm: ParallelFor ambiguous call
 			ParallelFor((const std::function<void(int)>)[&](int taskNum) {
 #else

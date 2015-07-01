@@ -22,7 +22,7 @@ endif()
 project( pbrt-v3 CXX C )
 
 #	To activate __MWKM__ patches
-add_definitions( /D__MWKM__ )
+#add_definitions( /D__MWKM__ )
 
 #	CMake configuration
 set(CMAKE_USE_RELATIVE_PATHS ON)
