@@ -190,14 +190,14 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
 
     // Correct sampling densities for infinite area lights
     if (path[0].IsInfiniteLight()) {
-        // Set positional density of _path[1]_
+        // Set spatial density of _path[1]_
         if (nvertices > 0) {
             path[1].pdfFwd = pdfPos;
             if (path[1].IsOnSurface())
                 path[1].pdfFwd *= AbsDot(ray.d, path[1].GetGeoNormal());
         }
 
-        // Set positional density of _path[0]_
+        // Set spatial density of _path[0]_
         path[0].pdfFwd = InfiniteLightDensity(scene, lightDistr, ray.d);
     }
     return nvertices + 1;
@@ -218,38 +218,51 @@ Float MISWeight(const Scene &scene, Vertex *lightSubpath, Vertex *cameraSubpath,
                 Vertex &sampled, int s, int t, const Distribution1D &lightPdf) {
     if (s + t == 2) return 1.0f;
     Float sum = 0.f;
-    // Determine connection vertices
+    // Define helper function _p_ that deals with Dirac delta functions
+    auto p = [](float f) -> float { return f != 0 ? f : 1.0f; };
+
+    // Temporarily update vertex properties for current strategy
+
+    // Look up connection vertices and their predecessors
     Vertex *qs = s > 0 ? &lightSubpath[s - 1] : nullptr,
            *pt = t > 0 ? &cameraSubpath[t - 1] : nullptr,
            *qsMinus = s > 1 ? &lightSubpath[s - 2] : nullptr,
            *ptMinus = t > 1 ? &cameraSubpath[t - 2] : nullptr;
 
-    // Temporarily update vertex properties for current strategy
-    ScopedAssign<Vertex> s0;
-    ScopedAssign<bool> s1, s2;
-    ScopedAssign<Float> s3, s4, s5, s6;
-    if (s == 1 || t == 1)
-        s0 = ScopedAssign<Vertex>((s == 1) ? qs : pt, sampled);
-    if (qs) {
-        s1 = ScopedAssign<bool>(&qs->delta, false),
-        s3 = ScopedAssign<Float>(&qs->pdfRev, pt->Pdf(scene, ptMinus, *qs));
-    }
-    if (qsMinus)
-        s5 =
-            ScopedAssign<Float>(&qsMinus->pdfRev, qs->Pdf(scene, pt, *qsMinus));
-    if (pt) {
-        s2 = ScopedAssign<bool>(&pt->delta, false);
-        s4 = ScopedAssign<Float>(
-            &pt->pdfRev, s > 0 ? qs->Pdf(scene, qsMinus, *pt)
-                               : pt->PdfLightOrigin(scene, *ptMinus, lightPdf));
-    }
+    // Account for $s=1$ or $t=1$ strategy if applicable
+    ScopedAssignment<Vertex> a1;
+    if (s == 1)
+        a1 = {qs, sampled};
+    else if (t == 1)
+        a1 = {pt, sampled};
+
+    // Mark connection vertices as non-degenerate
+    ScopedAssignment<bool> a2, a3;
+    if (pt) a2 = {&pt->delta, false};
+    if (qs) a3 = {&qs->delta, false};
+
+    // Update reverse density of vertex $\pt{t}$
+    ScopedAssignment<Float> a4;
+    if (pt)
+        a4 = {&pt->pdfRev, s > 0
+                               ? qs->Pdf(scene, qsMinus, *pt)
+                               : pt->PdfLightOrigin(scene, *ptMinus, lightPdf)};
+
+    // Update reverse density of vertex $\pt{t-1}$
+    ScopedAssignment<Float> a5;
     if (ptMinus)
-        s6 = ScopedAssign<Float>(&ptMinus->pdfRev,
-                                 s > 0 ? pt->Pdf(scene, qs, *ptMinus)
-                                       : pt->PdfLight(scene, *ptMinus));
+        a5 = {&ptMinus->pdfRev, s > 0 ? pt->Pdf(scene, qs, *ptMinus)
+                                      : pt->PdfLight(scene, *ptMinus)};
+
+    // Update reverse density of vertex $\pq{s}$
+    ScopedAssignment<Float> a6;
+    if (qs) a6 = {&qs->pdfRev, pt->Pdf(scene, ptMinus, *qs)};
+
+    // Update reverse density of vertex $\pq{s-1}$
+    ScopedAssignment<Float> a7;
+    if (qsMinus) a7 = {&qsMinus->pdfRev, qs->Pdf(scene, pt, *qsMinus)};
 
     // Consider hypothetical connection strategies along the camera subpath
-    auto p = [](float f) -> float { return f != 0 ? f : 1.0f; };
     Float ratio = 1.0f;
     for (int i = t - 1; i > 0; --i) {
         ratio *= p(cameraSubpath[i].pdfRev) / p(cameraSubpath[i].pdfFwd);
