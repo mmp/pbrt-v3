@@ -41,18 +41,22 @@
 
 // core/pbrt.h*
 #if defined(_WIN32) || defined(_WIN64)
-#define PBRT_IS_WINDOWS
-#if defined(__MINGW32__)  // Defined for both 32 bit/64 bit MinGW
-#define PBRT_IS_MINGW
-#elif defined(_MSC_VER)
-#define PBRT_IS_MSVC
-#endif
+  #define PBRT_IS_WINDOWS
+  #if defined(__MINGW32__)  // Defined for both 32 bit/64 bit MinGW
+    #define PBRT_IS_MINGW
+  #elif defined(_MSC_VER)
+    #define PBRT_IS_MSVC
+  #endif
 #elif defined(__linux__)
-#define PBRT_IS_LINUX
+  #define PBRT_IS_LINUX
 #elif defined(__APPLE__)
-#define PBRT_IS_OSX
+  #define PBRT_IS_OSX
 #elif defined(__OpenBSD__)
-#define PBRT_IS_OPENBSD
+  #define PBRT_IS_OPENBSD
+#endif
+
+#if defined(__INTEL_COMPILER)
+  #define PBRT_IS_INTEL
 #endif
 
 // Global Include Files
