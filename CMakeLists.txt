@@ -159,6 +159,8 @@ ADD_LIBRARY ( pbrt STATIC
   ${PBRT_SOURCE}
   )
 
+FIND_PACKAGE ( Threads )
+
 # Main renderer
 ADD_EXECUTABLE ( pbrt_exe
   src/main/pbrt.cpp
@@ -171,6 +173,7 @@ SET_TARGET_PROPERTIES ( pbrt_exe
 
 TARGET_LINK_LIBRARIES ( pbrt_exe
   pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 # Tools
@@ -184,6 +187,10 @@ ADD_EXECUTABLE ( chi2test
 
 ADD_EXECUTABLE ( exrdiff
   src/tools/exrdiff.cpp
+  )
+
+ADD_EXECUTABLE ( exravg
+  src/tools/exravg.cpp
   )
 
 ADD_EXECUTABLE ( hdrtoldr
@@ -203,6 +210,10 @@ TARGET_LINK_LIBRARIES ( chi2test
   )
 
 TARGET_LINK_LIBRARIES ( exrdiff
+  pbrt
+  )
+
+TARGET_LINK_LIBRARIES ( exravg
   pbrt
   )
 

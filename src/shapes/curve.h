@@ -46,13 +46,28 @@ struct CurveCommon;
 // CurveType Declarations
 enum class CurveType { Flat, Cylinder, Ribbon };
 
+// CurveCommon Declarations
+struct CurveCommon {
+    CurveCommon(const Point3f c[4], Float w0, Float w1, CurveType type,
+                const Normal3f *norm);
+    const CurveType type;
+    const Point3f cpObj[4];
+    const Float width[2];
+    Normal3f n[2];
+    Float normalAngle, invSinNormalAngle;
+};
+
 // Curve Declarations
 class Curve : public Shape {
   public:
     // Curve Public Methods
     Curve(const Transform *ObjectToWorld, const Transform *WorldToObject,
           bool ReverseOrientation, const std::shared_ptr<CurveCommon> &common,
-          Float uMin, Float Max);
+          Float uMin, Float uMax)
+        : Shape(ObjectToWorld, WorldToObject, ReverseOrientation),
+          common(common),
+          uMin(uMin),
+          uMax(uMax) {}
     Bounds3f ObjectBound() const;
     bool Intersect(const Ray &ray, Float *tHit,
                    SurfaceInteraction *isect) const;
@@ -69,16 +84,6 @@ class Curve : public Shape {
     // Curve Private Data
     const std::shared_ptr<CurveCommon> common;
     const Float uMin, uMax;
-};
-
-struct CurveCommon {
-    CurveCommon(const Point3f c[4], Float w0, Float w1, CurveType type,
-                const Normal3f *norm);
-    const CurveType curveType;
-    const Point3f cpObj[4];
-    const Float width[2];
-    Normal3f n[2];
-    Float normalAngle, invSinNormalAngle;
 };
 
 std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,

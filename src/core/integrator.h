@@ -77,10 +77,10 @@ class SamplerIntegrator : public Integrator {
     SamplerIntegrator(std::shared_ptr<const Camera> camera,
                       std::shared_ptr<Sampler> sampler)
         : camera(camera), sampler(sampler) {}
-    virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                        Sampler &sampler, MemoryArena &arena) const = 0;
     virtual void Preprocess(const Scene &scene, Sampler &sampler) {}
     void Render(const Scene &scene);
+    virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
+                        Sampler &sampler, MemoryArena &arena) const = 0;
     Spectrum SpecularReflect(const RayDifferential &ray,
                              const SurfaceInteraction &isect,
                              const Scene &scene, Sampler &sampler,

@@ -255,7 +255,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
     Preprocess(scene, *sampler);
     // Run parallel tasks to render the image
 
-    // Compute number of tiles to use for parallel rendering
+    // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
     Vector2i sampleExtent = sampleBounds.Diagonal();
     const int tileSize = 16;
@@ -350,7 +350,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
         reporter.Done();
     }
 
-    // Clean up after rendering and store final image
+    // Save final image after rendering
     camera->film->WriteImage();
 }
 

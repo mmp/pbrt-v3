@@ -315,6 +315,8 @@ static bool hostLittleEndian =
     true
 #elif defined(__BIG_ENDIAN__)
     false
+#elif defined(__sparc) || defined(__sparc__)
+    false
 #else
 #error "Can't detect machine endian-ness at compile-time."
 #endif

@@ -659,13 +659,10 @@ bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *si) const {
         if (node->bounds.IntersectP(ray, invDir, dirIsNeg)) {
             if (node->nPrimitives > 0) {
                 // Intersect ray with primitives in leaf BVH node
-                for (int i = 0; i < node->nPrimitives; ++i) {
+                for (int i = 0; i < node->nPrimitives; ++i)
                     if (primitives[node->primitivesOffset + i]->Intersect(ray,
-                                                                          si)) {
+                                                                          si))
                         hit = true;
-                    } else {
-                    }
-                }
                 if (todoOffset == 0) break;
                 nodeNum = todo[--todoOffset];
             } else {
@@ -701,7 +698,6 @@ bool BVHAccel::IntersectP(const Ray &ray) const {
                     if (primitives[node->primitivesOffset + i]->IntersectP(
                             ray)) {
                         return true;
-                    } else {
                     }
                 }
                 if (todoOffset == 0) break;

@@ -57,28 +57,19 @@ inline void SubdivideBezier(const Point3f cp[4], Point3f cpSplit[7]) {
     cpSplit[6] = cp[3];
 }
 
-static Point3f EvalBezier(const Point3f cp[4], Float t,
+static Point3f EvalBezier(const Point3f cp[4], Float u,
                           Vector3f *deriv = nullptr) {
-    Point3f cp1[3] = {Lerp(t, cp[0], cp[1]), Lerp(t, cp[1], cp[2]),
-                      Lerp(t, cp[2], cp[3])};
-    Point3f cp2[2] = {Lerp(t, cp1[0], cp1[1]), Lerp(t, cp1[1], cp1[2])};
+    Point3f cp1[3] = {Lerp(u, cp[0], cp[1]), Lerp(u, cp[1], cp[2]),
+                      Lerp(u, cp[2], cp[3])};
+    Point3f cp2[2] = {Lerp(u, cp1[0], cp1[1]), Lerp(u, cp1[1], cp1[2])};
     if (deriv) *deriv = (Float)3. * (cp2[1] - cp2[0]);
-    return Lerp(t, cp2[0], cp2[1]);
+    return Lerp(u, cp2[0], cp2[1]);
 }
 
 // Curve Method Definitions
-Curve::Curve(const Transform *ObjectToWorld, const Transform *WorldToObject,
-             bool ReverseOrientation,
-             const std::shared_ptr<CurveCommon> &common, Float uMin, Float uMax)
-    : Shape(ObjectToWorld, WorldToObject, ReverseOrientation),
-      common(common),
-      uMin(uMin),
-      uMax(uMax) {}
 CurveCommon::CurveCommon(const Point3f c[4], Float width0, Float width1,
-                         CurveType curveType, const Normal3f *norm)
-    : curveType(curveType),
-      cpObj{c[0], c[1], c[2], c[3]},
-      width{width0, width1} {
+                         CurveType type, const Normal3f *norm)
+    : type(type), cpObj{c[0], c[1], c[2], c[3]}, width{width0, width1} {
     if (norm) {
         n[0] = Normalize(norm[0]);
         n[1] = Normalize(norm[1]);
@@ -107,7 +98,7 @@ std::vector<std::shared_ptr<Shape>> CreateCurve(
 }
 
 Bounds3f Curve::ObjectBound() const {
-    // Compute control points for curve segment
+    // Compute object-space control points for curve segment, _cpObj_
     Point3f cpObj[4];
     cpObj[0] = BlossomBezier(common->cpObj, uMin, uMin, uMin);
     cpObj[1] = BlossomBezier(common->cpObj, uMin, uMin, uMax);
@@ -127,7 +118,7 @@ bool Curve::Intersect(const Ray &r, Float *tHit,
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
 
-    // Compute control points for curve segment
+    // Compute object-space control points for curve segment, _cpObj_
     Point3f cpObj[4];
     cpObj[0] = BlossomBezier(common->cpObj, uMin, uMin, uMin);
     cpObj[1] = BlossomBezier(common->cpObj, uMin, uMin, uMax);
@@ -165,61 +156,56 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
                                const Transform &rayToObject, Float u0, Float u1,
                                int depth) const {
     // Try to cull curve segment versus ray
-    Float maxWidth = std::max(Lerp(u0, common->width[0], common->width[1]),
-                              Lerp(u1, common->width[0], common->width[1]));
+
+    // Compute bounding box of curve segment, _curveBounds_
     Bounds3f curveBounds =
         Union(Bounds3f(cp[0], cp[1]), Bounds3f(cp[2], cp[3]));
+    Float maxWidth = std::max(Lerp(u0, common->width[0], common->width[1]),
+                              Lerp(u1, common->width[0], common->width[1]));
+    curveBounds = Expand(curveBounds, 0.5 * maxWidth);
+
+    // Compute bounding box of ray, _rayBounds_
     Float rayLength = ray.d.Length();
     Float zMax = rayLength * ray.tMax;
-    Bounds3f originBounds(Point3f(-0.5f * maxWidth, -0.5f * maxWidth, 0),
-                          Point3f(0.5f * maxWidth, 0.5f * maxWidth, zMax));
-    if (Overlaps(curveBounds, originBounds) == false) return false;
+    Bounds3f rayBounds(Point3f(0, 0, 0), Point3f(0, 0, zMax));
+    if (Overlaps(curveBounds, rayBounds) == false) return false;
     if (depth > 0) {
         // Split curve segment into sub-segments and test for intersection
-        --depth;
-        Float umid = 0.5f * (u0 + u1);
+        Float uMid = 0.5f * (u0 + u1);
         Point3f cpSplit[7];
         SubdivideBezier(cp, cpSplit);
         return (recursiveIntersect(ray, tHit, isect, &cpSplit[0], rayToObject,
-                                   u0, umid, depth) ||
+                                   u0, uMid, depth - 1) ||
                 recursiveIntersect(ray, tHit, isect, &cpSplit[3], rayToObject,
-                                   umid, u1, depth));
+                                   uMid, u1, depth - 1));
     } else {
-        // Intersect ray with linearized curve segment
+        // Intersect ray with curve segment
 
-        // Test sample point versus linearized curve
+        // Test ray against segment endpoint boundaries
         Vector2f segmentDirection = Point2f(cp[3]) - Point2f(cp[0]);
 
         // Test sample point against tangent perpendicular at curve start
-        Vector2f startTangent = Point2f(cp[1]) - Point2f(cp[0]);
-        if (Dot(segmentDirection, startTangent) < 0)
-            startTangent = -startTangent;
-        if (Dot(startTangent, -Vector2f(cp[0])) < 0) return false;
+        Float edge =
+            (cp[1].y - cp[0].y) * -cp[0].y + cp[0].x * (cp[0].x - cp[1].x);
+        if (edge < 0) return false;
 
         // Test sample point against tangent perpendicular at curve end
+        // TODO: update to match the starting test.
         Vector2f endTangent = Point2f(cp[2]) - Point2f(cp[3]);
         if (Dot(segmentDirection, endTangent) < 0) endTangent = -endTangent;
         if (Dot(endTangent, Vector2f(cp[3])) < 0) return false;
 
         // Compute line $w$ that gives minimum distance to sample point
-        Float w = Dot(segmentDirection, segmentDirection);
-        if (w == 0) return false;
-        w = -Dot(Vector2f(cp[0]), segmentDirection) / w;
+        Float denom = Dot(segmentDirection, segmentDirection);
+        if (denom == 0) return false;
+        Float w = Dot(-Vector2f(cp[0]), segmentDirection) / denom;
 
-        // Compute $(u,v)$ coordinates of curve intersection point
+        // Compute $u$ coordinate of curve intersection point and _hitWidth_
         Float u = Clamp(Lerp(w, u0, u1), u0, u1);
-        Point2f closestPt = Lerp(w, Point2f(cp[0]), Point2f(cp[3]));
-        Float ptLineDist =
-            std::sqrt(closestPt.x * closestPt.x + closestPt.y * closestPt.y);
-        Float edgeFunc =
-            segmentDirection.x * -cp[0].y + cp[0].x * segmentDirection.y;
-        Float v;
-
-        // Compute effective curve width for candidate intersection
         Float hitWidth = Lerp(u, common->width[0], common->width[1]);
         Normal3f nHit;
-        if (common->curveType == CurveType::Ribbon) {
-            // Scale curve width based on ribbon orientation
+        if (common->type == CurveType::Ribbon) {
+            // Scale _hitWidth_ based on ribbon orientation
             Float sin0 = std::sin((1 - u) * common->normalAngle) *
                          common->invSinNormalAngle;
             Float sin1 =
@@ -227,33 +213,40 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
             nHit = sin0 * common->n[0] + sin1 * common->n[1];
             hitWidth *= AbsDot(nHit, -ray.d / rayLength);
         }
-        if (edgeFunc > 0.)
-            v = 0.5f + ptLineDist / hitWidth;
-        else
-            v = 0.5f - ptLineDist / hitWidth;
 
         // Test intersection point against curve width
-        Point3f p = EvalBezier(cp, Clamp(w, 0, 1));
-        if (p.x * p.x + p.y * p.y > hitWidth * hitWidth * .25) return false;
-        if (p.z < 0 || p.z > zMax) return false;
+        Vector3f dpcdw;
+        Point3f pc = EvalBezier(cp, Clamp(w, 0, 1), &dpcdw);
+        Float ptCurveDist2 = pc.x * pc.x + pc.y * pc.y;
+        if (ptCurveDist2 > hitWidth * hitWidth * .25) return false;
+        if (pc.z < 0 || pc.z > zMax) return false;
 
-        // Compute hit _t_ and differential geometry for curve intersection
+        // Compute $v$ coordinate of curve intersection point
+        Float ptCurveDist = std::sqrt(ptCurveDist2);
+        Float edgeFunc = dpcdw.x * -pc.y + pc.x * dpcdw.y;
+        Float v = (edgeFunc > 0.) ? 0.5f + ptCurveDist / hitWidth
+                                  : 0.5f - ptCurveDist / hitWidth;
+
+        // Compute hit _t_ and partial derivatives for curve intersection
         if (tHit != nullptr) {
-            *tHit = p.z / rayLength;
+            // FIXME: this tHit isn't quite right for ribbons...
+            *tHit = pc.z / rayLength;
             // Compute error bounds for curve intersection
             Vector3f pError(2 * hitWidth, 2 * hitWidth, 2 * hitWidth);
 
             // Compute $\dpdu$ and $\dpdv$ for curve intersection
             Vector3f dpdu, dpdv;
             EvalBezier(common->cpObj, u, &dpdu);
-            if (common->curveType == CurveType::Ribbon)
+            if (common->type == CurveType::Ribbon)
                 dpdv = Normalize(Cross(nHit, dpdu)) * hitWidth;
             else {
+                // Compute curve $\dpdv$ for flat and cylinder curves
                 Vector3f dpduPlane = (Inverse(rayToObject))(dpdu);
                 Vector3f dpdvPlane =
                     Normalize(Vector3f(-dpduPlane.y, dpduPlane.x, 0)) *
                     hitWidth;
-                if (common->curveType == CurveType::Cylinder) {
+                if (common->type == CurveType::Cylinder) {
+                    // Rotate _dpdvPlane_ to give cylindrical appearance
                     Float theta = Lerp(v, -90., 90.);
                     Transform rot = Rotate(-theta, dpduPlane);
                     dpdvPlane = rot(dpdvPlane);
@@ -261,7 +254,7 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
                 dpdv = rayToObject(dpdvPlane);
             }
             *isect = (*ObjectToWorld)(SurfaceInteraction(
-                ray(p.z), pError, Point2f(u, v), -ray.d, dpdu, dpdv,
+                ray(pc.z), pError, Point2f(u, v), -ray.d, dpdu, dpdv,
                 Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time, this));
         }
         ++nHits;
@@ -270,7 +263,7 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
 }
 
 Float Curve::Area() const {
-    // Compute control points for curve segment
+    // Compute object-space control points for curve segment, _cpObj_
     Point3f cpObj[4];
     cpObj[0] = BlossomBezier(common->cpObj, uMin, uMin, uMin);
     cpObj[1] = BlossomBezier(common->cpObj, uMin, uMin, uMax);

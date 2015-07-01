@@ -77,23 +77,29 @@ struct EndpointInteraction : Interaction {
 struct Vertex;
 Float ConvertDensity(const Vertex &cur, Float pdfDir, const Vertex &next);
 template <typename Type>
-struct ScopedAssign {
-    Type *target, backup;
-    ScopedAssign(Type *ptr = nullptr, Type value = Type()) : target(ptr) {
+class ScopedAssignment {
+  public:
+    // ScopedAssignment Public Methods
+    ScopedAssignment(Type *ptr = nullptr, Type value = Type()) : target(ptr) {
         if (target) {
             backup = *target;
             *target = value;
         }
     }
-    ScopedAssign &operator=(ScopedAssign &&other) {
+    ~ScopedAssignment() {
+        if (target) *target = backup;
+    }
+    ScopedAssignment(const ScopedAssignment &) = delete;
+    ScopedAssignment &operator=(const ScopedAssignment &) = delete;
+    ScopedAssignment &operator=(ScopedAssignment &&other) {
         target = other.target;
         backup = other.backup;
         other.target = nullptr;
         return *this;
     }
-    ~ScopedAssign() {
-        if (target) *target = backup;
-    }
+
+  private:
+    Type *target, backup;
 };
 
 inline Float InfiniteLightDensity(const Scene &scene,
