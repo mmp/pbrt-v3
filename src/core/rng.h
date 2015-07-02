@@ -83,8 +83,13 @@ class RNG {
         }
     }
     Float UniformFloat() {
-        return std::min(OneMinusEpsilon, UniformUInt32() * 0x1p-32f);
-    }
+#if defined(PBRT_IS_MSVC)
+		// VS2015_mwkm: Hex floating literals unsupported
+		return std::min( OneMinusEpsilon, Float(UniformUInt32() * ldexp(1,-32)) );
+#else
+		return std::min(OneMinusEpsilon, UniformUInt32() * 0x1p-32f);
+#endif
+	}
     template <typename Iterator>
     void Shuffle(Iterator begin, Iterator end) {
         for (Iterator it = end - 1; it > begin; --it)

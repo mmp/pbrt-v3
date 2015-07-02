@@ -75,10 +75,23 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
                 lensData[i + 3] = apertureDiameter;
             }
         }
-        elementInterfaces.push_back((LensElementInterface){
-            lensData[i] * (Float).001, lensData[i + 1] * (Float).001,
-            lensData[i + 2], lensData[i + 3] * Float(.001) / Float(2.)});
-    }
+
+#if defined(PBRT_IS_WINDOWS)
+		// VS2015 mwkm: vs2015 syntax error :(
+		LensElementInterface	tmpInterface;
+		tmpInterface.curvatureRadius = lensData[i] * (Float).001;
+		tmpInterface.thickness = lensData[i + 1] * (Float).001;
+		tmpInterface.eta = lensData[i + 2];
+		tmpInterface.apertureRadius = lensData[i + 3] * Float(.001) / Float(2.);
+		elementInterfaces.push_back(tmpInterface);
+#else
+		elementInterfaces.push_back((LensElementInterface) {
+		lensData[i] * (Float).001, lensData[i + 1] * (Float).001,
+		lensData[i + 2], lensData[i + 3] * Float(.001) / Float(2.)
+});
+#endif
+
+	}
 
     // Compute lens--film distance for given focus distance
     Float fb = FocusBinarySearch(focusDistance);
@@ -91,7 +104,12 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
     Float filmDiagonal = film->diagonal;
     int nSamples = 64;
     exitPupilBounds.resize(nSamples);
-    ParallelFor([&](int i) {
+#if defined(PBRT_IS_MSVC)
+	// VS2015_mwkm: ParallelFor ambiguous call
+	ParallelFor((const std::function<void(int)>)[&](int i) {
+#else
+	ParallelFor([&](int i) {
+#endif
         Float r = (Float)i / (Float)(nSamples - 1) * filmDiagonal / 2.f;
         exitPupilBounds[i] = BoundExitPupil(Point2f(r, 0));
     }, nSamples);

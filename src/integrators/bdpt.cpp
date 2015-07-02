@@ -327,7 +327,12 @@ void BDPTIntegrator::Render(const Scene &scene) {
     // Render and write the output image to disk
     {
         StatTimer timer(&renderingTime);
+#if defined(PBRT_IS_MSVC)
+		// VS2015_mwkm: ParallelFor ambiguous call
+		ParallelFor((const std::function<void(Point2i)>)[&](Point2i bucket) {
+#else
         ParallelFor([&](const Point2i bucket) {
+#endif
             // Render a single bucket using BDPT
             MemoryArena arena;
             int seed = bucket.y * nXBuckets + bucket.x;

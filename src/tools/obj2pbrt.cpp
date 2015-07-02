@@ -22,6 +22,10 @@
 #include <vector>
 #include <map>
 
+#if defined(_MSC_VER)
+#include <algorithm>
+#endif
+
 namespace tinyobj {
 
 typedef struct

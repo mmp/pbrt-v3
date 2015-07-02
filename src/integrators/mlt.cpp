@@ -190,7 +190,12 @@ void MLTIntegrator::Render(const Scene &scene) {
     std::unique_ptr<Float[]> bootstrapWeights(new Float[bootstrapSamples]);
     {
         ProgressReporter progress(nBootstrap, "Generating bootstrap paths");
-        ParallelFor([&](int i) {
+#if defined(PBRT_IS_MSVC)
+		// VS2015_mwkm: ParallelFor ambiguous call
+		ParallelFor((const std::function<void(int)>)[&](int i) {
+#else
+		ParallelFor([&](int i) {
+#endif
             MemoryArena arena;
             for (int k = 0; k <= maxdepth; ++k) {
                 uint32_t sampleIndex = i * (maxdepth + 1) + k;
@@ -212,11 +217,15 @@ void MLTIntegrator::Render(const Scene &scene) {
         mutationsPerPixel * (int64_t)camera->film->GetSampleBounds().Area();
     int64_t mutationsPerChain = nMutations / nChains;
     Film &film = *camera->film;
-
     {
         StatTimer timer(&renderingTime);
         ProgressReporter progress(nMutations / 100, "Rendering");
-        ParallelFor([&](int taskNum) {
+#if defined(PBRT_IS_MSVC)
+		// VS2015_mwkm: ParallelFor ambiguous call
+		ParallelFor((const std::function<void(int)>)[&](int taskNum) {
+#else
+		ParallelFor([&](int taskNum) {
+#endif
             int64_t start = taskNum * mutationsPerChain;
             int64_t end =
                 std::min((taskNum + 1) * mutationsPerChain, nMutations);
@@ -254,6 +263,7 @@ void MLTIntegrator::Render(const Scene &scene) {
                 film.Splat(currentPos, currentValue / currentValue.y());
                 if (i % 100 == 0) progress.Update();
             }
+
         }, nChains);
         progress.Done();
     }
