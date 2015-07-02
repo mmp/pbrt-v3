@@ -176,7 +176,7 @@ class BSDF {
                  const Point2f *samples2, BxDFType flags = BSDF_ALL) const;
     Spectrum rho(const Vector3f &wo, int nSamples, const Point2f *samples,
                  BxDFType flags = BSDF_ALL) const;
-    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
+    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType flags = BSDF_ALL,
                       BxDFType *sampledType = nullptr) const;
     Float Pdf(const Vector3f &wo, const Vector3f &wi,
@@ -337,7 +337,7 @@ class FresnelSpecular : public BxDF {
         return Spectrum(0.f);
     }
     Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0.f; }
-    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
+    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
 
   private:
@@ -370,7 +370,7 @@ class LambertianTransmission : public BxDF {
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const;
     Spectrum rho(const Vector3f &, int, const Point2f *) const { return T; }
     Spectrum rho(int, const Point2f *, const Point2f *) const { return T; }
-    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
+    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
     Float Pdf(const Vector3f &wo, const Vector3f &wi) const;
 
@@ -407,7 +407,7 @@ class MicrofacetReflection : public BxDF {
           distribution(distribution),
           fresnel(fresnel) {}
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const;
-    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
+    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
     Float Pdf(const Vector3f &wo, const Vector3f &wi) const;
 
@@ -432,7 +432,7 @@ class MicrofacetTransmission : public BxDF {
           fresnel(etaExterior, etaInterior),
           mode(mode) {}
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const;
-    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
+    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
     Float Pdf(const Vector3f &wo, const Vector3f &wi) const;
 
@@ -454,9 +454,8 @@ class FresnelBlend : public BxDF {
     Spectrum SchlickFresnel(Float cosTheta) const {
         return Rs + std::pow(1 - cosTheta, 5.f) * (Spectrum(1.) - Rs);
     }
-    Spectrum Sample_f(const Vector3f &wi, Vector3f *sampled_f,
-                      const Point2f &sample, Float *pdf,
-                      BxDFType *sampledType) const;
+    Spectrum Sample_f(const Vector3f &wi, Vector3f *sampled_f, const Point2f &u,
+                      Float *pdf, BxDFType *sampledType) const;
     Float Pdf(const Vector3f &wi, const Vector3f &wo) const;
 
   private:
@@ -492,7 +491,7 @@ class FourierBSDF : public BxDF {
         : BxDF(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY)),
           bsdfTable(bsdfTable),
           mode(mode) {}
-    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
+    Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
     Float Pdf(const Vector3f &wi, const Vector3f &wo) const;
 

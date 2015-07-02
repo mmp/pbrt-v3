@@ -59,7 +59,7 @@ class Disk : public Shape {
                    SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
     Float Area() const;
-    bool Sample(const Point2f &sample, Interaction *p) const;
+    bool Sample(const Point2f &u, Interaction *p) const;
 
   private:
     // Disk Private Data

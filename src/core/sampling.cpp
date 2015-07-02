@@ -151,20 +151,20 @@ Float UniformConePdf(Float cosThetaMax) {
     return 1.f / (2.f * Pi * (1.f - cosThetaMax));
 }
 
-Vector3f UniformSampleCone(const Point2f &u, Float costhetamax) {
-    Float costheta = ((Float)1. - u[0]) + u[0] * costhetamax;
-    Float sintheta = std::sqrt((Float)1. - costheta * costheta);
+Vector3f UniformSampleCone(const Point2f &u, Float cosThetaMax) {
+    Float cosTheta = ((Float)1. - u[0]) + u[0] * cosThetaMax;
+    Float sinTheta = std::sqrt((Float)1. - cosTheta * cosTheta);
     Float phi = u[1] * 2 * Pi;
-    return Vector3f(std::cos(phi) * sintheta, std::sin(phi) * sintheta,
-                    costheta);
+    return Vector3f(std::cos(phi) * sinTheta, std::sin(phi) * sinTheta,
+                    cosTheta);
 }
 
-Vector3f UniformSampleCone(const Point2f &u, Float costhetamax,
+Vector3f UniformSampleCone(const Point2f &u, Float cosThetaMax,
                            const Vector3f &x, const Vector3f &y,
                            const Vector3f &z) {
-    Float costheta = Lerp(u[0], costhetamax, 1.f);
-    Float sintheta = std::sqrt((Float)1. - costheta * costheta);
+    Float cosTheta = Lerp(u[0], cosThetaMax, 1.f);
+    Float sinTheta = std::sqrt((Float)1. - cosTheta * cosTheta);
     Float phi = u[1] * 2 * Pi;
-    return std::cos(phi) * sintheta * x + std::sin(phi) * sintheta * y +
-           costheta * z;
+    return std::cos(phi) * sinTheta * x + std::sin(phi) * sinTheta * y +
+           cosTheta * z;
 }

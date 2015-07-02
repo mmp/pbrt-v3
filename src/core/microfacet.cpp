@@ -242,42 +242,36 @@ Float MicrofacetDistribution::Pdf(const Vector3f &wo, const Vector3f &wi,
 }
 
 Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,
-                                         const Point2f &sample) const {
-    // Compute sampled half-angle vector $\wh$ for Beckmann distribution
+                                         const Point2f &u) const {
     Vector3f wh;
-    if (!sampleVisibleArea) {
-        Float logSample = std::log(sample.x);
+    if (sampleVisibleArea) {
+        // Sample visible area of normals with Beckmann distribution
+        bool flip = wo.z < 0;
+        wh = BeckmannSample(flip ? -wo : wo, alphax, alphay, u[0], u[1]);
+        if (flip) wh = -wh;
+    } else {
+        // Sample full distribution of normals for Beckmann distribution
+        Float logSample = std::log(u[0]);
         if (std::isinf(logSample)) logSample = 0;
-        Float tan2theta, phi;
+        Float tan2Theta, phi;
         if (alphax == alphay) {
-            tan2theta = -alphax * alphax * logSample;
-            phi = sample.y * 2 * Pi;
+            tan2Theta = -alphax * alphax * logSample;
+            phi = u[1] * 2 * Pi;
         } else {
+            // Compute _tan2Theta_ and _phi_ for anisotropic Beckmann
+            // distribution
             phi = std::atan(alphay / alphax *
-                            std::tan(2.0f * Pi * sample.y + 0.5f * Pi));
-            if (sample.y > 0.5f) {
-                phi += Pi;
-            }
-            Float sinPhi = std::sin(phi);
-            Float cosPhi = std::cos(phi);
-
-            const Float alphax2 = alphax * alphax;
-            const Float alphay2 = alphay * alphay;
-
-            tan2theta = -logSample /
+                            std::tan(2.0f * Pi * u[1] + 0.5f * Pi));
+            if (u[1] > 0.5f) phi += Pi;
+            Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
+            Float alphax2 = alphax * alphax, alphay2 = alphay * alphay;
+            tan2Theta = -logSample /
                         (cosPhi * cosPhi / alphax2 + sinPhi * sinPhi / alphay2);
         }
-        Float cosTheta = 1.f / std::sqrt(1 + tan2theta);
-        Float sinTheta =
-            std::sqrt(std::max((Float)0., (Float)1. - cosTheta * cosTheta));
+        Float cosTheta = 1.f / std::sqrt(1 + tan2Theta);
+        Float sinTheta = std::sqrt(std::max((Float)0, 1 - cosTheta * cosTheta));
         wh = SphericalDirection(sinTheta, cosTheta, phi);
         if (!SameHemisphere(wo, wh)) wh = -wh;
-
-    } else {
-        bool flip = wo.z < 0;
-        wh =
-            BeckmannSample(flip ? -wo : wo, alphax, alphay, sample.x, sample.y);
-        if (flip) wh = -wh;
     }
     return wh;
 }
@@ -355,31 +349,30 @@ static Vector3f TrowbridgeReitzSample(const Vector3f &wi, Float alpha_x,
 }
 
 Vector3f TrowbridgeReitzDistribution::Sample_wh(const Vector3f &wo,
-                                                const Point2f &sample) const {
+                                                const Point2f &u) const {
     // Compute sampled half-angle vector $\wh$ for TrowbridgeReitz distribution
     Vector3f wh;
 
     if (!sampleVisibleArea) {
-        Float cosTheta = 0.0f, phi = (2.0f * Pi) * sample.y;
+        Float cosTheta = 0.0f, phi = (2.0f * Pi) * u[1];
 
         if (alphax == alphay) {
-            Float tanTheta2 = alphax * alphax * sample.x / (1.0f - sample.x);
+            Float tanTheta2 = alphax * alphax * u[0] / (1.0f - u[0]);
             cosTheta = 1.0f / std::sqrt(1 + tanTheta2);
         } else {
             phi = std::atan(alphay / alphax *
-                            std::tan(2.f * Pi * sample.y + .5f * Pi));
-            if (sample.y > .5f) {
+                            std::tan(2.f * Pi * u[1] + .5f * Pi));
+            if (u[1] > .5f) {
                 phi += Pi;
             }
             Float sinPhi = std::sin(phi);
             Float cosPhi = std::cos(phi);
 
-            const Float alphax2 = alphax * alphax;
-            const Float alphay2 = alphay * alphay;
+            const Float alphax2 = alphax * alphax, alphay2 = alphay * alphay;
 
             const Float alpha2 =
                 1.f / (cosPhi * cosPhi / alphax2 + sinPhi * sinPhi / alphay2);
-            Float tanTheta2 = alpha2 * sample.x / (1.f - sample.x);
+            Float tanTheta2 = alpha2 * u[0] / (1.f - u[0]);
             cosTheta = 1.f / std::sqrt(1 + tanTheta2);
         }
 
@@ -390,8 +383,7 @@ Vector3f TrowbridgeReitzDistribution::Sample_wh(const Vector3f &wo,
 
     } else {
         bool flip = wo.z < 0;
-        wh = TrowbridgeReitzSample(flip ? -wo : wo, alphax, alphay, sample.x,
-                                   sample.y);
+        wh = TrowbridgeReitzSample(flip ? -wo : wo, alphax, alphay, u[0], u[1]);
         if (flip) wh = -wh;
     }
     return wh;

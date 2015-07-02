@@ -199,9 +199,9 @@ bool Cylinder::IntersectP(const Ray &r) const {
 
 Float Cylinder::Area() const { return (zMax - zMin) * phiMax * radius; }
 
-bool Cylinder::Sample(const Point2f &sample, Interaction *intr) const {
-    Float z = Lerp(sample.x, zMin, zMax);
-    Float t = sample.y * phiMax;
+bool Cylinder::Sample(const Point2f &u, Interaction *intr) const {
+    Float z = Lerp(u[0], zMin, zMax);
+    Float t = u[1] * phiMax;
     Point3f pObj = Point3f(radius * std::cos(t), radius * std::sin(t), z);
     intr->n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, 0.f)));
     if (ReverseOrientation) intr->n *= -1.f;

@@ -61,8 +61,8 @@ class Sphere : public Shape {
                    SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
     Float Area() const;
-    bool Sample(const Point2f &sample, Interaction *rp) const;
-    bool Sample(const Interaction &ref, const Point2f &sample,
+    bool Sample(const Point2f &u, Interaction *rp) const;
+    bool Sample(const Interaction &ref, const Point2f &u,
                 Interaction *it) const;
     Float Pdf(const Interaction &ref, const Vector3f &wi) const;
 

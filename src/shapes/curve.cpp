@@ -278,7 +278,7 @@ Float Curve::Area() const {
     return approxLength * avgWidth;
 }
 
-bool Curve::Sample(const Point2f &sample, Interaction *it) const {
+bool Curve::Sample(const Point2f &u, Interaction *it) const {
     Severe("Curve::Sample not implemented.");
     return false;
 }

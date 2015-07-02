@@ -55,11 +55,10 @@ Spectrum GonioPhotometricLight::Power() const {
                SpectrumType::Illuminant);
 }
 
-Spectrum GonioPhotometricLight::Sample_L(const Point2f &sample1,
-                                         const Point2f &sample2, Float time,
-                                         Ray *ray, Normal3f *Ns, Float *pdfPos,
-                                         Float *pdfDir) const {
-    *ray = Ray(pLight, UniformSampleSphere(sample1), Infinity, time, 0, medium);
+Spectrum GonioPhotometricLight::Sample_L(const Point2f &u1, const Point2f &u2,
+                                         Float time, Ray *ray, Normal3f *Ns,
+                                         Float *pdfPos, Float *pdfDir) const {
+    *ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time, 0, medium);
     *Ns = (Normal3f)ray->d;
     *pdfPos = 1.f;
     *pdfDir = UniformSpherePdf();

@@ -212,8 +212,8 @@ bool Sphere::IntersectP(const Ray &r) const {
 
 Float Sphere::Area() const { return phiMax * radius * (zMax - zMin); }
 
-bool Sphere::Sample(const Point2f &sample, Interaction *it) const {
-    Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(sample);
+bool Sphere::Sample(const Point2f &u, Interaction *it) const {
+    Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(u);
     it->n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
     if (ReverseOrientation) it->n *= -1.f;
     Vector3f pObjError =
@@ -259,8 +259,7 @@ Float Sphere::Pdf(const Interaction &ref, const Vector3f &wi) const {
 
     // Compute general sphere weight
     Float sinThetaMax2 = radius * radius / DistanceSquared(ref.p, pCenter);
-    Float cosThetaMax =
-        std::sqrt(std::max((Float)0., (Float)1. - sinThetaMax2));
+    Float cosThetaMax = std::sqrt(std::max((Float)0, 1 - sinThetaMax2));
     return UniformConePdf(cosThetaMax);
 }
 

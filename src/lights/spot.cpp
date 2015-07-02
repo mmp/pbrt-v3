@@ -74,10 +74,10 @@ Float SpotLight::Pdf(const Interaction &, const Vector3f &) const {
     return 0.f;
 }
 
-Spectrum SpotLight::Sample_L(const Point2f &sample1, const Point2f &sample2,
-                             Float time, Ray *ray, Normal3f *Ns, Float *pdfPos,
+Spectrum SpotLight::Sample_L(const Point2f &u1, const Point2f &u2, Float time,
+                             Ray *ray, Normal3f *Ns, Float *pdfPos,
                              Float *pdfDir) const {
-    Vector3f v = UniformSampleCone(sample1, cosTotalWidth);
+    Vector3f v = UniformSampleCone(u1, cosTotalWidth);
     *ray = Ray(pLight, LightToWorld(v), Infinity, time, 0, medium);
     *Ns = (Normal3f)ray->d;
     *pdfPos = 1.f;

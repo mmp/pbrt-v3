@@ -696,11 +696,6 @@ Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 
 Float RealisticCamera::ExitPupilPdf(const Point3f &pFilm,
                                     const Point3f &pExitPupil) const {
-    // Check to see if _pExitPupil_ is within the radius of the rear element
-    // if (pExitPupil.x * pExitPupil.x + pExitPupil.y * pExitPupil.y >
-    //    RearElementRadius() * RearElementRadius())
-    //    return 0.f;
-
     // Find exit pupil bound for sample distance from film center
     Float filmDiagonal = film->diagonal;
     Float rFilm = std::sqrt(pFilm.x * pFilm.x + pFilm.y * pFilm.y);
@@ -713,8 +708,8 @@ Float RealisticCamera::ExitPupilPdf(const Point3f &pFilm,
         pupilBounds = Union(pupilBounds, exitPupilBounds[pupilIndex + 1]);
 
     // Rotate _pExitPupil_ by negative angle of _pFilm_ with $+x$ axis
-    Float sinTheta = (rFilm != 0.f) ? -pFilm.y / rFilm : 0.f;
-    Float cosTheta = (rFilm != 0.f) ? pFilm.x / rFilm : 1.f;
+    Float sinTheta = (rFilm != 0.f) ? -pFilm.y / rFilm : 0;
+    Float cosTheta = (rFilm != 0.f) ? pFilm.x / rFilm : 1;
     Point2f pRot(cosTheta * pExitPupil.x - sinTheta * pExitPupil.y,
                  sinTheta * pExitPupil.x + cosTheta * pExitPupil.y);
 

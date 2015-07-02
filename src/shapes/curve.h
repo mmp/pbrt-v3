@@ -72,7 +72,7 @@ class Curve : public Shape {
     bool Intersect(const Ray &ray, Float *tHit,
                    SurfaceInteraction *isect) const;
     Float Area() const;
-    bool Sample(const Point2f &sample, Interaction *it) const;
+    bool Sample(const Point2f &u, Interaction *it) const;
 
   private:
     // Curve Private Methods

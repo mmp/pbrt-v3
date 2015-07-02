@@ -57,9 +57,8 @@ class MicrofacetDistribution {
     Float G(const Vector3f &wo, const Vector3f &wi) const {
         return 1.f / (1.f + Lambda(wo) + Lambda(wi));
     }
+    virtual Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const = 0;
     Float Pdf(const Vector3f &wo, const Vector3f &wi, const Vector3f &wh) const;
-    virtual Vector3f Sample_wh(const Vector3f &wo,
-                               const Point2f &sample) const = 0;
 
   protected:
     // MicrofacetDistribution Protected Methods
@@ -82,7 +81,7 @@ class BeckmannDistribution : public MicrofacetDistribution {
     BeckmannDistribution(Float alphax, Float alphay, bool samplevis = true)
         : MicrofacetDistribution(samplevis), alphax(alphax), alphay(alphay) {}
     Float D(const Vector3f &wh) const;
-    Vector3f Sample_wh(const Vector3f &wo, const Point2f &sample) const;
+    Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const;
 
   private:
     // BeckmannDistribution Private Methods
@@ -100,7 +99,7 @@ class TrowbridgeReitzDistribution : public MicrofacetDistribution {
                                 bool samplevis = true)
         : MicrofacetDistribution(samplevis), alphax(alphax), alphay(alphay) {}
     Float D(const Vector3f &wh) const;
-    Vector3f Sample_wh(const Vector3f &wo, const Point2f &sample) const;
+    Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const;
 
   private:
     // TrowbridgeReitzDistribution Private Methods

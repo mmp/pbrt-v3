@@ -53,7 +53,7 @@ class Hyperboloid : public Shape {
                    SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
     Float Area() const;
-    bool Sample(const Point2f &sample, Interaction *it) const;
+    bool Sample(const Point2f &u, Interaction *it) const;
 
   protected:
     // Hyperboloid Private Data

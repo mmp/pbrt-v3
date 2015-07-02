@@ -79,9 +79,9 @@ class Light {
     virtual Spectrum Power() const = 0;
     virtual void Preprocess(const Scene &scene) {}
     virtual Spectrum Le(const RayDifferential &r) const;
-    virtual Float Pdf(const Interaction &vis, const Vector3f &wi) const = 0;
-    virtual Spectrum Sample_L(const Point2f &sample1, const Point2f &sample2,
-                              Float time, Ray *ray, Normal3f *Ns, Float *pdfPos,
+    virtual Float Pdf(const Interaction &ref, const Vector3f &wi) const = 0;
+    virtual Spectrum Sample_L(const Point2f &u1, const Point2f &u2, Float time,
+                              Ray *ray, Normal3f *Ns, Float *pdfPos,
                               Float *pdfDir) const = 0;
     virtual void Pdf(const Ray &ray, const Normal3f &Ns, Float *pdfPos,
                      Float *pdfDir) const = 0;

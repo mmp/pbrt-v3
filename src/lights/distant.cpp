@@ -61,27 +61,27 @@ Float DistantLight::Pdf(const Interaction &, const Vector3f &) const {
     return 0.f;
 }
 
-Spectrum DistantLight::Sample_L(const Point2f &sample1, const Point2f &sample2,
+Spectrum DistantLight::Sample_L(const Point2f &u1, const Point2f &u2,
                                 Float time, Ray *ray, Normal3f *Ns,
                                 Float *pdfPos, Float *pdfDir) const {
     // Choose point on disk oriented toward infinite light direction
     Vector3f v1, v2;
     CoordinateSystem(wLight, &v1, &v2);
-    Point2f cd = ConcentricSampleDisk(sample1);
+    Point2f cd = ConcentricSampleDisk(u1);
     Point3f Pdisk = worldCenter + worldRadius * (cd.x * v1 + cd.y * v2);
 
     // Set ray origin and direction for infinite light ray
     *ray = Ray(Pdisk + worldRadius * wLight, -wLight, Infinity, time);
     *Ns = (Normal3f)ray->d;
-    *pdfPos = 1.f / (Pi * worldRadius * worldRadius);
-    *pdfDir = 1.f;
+    *pdfPos = 1 / (Pi * worldRadius * worldRadius);
+    *pdfDir = 1;
     return L;
 }
 
 void DistantLight::Pdf(const Ray &, const Normal3f &, Float *pdfPos,
                        Float *pdfDir) const {
-    *pdfPos = 1.f / (Pi * worldRadius * worldRadius);
-    *pdfDir = 0.f;
+    *pdfPos = 1 / (Pi * worldRadius * worldRadius);
+    *pdfDir = 0;
 }
 
 std::shared_ptr<DistantLight> CreateDistantLight(const Transform &light2world,

@@ -200,7 +200,7 @@ Float Cone::Area() const {
            2.f;
 }
 
-bool Cone::Sample(const Point2f &sample, Interaction *it) const {
+bool Cone::Sample(const Point2f &u, Interaction *it) const {
     Severe("Cone::Sample not implemented.");
     return false;
 }

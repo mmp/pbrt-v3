@@ -48,11 +48,11 @@ DiffuseAreaLight::DiffuseAreaLight(const Transform &LightToWorld,
 
 Spectrum DiffuseAreaLight::Power() const { return Lemit * area * Pi; }
 
-Spectrum DiffuseAreaLight::Sample_L(const Interaction &ref,
-                                    const Point2f &sample, Vector3f *wi,
-                                    Float *pdf, VisibilityTester *vis) const {
+Spectrum DiffuseAreaLight::Sample_L(const Interaction &ref, const Point2f &u,
+                                    Vector3f *wi, Float *pdf,
+                                    VisibilityTester *vis) const {
     Interaction p1;
-    if (!shape->Sample(ref, sample, &p1) || ((ref.p - p1.p).Length() == 0.f)) {
+    if (!shape->Sample(ref, u, &p1) || ((ref.p - p1.p).Length() == 0.f)) {
         *pdf = 0.f;
         return Spectrum(0.f);
     }
@@ -67,16 +67,15 @@ Float DiffuseAreaLight::Pdf(const Interaction &ref, const Vector3f &wi) const {
     return shape->Pdf(ref, wi);
 }
 
-Spectrum DiffuseAreaLight::Sample_L(const Point2f &sample1,
-                                    const Point2f &sample2, Float time,
-                                    Ray *ray, Normal3f *nLight, Float *pdfPos,
-                                    Float *pdfDir) const {
+Spectrum DiffuseAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
+                                    Float time, Ray *ray, Normal3f *nLight,
+                                    Float *pdfPos, Float *pdfDir) const {
     Interaction it;
-    if (!shape->Sample(sample1, &it)) {
+    if (!shape->Sample(u1, &it)) {
         *pdfPos = *pdfDir = 0.f;
         return Spectrum(0.f);
     }
-    Vector3f w = CosineSampleHemisphere(sample2);
+    Vector3f w = CosineSampleHemisphere(u2);
     *pdfPos = shape->Pdf(it);
     *pdfDir = CosineHemispherePdf(w.z);
     Vector3f v1, v2, n(it.n);
