@@ -222,7 +222,7 @@ bool Sphere::Sample(const Point2f &u, Interaction *it) const {
     return true;
 }
 
-bool Sphere::Sample(const Interaction &ref, const Point2f &sample,
+bool Sphere::Sample(const Interaction &ref, const Point2f &u,
                     Interaction *it) const {
     // Compute coordinate system for sphere sampling
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
@@ -234,17 +234,38 @@ bool Sphere::Sample(const Interaction &ref, const Point2f &sample,
 
     // Sample uniformly on sphere if $\pt{}$ is inside it
     if (DistanceSquared(pOrigin, pCenter) <= 1.0001f * radius * radius)
-        return Sample(sample, it);
+        return Sample(u, it);
 
     // Sample sphere uniformly inside subtended cone
+
+    // Compute $\theta$ and $\phi$ values for sample in cone
     Float sinThetaMax2 = radius * radius / DistanceSquared(ref.p, pCenter);
-    Float cosThetaMax =
-        std::sqrt(std::max((Float)0., (Float)1. - sinThetaMax2));
-    SurfaceInteraction isectSphere;
-    Float tHit;
-    Ray r = ref.SpawnRay(UniformSampleCone(sample, cosThetaMax, wcX, wcY, wc));
-    if (!Intersect(r, &tHit, &isectSphere)) return false;
-    *it = isectSphere;
+    Float cosThetaMax = std::sqrt(std::max((Float)0, 1 - sinThetaMax2));
+    Float cosTheta = ((Float)1. - u[0]) + u[0] * cosThetaMax;
+    Float sinTheta = std::sqrt((Float)1. - cosTheta * cosTheta);
+    Float phi = u[1] * 2 * Pi;
+
+    // Compute angle $\alpha$ from center of sphere to sampled point on surface
+    Float D = 1 -
+              DistanceSquared(ref.p, pCenter) * sinTheta * sinTheta /
+                  (radius * radius);
+    Float cosAlpha;
+    if (D <= 0)
+        cosAlpha = std::sqrt(sinThetaMax2);
+    else
+        cosAlpha = Distance(ref.p, pCenter) / radius * sinTheta * sinTheta +
+                   cosTheta * std::sqrt(D);
+    // else cosAlpha = sinTheta * sinTheta / std::sqrt(sinThetaMax2) +
+    //    cosTheta * std::sqrt(1 - sinTheta * sinTheta / sinThetaMax2);
+    Float sinAlpha = std::sqrt(std::max((Float)0, 1 - cosAlpha * cosAlpha));
+
+    // Compute surface normal and sampled point on sphere
+    Vector3f nx, ny, nz = -Normalize(pCenter - ref.p);
+    CoordinateSystem(nz, &nx, &ny);
+    Vector3f n = SphericalDirection(sinAlpha, cosAlpha, phi, nx, ny, nz);
+    Point3f p = radius * Point3f(n.x, n.y, n.z);
+    it->p = (*ObjectToWorld)(p);
+    it->n = (*ObjectToWorld)(Normal3f(n));
     if (ReverseOrientation) it->n *= -1.f;
     return true;
 }
