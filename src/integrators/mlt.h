@@ -51,7 +51,8 @@
 class MLTSampler : public Sampler {
   public:
     // MLTSampler Public Methods
-    MLTSampler(int chainIndex, Float sigma, Float largeStepProb);
+    MLTSampler(int64_t mutationsPerPixel, int chainIndex, Float sigma,
+               Float largeStepProb);
     Float Get1D();
     Point2f Get2D();
     std::unique_ptr<Sampler> Clone(int seed);
@@ -61,11 +62,7 @@ class MLTSampler : public Sampler {
     void Reject();
 
   protected:
-    // MLTSampler Private Methods
-    Float NextNormalVariate();
-    Float GetSample(int index);
-
-    // MLTSampler Private Data
+    // MLTSampler Private Declarations
     struct MLTSample {
         Float value = 0, value_backup = 0;
         int modify = 0, modify_backup = 0;
@@ -78,10 +75,16 @@ class MLTSampler : public Sampler {
             modify = modify_backup;
         }
     };
-    std::vector<MLTSample> samples;
+
+    // MLTSampler Private Methods
+    Float NextNormalVariate();
+    Float GetSample(int index);
+
+    // MLTSampler Private Data
     RNG rng;
     Float sigma;
     Float largeStepProb;
+    std::vector<MLTSample> samples;
     int streamIndex;
     int streamCount;
     int sampleIndex;

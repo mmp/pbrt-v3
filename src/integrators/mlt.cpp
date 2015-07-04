@@ -46,15 +46,13 @@
 #include "sampling.h"
 #include "progressreporter.h"
 
-using std::cout;
-using std::endl;
-
 STAT_TIMER("Time/Rendering", renderingTime);
 STAT_PERCENT("Integrator/Acceptance rate", acceptedMutations, totalMutations);
 
 // MLTSampler Method Definitions
-MLTSampler::MLTSampler(int chainIndex, Float sigma, Float largeStepProb)
-    : Sampler(16),
+MLTSampler::MLTSampler(int64_t mutationsPerPixel, int chainIndex, Float sigma,
+                       Float largeStepProb)
+    : Sampler(mutationsPerPixel),
       rng(PCG32_DEFAULT_STATE, (uint32_t)chainIndex),
       sigma(sigma),
       largeStepProb(largeStepProb) {}
@@ -194,7 +192,8 @@ void MLTIntegrator::Render(const Scene &scene) {
             MemoryArena arena;
             for (int k = 0; k <= maxdepth; ++k) {
                 uint32_t sampleIndex = i * (maxdepth + 1) + k;
-                MLTSampler sampler(sampleIndex, sigma, largeStepProb);
+                MLTSampler sampler(mutationsPerPixel, sampleIndex, sigma,
+                                   largeStepProb);
                 Point2f samplePos;
                 bootstrapWeights[sampleIndex] =
                     EvaluateSample(scene, arena, sampler, k, &samplePos).y();
@@ -228,7 +227,8 @@ void MLTIntegrator::Render(const Scene &scene) {
             Float pdf;
             int chainIndex = bootstrap.SampleDiscrete(rng.UniformFloat(), &pdf);
 
-            MLTSampler sampler(chainIndex, sigma, largeStepProb);
+            MLTSampler sampler(mutationsPerPixel, chainIndex, sigma,
+                               largeStepProb);
 
             Point2f currentPos, proposalPos;
             Spectrum currentValue, proposalValue;
