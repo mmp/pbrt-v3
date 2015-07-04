@@ -110,6 +110,10 @@ inline bool SameHemisphere(const Vector3f &w, const Vector3f &wp) {
     return w.z * wp.z > 0.f;
 }
 
+inline bool SameHemisphere(const Vector3f &w, const Normal3f &wp) {
+    return w.z * wp.z > 0.f;
+}
+
 // BSDF Declarations
 enum BxDFType {
     BSDF_REFLECTION = 1 << 0,

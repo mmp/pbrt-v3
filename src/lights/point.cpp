@@ -39,7 +39,7 @@
 #include "sampling.h"
 
 // PointLight Method Definitions
-Spectrum PointLight::Sample_L(const Interaction &ref, const Point2f &sample,
+Spectrum PointLight::Sample_L(const Interaction &ref, const Point2f &u,
                               Vector3f *wi, Float *pdf,
                               VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
@@ -55,18 +55,18 @@ Float PointLight::Pdf(const Interaction &, const Vector3f &) const {
 }
 
 Spectrum PointLight::Sample_L(const Point2f &u1, const Point2f &u2, Float time,
-                              Ray *ray, Normal3f *Ns, Float *pdfPos,
+                              Ray *ray, Normal3f *nLight, Float *pdfPos,
                               Float *pdfDir) const {
     *ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time, 0, medium);
-    *Ns = (Normal3f)ray->d;
-    *pdfPos = 1.f;
+    *nLight = (Normal3f)ray->d;
+    *pdfPos = 1;
     *pdfDir = UniformSpherePdf();
     return intensity;
 }
 
 void PointLight::Pdf(const Ray &, const Normal3f &, Float *pdfPos,
                      Float *pdfDir) const {
-    *pdfPos = 0.f;
+    *pdfPos = 0;
     *pdfDir = UniformSpherePdf();
 }
 

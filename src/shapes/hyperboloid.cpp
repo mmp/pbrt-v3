@@ -239,9 +239,9 @@ Float Hyperboloid::Area() const {
 
 #undef SQR
 #undef QUAD
-bool Hyperboloid::Sample(const Point2f &u, Interaction *it) const {
+Interaction Hyperboloid::Sample(const Point2f &u) const {
     Severe("Hyperboloid::Sample not implemented.");
-    return false;
+    return Interaction();
 }
 
 std::shared_ptr<Shape> CreateHyperboloidShape(const Transform *o2w,

@@ -206,9 +206,9 @@ Float Paraboloid::Area() const {
            (std::pow(k * zMax + 1, 1.5f) - std::pow(k * zMin + 1, 1.5f));
 }
 
-bool Paraboloid::Sample(const Point2f &u, Interaction *it) const {
+Interaction Paraboloid::Sample(const Point2f &u) const {
     Severe("Paraboloid::Sample not implemented.");
-    return false;
+    return Interaction();
 }
 
 std::shared_ptr<Paraboloid> CreateParaboloidShape(const Transform *o2w,

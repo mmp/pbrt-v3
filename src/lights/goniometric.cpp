@@ -39,7 +39,7 @@
 
 // GonioPhotometricLight Method Definitions
 Spectrum GonioPhotometricLight::Sample_L(const Interaction &ref,
-                                         const Point2f &sample, Vector3f *wi,
+                                         const Point2f &u, Vector3f *wi,
                                          Float *pdf,
                                          VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
@@ -56,10 +56,10 @@ Spectrum GonioPhotometricLight::Power() const {
 }
 
 Spectrum GonioPhotometricLight::Sample_L(const Point2f &u1, const Point2f &u2,
-                                         Float time, Ray *ray, Normal3f *Ns,
+                                         Float time, Ray *ray, Normal3f *nLight,
                                          Float *pdfPos, Float *pdfDir) const {
     *ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time, 0, medium);
-    *Ns = (Normal3f)ray->d;
+    *nLight = (Normal3f)ray->d;
     *pdfPos = 1.f;
     *pdfDir = UniformSpherePdf();
     return intensity * Scale(ray->d);

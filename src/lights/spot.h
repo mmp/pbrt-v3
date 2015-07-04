@@ -50,12 +50,12 @@ class SpotLight : public Light {
     // SpotLight Public Methods
     SpotLight(const Transform &LightToWorld, const Medium *m, const Spectrum &,
               Float width, Float fall);
-    Spectrum Sample_L(const Interaction &ref, const Point2f &sample,
-                      Vector3f *wi, Float *pdf, VisibilityTester *vis) const;
+    Spectrum Sample_L(const Interaction &ref, const Point2f &u, Vector3f *wi,
+                      Float *pdf, VisibilityTester *vis) const;
     Float Falloff(const Vector3f &w) const;
     Spectrum Power() const;
     Spectrum Sample_L(const Point2f &u1, const Point2f &u2, Float time,
-                      Ray *ray, Normal3f *Ns, Float *pdfPos,
+                      Ray *ray, Normal3f *nLight, Float *pdfPos,
                       Float *pdfDir) const;
     Float Pdf(const Interaction &, const Vector3f &) const;
     void Pdf(const Ray &, const Normal3f &, Float *pdfPos, Float *pdfDir) const;

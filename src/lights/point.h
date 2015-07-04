@@ -53,11 +53,11 @@ class PointLight : public Light {
         : Light(LightFlags::DeltaPosition, LightToWorld, medium),
           pLight(LightToWorld(Point3f(0, 0, 0))),
           intensity(intensity) {}
-    Spectrum Sample_L(const Interaction &ref, const Point2f &sample,
-                      Vector3f *wi, Float *pdf, VisibilityTester *vis) const;
+    Spectrum Sample_L(const Interaction &ref, const Point2f &u, Vector3f *wi,
+                      Float *pdf, VisibilityTester *vis) const;
     Spectrum Power() const;
     Spectrum Sample_L(const Point2f &u1, const Point2f &u2, Float time,
-                      Ray *ray, Normal3f *Ns, Float *pdfPos,
+                      Ray *ray, Normal3f *nLight, Float *pdfPos,
                       Float *pdfDir) const;
     Float Pdf(const Interaction &, const Vector3f &) const;
     void Pdf(const Ray &, const Normal3f &, Float *pdfPos, Float *pdfDir) const;

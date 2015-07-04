@@ -148,12 +148,12 @@ Distribution2D::Distribution2D(const Float *func, int nu, int nv) {
 }
 
 Float UniformConePdf(Float cosThetaMax) {
-    return 1.f / (2.f * Pi * (1.f - cosThetaMax));
+    return 1 / (2 * Pi * (1 - cosThetaMax));
 }
 
 Vector3f UniformSampleCone(const Point2f &u, Float cosThetaMax) {
-    Float cosTheta = ((Float)1. - u[0]) + u[0] * cosThetaMax;
-    Float sinTheta = std::sqrt((Float)1. - cosTheta * cosTheta);
+    Float cosTheta = ((Float)1 - u[0]) + u[0] * cosThetaMax;
+    Float sinTheta = std::sqrt((Float)1 - cosTheta * cosTheta);
     Float phi = u[1] * 2 * Pi;
     return Vector3f(std::cos(phi) * sinTheta, std::sin(phi) * sinTheta,
                     cosTheta);

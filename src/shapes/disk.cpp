@@ -122,14 +122,15 @@ Float Disk::Area() const {
     return phiMax * 0.5 * (radius * radius - innerRadius * innerRadius);
 }
 
-bool Disk::Sample(const Point2f &u, Interaction *it) const {
+Interaction Disk::Sample(const Point2f &u) const {
+    Interaction it;
     Point2f pd = ConcentricSampleDisk(u);
     Point3f pObj(pd.x * radius, pd.y * radius, height);
-    it->n = Normalize((*ObjectToWorld)(Normal3f(0, 0, 1)));
-    if (ReverseOrientation) it->n *= -1.f;
+    it.n = Normalize((*ObjectToWorld)(Normal3f(0, 0, 1)));
+    if (ReverseOrientation) it.n *= -1.f;
     Vector3f pObjError(0.f, 0.f, MachineEpsilon * height);
-    it->p = (*ObjectToWorld)(pObj, pObjError, &it->pError);
-    return true;
+    it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+    return it;
 }
 
 std::shared_ptr<Disk> CreateDiskShape(const Transform *o2w,

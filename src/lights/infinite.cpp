@@ -63,7 +63,7 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
 
     // Compute scalar-valued image _img_ from environment map
     int width = resolution.x, height = resolution.y;
-    Float filter = (Float)1. / std::max(width, height);
+    Float filter = (Float)1 / std::max(width, height);
     std::unique_ptr<Float[]> img(new Float[width * height]);
     for (int v = 0; v < height; ++v) {
         Float vp = (Float)v / (Float)height;
@@ -97,18 +97,18 @@ Spectrum InfiniteAreaLight::Sample_L(const Interaction &ref,
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
     Point2f uv = distribution->SampleContinuous(lightSample, &mapPdf);
-    if (mapPdf == 0.f) return Spectrum(0.f);
+    if (mapPdf == 0) return Spectrum(0.f);
 
     // Convert infinite light sample point to direction
     Float theta = uv[1] * Pi, phi = uv[0] * 2.f * Pi;
-    Float costheta = std::cos(theta), sintheta = std::sin(theta);
-    Float sinphi = std::sin(phi), cosphi = std::cos(phi);
+    Float cosTheta = std::cos(theta), sinTheta = std::sin(theta);
+    Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
     *wi =
-        LightToWorld(Vector3f(sintheta * cosphi, sintheta * sinphi, costheta));
+        LightToWorld(Vector3f(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta));
 
     // Compute PDF for sampled infinite light direction
-    *pdf = mapPdf / (2.f * Pi * Pi * sintheta);
-    if (sintheta == 0.f) *pdf = 0.f;
+    *pdf = mapPdf / (2.f * Pi * Pi * sinTheta);
+    if (sinTheta == 0) *pdf = 0;
 
     // Return radiance value for infinite light direction
     *vis = VisibilityTester(
@@ -119,11 +119,10 @@ Spectrum InfiniteAreaLight::Sample_L(const Interaction &ref,
 Float InfiniteAreaLight::Pdf(const Interaction &, const Vector3f &w) const {
     Vector3f wi = WorldToLight(w);
     Float theta = SphericalTheta(wi), phi = SphericalPhi(wi);
-    Float sintheta = std::sin(theta);
-    if (sintheta == 0.f) return 0.f;
-    Float p = distribution->Pdf(Point2f(phi * Inv2Pi, theta * InvPi)) /
-              (2.f * Pi * Pi * sintheta);
-    return p;
+    Float sinTheta = std::sin(theta);
+    if (sinTheta == 0) return 0;
+    return distribution->Pdf(Point2f(phi * Inv2Pi, theta * InvPi)) /
+           (2.f * Pi * Pi * sinTheta);
 }
 
 Spectrum InfiniteAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
@@ -135,7 +134,7 @@ Spectrum InfiniteAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
     Point2f uv = distribution->SampleContinuous(lightSample, &mapPdf);
-    if (mapPdf == 0.f) return Spectrum(0.f);
+    if (mapPdf == 0) return Spectrum(0.f);
     Float theta = uv[1] * Pi, phi = uv[0] * 2.f * Pi;
     Float cosTheta = std::cos(theta), sinTheta = std::sin(theta);
     Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
@@ -147,10 +146,10 @@ Spectrum InfiniteAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
     Vector3f v1, v2;
     CoordinateSystem(-d, &v1, &v2);
     Point2f cd = ConcentricSampleDisk(u2);
-    Point3f Pdisk = worldCenter + worldRadius * (cd.x * v1 + cd.y * v2);
-    *ray = Ray(Pdisk + worldRadius * -d, d, Infinity, time);
+    Point3f pDisk = worldCenter + worldRadius * (cd.x * v1 + cd.y * v2);
+    *ray = Ray(pDisk + worldRadius * -d, d, Infinity, time);
 
-    // Compute _InfiniteAreaLight_ ray PDF
+    // Compute _InfiniteAreaLight_ ray PDFs
     *pdfDir = mapPdf / (2 * Pi * Pi * sinTheta);
     *pdfPos = 1 / (Pi * worldRadius * worldRadius);
     if (sinTheta == 0) *pdfDir = 0;

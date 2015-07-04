@@ -36,6 +36,7 @@
 #include "lights/spot.h"
 #include "paramset.h"
 #include "sampling.h"
+#include "reflection.h"
 
 // SpotLight Method Definitions
 SpotLight::SpotLight(const Transform &LightToWorld, const Medium *medium,
@@ -45,7 +46,7 @@ SpotLight::SpotLight(const Transform &LightToWorld, const Medium *medium,
       intensity(intensity),
       cosTotalWidth(std::cos(Radians(width))),
       cosFalloffStart(std::cos(Radians(fall))) {}
-Spectrum SpotLight::Sample_L(const Interaction &ref, const Point2f &sample,
+Spectrum SpotLight::Sample_L(const Interaction &ref, const Point2f &u,
                              Vector3f *wi, Float *pdf,
                              VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
@@ -75,20 +76,22 @@ Float SpotLight::Pdf(const Interaction &, const Vector3f &) const {
 }
 
 Spectrum SpotLight::Sample_L(const Point2f &u1, const Point2f &u2, Float time,
-                             Ray *ray, Normal3f *Ns, Float *pdfPos,
+                             Ray *ray, Normal3f *nLight, Float *pdfPos,
                              Float *pdfDir) const {
-    Vector3f v = UniformSampleCone(u1, cosTotalWidth);
-    *ray = Ray(pLight, LightToWorld(v), Infinity, time, 0, medium);
-    *Ns = (Normal3f)ray->d;
-    *pdfPos = 1.f;
+    Vector3f w = UniformSampleCone(u1, cosTotalWidth);
+    *ray = Ray(pLight, LightToWorld(w), Infinity, time, 0, medium);
+    *nLight = (Normal3f)ray->d;
+    *pdfPos = 1;
     *pdfDir = UniformConePdf(cosTotalWidth);
     return intensity * Falloff(ray->d);
 }
 
-void SpotLight::Pdf(const Ray &, const Normal3f &, Float *pdfPos,
+void SpotLight::Pdf(const Ray &ray, const Normal3f &, Float *pdfPos,
                     Float *pdfDir) const {
-    *pdfPos = 0.f;
-    *pdfDir = UniformConePdf(cosTotalWidth);
+    *pdfPos = 0;
+    *pdfDir = (CosTheta(WorldToLight(ray.d)) >= cosTotalWidth)
+                  ? UniformConePdf(cosTotalWidth)
+                  : 0;
 }
 
 std::shared_ptr<SpotLight> CreateSpotLight(const Transform &l2w,

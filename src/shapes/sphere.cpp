@@ -212,18 +212,18 @@ bool Sphere::IntersectP(const Ray &r) const {
 
 Float Sphere::Area() const { return phiMax * radius * (zMax - zMin); }
 
-bool Sphere::Sample(const Point2f &u, Interaction *it) const {
+Interaction Sphere::Sample(const Point2f &u) const {
+    Interaction it;
     Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(u);
-    it->n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
-    if (ReverseOrientation) it->n *= -1.f;
+    it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
+    if (ReverseOrientation) it.n *= -1.f;
     Vector3f pObjError =
         16.f * MachineEpsilon * Vector3f(radius, radius, radius);
-    it->p = (*ObjectToWorld)(pObj, pObjError, &it->pError);
-    return true;
+    it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+    return it;
 }
 
-bool Sphere::Sample(const Interaction &ref, const Point2f &u,
-                    Interaction *it) const {
+Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
     // Compute coordinate system for sphere sampling
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
     Point3f pOrigin =
@@ -234,9 +234,10 @@ bool Sphere::Sample(const Interaction &ref, const Point2f &u,
 
     // Sample uniformly on sphere if $\pt{}$ is inside it
     if (DistanceSquared(pOrigin, pCenter) <= 1.0001f * radius * radius)
-        return Sample(u, it);
+        return Sample(u);
 
     // Sample sphere uniformly inside subtended cone
+    Interaction it;
 
     // Compute $\theta$ and $\phi$ values for sample in cone
     Float sinThetaMax2 = radius * radius / DistanceSquared(ref.p, pCenter);
@@ -264,10 +265,10 @@ bool Sphere::Sample(const Interaction &ref, const Point2f &u,
     CoordinateSystem(nz, &nx, &ny);
     Vector3f n = SphericalDirection(sinAlpha, cosAlpha, phi, nx, ny, nz);
     Point3f p = radius * Point3f(n.x, n.y, n.z);
-    it->p = (*ObjectToWorld)(p);
-    it->n = (*ObjectToWorld)(Normal3f(n));
-    if (ReverseOrientation) it->n *= -1.f;
-    return true;
+    it.p = (*ObjectToWorld)(p);
+    it.n = (*ObjectToWorld)(Normal3f(n));
+    if (ReverseOrientation) it.n *= -1.f;
+    return it;
 }
 
 Float Sphere::Pdf(const Interaction &ref, const Vector3f &wi) const {

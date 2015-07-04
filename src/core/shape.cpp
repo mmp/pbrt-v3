@@ -56,8 +56,8 @@ Float Shape::Pdf(const Interaction &ref, const Vector3f &wi) const {
     SurfaceInteraction isectLight;
     Ray ray = ref.SpawnRay(wi);
     ray.depth = -1;  // temporary hack to ignore alpha mask
-    Float thit;
-    if (!Intersect(ray, &thit, &isectLight)) return 0.f;
+    Float tHit;
+    if (!Intersect(ray, &tHit, &isectLight)) return 0;
 
     // Convert light sample weight to solid angle measure
     Float pdf = DistanceSquared(ref.p, isectLight.p) /

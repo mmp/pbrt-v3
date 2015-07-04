@@ -43,7 +43,7 @@ DistantLight::DistantLight(const Transform &LightToWorld, const Spectrum &L,
     : Light(LightFlags::DeltaDirection, LightToWorld, nullptr),
       L(L),
       wLight(Normalize(LightToWorld(wLight))) {}
-Spectrum DistantLight::Sample_L(const Interaction &ref, const Point2f &sample,
+Spectrum DistantLight::Sample_L(const Interaction &ref, const Point2f &u,
                                 Vector3f *wi, Float *pdf,
                                 VisibilityTester *vis) const {
     *wi = wLight;
@@ -62,17 +62,17 @@ Float DistantLight::Pdf(const Interaction &, const Vector3f &) const {
 }
 
 Spectrum DistantLight::Sample_L(const Point2f &u1, const Point2f &u2,
-                                Float time, Ray *ray, Normal3f *Ns,
+                                Float time, Ray *ray, Normal3f *nLight,
                                 Float *pdfPos, Float *pdfDir) const {
     // Choose point on disk oriented toward infinite light direction
     Vector3f v1, v2;
     CoordinateSystem(wLight, &v1, &v2);
     Point2f cd = ConcentricSampleDisk(u1);
-    Point3f Pdisk = worldCenter + worldRadius * (cd.x * v1 + cd.y * v2);
+    Point3f pDisk = worldCenter + worldRadius * (cd.x * v1 + cd.y * v2);
 
     // Set ray origin and direction for infinite light ray
-    *ray = Ray(Pdisk + worldRadius * wLight, -wLight, Infinity, time);
-    *Ns = (Normal3f)ray->d;
+    *ray = Ray(pDisk + worldRadius * wLight, -wLight, Infinity, time);
+    *nLight = (Normal3f)ray->d;
     *pdfPos = 1 / (Pi * worldRadius * worldRadius);
     *pdfDir = 1;
     return L;

@@ -200,9 +200,9 @@ Float Cone::Area() const {
            2.f;
 }
 
-bool Cone::Sample(const Point2f &u, Interaction *it) const {
+Interaction Cone::Sample(const Point2f &u) const {
     Severe("Cone::Sample not implemented.");
-    return false;
+    return Interaction();
 }
 
 std::shared_ptr<Cone> CreateConeShape(const Transform *o2w,

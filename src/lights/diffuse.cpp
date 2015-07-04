@@ -51,16 +51,17 @@ Spectrum DiffuseAreaLight::Power() const { return Lemit * area * Pi; }
 Spectrum DiffuseAreaLight::Sample_L(const Interaction &ref, const Point2f &u,
                                     Vector3f *wi, Float *pdf,
                                     VisibilityTester *vis) const {
-    Interaction p1;
-    if (!shape->Sample(ref, u, &p1) || ((ref.p - p1.p).Length() == 0.f)) {
-        *pdf = 0.f;
-        return Spectrum(0.f);
+    Interaction pShape = shape->Sample(ref, u);
+    // Handle coincident light sample point and reference point
+    if ((ref.p - pShape.p).LengthSquared() == 0) {
+        *pdf = 0;
+        return Spectrum(0);
     }
-    p1.mediumInterface = MediumInterface(medium);
-    *vis = VisibilityTester(ref, p1);
-    *wi = Normalize(p1.p - ref.p);
+    pShape.mediumInterface = MediumInterface(medium);
+    *vis = VisibilityTester(ref, pShape);
+    *wi = Normalize(pShape.p - ref.p);
     *pdf = shape->Pdf(ref, *wi);
-    return L(p1, -*wi);
+    return L(pShape, -*wi);
 }
 
 Float DiffuseAreaLight::Pdf(const Interaction &ref, const Vector3f &wi) const {
@@ -70,21 +71,18 @@ Float DiffuseAreaLight::Pdf(const Interaction &ref, const Vector3f &wi) const {
 Spectrum DiffuseAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
                                     Float time, Ray *ray, Normal3f *nLight,
                                     Float *pdfPos, Float *pdfDir) const {
-    Interaction it;
-    if (!shape->Sample(u1, &it)) {
-        *pdfPos = *pdfDir = 0.f;
-        return Spectrum(0.f);
-    }
+    Interaction pShape = shape->Sample(u1);
+    pShape.mediumInterface = MediumInterface(medium);
     Vector3f w = CosineSampleHemisphere(u2);
-    *pdfPos = shape->Pdf(it);
     *pdfDir = CosineHemispherePdf(w.z);
-    Vector3f v1, v2, n(it.n);
+    // Transform cosine-weighted direction to coordinate system around normal
+    Vector3f v1, v2, n(pShape.n);
     CoordinateSystem(Vector3f(n), &v1, &v2);
     w = w.x * v1 + w.y * v2 + w.z * n;
-    *ray = it.SpawnRay(w);
-    *nLight = it.n;
-    it.mediumInterface = MediumInterface(medium);
-    return L(it, w);
+    *ray = pShape.SpawnRay(w);
+    *nLight = pShape.n;
+    *pdfPos = shape->Pdf(pShape);
+    return L(pShape, w);
 }
 
 void DiffuseAreaLight::Pdf(const Ray &ray, const Normal3f &n, Float *pdfPos,

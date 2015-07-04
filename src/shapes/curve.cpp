@@ -278,9 +278,9 @@ Float Curve::Area() const {
     return approxLength * avgWidth;
 }
 
-bool Curve::Sample(const Point2f &u, Interaction *it) const {
+Interaction Curve::Sample(const Point2f &u) const {
     Severe("Curve::Sample not implemented.");
-    return false;
+    return Interaction();
 }
 
 std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,

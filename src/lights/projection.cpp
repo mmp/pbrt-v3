@@ -37,6 +37,7 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "imageio.h"
+#include "reflection.h"
 
 // ProjectionLight Method Definitions
 ProjectionLight::ProjectionLight(const Transform &LightToWorld,
@@ -70,9 +71,9 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
     cosTotalWidth = std::cos(std::atan(tanDiag));
 }
 
-Spectrum ProjectionLight::Sample_L(const Interaction &ref,
-                                   const Point2f &sample, Vector3f *wi,
-                                   Float *pdf, VisibilityTester *vis) const {
+Spectrum ProjectionLight::Sample_L(const Interaction &ref, const Point2f &u,
+                                   Vector3f *wi, Float *pdf,
+                                   VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
     *pdf = 1.f;
     *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
@@ -101,11 +102,11 @@ Spectrum ProjectionLight::Power() const {
 }
 
 Spectrum ProjectionLight::Sample_L(const Point2f &u1, const Point2f &u2,
-                                   Float time, Ray *ray, Normal3f *Ns,
+                                   Float time, Ray *ray, Normal3f *nLight,
                                    Float *pdfPos, Float *pdfDir) const {
     Vector3f v = UniformSampleCone(u1, cosTotalWidth);
     *ray = Ray(pLight, LightToWorld(v), Infinity, time, 0, medium);
-    *Ns = (Normal3f)ray->d;  /// same here
+    *nLight = (Normal3f)ray->d;  /// same here
     *pdfPos = 1.f;
     *pdfDir = UniformConePdf(cosTotalWidth);
     return intensity * Projection(ray->d);
@@ -115,10 +116,12 @@ Float ProjectionLight::Pdf(const Interaction &, const Vector3f &) const {
     return 0.f;
 }
 
-void ProjectionLight::Pdf(const Ray &, const Normal3f &, Float *pdfPos,
+void ProjectionLight::Pdf(const Ray &ray, const Normal3f &, Float *pdfPos,
                           Float *pdfDir) const {
     *pdfPos = 0.f;
-    *pdfDir = UniformConePdf(cosTotalWidth);
+    *pdfDir = (CosTheta(WorldToLight(ray.d)) >= cosTotalWidth)
+                  ? UniformConePdf(cosTotalWidth)
+                  : 0;
 }
 
 std::shared_ptr<ProjectionLight> CreateProjectionLight(

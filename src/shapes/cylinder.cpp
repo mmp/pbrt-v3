@@ -199,16 +199,17 @@ bool Cylinder::IntersectP(const Ray &r) const {
 
 Float Cylinder::Area() const { return (zMax - zMin) * phiMax * radius; }
 
-bool Cylinder::Sample(const Point2f &u, Interaction *intr) const {
+Interaction Cylinder::Sample(const Point2f &u) const {
+    Interaction it;
     Float z = Lerp(u[0], zMin, zMax);
     Float t = u[1] * phiMax;
     Point3f pObj = Point3f(radius * std::cos(t), radius * std::sin(t), z);
-    intr->n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, 0.f)));
-    if (ReverseOrientation) intr->n *= -1.f;
+    it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, 0.f)));
+    if (ReverseOrientation) it.n *= -1.f;
     Vector3f pObjError(16.f * MachineEpsilon * radius,
                        16.f * MachineEpsilon * radius, 0.f);
-    intr->p = (*ObjectToWorld)(pObj, pObjError, &intr->pError);
-    return true;
+    it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+    return it;
 }
 
 std::shared_ptr<Cylinder> CreateCylinderShape(const Transform *o2w,

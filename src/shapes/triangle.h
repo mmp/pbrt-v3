@@ -79,7 +79,7 @@ class Triangle : public Shape {
                    SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
     Float Area() const;
-    bool Sample(const Point2f &u, Interaction *rp) const;
+    Interaction Sample(const Point2f &u) const;
 
   private:
     // Triangle Private Methods

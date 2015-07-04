@@ -53,7 +53,7 @@ class Cone : public Shape {
                    SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
     Float Area() const;
-    bool Sample(const Point2f &u, Interaction *it) const;
+    Interaction Sample(const Point2f &u) const;
 
   protected:
     // Cone Private Data

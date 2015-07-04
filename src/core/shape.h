@@ -63,12 +63,10 @@ class Shape {
         return Intersect(ray, &tHit, &isect);
     }
     virtual Float Area() const = 0;
-    virtual bool Sample(const Point2f &u, Interaction *si) const = 0;
+    virtual Interaction Sample(const Point2f &u) const = 0;
     virtual Float Pdf(const Interaction &) const { return 1 / Area(); }
-    virtual bool Sample(const Interaction &ref, const Point2f &u,
-                        Interaction *si) const {
-        si->time = ref.time;
-        return Sample(u, si);
+    virtual Interaction Sample(const Interaction &ref, const Point2f &u) const {
+        return Sample(u);
     }
     virtual Float Pdf(const Interaction &ref, const Vector3f &wi) const;
 
