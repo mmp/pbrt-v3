@@ -63,11 +63,12 @@ void TranslucentMaterial::ComputeScatteringFunctions(
     Spectrum ks = Ks->Evaluate(*si).Clamp();
     if (!ks.IsBlack() && (!r.IsBlack() || !t.IsBlack())) {
         Float rough = roughness->Evaluate(*si);
-        Float alpha = TrowbridgeReitzDistribution::RoughnessToAlpha(rough);
+        if (remapRoughness)
+            rough = TrowbridgeReitzDistribution::RoughnessToAlpha(rough);
         MicrofacetDistribution *distrib =
-            ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(alpha, alpha);
+            ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(rough, rough);
         if (!r.IsBlack()) {
-            Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(eta, 1.f);
+            Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f, eta);
             si->bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(
                 r * ks, distrib, fresnel));
         }
@@ -90,6 +91,7 @@ TranslucentMaterial *CreateTranslucentMaterial(const TextureParams &mp) {
         mp.GetFloatTexture("roughness", .1f);
     std::shared_ptr<Texture<Float>> bumpMap =
         mp.GetFloatTextureOrNull("bumpmap");
+    bool remapRoughness = mp.FindBool("remaproughness", true);
     return new TranslucentMaterial(Kd, Ks, roughness, reflect, transmit,
-                                   bumpMap);
+                                   bumpMap, remapRoughness);
 }
