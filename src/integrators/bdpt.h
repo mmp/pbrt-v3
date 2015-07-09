@@ -288,7 +288,7 @@ struct Vertex {
                                      : isect.primitive->GetAreaLight();
 
             // Set _pdfChoice_ to the discrete probability of sampling _light_
-            for (int i = 0; i < scene.lights.size(); ++i) {
+            for (size_t i = 0; i < scene.lights.size(); ++i) {
                 if (scene.lights[i].get() == light) {
                     pdfChoice = lightDistr.func[i] /
                                 (lightDistr.funcInt * lightDistr.Count());

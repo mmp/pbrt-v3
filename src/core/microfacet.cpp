@@ -350,37 +350,27 @@ static Vector3f TrowbridgeReitzSample(const Vector3f &wi, Float alpha_x,
 
 Vector3f TrowbridgeReitzDistribution::Sample_wh(const Vector3f &wo,
                                                 const Point2f &u) const {
-    // Compute sampled half-angle vector $\wh$ for TrowbridgeReitz distribution
     Vector3f wh;
-
     if (!sampleVisibleArea) {
-        Float cosTheta = 0.0f, phi = (2.0f * Pi) * u[1];
-
+        Float cosTheta = 0, phi = (2 * Pi) * u[1];
         if (alphax == alphay) {
             Float tanTheta2 = alphax * alphax * u[0] / (1.0f - u[0]);
-            cosTheta = 1.0f / std::sqrt(1 + tanTheta2);
+            cosTheta = 1 / std::sqrt(1 + tanTheta2);
         } else {
-            phi = std::atan(alphay / alphax *
-                            std::tan(2.f * Pi * u[1] + .5f * Pi));
-            if (u[1] > .5f) {
-                phi += Pi;
-            }
-            Float sinPhi = std::sin(phi);
-            Float cosPhi = std::cos(phi);
-
+            phi =
+                std::atan(alphay / alphax * std::tan(2 * Pi * u[1] + .5f * Pi));
+            if (u[1] > .5f) phi += Pi;
+            Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
             const Float alphax2 = alphax * alphax, alphay2 = alphay * alphay;
-
             const Float alpha2 =
-                1.f / (cosPhi * cosPhi / alphax2 + sinPhi * sinPhi / alphay2);
-            Float tanTheta2 = alpha2 * u[0] / (1.f - u[0]);
-            cosTheta = 1.f / std::sqrt(1 + tanTheta2);
+                1 / (cosPhi * cosPhi / alphax2 + sinPhi * sinPhi / alphay2);
+            Float tanTheta2 = alpha2 * u[0] / (1 - u[0]);
+            cosTheta = 1 / std::sqrt(1 + tanTheta2);
         }
-
         Float sinTheta =
             std::sqrt(std::max((Float)0., (Float)1. - cosTheta * cosTheta));
         wh = SphericalDirection(sinTheta, cosTheta, phi);
         if (!SameHemisphere(wo, wh)) wh = -wh;
-
     } else {
         bool flip = wo.z < 0;
         wh = TrowbridgeReitzSample(flip ? -wo : wo, alphax, alphay, u[0], u[1]);

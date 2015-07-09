@@ -61,7 +61,7 @@ Spectrum UniformSampleAllLights(const Interaction &isect, const Scene &scene,
                                 Sampler &sampler,
                                 const std::vector<int> &numLightSamples,
                                 MemoryArena &arena, bool handleMedia = false);
-Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
+Spectrum UniformSampleOneLight(const Interaction &isect, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena,
                                bool handleMedia = false);
 Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,

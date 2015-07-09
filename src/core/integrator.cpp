@@ -111,24 +111,25 @@ Distribution1D *ComputeLightSamplingCDF(const Scene &scene) {
     return new Distribution1D(&lightPower[0], lightPower.size());
 }
 
-Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
+Spectrum UniformSampleAllLights(const Interaction &isect, const Scene &scene,
                                 Sampler &sampler,
                                 const std::vector<int> &numLightSamples,
                                 MemoryArena &arena, bool handleMedia) {
     Spectrum L(0.f);
-    for (uint32_t i = 0; i < scene.lights.size(); ++i) {
+    for (size_t i = 0; i < scene.lights.size(); ++i) {
+        // Accumulate contribution of _i_th light to _L_
         const std::shared_ptr<Light> &light = scene.lights[i];
         int nSamples = numLightSamples[i];
         const Point2f *lightSamples = sampler.Get2DArray(nSamples);
         const Point2f *shadingSamples = sampler.Get2DArray(nSamples);
-        if (lightSamples == NULL || shadingSamples == NULL) {
-            L += EstimateDirect(it, sampler.Get2D(), *light, sampler.Get2D(),
+        if (lightSamples == nullptr || shadingSamples == nullptr) {
+            L += EstimateDirect(isect, sampler.Get2D(), *light, sampler.Get2D(),
                                 scene, sampler, arena, handleMedia);
         } else {
             // Estimate direct lighting using sample arrays
             Spectrum Ld(0.f);
             for (int j = 0; j < nSamples; ++j) {
-                Ld += EstimateDirect(it, shadingSamples[j], *light,
+                Ld += EstimateDirect(isect, shadingSamples[j], *light,
                                      lightSamples[j], scene, sampler, arena,
                                      handleMedia);
             }
@@ -138,7 +139,7 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
     return L;
 }
 
-Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
+Spectrum UniformSampleOneLight(const Interaction &isect, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena,
                                bool handleMedia) {
     // Randomly choose a single light to sample, _light_
@@ -148,7 +149,7 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
     const std::shared_ptr<Light> &light = scene.lights[lightNum];
     Point2f lightSample = sampler.Get2D();
     Point2f shadingSample = sampler.Get2D();
-    return (Float)nLights * EstimateDirect(it, shadingSample, *light,
+    return (Float)nLights * EstimateDirect(isect, shadingSample, *light,
                                            lightSample, scene, sampler, arena,
                                            handleMedia);
 }
@@ -199,7 +200,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
     }
 
     // Sample material with multiple importance sampling
-    if (!(IsDeltaLight(light.flags))) {
+    if (!IsDeltaLight(light.flags)) {
         Spectrum f;
         bool sampledSpecular = false;
         if (it.IsSurfaceInteraction()) {
@@ -304,7 +305,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray
-                    Spectrum L = 0.f;
+                    Spectrum L(0.f);
                     if (rayWeight > 0.f)
                         L = Li(ray, scene, *tileSampler, arena);
 
