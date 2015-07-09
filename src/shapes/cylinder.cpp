@@ -206,8 +206,11 @@ Interaction Cylinder::Sample(const Point2f &u) const {
     Point3f pObj = Point3f(radius * std::cos(t), radius * std::sin(t), z);
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, 0.f)));
     if (ReverseOrientation) it.n *= -1.f;
-    Vector3f pObjError(16.f * MachineEpsilon * radius,
-                       16.f * MachineEpsilon * radius, 0.f);
+    // Reproject _pObj_ to cylinder surface and compute _pObjError_
+    Float hitRad = std::sqrt(pObj.x * pObj.x + pObj.y * pObj.y);
+    pObj.x *= radius / hitRad;
+    pObj.y *= radius / hitRad;
+    Vector3f pObjError = gamma(3) * Abs(Vector3f(pObj.x, pObj.y, 0.f));
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
     return it;
 }

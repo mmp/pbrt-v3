@@ -217,8 +217,9 @@ Interaction Sphere::Sample(const Point2f &u) const {
     Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(u);
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
     if (ReverseOrientation) it.n *= -1.f;
-    Vector3f pObjError =
-        16.f * MachineEpsilon * Vector3f(radius, radius, radius);
+    // Reproject _pObj_ to sphere surface and compute _pObjError_
+    pObj *= radius / Distance(pObj, Point3f(0, 0, 0));
+    Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
     return it;
 }
@@ -226,36 +227,35 @@ Interaction Sphere::Sample(const Point2f &u) const {
 Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
     // Compute coordinate system for sphere sampling
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
-    Point3f pOrigin =
-        OffsetRayOrigin(ref.p, ref.pError, ref.n, pCenter - ref.p);
     Vector3f wc = Normalize(pCenter - ref.p);
     Vector3f wcX, wcY;
     CoordinateSystem(wc, &wcX, &wcY);
 
     // Sample uniformly on sphere if $\pt{}$ is inside it
+    Point3f pOrigin =
+        OffsetRayOrigin(ref.p, ref.pError, ref.n, pCenter - ref.p);
     if (DistanceSquared(pOrigin, pCenter) <= 1.0001f * radius * radius)
         return Sample(u);
 
     // Sample sphere uniformly inside subtended cone
-    Interaction it;
 
     // Compute $\theta$ and $\phi$ values for sample in cone
     Float sinThetaMax2 = radius * radius / DistanceSquared(ref.p, pCenter);
     Float cosThetaMax = std::sqrt(std::max((Float)0, 1 - sinThetaMax2));
-    Float cosTheta = ((Float)1. - u[0]) + u[0] * cosThetaMax;
-    Float sinTheta = std::sqrt((Float)1. - cosTheta * cosTheta);
+    Float cosTheta = (1 - u[0]) + u[0] * cosThetaMax;
+    Float sinTheta = std::sqrt(1 - cosTheta * cosTheta);
     Float phi = u[1] * 2 * Pi;
 
     // Compute angle $\alpha$ from center of sphere to sampled point on surface
-    Float D = 1 -
-              DistanceSquared(ref.p, pCenter) * sinTheta * sinTheta /
-                  (radius * radius);
+    Float D2 = 1 -
+               DistanceSquared(ref.p, pCenter) * sinTheta * sinTheta /
+                   (radius * radius);
     Float cosAlpha;
-    if (D <= 0)
+    if (D2 <= 0)
         cosAlpha = std::sqrt(sinThetaMax2);
     else
         cosAlpha = Distance(ref.p, pCenter) / radius * sinTheta * sinTheta +
-                   cosTheta * std::sqrt(D);
+                   cosTheta * std::sqrt(D2);
     // else cosAlpha = sinTheta * sinTheta / std::sqrt(sinThetaMax2) +
     //    cosTheta * std::sqrt(1 - sinTheta * sinTheta / sinThetaMax2);
     Float sinAlpha = std::sqrt(std::max((Float)0, 1 - cosAlpha * cosAlpha));
@@ -263,23 +263,30 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
     // Compute surface normal and sampled point on sphere
     Vector3f nx, ny, nz = -Normalize(pCenter - ref.p);
     CoordinateSystem(nz, &nx, &ny);
-    Vector3f n = SphericalDirection(sinAlpha, cosAlpha, phi, nx, ny, nz);
-    Point3f p = radius * Point3f(n.x, n.y, n.z);
-    it.p = (*ObjectToWorld)(p);
-    it.n = (*ObjectToWorld)(Normal3f(n));
+    Vector3f nObj = SphericalDirection(sinAlpha, cosAlpha, phi, nx, ny, nz);
+    Point3f pObj = radius * Point3f(nObj.x, nObj.y, nObj.z);
+
+    // Return _Interaction_ for sampled point on sphere
+    Interaction it;
+
+    // Reproject _pObj_ to sphere surface and compute _pObjError_
+    pObj *= radius / Distance(pObj, Point3f(0, 0, 0));
+    Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
+    it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+    it.n = (*ObjectToWorld)(Normal3f(nObj));
     if (ReverseOrientation) it.n *= -1.f;
     return it;
 }
 
 Float Sphere::Pdf(const Interaction &ref, const Vector3f &wi) const {
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
-    // Return uniform weight if point inside sphere
+    // Return uniform PDF if point is inside sphere
     Point3f pOrigin =
         OffsetRayOrigin(ref.p, ref.pError, ref.n, pCenter - ref.p);
     if (DistanceSquared(pOrigin, pCenter) <= 1.0001f * radius * radius)
         return Shape::Pdf(ref, wi);
 
-    // Compute general sphere weight
+    // Compute general sphere PDF
     Float sinThetaMax2 = radius * radius / DistanceSquared(ref.p, pCenter);
     Float cosThetaMax = std::sqrt(std::max((Float)0, 1 - sinThetaMax2));
     return UniformConePdf(cosThetaMax);
