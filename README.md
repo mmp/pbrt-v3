@@ -160,8 +160,6 @@ huge help. Specific areas of interest include:
   killeroo in Chapters 8 and 9...
   * Showing the capabilities of the new curves primitive: hair, fur, fields
   of grass, ...
-  * It would be nice to have [MirageYM's 3D
-  Models](https://github.com/MirageYM/3DModels) available in pbrt's scene
-  format.
-  
+  * It would be great to have the [Digital
+  Emily](http://gl.ict.usc.edu/Research/DigitalEmily2) model available in pbrt.
 
