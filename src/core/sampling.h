@@ -156,7 +156,7 @@ inline Vector3f CosineSampleHemisphere(const Point2f &u) {
     return Vector3f(d.x, d.y, z);
 }
 
-inline Float CosineHemispherePdf(Float costheta) { return costheta * InvPi; }
+inline Float CosineHemispherePdf(Float cosTheta) { return cosTheta * InvPi; }
 
 inline Float BalanceHeuristic(int nf, Float fPdf, int ng, Float gPdf) {
     return (nf * fPdf) / (nf * fPdf + ng * gPdf);

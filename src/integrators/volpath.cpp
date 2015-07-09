@@ -72,12 +72,11 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             // Possibly add emitted light and terminate
             if (bounces == 0 || specularBounce) {
                 // Add emitted light at path vertex or from the environment
-                if (foundIntersection) {
+                if (foundIntersection)
                     L += pathThroughput * isect.Le(-ray.d);
-                } else {
+                else
                     for (const auto &light : scene.lights)
                         L += pathThroughput * light->Le(ray);
-                }
             }
             if (!foundIntersection || bounces >= maxDepth) break;
 

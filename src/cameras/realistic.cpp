@@ -684,12 +684,12 @@ Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
     ray->d = Normalize(ray->d);
     ray->medium = medium;
     // Return weighting for _RealisticCamera_ ray
-    Float costheta = Normalize(rFilm.d).z;
+    Float cosTheta = Normalize(rFilm.d).z;
     if (simpleWeighting)
-        return (costheta * costheta) * (costheta * costheta);
+        return (cosTheta * cosTheta) * (cosTheta * cosTheta);
     else {
         Float pdf = ExitPupilPdf(pFilm, pRear);
-        return ((costheta * costheta) * (costheta * costheta)) /
+        return ((cosTheta * cosTheta) * (cosTheta * cosTheta)) /
                (LensRearZ() * LensRearZ() * pdf);
     }
 }
@@ -715,9 +715,9 @@ Float RealisticCamera::ExitPupilPdf(const Point3f &pFilm,
 
     // Return PDF based on whether lens point is inside lens sampling area
     if (Inside(pRot, pupilBounds))
-        return 1.f / pupilBounds.Area();
+        return 1 / pupilBounds.Area();
     else
-        return 0.f;
+        return 0;
 }
 
 RealisticCamera *CreateRealisticCamera(const ParamSet &params,

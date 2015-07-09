@@ -192,19 +192,19 @@ bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
 
 Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
                                  const Point2f &sample) const {
-    Float costheta;
+    Float cosTheta;
     if (std::abs(g) < 1e-3)
-        costheta = 1.f - 2.f * sample.x;
+        cosTheta = 1.f - 2.f * sample.x;
     else {
         Float sqrTerm = (1.f - g * g) / (1.f - g + 2.f * g * sample.x);
-        costheta = (1.f + g * g - sqrTerm * sqrTerm) / (2.f * g);
+        cosTheta = (1.f + g * g - sqrTerm * sqrTerm) / (2.f * g);
     }
-    Float sintheta =
-        std::sqrt(std::max((Float)0., (Float)1. - costheta * costheta));
+    Float sinTheta =
+        std::sqrt(std::max((Float)0., (Float)1. - cosTheta * cosTheta));
     Float phi = 2 * Pi * sample.y;
     Vector3f v1, v2;
     CoordinateSystem(wo, &v1, &v2);
 
-    *wi = SphericalDirection(sintheta, costheta, phi, v1, v2, -wo);
-    return PhaseHG(-costheta, g);
+    *wi = SphericalDirection(sinTheta, cosTheta, phi, v1, v2, -wo);
+    return PhaseHG(-cosTheta, g);
 }

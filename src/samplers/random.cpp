@@ -56,12 +56,12 @@ std::unique_ptr<Sampler> RandomSampler::Clone(int seed) {
 }
 
 void RandomSampler::StartPixel(const Point2i &p) {
-    for (int i = 0; i < sampleArray1D.size(); ++i)
-        for (int j = 0; j < sampleArray1D[i].size(); ++j)
+    for (size_t i = 0; i < sampleArray1D.size(); ++i)
+        for (size_t j = 0; j < sampleArray1D[i].size(); ++j)
             sampleArray1D[i][j] = rng.UniformFloat();
 
-    for (int i = 0; i < sampleArray2D.size(); ++i)
-        for (int j = 0; j < sampleArray2D[i].size(); ++j)
+    for (size_t i = 0; i < sampleArray2D.size(); ++i)
+        for (size_t j = 0; j < sampleArray2D[i].size(); ++j)
             sampleArray2D[i][j] =
                 Point2f(rng.UniformFloat(), rng.UniformFloat());
     Sampler::StartPixel(p);

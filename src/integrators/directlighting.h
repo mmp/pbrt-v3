@@ -49,17 +49,20 @@ enum class LightStrategy { UniformSampleAll, UniformSampleOne };
 class DirectLightingIntegrator : public SamplerIntegrator {
   public:
     // DirectLightingIntegrator Public Methods
-    DirectLightingIntegrator(LightStrategy ls, int maxDepth,
+    DirectLightingIntegrator(LightStrategy strategy, int maxDepth,
                              std::shared_ptr<const Camera> camera,
-                             std::shared_ptr<Sampler> sampler);
+                             std::shared_ptr<Sampler> sampler)
+        : SamplerIntegrator(camera, sampler),
+          strategy(strategy),
+          maxDepth(maxDepth) {}
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena) const;
     void Preprocess(const Scene &scene, Sampler &sampler);
 
   private:
     // DirectLightingIntegrator Private Data
-    LightStrategy strategy;
-    int maxDepth;
+    const LightStrategy strategy;
+    const int maxDepth;
     std::vector<int> numLightSamples;
 };
 

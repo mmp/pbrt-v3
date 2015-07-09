@@ -690,15 +690,18 @@ Interaction Triangle::Sample(const Point2f &u) const {
     const Point3f &p0 = mesh->p[v[0]];
     const Point3f &p1 = mesh->p[v[1]];
     const Point3f &p2 = mesh->p[v[2]];
-    it.p = b[0] * p0 + b[1] * p1 + (1.f - b[0] - b[1]) * p2;
+    it.p = b[0] * p0 + b[1] * p1 + (1 - b[0] - b[1]) * p2;
+    // Compute surface normal for sampled point on triangle
     if (mesh->n)
         it.n = Normalize(b[0] * mesh->n[v[0]] + b[1] * mesh->n[v[1]] +
-                         (1.f - b[0] - b[1]) * mesh->n[v[2]]);
+                         (1 - b[0] - b[1]) * mesh->n[v[2]]);
     else
         it.n = Normalize(Normal3f(Cross(p1 - p0, p2 - p0)));
     if (ReverseOrientation) it.n *= -1.f;
+
+    // Compute error bounds for sampled point on triangle
     Point3f pAbsSum =
-        Abs(b[0] * p0) + Abs(b[1] * p1) + Abs((1.f - b[0] - b[1]) * p2);
+        Abs(b[0] * p0) + Abs(b[1] * p1) + Abs((1 - b[0] - b[1]) * p2);
     it.pError = gamma(6) * Vector3f(pAbsSum.x, pAbsSum.y, pAbsSum.z);
     return it;
 }

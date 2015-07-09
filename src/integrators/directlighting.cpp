@@ -38,14 +38,6 @@
 #include "paramset.h"
 
 // DirectLightingIntegrator Method Definitions
-DirectLightingIntegrator::DirectLightingIntegrator(
-    LightStrategy st, int md, std::shared_ptr<const Camera> camera,
-    std::shared_ptr<Sampler> sampler)
-    : SamplerIntegrator(camera, sampler) {
-    maxDepth = md;
-    strategy = st;
-}
-
 void DirectLightingIntegrator::Preprocess(const Scene &scene,
                                           Sampler &sampler) {
     if (strategy == LightStrategy::UniformSampleAll) {
@@ -55,7 +47,7 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
                 int nSamples = sampler.RoundCount(light->nSamples);
                 sampler.Request2DArray(nSamples);
                 sampler.Request2DArray(nSamples);
-                numLightSamples.push_back(nSamples);
+                if (i == 0) numLightSamples.push_back(nSamples);
             }
         }
     }
@@ -80,7 +72,6 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
 
     // Compute direct lighting for _DirectLightingIntegrator_ integrator
     if (scene.lights.size() > 0) {
-        // Apply direct lighting strategy
         if (strategy == LightStrategy::UniformSampleAll)
             L += UniformSampleAllLights(isect, scene, sampler, numLightSamples,
                                         arena, false);

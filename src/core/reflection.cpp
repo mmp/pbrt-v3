@@ -240,15 +240,15 @@ Spectrum KajiyaKay::f(const Vector3f &wo, const Vector3f &wi) const {
         if (!(wh.x == 0.f && wh.y == 0.f && wh.z == 0.f)) {
             wh = Normalize(wh);
 #if 0
-            Float costhetah = Dot(wo, wh);
-            Float sinthetah = std::sqrt(std::max((Float)0., (Float)1. - costhetah * costhetah));
-            Float costhetao = CosTheta(wo), sinthetao = SinTheta(wo);
-            Float spec = std::pow(costhetao * costhetah + sinthetao * sinthetah,
+            Float cosThetaH = Dot(wo, wh);
+            Float sinThetaH = std::sqrt(std::max((Float)0, (Float)1 - cosThetaH * cosThetaH));
+            Float cosThetaO = CosTheta(wo), sinThetaO = SinTheta(wo);
+            Float spec = std::pow(cosThetao * cosThetah + sinThetaO * sinThetaH,
                                   exponent);
 #else
             Float tdoth = wh.x;
             Float spec = std::pow(
-                std::sqrt(std::max((Float)0., (Float)1. - tdoth * tdoth)),
+                std::sqrt(std::max((Float)0, (Float)1 - tdoth * tdoth)),
                 exponent);
 #endif
             specular = spec * Ks;
