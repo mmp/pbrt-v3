@@ -71,9 +71,9 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
     cosTotalWidth = std::cos(std::atan(tanDiag));
 }
 
-Spectrum ProjectionLight::Sample_L(const Interaction &ref, const Point2f &u,
-                                   Vector3f *wi, Float *pdf,
-                                   VisibilityTester *vis) const {
+Spectrum ProjectionLight::Sample_Li(const Interaction &ref, const Point2f &u,
+                                    Vector3f *wi, Float *pdf,
+                                    VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
     *pdf = 1.f;
     *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
@@ -101,9 +101,13 @@ Spectrum ProjectionLight::Power() const {
            intensity * 2.f * Pi * (1.f - cosTotalWidth);
 }
 
-Spectrum ProjectionLight::Sample_L(const Point2f &u1, const Point2f &u2,
-                                   Float time, Ray *ray, Normal3f *nLight,
-                                   Float *pdfPos, Float *pdfDir) const {
+Float ProjectionLight::Pdf_Li(const Interaction &, const Vector3f &) const {
+    return 0.f;
+}
+
+Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
+                                    Float time, Ray *ray, Normal3f *nLight,
+                                    Float *pdfPos, Float *pdfDir) const {
     Vector3f v = UniformSampleCone(u1, cosTotalWidth);
     *ray = Ray(pLight, LightToWorld(v), Infinity, time, 0, medium);
     *nLight = (Normal3f)ray->d;  /// same here
@@ -112,12 +116,8 @@ Spectrum ProjectionLight::Sample_L(const Point2f &u1, const Point2f &u2,
     return intensity * Projection(ray->d);
 }
 
-Float ProjectionLight::Pdf(const Interaction &, const Vector3f &) const {
-    return 0.f;
-}
-
-void ProjectionLight::Pdf(const Ray &ray, const Normal3f &, Float *pdfPos,
-                          Float *pdfDir) const {
+void ProjectionLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
+                             Float *pdfDir) const {
     *pdfPos = 0.f;
     *pdfDir = (CosTheta(WorldToLight(ray.d)) >= cosTotalWidth)
                   ? UniformConePdf(cosTotalWidth)

@@ -46,9 +46,9 @@ SpotLight::SpotLight(const Transform &LightToWorld, const Medium *medium,
       intensity(intensity),
       cosTotalWidth(std::cos(Radians(width))),
       cosFalloffStart(std::cos(Radians(fall))) {}
-Spectrum SpotLight::Sample_L(const Interaction &ref, const Point2f &u,
-                             Vector3f *wi, Float *pdf,
-                             VisibilityTester *vis) const {
+Spectrum SpotLight::Sample_Li(const Interaction &ref, const Point2f &u,
+                              Vector3f *wi, Float *pdf,
+                              VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
     *pdf = 1.f;
     *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
@@ -71,13 +71,13 @@ Spectrum SpotLight::Power() const {
            (1.f - .5f * (cosFalloffStart + cosTotalWidth));
 }
 
-Float SpotLight::Pdf(const Interaction &, const Vector3f &) const {
+Float SpotLight::Pdf_Li(const Interaction &, const Vector3f &) const {
     return 0.f;
 }
 
-Spectrum SpotLight::Sample_L(const Point2f &u1, const Point2f &u2, Float time,
-                             Ray *ray, Normal3f *nLight, Float *pdfPos,
-                             Float *pdfDir) const {
+Spectrum SpotLight::Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
+                              Ray *ray, Normal3f *nLight, Float *pdfPos,
+                              Float *pdfDir) const {
     Vector3f w = UniformSampleCone(u1, cosTotalWidth);
     *ray = Ray(pLight, LightToWorld(w), Infinity, time, 0, medium);
     *nLight = (Normal3f)ray->d;
@@ -86,8 +86,8 @@ Spectrum SpotLight::Sample_L(const Point2f &u1, const Point2f &u2, Float time,
     return intensity * Falloff(ray->d);
 }
 
-void SpotLight::Pdf(const Ray &ray, const Normal3f &, Float *pdfPos,
-                    Float *pdfDir) const {
+void SpotLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
+                       Float *pdfDir) const {
     *pdfPos = 0;
     *pdfDir = (CosTheta(WorldToLight(ray.d)) >= cosTotalWidth)
                   ? UniformConePdf(cosTotalWidth)

@@ -42,9 +42,6 @@
 #include "paramset.h"
 #include "progressreporter.h"
 
-using std::cout;
-using std::endl;
-
 STAT_TIMER("Time/Rendering", renderingTime);
 
 // BDPT Infrastructure
@@ -175,8 +172,8 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
     RayDifferential ray;
     Normal3f Nl;
     Float pdfPos, pdfDir;
-    Spectrum Le = light->Sample_L(sampler.Get2D(), sampler.Get2D(), time, &ray,
-                                  &Nl, &pdfPos, &pdfDir);
+    Spectrum Le = light->Sample_Le(sampler.Get2D(), sampler.Get2D(), time, &ray,
+                                   &Nl, &pdfPos, &pdfDir);
     if (pdfPos == 0.f || pdfDir == 0.f || Le.IsBlack()) return 0;
 
     // Generate first vertex on light subpath and start random walk
@@ -456,7 +453,7 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
             int lightNum =
                 lightDistr.SampleDiscrete(sampler.Get1D(), &lightPdf);
             const std::shared_ptr<Light> &light = scene.lights[lightNum];
-            Spectrum lightWeight = light->Sample_L(
+            Spectrum lightWeight = light->Sample_Li(
                 pt.GetInteraction(), sampler.Get2D(), &wi, &pdf, &vis);
             if (pdf > 0 && !lightWeight.IsBlack()) {
                 sampled = Vertex(VertexType::Light,

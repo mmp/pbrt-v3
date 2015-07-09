@@ -108,7 +108,8 @@ inline Float InfiniteLightDensity(const Scene &scene,
     Float pdf = 0;
     for (size_t i = 0; i < scene.lights.size(); ++i)
         if (scene.lights[i]->flags == LightFlags::Infinite)
-            pdf += scene.lights[i]->Pdf(Interaction(), -d) * lightDistr.func[i];
+            pdf +=
+                scene.lights[i]->Pdf_Li(Interaction(), -d) * lightDistr.func[i];
     return pdf / (lightDistr.funcInt * lightDistr.Count());
 }
 
@@ -265,8 +266,8 @@ struct Vertex {
             const Light *light = type == VertexType::Light
                                      ? ei.light
                                      : isect.primitive->GetAreaLight();
-            light->Pdf(Ray(GetPosition(), d, GetTime()), GetGeoNormal(),
-                       &unused, &pdf);
+            light->Pdf_Le(Ray(GetPosition(), d, GetTime()), GetGeoNormal(),
+                          &unused, &pdf);
             pdf *= invL2;
         }
         if (v.IsOnSurface()) pdf *= AbsDot(v.GetGeoNormal(), d);
@@ -295,8 +296,8 @@ struct Vertex {
                 }
             }
             Assert(pdfChoice != 0);
-            light->Pdf(Ray(GetPosition(), d, GetTime()), GetGeoNormal(),
-                       &pdfPos, &unused);
+            light->Pdf_Le(Ray(GetPosition(), d, GetTime()), GetGeoNormal(),
+                          &pdfPos, &unused);
             return pdfPos * pdfChoice;
         }
     }

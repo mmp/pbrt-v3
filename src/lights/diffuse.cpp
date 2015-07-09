@@ -48,9 +48,9 @@ DiffuseAreaLight::DiffuseAreaLight(const Transform &LightToWorld,
 
 Spectrum DiffuseAreaLight::Power() const { return Lemit * area * Pi; }
 
-Spectrum DiffuseAreaLight::Sample_L(const Interaction &ref, const Point2f &u,
-                                    Vector3f *wi, Float *pdf,
-                                    VisibilityTester *vis) const {
+Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
+                                     Vector3f *wi, Float *pdf,
+                                     VisibilityTester *vis) const {
     Interaction pShape = shape->Sample(ref, u);
     // Handle coincident light sample point and reference point
     if ((ref.p - pShape.p).LengthSquared() == 0) {
@@ -64,13 +64,14 @@ Spectrum DiffuseAreaLight::Sample_L(const Interaction &ref, const Point2f &u,
     return L(pShape, -*wi);
 }
 
-Float DiffuseAreaLight::Pdf(const Interaction &ref, const Vector3f &wi) const {
+Float DiffuseAreaLight::Pdf_Li(const Interaction &ref,
+                               const Vector3f &wi) const {
     return shape->Pdf(ref, wi);
 }
 
-Spectrum DiffuseAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
-                                    Float time, Ray *ray, Normal3f *nLight,
-                                    Float *pdfPos, Float *pdfDir) const {
+Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
+                                     Float time, Ray *ray, Normal3f *nLight,
+                                     Float *pdfPos, Float *pdfDir) const {
     Interaction pShape = shape->Sample(u1);
     pShape.mediumInterface = MediumInterface(medium);
     Vector3f w = CosineSampleHemisphere(u2);
@@ -85,8 +86,8 @@ Spectrum DiffuseAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
     return L(pShape, w);
 }
 
-void DiffuseAreaLight::Pdf(const Ray &ray, const Normal3f &n, Float *pdfPos,
-                           Float *pdfDir) const {
+void DiffuseAreaLight::Pdf_Le(const Ray &ray, const Normal3f &n, Float *pdfPos,
+                              Float *pdfDir) const {
     Interaction it(ray.o, n, Vector3f(), Vector3f(), ray.time,
                    MediumInterface(medium));
     *pdfPos = shape->Pdf(it);

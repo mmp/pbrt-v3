@@ -38,10 +38,10 @@
 #include "sampling.h"
 
 // GonioPhotometricLight Method Definitions
-Spectrum GonioPhotometricLight::Sample_L(const Interaction &ref,
-                                         const Point2f &u, Vector3f *wi,
-                                         Float *pdf,
-                                         VisibilityTester *vis) const {
+Spectrum GonioPhotometricLight::Sample_Li(const Interaction &ref,
+                                          const Point2f &u, Vector3f *wi,
+                                          Float *pdf,
+                                          VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
     *pdf = 1.f;
     *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
@@ -55,9 +55,15 @@ Spectrum GonioPhotometricLight::Power() const {
                SpectrumType::Illuminant);
 }
 
-Spectrum GonioPhotometricLight::Sample_L(const Point2f &u1, const Point2f &u2,
-                                         Float time, Ray *ray, Normal3f *nLight,
-                                         Float *pdfPos, Float *pdfDir) const {
+Float GonioPhotometricLight::Pdf_Li(const Interaction &,
+                                    const Vector3f &) const {
+    return 0.f;
+}
+
+Spectrum GonioPhotometricLight::Sample_Le(const Point2f &u1, const Point2f &u2,
+                                          Float time, Ray *ray,
+                                          Normal3f *nLight, Float *pdfPos,
+                                          Float *pdfDir) const {
     *ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time, 0, medium);
     *nLight = (Normal3f)ray->d;
     *pdfPos = 1.f;
@@ -65,12 +71,8 @@ Spectrum GonioPhotometricLight::Sample_L(const Point2f &u1, const Point2f &u2,
     return intensity * Scale(ray->d);
 }
 
-Float GonioPhotometricLight::Pdf(const Interaction &, const Vector3f &) const {
-    return 0.f;
-}
-
-void GonioPhotometricLight::Pdf(const Ray &, const Normal3f &, Float *pdfPos,
-                                Float *pdfDir) const {
+void GonioPhotometricLight::Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
+                                   Float *pdfDir) const {
     *pdfPos = 0.f;
     *pdfDir = UniformSpherePdf();
 }

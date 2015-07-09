@@ -343,9 +343,9 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     haltonDim += 5;
                     Normal3f Nl;
                     Float pdfPos, pdfDir;
-                    Spectrum Le = light->Sample_L(lightSample0, lightSample1,
-                                                  lightSampleTime, &photonRay,
-                                                  &Nl, &pdfPos, &pdfDir);
+                    Spectrum Le = light->Sample_Le(lightSample0, lightSample1,
+                                                   lightSampleTime, &photonRay,
+                                                   &Nl, &pdfPos, &pdfDir);
                     if (pdfPos == 0.f || pdfDir == 0.f || Le.IsBlack())
                         continue;
                     Spectrum alpha = (AbsDot(Nl, photonRay.d) * Le) /

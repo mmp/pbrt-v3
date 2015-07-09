@@ -163,7 +163,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
     Vector3f wi;
     Float lightPdf = 0.f, shadingPdf = 0.f;
     VisibilityTester visibility;
-    Spectrum Li = light.Sample_L(it, lightSample, &wi, &lightPdf, &visibility);
+    Spectrum Li = light.Sample_Li(it, lightSample, &wi, &lightPdf, &visibility);
     if (lightPdf > 0. && !Li.IsBlack()) {
         Spectrum f;
         if (it.IsSurfaceInteraction()) {
@@ -221,7 +221,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
         if (!f.IsBlack() && shadingPdf > 0.f) {
             Float weight = 1.f;
             if (!sampledSpecular) {
-                lightPdf = light.Pdf(it, wi);
+                lightPdf = light.Pdf_Li(it, wi);
                 if (lightPdf == 0.f) return Ld;
                 weight = PowerHeuristic(1, shadingPdf, 1, lightPdf);
             }

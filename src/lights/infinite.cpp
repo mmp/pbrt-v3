@@ -91,9 +91,9 @@ Spectrum InfiniteAreaLight::Le(const RayDifferential &ray) const {
     return Spectrum(Lmap->Lookup(st), SpectrumType::Illuminant);
 }
 
-Spectrum InfiniteAreaLight::Sample_L(const Interaction &ref,
-                                     const Point2f &lightSample, Vector3f *wi,
-                                     Float *pdf, VisibilityTester *vis) const {
+Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref,
+                                      const Point2f &lightSample, Vector3f *wi,
+                                      Float *pdf, VisibilityTester *vis) const {
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
     Point2f uv = distribution->SampleContinuous(lightSample, &mapPdf);
@@ -116,7 +116,7 @@ Spectrum InfiniteAreaLight::Sample_L(const Interaction &ref,
     return Spectrum(Lmap->Lookup(uv), SpectrumType::Illuminant);
 }
 
-Float InfiniteAreaLight::Pdf(const Interaction &, const Vector3f &w) const {
+Float InfiniteAreaLight::Pdf_Li(const Interaction &, const Vector3f &w) const {
     Vector3f wi = WorldToLight(w);
     Float theta = SphericalTheta(wi), phi = SphericalPhi(wi);
     Float sinTheta = std::sin(theta);
@@ -125,9 +125,9 @@ Float InfiniteAreaLight::Pdf(const Interaction &, const Vector3f &w) const {
            (2.f * Pi * Pi * sinTheta);
 }
 
-Spectrum InfiniteAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
-                                     Float time, Ray *ray, Normal3f *nLight,
-                                     Float *pdfPos, Float *pdfDir) const {
+Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
+                                      Float time, Ray *ray, Normal3f *nLight,
+                                      Float *pdfPos, Float *pdfDir) const {
     // Compute direction for infinite light sample ray
     Point2f lightSample = u1;
 
@@ -156,8 +156,8 @@ Spectrum InfiniteAreaLight::Sample_L(const Point2f &u1, const Point2f &u2,
     return Spectrum(Lmap->Lookup(uv), SpectrumType::Illuminant);
 }
 
-void InfiniteAreaLight::Pdf(const Ray &ray, const Normal3f &, Float *pdfPos,
-                            Float *pdfDir) const {
+void InfiniteAreaLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
+                               Float *pdfDir) const {
     Vector3f d = -WorldToLight(ray.d);
     Float theta = std::acos(d.z), phi = std::atan2(d.y, d.x);
     Point2f uv(phi * Inv2Pi, theta * InvPi);

@@ -73,18 +73,18 @@ class Light {
                 "Proceed at your own risk; your image may have errors or\n"
                 "the system may crash as a result of this.");
     }
-    virtual Spectrum Sample_L(const Interaction &ref, const Point2f &u,
-                              Vector3f *wi, Float *pdf,
-                              VisibilityTester *vis) const = 0;
+    virtual Spectrum Sample_Li(const Interaction &ref, const Point2f &u,
+                               Vector3f *wi, Float *pdf,
+                               VisibilityTester *vis) const = 0;
     virtual Spectrum Power() const = 0;
     virtual void Preprocess(const Scene &scene) {}
     virtual Spectrum Le(const RayDifferential &r) const;
-    virtual Float Pdf(const Interaction &ref, const Vector3f &wi) const = 0;
-    virtual Spectrum Sample_L(const Point2f &u1, const Point2f &u2, Float time,
-                              Ray *ray, Normal3f *nLight, Float *pdfPos,
-                              Float *pdfDir) const = 0;
-    virtual void Pdf(const Ray &ray, const Normal3f &nLight, Float *pdfPos,
-                     Float *pdfDir) const = 0;
+    virtual Float Pdf_Li(const Interaction &ref, const Vector3f &wi) const = 0;
+    virtual Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
+                               Ray *ray, Normal3f *nLight, Float *pdfPos,
+                               Float *pdfDir) const = 0;
+    virtual void Pdf_Le(const Ray &ray, const Normal3f &nLight, Float *pdfPos,
+                        Float *pdfDir) const = 0;
 
     // Light Public Data
     const LightFlags flags;
