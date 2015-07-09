@@ -51,21 +51,25 @@
 class MLTSampler : public Sampler {
   public:
     // MLTSampler Public Methods
-    MLTSampler(int64_t mutationsPerPixel, int chainIndex, Float sigma,
+    MLTSampler(int64_t mutationsPerPixel, int id, Float sigma,
                Float largeStepProb);
     Float Get1D();
     Point2f Get2D();
     std::unique_ptr<Sampler> Clone(int seed);
-    void SetStream(int streamCount_, int streamIndex_);
     void Begin();
     void Accept();
     void Reject();
+    void SetStream(int streamCount_, int streamIndex_);
+    int GetNextIndex() { return streamIndex + streamCount * sampleIndex++; }
 
   protected:
     // MLTSampler Private Declarations
-    struct MLTSample {
-        Float value = 0, value_backup = 0;
-        int modify = 0, modify_backup = 0;
+    struct PrimarySample {
+        Float value = 0;
+        // PrimarySample Members
+        int modify = 0;
+        Float value_backup = 0;
+        int modify_backup = 0;
         void Backup() {
             value_backup = value;
             modify_backup = modify;
@@ -77,21 +81,19 @@ class MLTSampler : public Sampler {
     };
 
     // MLTSampler Private Methods
-    Float NextNormalVariate();
-    Float GetSample(int index);
+    void EnsureReady(int index);
 
     // MLTSampler Private Data
     RNG rng;
     Float sigma;
     Float largeStepProb;
-    std::vector<MLTSample> samples;
+    std::vector<PrimarySample> samples;
+    int iteration = 0;
+    bool largeStep = true;
+    int lastLargeStep = 0;
     int streamIndex;
     int streamCount;
     int sampleIndex;
-    int lastLargeStep = 0;
-    int iteration = 0;
-    bool largeStep = true;
-    Float normalSample = Infinity;
 };
 
 // MLT Declarations
