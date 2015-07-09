@@ -58,7 +58,7 @@ class MicrofacetDistribution {
         return 1.f / (1.f + Lambda(wo) + Lambda(wi));
     }
     virtual Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const = 0;
-    Float Pdf(const Vector3f &wo, const Vector3f &wi, const Vector3f &wh) const;
+    Float Pdf(const Vector3f &wo, const Vector3f &wh) const;
 
   protected:
     // MicrofacetDistribution Protected Methods

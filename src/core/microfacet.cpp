@@ -233,47 +233,47 @@ Float TrowbridgeReitzDistribution::Lambda(const Vector3f &w) const {
     return (-1.f + std::sqrt(1.f + alpha2Tan2Theta)) / 2.f;
 }
 
-Float MicrofacetDistribution::Pdf(const Vector3f &wo, const Vector3f &wi,
-                                  const Vector3f &wh) const {
-    if (sampleVisibleArea)
-        return G1(wo) * D(wh) * AbsDot(wo, wh) / AbsCosTheta(wo);
-    else
-        return D(wh) * AbsCosTheta(wh);
-}
-
 Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,
                                          const Point2f &u) const {
-    Vector3f wh;
-    if (sampleVisibleArea) {
-        // Sample visible area of normals with Beckmann distribution
-        bool flip = wo.z < 0;
-        wh = BeckmannSample(flip ? -wo : wo, alphax, alphay, u[0], u[1]);
-        if (flip) wh = -wh;
-    } else {
+    if (!sampleVisibleArea) {
         // Sample full distribution of normals for Beckmann distribution
-        Float logSample = std::log(u[0]);
-        if (std::isinf(logSample)) logSample = 0;
+        Vector3f wh;
+
+        // Compute $\tan^2 \theta$ and $\phi$ for Beckmann distribution sample
         Float tan2Theta, phi;
         if (alphax == alphay) {
+            Float logSample = std::log(u[0]);
+            if (std::isinf(logSample)) logSample = 0;
             tan2Theta = -alphax * alphax * logSample;
             phi = u[1] * 2 * Pi;
         } else {
             // Compute _tan2Theta_ and _phi_ for anisotropic Beckmann
             // distribution
+            Float logSample = std::log(u[0]);
+            if (std::isinf(logSample)) logSample = 0;
             phi = std::atan(alphay / alphax *
-                            std::tan(2.0f * Pi * u[1] + 0.5f * Pi));
+                            std::tan(2 * Pi * u[1] + 0.5f * Pi));
             if (u[1] > 0.5f) phi += Pi;
             Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
             Float alphax2 = alphax * alphax, alphay2 = alphay * alphay;
             tan2Theta = -logSample /
                         (cosPhi * cosPhi / alphax2 + sinPhi * sinPhi / alphay2);
         }
-        Float cosTheta = 1.f / std::sqrt(1 + tan2Theta);
+
+        // Map sampled Beckmann angles to normal direction _wh_
+        Float cosTheta = 1 / std::sqrt(1 + tan2Theta);
         Float sinTheta = std::sqrt(std::max((Float)0, 1 - cosTheta * cosTheta));
         wh = SphericalDirection(sinTheta, cosTheta, phi);
         if (!SameHemisphere(wo, wh)) wh = -wh;
+        return wh;
+    } else {
+        // Sample visible area of normals with Beckmann distribution
+        Vector3f wh;
+        bool flip = wo.z < 0;
+        wh = BeckmannSample(flip ? -wo : wo, alphax, alphay, u[0], u[1]);
+        if (flip) wh = -wh;
+        return wh;
     }
-    return wh;
 }
 
 static void TrowbridgeReitzSample11(Float cosTheta, Float U1, Float U2,
@@ -387,4 +387,12 @@ Vector3f TrowbridgeReitzDistribution::Sample_wh(const Vector3f &wo,
         if (flip) wh = -wh;
     }
     return wh;
+}
+
+Float MicrofacetDistribution::Pdf(const Vector3f &wo,
+                                  const Vector3f &wh) const {
+    if (sampleVisibleArea)
+        return D(wh) * G1(wo) * AbsDot(wo, wh) / AbsCosTheta(wo);
+    else
+        return D(wh) * AbsCosTheta(wh);
 }

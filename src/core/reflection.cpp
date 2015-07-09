@@ -508,14 +508,14 @@ Spectrum MicrofacetReflection::Sample_f(const Vector3f &wo, Vector3f *wi,
     *wi = Reflect(wo, wh);
     if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
     // Compute PDF of _wi_ for microfacet reflection
-    *pdf = distribution->Pdf(wo, *wi, wh) / (4.f * Dot(wo, wh));
+    *pdf = distribution->Pdf(wo, wh) / (4 * Dot(wo, wh));
     return f(wo, *wi);
 }
 
 Float MicrofacetReflection::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     if (!SameHemisphere(wo, wi)) return 0.f;
     Vector3f wh = Normalize(wo + wi);
-    return distribution->Pdf(wo, wi, wh) / (4 * Dot(wo, wh));
+    return distribution->Pdf(wo, wh) / (4 * Dot(wo, wh));
 }
 
 Spectrum MicrofacetTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
@@ -536,9 +536,12 @@ Float MicrofacetTransmission::Pdf(const Vector3f &wo,
     Float eta = CosTheta(wo) > 0 ? (etaInterior / etaExterior)
                                  : (etaExterior / etaInterior);
     Vector3f wh = Normalize(wo + wi * eta);
+
+    // Compute change of variables _dwh\_dwi_ for microfacet transmission
     Float sqrtDenom = Dot(wo, wh) + eta * Dot(wi, wh);
-    Float dwh_dwi = (eta * eta * Dot(wi, wh)) / (sqrtDenom * sqrtDenom);
-    return std::abs(distribution->Pdf(wo, wi, wh) * dwh_dwi);
+    Float dwh_dwi =
+        std::abs((eta * eta * Dot(wi, wh)) / (sqrtDenom * sqrtDenom));
+    return distribution->Pdf(wo, wh) * dwh_dwi;
 }
 
 Spectrum FresnelBlend::Sample_f(const Vector3f &wo, Vector3f *wi,
@@ -563,8 +566,8 @@ Spectrum FresnelBlend::Sample_f(const Vector3f &wo, Vector3f *wi,
 Float FresnelBlend::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     if (!SameHemisphere(wo, wi)) return 0.f;
     Vector3f wh = Normalize(wo + wi);
-    Float pdf_wh = distribution->Pdf(wo, wi, wh);
-    return .5f * (AbsCosTheta(wi) * InvPi + pdf_wh / (4. * Dot(wo, wh)));
+    Float pdf_wh = distribution->Pdf(wo, wh);
+    return .5f * (AbsCosTheta(wi) * InvPi + pdf_wh / (4 * Dot(wo, wh)));
 }
 
 Spectrum FresnelSpecular::Sample_f(const Vector3f &wo, Vector3f *wi,

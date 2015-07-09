@@ -340,9 +340,9 @@ class FresnelSpecular : public BxDF {
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const {
         return Spectrum(0.f);
     }
-    Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0.f; }
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
+    Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0; }
 
   private:
     // FresnelSpecular Private Data
