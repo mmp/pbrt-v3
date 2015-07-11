@@ -17,6 +17,8 @@ Operation
 
 Choosing 'Export to PBRT...' from the Plugins menu will open the export dialog. The export mode controls where PBRT files are written and whether the renderer is started. The 'Render' mode will export the scene to a temporary location, start pbrt and open the resulting image in the Picture Viewer once the rendering is done. 'Export' will ask you for a location the pbrt scene should be written to. 'Export and Render' will ask you where the scene should be written and will start a rendering. For 'Render' and 'Export and Render' is important to let the plugin know where your pbrt executable is located. This can be specified using the 'Renderer' input field. 'Samples' allows you to specify the number of Samples per Pixel to be used. 'Light Intensity' lets you globally scale the intensity of all exported light sources in the scene. During export, a detailed log is created. The 'Logging Level' lets you choose how much detail you want to see in the log window at the bottom of the export dialog.
 
+By default, the 'directlighting' integrator is used. When a Global Illumination effect is added to the regular Cinema 4D render settings, the 'path' integrator is used instead.
+
 Supported Features
 ------------------
 
