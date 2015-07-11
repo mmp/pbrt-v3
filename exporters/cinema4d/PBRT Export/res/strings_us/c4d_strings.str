@@ -1,0 +1,8 @@
+// C4D-StringResource
+// Identifier   Text
+
+STRINGTABLE
+{
+    IDS_PBRT_START 					"Start";
+    IDS_PBRT_ABORT 					"Abort";
+}
