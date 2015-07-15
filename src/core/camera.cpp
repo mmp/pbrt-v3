@@ -106,19 +106,19 @@ ProjectiveCamera::ProjectiveCamera(const AnimatedTransform &CameraToWorld,
 }
 
 Spectrum Camera::We(const Interaction &it, const Vector3f &w,
-                    Point2f *raster) const {
-    Error("Camera::We() is not implemented!");
+                    Point2f *pRaster) const {
+    Severe("Camera::We() is not implemented!");
     return Spectrum(0.f);
 }
 
 Float Camera::Pdf(const Interaction &it, const Vector3f &w) const {
-    Error("Camera::Pdf() is not implemented!");
+    Severe("Camera::Pdf() is not implemented!");
     return 0.f;
 }
 
 Spectrum Camera::Sample_We(const Interaction &ref, const Point2f &u,
                            Vector3f *wi, Float *pdf, Point2f *raster,
                            VisibilityTester *vis) const {
-    Error("Camera::Sample_We() is not implemented!");
+    Severe("Camera::Sample_We() is not implemented!");
     return Spectrum(0.f);
 }
