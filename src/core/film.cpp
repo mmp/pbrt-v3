@@ -107,27 +107,19 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
         for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
         mergePixel.filterWeightSum += unnormalizedPixel.filterWeightSum;
     }
-}
-
-void Film::Splat(const Point2f &pFilm, const Spectrum &L) {
-    if (L.HasNaNs()) {
-        Warning("Film ignoring splatted spectrum with NaN values");
-        return;
+    for (const auto &splat : tile->splats) {
+        // Add contribution of _splat_ into _Film::pixels_
+        if (splat.second.HasNaNs()) {
+            Warning("Film ignoring splatted spectrum with NaN values");
+            return;
+        }
+        Point2i pi = (Point2i)Floor(splat.first);
+        if (!InsideExclusive(pi, croppedPixelBounds)) continue;
+        Float xyz[3];
+        splat.second.ToXYZ(xyz);
+        Pixel &pixel = GetPixel(pi);
+        for (int i = 0; i < 3; ++i) pixel.splatXYZ[i] += xyz[i];
     }
-    Point2i pi = (Point2i)Floor(pFilm);
-    if (!InsideExclusive(pi, croppedPixelBounds)) return;
-    Float xyz[3];
-    L.ToXYZ(xyz);
-    Pixel &pixel = GetPixel(pi);
-#if 0
-    // XXX rethink this -- it's killing performance for BDPT
-    std::lock_guard<std::mutex> lock(mutex);
-    for (int i = 0; i < 3; ++i)
-        pixel.splatXYZ[i] += xyz[i];
-#else
-    /// Workaround for now (?) using atomic FP adds
-    for (int i = 0; i < 3; ++i) AtomicAdd(&pixel.splatXYZ[i], xyz[i]);
-#endif
 }
 
 void Film::SetImage(const Spectrum *img) const {

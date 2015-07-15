@@ -62,7 +62,6 @@ class Film {
     Point2f GetPhysicalSize() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
     void MergeFilmTile(std::unique_ptr<FilmTile> tile);
-    void Splat(const Point2f &pFilm, const Spectrum &L);
     void SetImage(const Spectrum *img) const;
     void WriteImage(Float splatScale = 1.f);
     void Clear();
@@ -112,7 +111,7 @@ class FilmTile {
           invFilterRadius(1.f / filterRadius.x, 1.f / filterRadius.y),
           filterTable(filterTable),
           filterTableSize(filterTableSize) {
-        pixels = std::vector<FilmTilePixel>(pixelBounds.Area());
+        pixels = std::vector<FilmTilePixel>(std::max(0, pixelBounds.Area()));
     }
     void AddSample(const Point2f &pFilm, const Spectrum &L,
                    Float sampleWeight) {
@@ -166,6 +165,9 @@ class FilmTile {
             (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;
         return pixels[offset];
     }
+    void AddSplat(const Point2f &pRaster, const Spectrum &L) {
+        splats.push_back(std::make_pair((Point2i)pRaster, L));
+    }
     Bounds2i GetPixelBounds() const { return pixelBounds; }
 
   private:
@@ -175,6 +177,8 @@ class FilmTile {
     const Float *filterTable;
     const int filterTableSize;
     std::vector<FilmTilePixel> pixels;
+    std::vector<std::pair<Point2i, Spectrum>> splats;
+    friend class Film;
 };
 
 Film *CreateFilm(const ParamSet &params, Filter *filter);

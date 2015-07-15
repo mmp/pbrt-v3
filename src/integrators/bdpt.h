@@ -118,32 +118,35 @@ class BDPTIntegrator : public Integrator {
   public:
     // BDPTIntegrator Public Methods
     BDPTIntegrator(std::shared_ptr<Sampler> sampler,
-                   std::shared_ptr<const Camera> camera, int maxdepth,
-                   bool visualize_strategies, bool visualize_weights)
+                   std::shared_ptr<const Camera> camera, int maxDepth,
+                   bool visualizeStrategies, bool visualizeWeights)
         : sampler(sampler),
           camera(camera),
-          maxdepth(maxdepth),
-          visualize_strategies(visualize_strategies),
-          visualize_weights(visualize_weights) {}
+          maxDepth(maxDepth),
+          visualizeStrategies(visualizeStrategies),
+          visualizeWeights(visualizeWeights) {}
     void Render(const Scene &scene);
 
   private:
     // BDPTIntegrator Private Data
     std::shared_ptr<Sampler> sampler;
     std::shared_ptr<const Camera> camera;
-    int maxdepth;
-    bool visualize_strategies;
-    bool visualize_weights;
+    const int maxDepth;
+    const bool visualizeStrategies;
+    const bool visualizeWeights;
 };
 
-enum class VertexType { Camera = 0, Light, Surface, Medium };
-
+Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
+                     Vertex *cameraSubpath, int s, int t,
+                     const Distribution1D &lightDistr, const Camera &camera,
+                     Sampler &sampler, Point2f *pFilm,
+                     Float *misWeight = nullptr);
+enum class VertexType { Camera, Light, Surface, Medium };
 struct Vertex {
     // Vertex Public Data
     VertexType type;
     Spectrum weight;
-    Float pdfFwd = 0.f;
-    Float pdfRev = 0.f;
+    Float pdfFwd = 0.f, pdfRev = 0.f;
     bool delta = false;
 // Switch to a struct in debug mode to avoid a compiler error regarding
 // non-trivial constructors
@@ -177,10 +180,10 @@ struct Vertex {
             return ei;
         };
     }
-    const Point3f &GetPosition() const { return GetInteraction().p; }
-    Float GetTime() const { return GetInteraction().time; }
-    const Normal3f &GetGeoNormal() const { return GetInteraction().n; }
-    const Normal3f &GetShadingNormal() const {
+    const Point3f &p() const { return GetInteraction().p; }
+    Float time() const { return GetInteraction().time; }
+    const Normal3f &ng() const { return GetInteraction().n; }
+    const Normal3f &ns() const {
         if (type == VertexType::Surface)
             return isect.shading.n;
         else
@@ -190,67 +193,58 @@ struct Vertex {
               const Vertex &next) const {
         if (type == VertexType::Light) return PdfLight(scene, next);
         // Compute directions to preceding and next vertex
-        Vector3f wp, wn = Normalize(next.GetPosition() - GetPosition());
-        if (prev) wp = Normalize(prev->GetPosition() - GetPosition());
+        Vector3f wp, wn = Normalize(next.p() - p());
+        if (prev) wp = Normalize(prev->p() - p());
 
         // Compute directional density depending on the vertex types
         Float pdf;
-        switch (type) {
-        case VertexType::Camera:
+        if (type == VertexType::Camera)
             pdf = ei.camera->Pdf(ei, wn);
-            break;
-        case VertexType::Surface:
+        else if (type == VertexType::Surface)
             pdf = isect.bsdf->Pdf(wp, wn);
-            break;
-        case VertexType::Medium:
+        else if (type == VertexType::Medium)
             pdf = mi.phase->p(wp, wn);
-            break;
-        default:
-            Error("Vertex::Pdf(): Unimplemented");
-            return 0.f;
-        }
+        else
+            Severe("Vertex::Pdf(): Unimplemented");
 
         // Convert to probability per unit area at vertex _next_
         return ConvertDensity(*this, pdf, next);
     }
-    bool IsOnSurface() const { return GetGeoNormal() != Normal3f(); }
+    bool IsOnSurface() const { return ng() != Normal3f(); }
     Spectrum f(const Vertex &next) const {
-        Vector3f wi = Normalize(next.GetPosition() - GetPosition());
+        Vector3f wi = Normalize(next.p() - p());
         switch (type) {
         case VertexType::Surface:
             return isect.bsdf->f(isect.wo, wi);
         case VertexType::Medium:
             return mi.phase->p(mi.wo, wi);
         default:
-            Error("Vertex::f(): Unimplemented");
+            Severe("Vertex::f(): Unimplemented");
             return Spectrum(0.f);
         }
     }
     bool IsConnectible() const {
-        switch (type) {
-        case VertexType::Surface:
+        if (type == VertexType::Surface)
             return isect.bsdf->NumComponents(
                        BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION |
                                 BSDF_TRANSMISSION)) > 0;
-        default:
+        else
             return true;
-        };
     }
     bool IsLight() const {
         return type == VertexType::Light ||
-               (type == VertexType::Surface &&
-                isect.primitive->GetAreaLight() != nullptr);
+               (type == VertexType::Surface && isect.primitive->GetAreaLight());
     }
     bool IsDeltaLight() const {
-        return type == VertexType::Light && ei.light != nullptr &&
+        return type == VertexType::Light && ei.light &&
                ::IsDeltaLight(ei.light->flags);
     }
     bool IsInfiniteLight() const {
         return type == VertexType::Light &&
-               (ei.light == nullptr || ei.light->flags == LightFlags::Infinite);
+               (!ei.light || ei.light->flags == LightFlags::Infinite);
     }
     Float PdfLight(const Scene &scene, const Vertex &v) const {
-        Vector3f d = v.GetPosition() - GetPosition();
+        Vector3f d = v.p() - p();
         Float invL2 = 1.f / d.LengthSquared();
         d *= std::sqrt(invL2);
         Float unused, pdf;
@@ -266,16 +260,15 @@ struct Vertex {
             const Light *light = type == VertexType::Light
                                      ? ei.light
                                      : isect.primitive->GetAreaLight();
-            light->Pdf_Le(Ray(GetPosition(), d, GetTime()), GetGeoNormal(),
-                          &unused, &pdf);
+            light->Pdf_Le(Ray(p(), d, time()), ng(), &unused, &pdf);
             pdf *= invL2;
         }
-        if (v.IsOnSurface()) pdf *= AbsDot(v.GetGeoNormal(), d);
+        if (v.IsOnSurface()) pdf *= AbsDot(v.ng(), d);
         return pdf;
     }
     Float PdfLightOrigin(const Scene &scene, const Vertex &v,
                          const Distribution1D &lightDistr) const {
-        Vector3f d = Normalize(v.GetPosition() - GetPosition());
+        Vector3f d = Normalize(v.p() - p());
         if (IsInfiniteLight()) {
             // Return solid angle density for infinite light sources
             return InfiniteLightDensity(scene, lightDistr, d);
@@ -296,18 +289,17 @@ struct Vertex {
                 }
             }
             Assert(pdfChoice != 0);
-            light->Pdf_Le(Ray(GetPosition(), d, GetTime()), GetGeoNormal(),
-                          &pdfPos, &unused);
+            light->Pdf_Le(Ray(p(), d, time()), ng(), &pdfPos, &unused);
             return pdfPos * pdfChoice;
         }
     }
     Spectrum Le(const Scene &scene, const Vertex &v) const {
-        Vector3f d = Normalize(v.GetPosition() - GetPosition());
+        Vector3f d = Normalize(v.p() - p());
         if (IsInfiniteLight()) {
             // Return emitted radiance for infinite light sources
             Spectrum Le(0.f);
             for (const auto &light : scene.lights)
-                Le += light->Le(Ray(GetPosition(), -d));
+                Le += light->Le(Ray(p(), -d));
             return Le;
         } else {
             const AreaLight *light = isect.primitive->GetAreaLight();
@@ -332,8 +324,8 @@ struct Vertex {
         }
         os << "," << std::endl
            << "  connectible = " << v.IsConnectible() << "," << std::endl
-           << "  p = " << v.GetPosition() << "," << std::endl
-           << "  n = " << v.GetGeoNormal() << "," << std::endl
+           << "  p = " << v.p() << "," << std::endl
+           << "  n = " << v.ng() << "," << std::endl
            << "  pdfFwd = " << v.pdfFwd << "," << std::endl
            << "  pdfRev = " << v.pdfRev << "," << std::endl
            << "  weight = " << v.weight << std::endl
@@ -343,19 +335,13 @@ struct Vertex {
 };
 
 extern int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
-                                 MemoryArena &arena, int maxdepth,
-                                 const Camera &camera, Point2f &rasterPos,
+                                 MemoryArena &arena, int maxDepth,
+                                 const Camera &camera, Point2f &pFilm,
                                  Vertex *path);
 
 extern int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
-                                MemoryArena &arena, int maxdepth, Float time,
+                                MemoryArena &arena, int maxDepth, Float time,
                                 const Distribution1D &lightDistr, Vertex *path);
-
-extern Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
-                            Vertex *cameraSubpath, int s, int t,
-                            const Distribution1D &lightDistr,
-                            const Camera &camera, Sampler &sampler,
-                            Point2f *rasterPos, Float *misWeight);
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera);

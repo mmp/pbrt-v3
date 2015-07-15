@@ -68,15 +68,15 @@ class MLTSampler : public Sampler {
         Float value = 0;
         // PrimarySample Members
         int modify = 0;
-        Float value_backup = 0;
-        int modify_backup = 0;
+        Float valueBackup = 0;
+        int modifyBackup = 0;
         void Backup() {
-            value_backup = value;
-            modify_backup = modify;
+            valueBackup = value;
+            modifyBackup = modify;
         }
         void Restore() {
-            value = value_backup;
-            modify = modify_backup;
+            value = valueBackup;
+            modify = modifyBackup;
         }
     };
 
@@ -100,30 +100,30 @@ class MLTSampler : public Sampler {
 class MLTIntegrator : public Integrator {
   public:
     // MLTIntegrator Public Methods
-    MLTIntegrator(std::shared_ptr<const Camera> camera, int maxdepth,
+    MLTIntegrator(std::shared_ptr<const Camera> camera, int maxDepth,
                   int nBootstrap, int nChains, int64_t mutationsPerPixel,
                   Float sigma, Float largeStepProb)
         : camera(camera),
-          maxdepth(maxdepth),
+          maxDepth(maxDepth),
           nBootstrap(nBootstrap),
           nChains(nChains),
           mutationsPerPixel(mutationsPerPixel),
           sigma(sigma),
           largeStepProb(largeStepProb){};
     void Render(const Scene &scene);
-    Spectrum EvaluateSample(const Scene &scene, MemoryArena &arena,
-                            MLTSampler &sampler, int k, Point2f *samplePos);
+    Spectrum L(const Scene &scene, MemoryArena &arena, MLTSampler &sampler,
+               int k, Point2f *samplePos);
 
   private:
     // MLTIntegrator Private Data
     std::shared_ptr<const Camera> camera;
-    int maxdepth;
+    std::unique_ptr<Distribution1D> lightDistr;
+    int maxDepth;
     int nBootstrap;
     int nChains;
     int64_t mutationsPerPixel;
     Float sigma;
     Float largeStepProb;
-    std::unique_ptr<Distribution1D> lightDistr;
 };
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,

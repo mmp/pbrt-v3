@@ -55,21 +55,31 @@ Float ShadingNormalCorrection(const SurfaceInteraction &isect,
         return 1.f;
 }
 
+Spectrum G(const Scene &scene, Sampler &sampler, const Vertex &v0,
+           const Vertex &v1) {
+    Vector3f d = v0.p() - v1.p();
+    Float g = 1 / d.LengthSquared();
+    d *= std::sqrt(g);
+    if (v0.IsOnSurface()) g *= Dot(v0.ns(), d);
+    if (v1.IsOnSurface()) g *= Dot(v1.ns(), d);
+    VisibilityTester vis(v0.GetInteraction(), v1.GetInteraction());
+    return std::abs(g) * vis.T(scene, sampler);
+}
+
 Float ConvertDensity(const Vertex &cur, Float pdf, const Vertex &next) {
     // Return solid angle density if _next_ is an infinite area light
     if (next.IsInfiniteLight()) return pdf;
-    Vector3f d = next.GetPosition() - cur.GetPosition();
+    Vector3f d = next.p() - cur.p();
     Float invL2 = 1.f / d.LengthSquared();
-    if (next.IsOnSurface())
-        pdf *= AbsDot(next.GetGeoNormal(), d * std::sqrt(invL2));
+    if (next.IsOnSurface()) pdf *= AbsDot(next.ng(), d * std::sqrt(invL2));
     return pdf * invL2;
 }
 
 int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
-               MemoryArena &arena, Spectrum weight, Float pdfFwd, int maxdepth,
+               MemoryArena &arena, Spectrum weight, Float pdfFwd, int maxDepth,
                TransportMode mode, Vertex *path) {
     int bounces = 0;
-    if (maxdepth == 0) return 0;
+    if (maxDepth == 0) return 0;
     SurfaceInteraction isect;
     MediumInteraction mi;
     while (true) {
@@ -85,7 +95,7 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             // Record medium interaction in _path_ and compute forward density
             vertex = Vertex(mi, weight);
             vertex.pdfFwd = ConvertDensity(prev, pdfFwd, vertex);
-            if (++bounces >= maxdepth) break;
+            if (++bounces >= maxDepth) break;
 
             // Sample direction and compute reverse density at preceding vertex
             Vector3f wi;
@@ -115,7 +125,7 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             // Fill _vertex_ with intersection information
             vertex = Vertex(isect, weight);
             vertex.pdfFwd = ConvertDensity(prev, pdfFwd, vertex);
-            if (++bounces >= maxdepth) break;
+            if (++bounces >= maxDepth) break;
 
             // Sample BSDF at current vertex and compute reverse probability
             Vector3f wi, wo = isect.wo;
@@ -139,13 +149,12 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
 }
 
 int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
-                          MemoryArena &arena, int maxdepth,
-                          const Camera &camera, Point2f &rasterPos,
-                          Vertex *path) {
-    if (maxdepth == 0) return 0;
+                          MemoryArena &arena, int maxDepth,
+                          const Camera &camera, Point2f &pFilm, Vertex *path) {
+    if (maxDepth == 0) return 0;
     // Sample initial ray for camera subpath
     CameraSample cameraSample;
-    cameraSample.pFilm = rasterPos;
+    cameraSample.pFilm = pFilm;
     cameraSample.time = sampler.Get1D();
     cameraSample.pLens = sampler.Get2D();
     RayDifferential ray;
@@ -156,15 +165,15 @@ int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
     path[0] = Vertex(VertexType::Camera, EndpointInteraction(&camera, ray),
                      Spectrum(1.0f));
     return RandomWalk(scene, ray, sampler, arena, rayWeight,
-                      camera.Pdf(path[0].ei, ray.d), maxdepth - 1,
+                      camera.Pdf(path[0].ei, ray.d), maxDepth - 1,
                       TransportMode::Radiance, path + 1) +
            1;
 }
 
 int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
-                         MemoryArena &arena, int maxdepth, Float time,
+                         MemoryArena &arena, int maxDepth, Float time,
                          const Distribution1D &lightDistr, Vertex *path) {
-    if (maxdepth == 0) return 0;
+    if (maxDepth == 0) return 0;
     // Sample initial ray for light subpath
     Float lightPdf;
     int lightNum = lightDistr.SampleDiscrete(sampler.Get1D(), &lightPdf);
@@ -181,34 +190,23 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
     path[0] = Vertex(VertexType::Light,
                      EndpointInteraction(light.get(), ray, Nl), Le);
     path[0].pdfFwd = pdfPos * lightPdf;
-    int nvertices =
-        RandomWalk(scene, ray, sampler, arena, weight, pdfDir, maxdepth - 1,
+    int nVertices =
+        RandomWalk(scene, ray, sampler, arena, weight, pdfDir, maxDepth - 1,
                    TransportMode::Importance, path + 1);
 
     // Correct sampling densities for infinite area lights
     if (path[0].IsInfiniteLight()) {
         // Set spatial density of _path[1]_
-        if (nvertices > 0) {
+        if (nVertices > 0) {
             path[1].pdfFwd = pdfPos;
             if (path[1].IsOnSurface())
-                path[1].pdfFwd *= AbsDot(ray.d, path[1].GetGeoNormal());
+                path[1].pdfFwd *= AbsDot(ray.d, path[1].ng());
         }
 
         // Set spatial density of _path[0]_
         path[0].pdfFwd = InfiniteLightDensity(scene, lightDistr, ray.d);
     }
-    return nvertices + 1;
-}
-
-Spectrum GeometryTerm(const Scene &scene, Sampler &sampler, const Vertex &v0,
-                      const Vertex &v1) {
-    Vector3f d = v0.GetPosition() - v1.GetPosition();
-    Float G = 1.f / d.LengthSquared();
-    d *= std::sqrt(G);
-    if (v0.IsOnSurface()) G *= Dot(v0.GetShadingNormal(), d);
-    if (v1.IsOnSurface()) G *= Dot(v1.GetShadingNormal(), d);
-    VisibilityTester vis(v0.GetInteraction(), v1.GetInteraction());
-    return std::abs(G) * vis.T(scene, sampler);
+    return nVertices + 1;
 }
 
 Float MISWeight(const Scene &scene, Vertex *lightSubpath, Vertex *cameraSubpath,
@@ -288,20 +286,20 @@ void BDPTIntegrator::Render(const Scene &scene) {
     // Compute _lightDistr_ for sampling lights proportional to power
     std::unique_ptr<Distribution1D> lightDistr(ComputeLightSamplingCDF(scene));
 
-    // Partition the image into buckets
+    // Partition the image into tiles
     Film *film = camera->film;
     const Bounds2i sampleBounds = film->GetSampleBounds();
     const Vector2i sampleExtent = sampleBounds.Diagonal();
-    const int bucketSize = 16;
-    const int nXBuckets = (sampleExtent.x + bucketSize - 1) / bucketSize;
-    const int nYBuckets = (sampleExtent.y + bucketSize - 1) / bucketSize;
-    ProgressReporter reporter(nXBuckets * nYBuckets, "Rendering");
+    const int tileSize = 16;
+    const int nXTiles = (sampleExtent.x + tileSize - 1) / tileSize;
+    const int nYTiles = (sampleExtent.y + tileSize - 1) / tileSize;
+    ProgressReporter reporter(nXTiles * nYTiles, "Rendering");
 
     // Allocate buffers for debug visualization
-    const int bufferCount = (1 + maxdepth) * (6 + maxdepth) / 2;
-    std::vector<std::unique_ptr<Film>> films(bufferCount);
-    if (visualize_strategies || visualize_weights) {
-        for (int depth = 0; depth <= maxdepth; ++depth) {
+    const int bufferCount = (1 + maxDepth) * (6 + maxDepth) / 2;
+    std::vector<std::unique_ptr<Film>> weightFilms(bufferCount);
+    if (visualizeStrategies || visualizeWeights) {
+        for (int depth = 0; depth <= maxDepth; ++depth) {
             for (int s = 0; s <= depth + 2; ++s) {
                 int t = depth + 2 - s;
                 if (t == 0 || (s == 1 && t == 1)) continue;
@@ -310,13 +308,11 @@ void BDPTIntegrator::Render(const Scene &scene) {
                 snprintf(filename, sizeof(filename),
                          "bdpt_d%02i_s%02i_t%02i.exr", depth, s, t);
 
-                films[BufferIndex(s, t)] = std::unique_ptr<Film>(new Film(
-                    film->fullResolution,
-                    Bounds2f(Point2f(0, 0), Point2f(1, 1)),
-                    CreateBoxFilter(ParamSet()),
-                    film->diagonal * 1000,  // XXX what does this parameter
-                                            // mean? Why the multiplication?
-                    filename, 1.f, 2.2f));
+                weightFilms[BufferIndex(s, t)] = std::unique_ptr<Film>(
+                    new Film(film->fullResolution,
+                             Bounds2f(Point2f(0, 0), Point2f(1, 1)),
+                             CreateBoxFilter(ParamSet()), film->diagonal * 1000,
+                             filename, 1.f, 2.2f));
             }
         }
     }
@@ -324,81 +320,88 @@ void BDPTIntegrator::Render(const Scene &scene) {
     // Render and write the output image to disk
     {
         StatTimer timer(&renderingTime);
-        ParallelFor([&](const Point2i bucket) {
-            // Render a single bucket using BDPT
+        ParallelFor([&](const Point2i tile) {
+            // Render a single tile using BDPT
             MemoryArena arena;
-            int seed = bucket.y * nXBuckets + bucket.x;
-            std::unique_ptr<Sampler> bucketSampler = sampler->Clone(seed);
-            int x0 = sampleBounds.pMin.x + bucket.x * bucketSize;
-            int x1 = std::min(x0 + bucketSize, sampleBounds.pMax.x);
-            int y0 = sampleBounds.pMin.y + bucket.y * bucketSize;
-            int y1 = std::min(y0 + bucketSize, sampleBounds.pMax.y);
-            Bounds2i bucketBounds(Point2i(x0, y0), Point2i(x1, y1));
+            int seed = tile.y * nXTiles + tile.x;
+            std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
+            int x0 = sampleBounds.pMin.x + tile.x * tileSize;
+            int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
+            int y0 = sampleBounds.pMin.y + tile.y * tileSize;
+            int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
+            Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
             std::unique_ptr<FilmTile> filmTile =
-                camera->film->GetFilmTile(bucketBounds);
-            for (Point2i pixel : bucketBounds) {
-                bucketSampler->StartPixel(pixel);
+                camera->film->GetFilmTile(tileBounds);
+            std::vector<std::unique_ptr<FilmTile>> weightFilmTiles;
+            if (visualizeStrategies || visualizeWeights)
+                for (auto &wFilm : weightFilms)
+                    weightFilmTiles.emplace_back(
+                        wFilm->GetFilmTile(tileBounds));
+            for (Point2i pixel : tileBounds) {
+                tileSampler->StartPixel(pixel);
                 do {
                     // Generate a single sample using BDPT
-                    Point2f rasterPos((Float)pixel.x, (Float)pixel.y);
-                    rasterPos += bucketSampler->Get2D();
+                    Point2f pFilm = (Point2f)pixel + tileSampler->Get2D();
 
                     // Trace the light and camera subpaths
                     Vertex *cameraSubpath =
-                        (Vertex *)arena.Alloc<Vertex>(maxdepth + 2);
+                        (Vertex *)arena.Alloc<Vertex>(maxDepth + 2);
                     Vertex *lightSubpath =
-                        (Vertex *)arena.Alloc<Vertex>(maxdepth + 1);
+                        (Vertex *)arena.Alloc<Vertex>(maxDepth + 1);
                     int nCamera = GenerateCameraSubpath(
-                        scene, *bucketSampler, arena, maxdepth + 2, *camera,
-                        rasterPos, cameraSubpath);
+                        scene, *tileSampler, arena, maxDepth + 2, *camera,
+                        pFilm, cameraSubpath);
                     int nLight = GenerateLightSubpath(
-                        scene, *bucketSampler, arena, maxdepth + 1,
-                        cameraSubpath[0].GetTime(), *lightDistr, lightSubpath);
+                        scene, *tileSampler, arena, maxDepth + 1,
+                        cameraSubpath[0].time(), *lightDistr, lightSubpath);
 
-                    // Execute all connection strategies
-                    Spectrum pixelWeight(0.f);
+                    // Execute all BDPT connection strategies
+                    Spectrum L(0.f);
                     for (int t = 1; t <= nCamera; ++t) {
                         for (int s = 0; s <= nLight; ++s) {
                             int depth = t + s - 2;
                             if ((s == 1 && t == 1) || depth < 0 ||
-                                depth > maxdepth)
+                                depth > maxDepth)
                                 continue;
                             // Execute the $(s, t)$ connection strategy
-                            Point2f finalRasterPos = rasterPos;
+                            Point2f pFilmV1 = pFilm;
                             Float misWeight = 0.f;
-                            Spectrum weight = ConnectBDPT(
-                                scene, lightSubpath, cameraSubpath, s, t,
-                                *lightDistr, *camera, *bucketSampler,
-                                &finalRasterPos, &misWeight);
-                            if (visualize_strategies || visualize_weights) {
-                                Spectrum value(1.0f);
-                                if (visualize_strategies) value *= weight;
-                                if (visualize_weights) value *= misWeight;
-                                films[BufferIndex(s, t)]->Splat(finalRasterPos,
-                                                                value);
+                            Spectrum Lpath =
+                                ConnectBDPT(scene, lightSubpath, cameraSubpath,
+                                            s, t, *lightDistr, *camera,
+                                            *tileSampler, &pFilmV1, &misWeight);
+                            if (visualizeStrategies || visualizeWeights) {
+                                Spectrum value;
+                                if (visualizeStrategies)
+                                    value = Lpath / misWeight;
+                                if (visualizeWeights) value = Lpath;
+                                //   weightFilmTiles[BufferIndex(s,
+                                //   t)]->AddSplat(pFilmV1, value);
                             }
                             if (t != 1)
-                                pixelWeight += weight * misWeight;
+                                L += Lpath;
                             else
-                                film->Splat(finalRasterPos, weight * misWeight);
+                                filmTile->AddSplat(pFilmV1, Lpath);
                         }
                     }
-                    filmTile->AddSample(rasterPos, pixelWeight, 1.0f);
+                    filmTile->AddSample(pFilm, L, 1.0f);
                     arena.Reset();
-                } while (bucketSampler->StartNextSample());
+                } while (tileSampler->StartNextSample());
             }
             film->MergeFilmTile(std::move(filmTile));
+            for (size_t i = 0; i < weightFilmTiles.size(); ++i)
+                weightFilms[i]->MergeFilmTile(std::move(weightFilmTiles[i]));
             reporter.Update();
-        }, Point2i(nXBuckets, nYBuckets));
+        }, Point2i(nXTiles, nYTiles));
         reporter.Done();
     }
     film->WriteImage(1.0f / sampler->samplesPerPixel);
 
     // Write buffers for debug visualization
-    if (visualize_strategies || visualize_weights) {
+    if (visualizeStrategies || visualizeWeights) {
         const Float invSampleCount = 1.0f / sampler->samplesPerPixel;
-        for (size_t i = 0; i < films.size(); ++i) {
-            if (films[i]) films[i]->WriteImage(invSampleCount);
+        for (size_t i = 0; i < weightFilms.size(); ++i) {
+            if (weightFilms[i]) weightFilms[i]->WriteImage(invSampleCount);
         }
     }
 }
@@ -406,8 +409,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
 Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
                      Vertex *cameraSubpath, int s, int t,
                      const Distribution1D &lightDistr, const Camera &camera,
-                     Sampler &sampler, Point2f *rasterPos, Float *misWeight) {
-    Spectrum weight(0.f);
+                     Sampler &sampler, Point2f *pFilm, Float *misWeightPtr) {
+    Spectrum L(0.f);
     // Ignore invalid connections related to infinite area lights
     if (t > 1 && s != 0 && cameraSubpath[t - 1].type == VertexType::Light)
         return Spectrum(0.f);
@@ -417,10 +420,7 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
     if (s == 0) {
         // Interpret the camera subpath as a complete path
         const Vertex &pt = cameraSubpath[t - 1];
-        if (pt.IsLight()) {
-            const Vertex &ptMinus = cameraSubpath[t - 2];
-            weight = pt.Le(scene, ptMinus) * pt.weight;
-        }
+        if (pt.IsLight()) L = pt.Le(scene, cameraSubpath[t - 2]) * pt.weight;
     } else if (t == 1) {
         // Sample a point on the camera and connect it to the light subpath
         const Vertex &qs = lightSubpath[s - 1];
@@ -428,18 +428,15 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
             VisibilityTester vis;
             Vector3f wi;
             Float pdf;
-            Spectrum cameraWeight =
-                camera.Sample_We(qs.GetInteraction(), sampler.Get2D(), &wi,
-                                 &pdf, rasterPos, &vis);
-            if (pdf > 0 && !cameraWeight.IsBlack()) {
+            Spectrum We = camera.Sample_We(qs.GetInteraction(), sampler.Get2D(),
+                                           &wi, &pdf, pFilm, &vis);
+            if (pdf > 0 && !We.IsBlack()) {
                 // Initialize dynamically sampled vertex and _weight_
                 sampled = Vertex(VertexType::Camera,
-                                 EndpointInteraction(vis.P1(), &camera),
-                                 cameraWeight);
-                weight = qs.weight * qs.f(sampled) * vis.T(scene, sampler) *
-                         sampled.weight;
-                if (qs.IsOnSurface())
-                    weight *= AbsDot(wi, qs.GetShadingNormal());
+                                 EndpointInteraction(vis.P1(), &camera), We);
+                L = qs.weight * qs.f(sampled) * vis.T(scene, sampler) *
+                    sampled.weight;
+                if (qs.IsOnSurface()) L *= AbsDot(wi, qs.ns());
             }
         }
     } else if (s == 1) {
@@ -460,44 +457,42 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightSubpath,
                                  EndpointInteraction(vis.P1(), light.get()),
                                  lightWeight / (pdf * lightPdf));
                 sampled.pdfFwd = sampled.PdfLightOrigin(scene, pt, lightDistr);
-                weight = pt.weight * pt.f(sampled) * vis.T(scene, sampler) *
-                         sampled.weight;
-                if (pt.IsOnSurface())
-                    weight *= AbsDot(wi, pt.GetShadingNormal());
+                L = pt.weight * pt.f(sampled) * vis.T(scene, sampler) *
+                    sampled.weight;
+                if (pt.IsOnSurface()) L *= AbsDot(wi, pt.ns());
             }
         }
     } else {
-        // Handle all other cases
+        // Handle all other bidirectional connection cases
         const Vertex &qs = lightSubpath[s - 1], &pt = cameraSubpath[t - 1];
-        if (qs.IsConnectible() && pt.IsConnectible()) {
-            weight = qs.weight * qs.f(pt) *
-                     GeometryTerm(scene, sampler, qs, pt) * pt.f(qs) *
-                     pt.weight;
-        }
+        if (qs.IsConnectible() && pt.IsConnectible())
+            L = qs.weight * qs.f(pt) * G(scene, sampler, qs, pt) * pt.f(qs) *
+                pt.weight;
     }
 
     // Compute MIS weight for connection strategy
-    *misWeight =
-        weight.IsBlack() ? 0.f : MISWeight(scene, lightSubpath, cameraSubpath,
-                                           sampled, s, t, lightDistr);
-    return weight;
+    Float misWeight =
+        L.IsBlack() ? 0.f : MISWeight(scene, lightSubpath, cameraSubpath,
+                                      sampled, s, t, lightDistr);
+    L *= misWeight;
+    if (misWeightPtr) *misWeightPtr = misWeight;
+    return L;
 }
 
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera) {
-    int maxdepth = params.FindOneInt("maxdepth", 5);
-    bool visualize_strategies =
-        params.FindOneBool("visualize_strategies", false);
-    bool visualize_weights = params.FindOneBool("visualize_weights", false);
+    int maxDepth = params.FindOneInt("maxdepth", 5);
+    bool visualizeStrategies = params.FindOneBool("visualizestrategies", false);
+    bool visualizeWeights = params.FindOneBool("visualizeweights", false);
 
-    if ((visualize_strategies || visualize_weights) && maxdepth > 5) {
+    if ((visualizeStrategies || visualizeWeights) && maxDepth > 5) {
         Warning(
-            "visualize_strategies/visualize_weights was enabled, limiting "
+            "visualizestrategies/visualizeweights was enabled, limiting "
             "maxdepth to 5");
-        maxdepth = 5;
+        maxDepth = 5;
     }
 
-    return new BDPTIntegrator(sampler, camera, maxdepth, visualize_strategies,
-                              visualize_weights);
+    return new BDPTIntegrator(sampler, camera, maxDepth, visualizeStrategies,
+                              visualizeWeights);
 }

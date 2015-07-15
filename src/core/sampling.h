@@ -85,7 +85,8 @@ struct Distribution1D {
         // Return $x\in{}[0,1)$ corresponding to sample
         return (offset + du) / Count();
     }
-    int SampleDiscrete(Float u, Float *pdf, Float *uRemapped = nullptr) const {
+    int SampleDiscrete(Float u, Float *pdf = nullptr,
+                       Float *uRemapped = nullptr) const {
         // Find surrounding CDF segments and _offset_
         int offset = std::upper_bound(cdf.begin(), cdf.end(), u) - cdf.begin();
         offset = Clamp(offset - 1, 0, Count() - 1);

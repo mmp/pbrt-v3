@@ -291,61 +291,6 @@ inline Float gamma(int n) {
     return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 }
 
-inline bool AtomicCompareAndExchange(volatile int32_t *v, int32_t newValue,
-                                     int32_t oldValue) {
-#if defined(PBRT_IS_MSVC)
-    return _InterlockedCompareExchange(reinterpret_cast<volatile long *>(v),
-                                       newValue, oldValue) == oldValue;
-#else
-    return __sync_bool_compare_and_swap(v, oldValue, newValue);
-#endif
-}
-
-inline bool AtomicCompareAndExchange(volatile int64_t *v, int64_t newValue,
-                                     int64_t oldValue) {
-#if defined(PBRT_IS_MSVC)
-    return _InterlockedCompareExchange64(
-               reinterpret_cast<volatile __int64 *>(v), newValue, oldValue) ==
-           oldValue;
-#else
-    return __sync_bool_compare_and_swap(v, oldValue, newValue);
-#endif
-}
-
-inline float AtomicAdd(volatile float *dst, float delta) {
-    union bits {
-        float f;
-        int32_t i;
-    };
-    bits oldVal, newVal;
-    do {
-#if defined(__i386__) || defined(__amd64__)
-        __asm__ __volatile__("pause\n");
-#endif
-        oldVal.f = *dst;
-        newVal.f = oldVal.f + delta;
-    } while (
-        !AtomicCompareAndExchange((volatile int32_t *)dst, newVal.i, oldVal.i));
-    return newVal.f;
-}
-
-inline double AtomicAdd(volatile double *dst, double delta) {
-    union bits {
-        double f;
-        int64_t i;
-    };
-    bits oldVal, newVal;
-    do {
-#if defined(__i386__) || defined(__amd64__)
-        __asm__ __volatile__("pause\n");
-#endif
-        oldVal.f = *dst;
-        newVal.f = oldVal.f + delta;
-    } while (
-        !AtomicCompareAndExchange((volatile int64_t *)dst, newVal.i, oldVal.i));
-    return newVal.f;
-}
-
 template <typename T, typename U, typename V>
 inline T Clamp(T val, U low, V high) {
     if (val < low)
