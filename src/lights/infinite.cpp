@@ -42,7 +42,7 @@
 InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
                                      const Spectrum &L, int nSamples,
                                      const std::string &texmap)
-    : Light(LightFlags::Infinite, LightToWorld, nullptr, nSamples) {
+    : Light(LightFlags::Infinite, LightToWorld, MediumInterface(), nSamples) {
     // Read texel data from _texmap_ and initialize _Lmap_
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> texels(nullptr);
@@ -107,12 +107,12 @@ Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref,
         LightToWorld(Vector3f(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta));
 
     // Compute PDF for sampled infinite light direction
-    *pdf = mapPdf / (2.f * Pi * Pi * sinTheta);
+    *pdf = mapPdf / (2 * Pi * Pi * sinTheta);
     if (sinTheta == 0) *pdf = 0;
 
     // Return radiance value for infinite light direction
-    *vis = VisibilityTester(
-        ref, Interaction(ref.p + *wi * (2 * worldRadius), ref.time, medium));
+    *vis = VisibilityTester(ref, Interaction(ref.p + *wi * (2 * worldRadius),
+                                             ref.time, mediumInterface));
     return Spectrum(Lmap->Lookup(uv), SpectrumType::Illuminant);
 }
 
@@ -122,7 +122,7 @@ Float InfiniteAreaLight::Pdf_Li(const Interaction &, const Vector3f &w) const {
     Float sinTheta = std::sin(theta);
     if (sinTheta == 0) return 0;
     return distribution->Pdf(Point2f(phi * Inv2Pi, theta * InvPi)) /
-           (2.f * Pi * Pi * sinTheta);
+           (2 * Pi * Pi * sinTheta);
 }
 
 Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,

@@ -53,9 +53,10 @@ class GonioPhotometricLight : public Light {
     // GonioPhotometricLight Public Methods
     Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
                        Float *pdf, VisibilityTester *vis) const;
-    GonioPhotometricLight(const Transform &LightToWorld, const Medium *medium,
+    GonioPhotometricLight(const Transform &LightToWorld,
+                          const MediumInterface &mediumInterface,
                           const Spectrum &intensity, const std::string &texname)
-        : Light(LightFlags::DeltaPosition, LightToWorld, medium),
+        : Light(LightFlags::DeltaPosition, LightToWorld, mediumInterface),
           pLight(LightToWorld(Point3f(0, 0, 0))),
           intensity(intensity) {
         // Create _mipmap_ for _GonioPhotometricLight_

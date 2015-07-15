@@ -39,9 +39,10 @@
 #include "reflection.h"
 
 // SpotLight Method Definitions
-SpotLight::SpotLight(const Transform &LightToWorld, const Medium *medium,
+SpotLight::SpotLight(const Transform &LightToWorld,
+                     const MediumInterface &mediumInterface,
                      const Spectrum &intensity, Float width, Float fall)
-    : Light(LightFlags::DeltaPosition, LightToWorld, medium),
+    : Light(LightFlags::DeltaPosition, LightToWorld, mediumInterface),
       pLight(LightToWorld(Point3f(0, 0, 0))),
       intensity(intensity),
       cosTotalWidth(std::cos(Radians(width))),
@@ -51,7 +52,8 @@ Spectrum SpotLight::Sample_Li(const Interaction &ref, const Point2f &u,
                               VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
     *pdf = 1.f;
-    *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
+    *vis =
+        VisibilityTester(ref, Interaction(pLight, ref.time, mediumInterface));
     return intensity * Falloff(-*wi) / DistanceSquared(pLight, ref.p);
 }
 
@@ -79,7 +81,8 @@ Spectrum SpotLight::Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
                               Ray *ray, Normal3f *nLight, Float *pdfPos,
                               Float *pdfDir) const {
     Vector3f w = UniformSampleCone(u1, cosTotalWidth);
-    *ray = Ray(pLight, LightToWorld(w), Infinity, time, 0, medium);
+    *ray =
+        Ray(pLight, LightToWorld(w), Infinity, time, 0, mediumInterface.inside);
     *nLight = (Normal3f)ray->d;
     *pdfPos = 1;
     *pdfDir = UniformConePdf(cosTotalWidth);

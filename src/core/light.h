@@ -57,11 +57,11 @@ class Light {
   public:
     // Light Interface
     virtual ~Light();
-    Light(LightFlags flags, const Transform &LightToWorld, const Medium *medium,
-          int nSamples = 1)
+    Light(LightFlags flags, const Transform &LightToWorld,
+          const MediumInterface &mediumInterface, int nSamples = 1)
         : flags(flags),
           nSamples(std::max(1, nSamples)),
-          medium(medium),
+          mediumInterface(mediumInterface),
           LightToWorld(LightToWorld),
           WorldToLight(Inverse(LightToWorld)) {
         // Warn if light has transformation with non-uniform scale
@@ -89,7 +89,7 @@ class Light {
     // Light Public Data
     const LightFlags flags;
     const int nSamples;
-    const Medium *medium;
+    const MediumInterface mediumInterface;
 
   protected:
     // Light Protected Data
@@ -114,7 +114,8 @@ class VisibilityTester {
 class AreaLight : public Light {
   public:
     // AreaLight Interface
-    AreaLight(const Transform &LightToWorld, const Medium *medium, int nSamples)
+    AreaLight(const Transform &LightToWorld, const MediumInterface &medium,
+              int nSamples)
         : Light(LightFlags::Area, LightToWorld, medium, nSamples) {}
     virtual Spectrum L(const Interaction &intr, const Vector3f &w) const = 0;
 };

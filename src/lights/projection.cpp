@@ -41,10 +41,10 @@
 
 // ProjectionLight Method Definitions
 ProjectionLight::ProjectionLight(const Transform &LightToWorld,
-                                 const Medium *medium,
+                                 const MediumInterface &mediumInterface,
                                  const Spectrum &intensity,
                                  const std::string &texname, Float fov)
-    : Light(LightFlags::DeltaPosition, LightToWorld, medium),
+    : Light(LightFlags::DeltaPosition, LightToWorld, mediumInterface),
       pLight(LightToWorld(Point3f(0, 0, 0))),
       intensity(intensity) {
     // Create _ProjectionLight_ MIP map
@@ -76,7 +76,8 @@ Spectrum ProjectionLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                     VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
     *pdf = 1.f;
-    *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
+    *vis =
+        VisibilityTester(ref, Interaction(pLight, ref.time, mediumInterface));
     return intensity * Projection(-*wi) / DistanceSquared(pLight, ref.p);
 }
 
@@ -109,7 +110,8 @@ Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                     Float time, Ray *ray, Normal3f *nLight,
                                     Float *pdfPos, Float *pdfDir) const {
     Vector3f v = UniformSampleCone(u1, cosTotalWidth);
-    *ray = Ray(pLight, LightToWorld(v), Infinity, time, 0, medium);
+    *ray =
+        Ray(pLight, LightToWorld(v), Infinity, time, 0, mediumInterface.inside);
     *nLight = (Normal3f)ray->d;  /// same here
     *pdfPos = 1.f;
     *pdfDir = UniformConePdf(cosTotalWidth);

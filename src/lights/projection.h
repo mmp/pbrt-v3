@@ -49,9 +49,9 @@
 class ProjectionLight : public Light {
   public:
     // ProjectionLight Public Methods
-    ProjectionLight(const Transform &LightToWorld, const Medium *medium,
-                    const Spectrum &intensity, const std::string &texname,
-                    Float fov);
+    ProjectionLight(const Transform &LightToWorld,
+                    const MediumInterface &medium, const Spectrum &intensity,
+                    const std::string &texname, Float fov);
     Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
                        Float *pdf, VisibilityTester *vis) const;
     Spectrum Projection(const Vector3f &w) const;

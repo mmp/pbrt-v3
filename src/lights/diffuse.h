@@ -48,9 +48,9 @@
 class DiffuseAreaLight : public AreaLight {
   public:
     // DiffuseAreaLight Public Methods
-    DiffuseAreaLight(const Transform &LightToWorld, const Medium *medium,
-                     const Spectrum &Le, int nSamples,
-                     const std::shared_ptr<Shape> &shape);
+    DiffuseAreaLight(const Transform &LightToWorld,
+                     const MediumInterface &medium, const Spectrum &Le,
+                     int nSamples, const std::shared_ptr<Shape> &shape);
     Spectrum L(const Interaction &intr, const Vector3f &w) const {
         return Dot(intr.n, w) > 0.f ? Lemit : Spectrum(0.f);
     }

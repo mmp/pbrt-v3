@@ -76,10 +76,11 @@ struct Interaction {
         return Ray(origin, d, 1 - ShadowEpsilon, time, depth, GetMedium(d));
     }
     Interaction(const Point3f &p, const Vector3f &wo, Float time,
-                const Medium *medium)
-        : p(p), time(time), wo(wo), mediumInterface(medium) {}
-    Interaction(const Point3f &p, Float time, const Medium *medium)
-        : p(p), time(time), mediumInterface(medium) {}
+                const MediumInterface &mediumInterface)
+        : p(p), time(time), wo(wo), mediumInterface(mediumInterface) {}
+    Interaction(const Point3f &p, Float time,
+                const MediumInterface &mediumInterface)
+        : p(p), time(time), mediumInterface(mediumInterface) {}
     bool IsMediumInteraction() const { return !IsSurfaceInteraction(); }
     const Medium *GetMedium(const Vector3f &w) const {
         return Dot(w, n) > 0 ? mediumInterface.outside : mediumInterface.inside;

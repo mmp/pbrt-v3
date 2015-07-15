@@ -44,7 +44,8 @@ Spectrum PointLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
     *pdf = 1.f;
-    *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
+    *vis =
+        VisibilityTester(ref, Interaction(pLight, ref.time, mediumInterface));
     return intensity / DistanceSquared(pLight, ref.p);
 }
 
@@ -57,7 +58,8 @@ Float PointLight::Pdf_Li(const Interaction &, const Vector3f &) const {
 Spectrum PointLight::Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
                                Ray *ray, Normal3f *nLight, Float *pdfPos,
                                Float *pdfDir) const {
-    *ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time, 0, medium);
+    *ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time, 0,
+               mediumInterface.inside);
     *nLight = (Normal3f)ray->d;
     *pdfPos = 1;
     *pdfDir = UniformSpherePdf();

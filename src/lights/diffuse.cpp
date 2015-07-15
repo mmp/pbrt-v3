@@ -39,10 +39,12 @@
 
 // DiffuseAreaLight Method Definitions
 DiffuseAreaLight::DiffuseAreaLight(const Transform &LightToWorld,
-                                   const Medium *medium, const Spectrum &Lemit,
-                                   int nSamples,
+                                   const MediumInterface &medium,
+                                   const Spectrum &Lemit, int nSamples,
                                    const std::shared_ptr<Shape> &shape)
-    : AreaLight(LightToWorld, medium, nSamples), Lemit(Lemit), shape(shape) {
+    : AreaLight(LightToWorld, mediumInterface, nSamples),
+      Lemit(Lemit),
+      shape(shape) {
     area = shape->Area();
 }
 
@@ -57,7 +59,7 @@ Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
         *pdf = 0;
         return Spectrum(0);
     }
-    pShape.mediumInterface = MediumInterface(medium);
+    pShape.mediumInterface = mediumInterface;
     *vis = VisibilityTester(ref, pShape);
     *wi = Normalize(pShape.p - ref.p);
     *pdf = shape->Pdf(ref, *wi);
@@ -73,7 +75,7 @@ Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                      Float time, Ray *ray, Normal3f *nLight,
                                      Float *pdfPos, Float *pdfDir) const {
     Interaction pShape = shape->Sample(u1);
-    pShape.mediumInterface = MediumInterface(medium);
+    pShape.mediumInterface = mediumInterface;
     Vector3f w = CosineSampleHemisphere(u2);
     *pdfDir = CosineHemispherePdf(w.z);
     // Transform cosine-weighted direction to coordinate system around normal
@@ -88,8 +90,7 @@ Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
 
 void DiffuseAreaLight::Pdf_Le(const Ray &ray, const Normal3f &n, Float *pdfPos,
                               Float *pdfDir) const {
-    Interaction it(ray.o, n, Vector3f(), Vector3f(), ray.time,
-                   MediumInterface(medium));
+    Interaction it(ray.o, n, Vector3f(), Vector3f(), ray.time, mediumInterface);
     *pdfPos = shape->Pdf(it);
     *pdfDir = CosineHemispherePdf(Dot(n, ray.d));
 }
