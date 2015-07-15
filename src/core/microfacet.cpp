@@ -184,7 +184,6 @@ Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,
                                          const Point2f &u) const {
     if (!sampleVisibleArea) {
         // Sample full distribution of normals for Beckmann distribution
-        Vector3f wh;
 
         // Compute $\tan^2 \theta$ and $\phi$ for Beckmann distribution sample
         Float tan2Theta, phi;
@@ -210,7 +209,7 @@ Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,
         // Map sampled Beckmann angles to normal direction _wh_
         Float cosTheta = 1 / std::sqrt(1 + tan2Theta);
         Float sinTheta = std::sqrt(std::max((Float)0, 1 - cosTheta * cosTheta));
-        wh = SphericalDirection(sinTheta, cosTheta, phi);
+        Vector3f wh = SphericalDirection(sinTheta, cosTheta, phi);
         if (!SameHemisphere(wo, wh)) wh = -wh;
         return wh;
     } else {

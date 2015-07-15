@@ -843,8 +843,8 @@ Spectrum TabulatedBSSRDF::f(const SurfaceInteraction &isect_out,
                 Float weight = albedoWeights[i] * radiusWeights[j];
                 if (weight != 0)
                     fs[c] +=
-                        table.evalProfile(albedoOffset + i, radiusOffset + j) *
-                        weight;
+                        weight *
+                        table.evalProfile(albedoOffset + i, radiusOffset + j);
             }
     }
     return (fs * sigma_t).Clamp();

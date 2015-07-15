@@ -111,7 +111,7 @@ Distribution1D *ComputeLightSamplingCDF(const Scene &scene) {
     return new Distribution1D(&lightPower[0], lightPower.size());
 }
 
-Spectrum UniformSampleAllLights(const Interaction &isect, const Scene &scene,
+Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 Sampler &sampler,
                                 const std::vector<int> &numLightSamples,
                                 MemoryArena &arena, bool handleMedia) {
@@ -123,23 +123,25 @@ Spectrum UniformSampleAllLights(const Interaction &isect, const Scene &scene,
         const Point2f *lightSamples = sampler.Get2DArray(nSamples);
         const Point2f *shadingSamples = sampler.Get2DArray(nSamples);
         if (lightSamples == nullptr || shadingSamples == nullptr) {
-            L += EstimateDirect(isect, sampler.Get2D(), *light, sampler.Get2D(),
-                                scene, sampler, arena, handleMedia);
+            // Use a single sample for illumination from _light_
+            Point2f lightSample = sampler.Get2D();
+            Point2f shadingSample = sampler.Get2D();
+            L += EstimateDirect(it, shadingSample, *light, lightSample, scene,
+                                sampler, arena, handleMedia);
         } else {
             // Estimate direct lighting using sample arrays
             Spectrum Ld(0.f);
-            for (int j = 0; j < nSamples; ++j) {
-                Ld += EstimateDirect(isect, shadingSamples[j], *light,
+            for (int j = 0; j < nSamples; ++j)
+                Ld += EstimateDirect(it, shadingSamples[j], *light,
                                      lightSamples[j], scene, sampler, arena,
                                      handleMedia);
-            }
             L += Ld / nSamples;
         }
     }
     return L;
 }
 
-Spectrum UniformSampleOneLight(const Interaction &isect, const Scene &scene,
+Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena,
                                bool handleMedia) {
     // Randomly choose a single light to sample, _light_
@@ -149,7 +151,7 @@ Spectrum UniformSampleOneLight(const Interaction &isect, const Scene &scene,
     const std::shared_ptr<Light> &light = scene.lights[lightNum];
     Point2f lightSample = sampler.Get2D();
     Point2f shadingSample = sampler.Get2D();
-    return (Float)nLights * EstimateDirect(isect, shadingSample, *light,
+    return (Float)nLights * EstimateDirect(it, shadingSample, *light,
                                            lightSample, scene, sampler, arena,
                                            handleMedia);
 }
@@ -170,11 +172,9 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
         if (it.IsSurfaceInteraction()) {
             // Evaluate surface reflectance for light sampling strategy
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
-            if (isect.bsdf) {
-                f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
-                    AbsDot(wi, isect.shading.n);
-                shadingPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
-            }
+            f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
+                AbsDot(wi, isect.shading.n);
+            shadingPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
         } else {
             // Evaluate medium reflectance for light sampling strategy
             const MediumInteraction &mi = (const MediumInteraction &)it;
@@ -193,7 +193,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
                     Ld += f * Li / lightPdf;
                 else {
                     Float weight = PowerHeuristic(1, lightPdf, 1, shadingPdf);
-                    Ld += f * Li * (weight / lightPdf);
+                    Ld += f * Li * weight / lightPdf;
                 }
             }
         }
@@ -207,12 +207,10 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
             // Sample scattered direction for surface interactions
             BxDFType sampledType;
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
-            if (isect.bsdf) {
-                f = isect.bsdf->Sample_f(isect.wo, &wi, shadingSample,
-                                         &shadingPdf, bsdfFlags, &sampledType);
-                f *= AbsDot(wi, isect.shading.n);
-                sampledSpecular = sampledType & BSDF_SPECULAR;
-            }
+            f = isect.bsdf->Sample_f(isect.wo, &wi, shadingSample, &shadingPdf,
+                                     bsdfFlags, &sampledType);
+            f *= AbsDot(wi, isect.shading.n);
+            sampledSpecular = sampledType & BSDF_SPECULAR;
         } else {
             // Sample scattered direction for medium interactions
             const MediumInteraction &mi = (const MediumInteraction &)it;
@@ -220,22 +218,21 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
             f = Spectrum(shadingPdf);
         }
         if (!f.IsBlack() && shadingPdf > 0.f) {
+            // Account for light contributions along sampled direction _wi_
             Float weight = 1.f;
             if (!sampledSpecular) {
                 lightPdf = light.Pdf_Li(it, wi);
                 if (lightPdf == 0.f) return Ld;
                 weight = PowerHeuristic(1, shadingPdf, 1, lightPdf);
             }
+
             // Find intersection and compute transmittance
             SurfaceInteraction lightIsect;
             Ray ray = it.SpawnRay(wi);
-            Spectrum transmittance(1.f);
-
+            Spectrum T(1.f);
             bool foundSurfaceInteraction =
-                handleMedia
-                    ? scene.IntersectT(ray, sampler, &lightIsect,
-                                       &transmittance)
-                    : scene.Intersect(ray, &lightIsect);
+                handleMedia ? scene.IntersectT(ray, sampler, &lightIsect, &T)
+                            : scene.Intersect(ray, &lightIsect);
 
             // Add light contribution from material sampling
             Spectrum Li(0.f);
@@ -244,8 +241,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
                     Li = lightIsect.Le(-wi);
             } else
                 Li = light.Le(ray);
-            if (!Li.IsBlack())
-                Ld += f * Li * transmittance * weight / shadingPdf;
+            if (!Li.IsBlack()) Ld += f * Li * T * weight / shadingPdf;
         }
     }
     return Ld;

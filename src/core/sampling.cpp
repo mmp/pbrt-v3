@@ -128,25 +128,6 @@ Point2f ConcentricSampleDisk(const Point2f &u) {
     return r * Point2f(std::cos(theta), std::sin(theta));
 }
 
-Point2f UniformSampleTriangle(const Point2f &u) {
-    Float su0 = std::sqrt(u[0]);
-    return Point2f(1.f - su0, u[1] * su0);
-}
-
-Distribution2D::Distribution2D(const Float *func, int nu, int nv) {
-    pConditionalV.reserve(nv);
-    for (int v = 0; v < nv; ++v) {
-        // Compute conditional sampling distribution for $\tilde{v}$
-        pConditionalV.emplace_back(new Distribution1D(&func[v * nu], nu));
-    }
-    // Compute marginal sampling distribution $p[\tilde{v}]$
-    std::vector<Float> marginalFunc;
-    marginalFunc.reserve(nv);
-    for (int v = 0; v < nv; ++v)
-        marginalFunc.push_back(pConditionalV[v]->funcInt);
-    pMarginal.reset(new Distribution1D(&marginalFunc[0], nv));
-}
-
 Float UniformConePdf(Float cosThetaMax) {
     return 1 / (2 * Pi * (1 - cosThetaMax));
 }
@@ -167,4 +148,23 @@ Vector3f UniformSampleCone(const Point2f &u, Float cosThetaMax,
     Float phi = u[1] * 2 * Pi;
     return std::cos(phi) * sinTheta * x + std::sin(phi) * sinTheta * y +
            cosTheta * z;
+}
+
+Point2f UniformSampleTriangle(const Point2f &u) {
+    Float su0 = std::sqrt(u[0]);
+    return Point2f(1.f - su0, u[1] * su0);
+}
+
+Distribution2D::Distribution2D(const Float *func, int nu, int nv) {
+    pConditionalV.reserve(nv);
+    for (int v = 0; v < nv; ++v) {
+        // Compute conditional sampling distribution for $\tilde{v}$
+        pConditionalV.emplace_back(new Distribution1D(&func[v * nu], nu));
+    }
+    // Compute marginal sampling distribution $p[\tilde{v}]$
+    std::vector<Float> marginalFunc;
+    marginalFunc.reserve(nv);
+    for (int v = 0; v < nv; ++v)
+        marginalFunc.push_back(pConditionalV[v]->funcInt);
+    pMarginal.reset(new Distribution1D(&marginalFunc[0], nv));
 }

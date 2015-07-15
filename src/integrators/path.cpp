@@ -41,12 +41,12 @@
 // PathIntegrator Method Definitions
 Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                             Sampler &sampler, MemoryArena &arena) const {
-    Spectrum L(0.f);
-    // Declare common path integration variables
+    Spectrum L(0.f), pathThroughput(1.f);
     RayDifferential ray(r);
-    Spectrum pathThroughput = Spectrum(1.f);
     bool specularBounce = false;
     for (int bounces = 0;; ++bounces) {
+        // Find next path vertex and accumulate contribution
+
         // Store intersection into _isect_
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
@@ -80,12 +80,9 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         BxDFType flags;
         Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                           BSDF_ALL, &flags);
-
         if (f.IsBlack() || pdf == 0.f) break;
         pathThroughput *= f * AbsDot(wi, isect.shading.n) / pdf;
-#ifndef NDEBUG
         Assert(std::isinf(pathThroughput.y()) == false);
-#endif
         specularBounce = (flags & BSDF_SPECULAR) != 0;
         ray = isect.SpawnRay(wi);
 
