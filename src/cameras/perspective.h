@@ -65,6 +65,7 @@ class PerspectiveCamera : public ProjectiveCamera {
   private:
     // PerspectiveCamera Private Data
     Vector3f dxCamera, dyCamera;
+    Float A;
 };
 
 PerspectiveCamera *CreatePerspectiveCamera(const ParamSet &params,
