@@ -54,11 +54,6 @@ Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                      Vector3f *wi, Float *pdf,
                                      VisibilityTester *vis) const {
     Interaction pShape = shape->Sample(ref, u);
-    // Handle coincident light sample point and reference point
-    if ((ref.p - pShape.p).LengthSquared() == 0) {
-        *pdf = 0;
-        return Spectrum(0);
-    }
     pShape.mediumInterface = mediumInterface;
     *vis = VisibilityTester(ref, pShape);
     *wi = Normalize(pShape.p - ref.p);
