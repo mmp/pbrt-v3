@@ -19,7 +19,7 @@ IF(MSVC)
   ADD_DEFINITIONS (/D _CRT_SECURE_NO_WARNINGS)
 ENDIF()
 
-FIND_PACKAGE ( THREADS )
+FIND_PACKAGE ( Threads )
 
 # Optionally use Bison and Flex to regenerate parser files
 # Use pregenerated files otherwise (may be outdated)
