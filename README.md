@@ -1,7 +1,7 @@
 pbrt, Version 3
 ===============
 
-[![Build Status](https://travis-ci.org/ambakshi/pbrt-v3.svg?branch=master)](https://travis-ci.org/ambakshi/pbrt-v3)
+[![Build Status](https://travis-ci.org/mmp/pbrt-v3.svg?branch=master)](https://travis-ci.org/mmp/pbrt-v3)
 
 This repository holds the current snapshot of the source code to the new
 version of pbrt that will be described in the forthcoming third edition of
