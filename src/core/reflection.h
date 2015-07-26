@@ -514,88 +514,112 @@ inline int BSDF::NumComponents(BxDFType flags) const {
 }
 
 // BSSRDF Declarations
+Float FresnelMoment1(Float eta);
+Float FresnelMoment2(Float eta);
 class BSSRDF {
   public:
+    // BSSRDF Public Methods
+    BSSRDF(const SurfaceInteraction &po, Float eta) : po(po), eta(eta) {}
+
     // BSSRDF Interface
-    BSSRDF(Float eta) : eta(eta) {}
-    virtual Spectrum f(const SurfaceInteraction &po,
-                       const SurfaceInteraction &pi) const = 0;
-    virtual Spectrum Sample_f(const SurfaceInteraction &, const Scene &scene,
-                              Float time, const BSSRDFSample &bssrdfSample,
-                              MemoryArena &arena, SurfaceInteraction *isect_in,
-                              Float *pdf) const = 0;
-    virtual Float Pdf(const SurfaceInteraction &,
-                      const SurfaceInteraction &isect_in) const = 0;
+    virtual Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) = 0;
+    virtual Spectrum Sample_S(const Scene &scene, const Point2f &sample1,
+                              Float sample2, MemoryArena &arena,
+                              SurfaceInteraction *si, Float *pdf) const = 0;
 
   protected:
     // BSSRDF Protected Data
-    const Float eta;
+    const SurfaceInteraction &po;
+    Float eta;
 };
 
-class TabulatedBSSRDF : public BSSRDF {
+class SeparableBSSRDF : public BSSRDF {
+  public:
+    // SeparableBSSRDF Public Methods
+    SeparableBSSRDF(const SurfaceInteraction &po, Float eta,
+                    const Material *material, TransportMode mode)
+        : BSSRDF(po, eta),
+          ns(po.shading.n),
+          ss(Normalize(po.shading.dpdu)),
+          ts(Cross(ns, ss)),
+          material(material),
+          mode(mode) {}
+    Spectrum Sw(const Vector3f &w) const {
+        Float c = 1 - 2 * FresnelMoment1(1 / eta);
+        return InvPi * (1 - FrDielectric(CosTheta(w), 1.f, eta)) / c;
+    }
+    Spectrum Sp(const SurfaceInteraction &si) const;
+    Spectrum Sample_S(const Scene &scene, const Point2f &sample1, Float sample2,
+                      MemoryArena &arena, SurfaceInteraction *si,
+                      Float *pdf) const;
+    Spectrum Sample_Sp(const Scene &scene, const Point2f &sample1,
+                       Float sample2, MemoryArena &arena,
+                       SurfaceInteraction *si, Float *pdf) const;
+    Float Pdf_Sp(const SurfaceInteraction &si) const;
+
+    // SeparableBSSRDF Interface
+    Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) {
+        return Sw(po.wo) * Sp(pi) * Sw(wi);
+    }
+    virtual Spectrum Sd(Float d) const = 0;
+    virtual Float Pdf_Sd(Float r) const = 0;
+    virtual Float Sample_Sd(const Point2f &sample) const = 0;
+
+  private:
+    // SeparableBSSRDF Private Data
+    Normal3f ns;
+    Vector3f ss, ts;
+    const Material *material;
+    const TransportMode mode;
+};
+
+class BSSRDFAdapter : public BxDF {
+  public:
+    BSSRDFAdapter(SeparableBSSRDF *bssrdf)
+        : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), bssrdf(bssrdf) {}
+    Spectrum f(const Vector3f &, const Vector3f &wi) const {
+        return bssrdf->Sw(wi);
+    }
+
+  private:
+    SeparableBSSRDF *bssrdf;
+};
+
+class TabulatedBSSRDF : public SeparableBSSRDF {
   public:
     // TabulatedBSSRDF Public Methods
-    TabulatedBSSRDF(const SurfaceInteraction &isect, const Material *material,
-                    const BSSRDFTable &table, const Spectrum &sigma_a,
-                    const Spectrum &sigma_s, Float eta, TransportMode mode)
-        : BSSRDF(eta), material(material), table(table), mode(mode) {
-        nn = isect.n;
-        sn = Normalize(isect.dpdu);
-        tn = Cross(nn, sn);
+    TabulatedBSSRDF(const SurfaceInteraction &po, const Material *material,
+                    TransportMode mode, Float eta, const Spectrum &sigma_a,
+                    const Spectrum &sigma_s, const BSSRDFTable &table)
+        : SeparableBSSRDF(po, eta, material, mode), table(table) {
         sigma_t = sigma_a + sigma_s;
         for (int c = 0; c < Spectrum::nSamples; ++c)
             albedo[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0.f;
     }
-    Spectrum f(const SurfaceInteraction &p_in,
-               const SurfaceInteraction &p_out) const;
-    Float Pdf(const SurfaceInteraction &,
-              const SurfaceInteraction &isect_in) const;
-    Spectrum Sample_f(const SurfaceInteraction &, const Scene &scene,
-                      Float time, const BSSRDFSample &bssrdfSample,
-                      MemoryArena &arena, SurfaceInteraction *isect_in,
-                      Float *pdf) const;
+    Spectrum Sd(Float distance) const;
+    Float Pdf_Sd(Float distance) const;
+    Float Sample_Sd(const Point2f &sample) const;
 
   private:
-    // TabulatedBSSRDF Private Methods
-    Float Pdf(Float distance) const;
-
     // TabulatedBSSRDF Private Data
-    const Material *material;
     const BSSRDFTable &table;
     Spectrum sigma_t, albedo;
-    const TransportMode mode;
-    Vector3f sn, tn;
-    Normal3f nn;
 };
 
 struct BSSRDFTable {
     // BSSRDFTable Public Data
-    const int nAlbedoSamples, nRadiusSamples;
-    std::unique_ptr<Float[]> albedoSamples, radiusSamples;
+    const int nAlbedoSamples, nDistanceSamples;
+    std::unique_ptr<Float[]> albedoSamples, distanceSamples;
     std::unique_ptr<Float[]> profile;
     std::unique_ptr<Float[]> profileAlbedo, profileCDF;
 
     // BSSRDFTable Public Methods
-    BSSRDFTable(int nAlbedoSamples, int nRadiusSamples)
-        : nAlbedoSamples(nAlbedoSamples),
-          nRadiusSamples(nRadiusSamples),
-          albedoSamples(new Float[nAlbedoSamples]),
-          radiusSamples(new Float[nRadiusSamples]),
-          profile(new Float[nRadiusSamples * nAlbedoSamples]),
-          profileAlbedo(new Float[nAlbedoSamples]),
-          profileCDF(new Float[nRadiusSamples * nAlbedoSamples]) {}
-    inline Float evalProfile(int albedoIndex, int radiusIndex) const {
-        return profile[albedoIndex * nRadiusSamples + radiusIndex];
+    BSSRDFTable(int nAlbedoSamples, int nDistanceSamples);
+    inline Float EvalProfile(int albedoIndex, int distanceIndex) const {
+        return profile[albedoIndex * nDistanceSamples + distanceIndex];
     }
 };
 
-struct BSSRDFSample {
-    Point2f pos;
-    Float uDiscrete;
-};
-
-Float FresnelMoment1(Float eta);
-Float FresnelMoment2(Float eta);
 Float BeamDiffusionSS(Float sig_s, Float sig_a, Float g, Float eta, Float r);
 Float BeamDiffusionMS(Float sig_s, Float sig_a, Float g, Float eta, Float r);
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t);

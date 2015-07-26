@@ -690,48 +690,6 @@ Float BSDF::Pdf(const Vector3f &woW, const Vector3f &wiW,
 }
 
 // BSSRDF Utility Functions
-Float BeamDiffusionMS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
-    // Compute reduced scattering coefficients and albedo
-    Float sigp_s = sig_s * (1 - g);
-    Float sigp_t = sig_a + sigp_s;
-    Float alphap = sigp_s / sigp_t;
-
-    // Compute diffusion and transport coefficients
-    Float D_g = (2 * sig_a + sigp_s) / (3 * sigp_t * sigp_t);
-    Float sig_tr = std::sqrt(sig_a / D_g);
-
-    // Determine boundary conditions
-    Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
-
-    // Determine the position of the extrapolated boundary
-    Float zb = 2 * D_g * (1 + 3 * fm2) / (1 - 2 * fm1);
-
-    // Determine fluence and vector irradiance weights
-    Float c_phi = 0.25f * (1 - 2 * fm1), c_E = 0.5f * (1 - 3 * fm2);
-    Float integral = 0.0f;
-    const int nSamples = 100;
-    for (int i = 0; i < nSamples; ++i) {
-        // Evaluate dipole integrand and add to _integral_
-        Float zr = -std::log(1 - (i + .5f) / nSamples) / sigp_t,
-              zv = zr + 2 * zb, dr = std::sqrt(r * r + zr * zr),
-              dv = std::sqrt(r * r + zv * zv);
-
-        // Compute fluence _phi_ and vector irradiance _E\_n_ due to the dipole
-        Float phi = alphap * Inv4Pi / D_g *
-                    (std::exp(-sig_tr * dr) / dr - std::exp(-sig_tr * dv) / dv);
-        Float E_n =
-            alphap * Inv4Pi *
-            (zr * (1 + sig_tr * dr) * std::exp(-sig_tr * dr) / (dr * dr * dr) +
-             (zr + 2 * zb) * (1 + sig_tr * dv) * std::exp(-sig_tr * dv) /
-                 (dv * dv * dv));
-
-        // Compute empirical correction factor _kappa_
-        Float kappa = 1 - std::exp(-2 * sigp_t * (dr + zr));
-        integral += kappa * alphap * (phi * c_phi + E_n * c_E);
-    }
-    return integral / nSamples;
-}
-
 Float FresnelMoment1(Float eta) {
     Float eta2 = eta * eta, eta3 = eta2 * eta, eta4 = eta3 * eta,
           eta5 = eta4 * eta;
@@ -755,6 +713,48 @@ Float FresnelMoment2(Float eta) {
                458.843f * r_eta + 404.557f * eta - 189.519f * eta2 +
                54.9327f * eta3 - 9.00603f * eta4 + 0.63942f * eta5;
     }
+}
+
+Float BeamDiffusionMS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
+    // Compute reduced scattering coefficients and albedo
+    Float sigp_s = sig_s * (1 - g);
+    Float sigp_t = sig_a + sigp_s;
+    Float alphap = sigp_s / sigp_t;
+
+    // Compute diffusion and transport coefficients
+    Float D_g = (2 * sig_a + sigp_s) / (3 * sigp_t * sigp_t);
+    Float sig_tr = std::sqrt(sig_a / D_g);
+
+    // Determine boundary conditions
+    Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
+
+    // Determine the position of the extrapolated boundary
+    Float zb = 2 * D_g * (1 + 3 * fm2) / (1 - 2 * fm1);
+
+    // Determine fluence and vector irradiance weights
+    Float c_phi = .25f * (1 - 2 * fm1), c_E = .5f * (1 - 3 * fm2);
+    Float integral = 0.0f;
+    const int nSamples = 100;
+    for (int i = 0; i < nSamples; ++i) {
+        // Evaluate dipole integrand and add to _integral_
+        Float zr = -std::log(1 - (i + .5f) / nSamples) / sigp_t,
+              zv = zr + 2 * zb, dr = std::sqrt(r * r + zr * zr),
+              dv = std::sqrt(r * r + zv * zv);
+
+        // Compute fluence _phi_ and vector irradiance _E\_n_ due to the dipole
+        Float phi = alphap * Inv4Pi / D_g *
+                    (std::exp(-sig_tr * dr) / dr - std::exp(-sig_tr * dv) / dv);
+        Float E_n =
+            alphap * Inv4Pi *
+            (zr * (1 + sig_tr * dr) * std::exp(-sig_tr * dr) / (dr * dr * dr) +
+             (zr + 2 * zb) * (1 + sig_tr * dv) * std::exp(-sig_tr * dv) /
+                 (dv * dv * dv));
+
+        // Compute empirical correction factor _kappa_
+        Float kappa = 1 - std::exp(-2 * sigp_t * (dr + zr));
+        integral += kappa * alphap * (phi * c_phi + E_n * c_E);
+    }
+    return integral / nSamples;
 }
 
 Float BeamDiffusionSS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
@@ -781,31 +781,31 @@ Float BeamDiffusionSS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
 
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
     // Choose radii of the diffusion profile disretization
-    t->radiusSamples[0] = 0;
-    t->radiusSamples[1] = 2.5e-3f;
-    for (int i = 2; i < t->nRadiusSamples; ++i)
-        t->radiusSamples[i] = t->radiusSamples[i - 1] * 1.2f;
+    t->distanceSamples[0] = 0;
+    t->distanceSamples[1] = 2.5e-3f;
+    for (int i = 2; i < t->nDistanceSamples; ++i)
+        t->distanceSamples[i] = t->distanceSamples[i - 1] * 1.2f;
     ParallelFor([&](int i) {
         // Compute the _i_-th diffusion profile
         Float albedo = (1 - std::exp(-8 * i / (Float)(t->nAlbedoSamples - 1))) /
                        (1 - std::exp(-8));
 
         // Compute profile for chosen _albedo_
-        t->profile[i * t->nRadiusSamples] = 0.0f;
-        for (int j = 0; j < t->nRadiusSamples; ++j)
-            t->profile[i * t->nRadiusSamples + j] =
-                2 * Pi * t->radiusSamples[j] *
+        t->profile[i * t->nDistanceSamples] = 0.0f;
+        for (int j = 0; j < t->nDistanceSamples; ++j)
+            t->profile[i * t->nDistanceSamples + j] =
+                2 * Pi * t->distanceSamples[j] *
                 (BeamDiffusionSS(albedo, 1 - albedo, g, eta,
-                                 t->radiusSamples[j]) +
+                                 t->distanceSamples[j]) +
                  BeamDiffusionMS(albedo, 1 - albedo, g, eta,
-                                 t->radiusSamples[j]));
+                                 t->distanceSamples[j]));
 
         // Compute multiple scattering albedo and importance sampling CDF
         t->albedoSamples[i] = albedo;
         t->profileAlbedo[i] =
-            IntegrateCatmullRom(t->nRadiusSamples, t->radiusSamples.get(),
-                                &t->profile[i * t->nRadiusSamples],
-                                &t->profileCDF[i * t->nRadiusSamples]);
+            IntegrateCatmullRom(t->nDistanceSamples, t->distanceSamples.get(),
+                                &t->profile[i * t->nDistanceSamples],
+                                &t->profileCDF[i * t->nDistanceSamples]);
     }, t->nAlbedoSamples);
 }
 
@@ -822,29 +822,39 @@ void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &Kd,
 }
 
 // BSSRDF Method Definitions
-Spectrum TabulatedBSSRDF::f(const SurfaceInteraction &isect_out,
-                            const SurfaceInteraction &isect_in) const {
+Spectrum SeparableBSSRDF::Sp(const SurfaceInteraction &pi) const {
+    return Sd(Distance(po.p, pi.p));
+}
+
+BSSRDFTable::BSSRDFTable(int nAlbedoSamples, int nDistanceSamples)
+    : nAlbedoSamples(nAlbedoSamples),
+      nDistanceSamples(nDistanceSamples),
+      albedoSamples(new Float[nAlbedoSamples]),
+      distanceSamples(new Float[nDistanceSamples]),
+      profile(new Float[nDistanceSamples * nAlbedoSamples]),
+      profileAlbedo(new Float[nAlbedoSamples]),
+      profileCDF(new Float[nDistanceSamples * nAlbedoSamples]) {}
+Spectrum TabulatedBSSRDF::Sd(Float distance) const {
     Spectrum fs(0.f);
     for (int c = 0; c < Spectrum::nSamples; ++c) {
         // Compute BSSRDF sample weights for spectrum component _c_
-        Float distance = Distance(isect_out.p, isect_in.p);
-        int albedoOffset, radiusOffset;
-        Float albedoWeights[4], radiusWeights[4];
+        int albedoOffset, distanceOffset;
+        Float albedoWeights[4], distanceWeights[4];
         if (!CatmullRomWeights(table.nAlbedoSamples, table.albedoSamples.get(),
                                albedo[c], &albedoOffset, albedoWeights) ||
-            !CatmullRomWeights(table.nRadiusSamples, table.radiusSamples.get(),
-                               distance * sigma_t[c], &radiusOffset,
-                               radiusWeights))
+            !CatmullRomWeights(
+                table.nDistanceSamples, table.distanceSamples.get(),
+                distance * sigma_t[c], &distanceOffset, distanceWeights))
             continue;
 
         // Compute weighted BSSRDF value using weights
         for (int i = 0; i < 4; ++i)
             for (int j = 0; j < 4; ++j) {
-                Float weight = albedoWeights[i] * radiusWeights[j];
+                Float weight = albedoWeights[i] * distanceWeights[j];
                 if (weight != 0)
                     fs[c] +=
                         weight *
-                        table.evalProfile(albedoOffset + i, radiusOffset + j);
+                        table.EvalProfile(albedoOffset + i, distanceOffset + j);
             }
     }
     return (fs * sigma_t).Clamp();
@@ -859,141 +869,147 @@ bool IntersectFacing(const Scene &scene, Ray ray, const Vector3f &axis,
     return false;
 }
 
-Spectrum TabulatedBSSRDF::Sample_f(const SurfaceInteraction &isect,
-                                   const Scene &scene, Float time,
-                                   const BSSRDFSample &bssrdfSample,
-                                   MemoryArena &arena,
-                                   SurfaceInteraction *isect_in,
-                                   Float *pdf) const {
+Spectrum SeparableBSSRDF::Sample_Sp(const Scene &scene, const Point2f &sample1,
+                                    Float sample2, MemoryArena &arena,
+                                    SurfaceInteraction *pi, Float *pdf) const {
+    // Choose projection axis for sampled BSSRDF profile
     Vector3f axis;
-
     bool offsetRayOrigin = false;
-    Float discrSample = bssrdfSample.uDiscrete;
-    if (discrSample < .25f) {
-        axis = sn;
-        discrSample *= 4;
-    } else if (discrSample < .5f) {
-        axis = tn;
-        discrSample = (discrSample - .25f) * 4.f;
+    if (sample2 < .25f) {
+        axis = ss;
+        sample2 *= 4;
+    } else if (sample2 < .5f) {
+        axis = ts;
+        sample2 = (sample2 - .25f) * 4.f;
     } else {
-        axis = Vector3f(nn);
-        discrSample = (discrSample - .5f) * 2.f;
+        axis = Vector3f(ns);
+        sample2 = (sample2 - .5f) * 2.f;
         offsetRayOrigin = true;
     }
 
-    if (discrSample < .5f) {
-        discrSample *= 2.f;
+    // Choose projection direction for sampled BSSRDF profile
+    if (sample2 < .5f) {
+        sample2 *= 2.f;
     } else {
-        discrSample = 2.f * (discrSample - .5f);
+        sample2 = 2.f * (sample2 - .5f);
         axis = -axis;
     }
 
-    int ch = Clamp((int)(discrSample * Spectrum::nSamples), 0,
-                   Spectrum::nSamples - 1);
-    if (sigma_t[ch] == 0) return Spectrum(0.f);
+    // Sample BSSRDF profile using polar coordinates
+    Float phi = 2 * Pi * sample1.x;
+    Float r = Sample_Sd(Point2f(sample2, sample1.y));
+    if (r < 0) return Spectrum(0.f);
 
-    Float phi = 2 * Pi * bssrdfSample.pos.x;
-    Float r =
-        SampleCatmullRom2D(table.nAlbedoSamples, table.nRadiusSamples,
-                           table.albedoSamples.get(), table.radiusSamples.get(),
-                           table.profile.get(), table.profileCDF.get(),
-                           albedo[ch], bssrdfSample.pos.y) /
-        sigma_t[ch];
-
+    // Compute BSSRDF sampling ray origin in world space
     Vector3f v0, v1;
     CoordinateSystem(axis, &v0, &v1);
-    Point3f origin = isect.p + (v0 * std::cos(phi) + v1 * std::sin(phi)) * r;
-
+    Point3f origin = po.p + (v0 * std::cos(phi) + v1 * std::sin(phi)) * r;
     if (offsetRayOrigin)
-        origin = OffsetRayOrigin(origin, isect.pError * 10, isect.n, axis);
+        origin = OffsetRayOrigin(origin, po.pError * 10, po.n, axis);
 
-    Ray ray1(origin, axis, Infinity, time);
-    Ray ray2(origin, -axis, Infinity, time);
+    // Intersect two BSSRDF sampling rays against the scene geometry
+    Ray ray1(origin, axis, Infinity, po.time);
+    Ray ray2(origin, -axis, Infinity, po.time);
+    SurfaceInteraction it1, it2;
+    bool it1Valid = IntersectFacing(scene, ray1, axis, &it1);
+    bool it2Valid = IntersectFacing(scene, ray2, axis, &it2);
+    it1Valid = it1Valid && it1.primitive->GetMaterial() == material;
+    it2Valid = it2Valid && it2.primitive->GetMaterial() == material;
 
-    SurfaceInteraction its1, its2;
-    bool its1Valid = IntersectFacing(scene, ray1, axis, &its1);
-    bool its2Valid = IntersectFacing(scene, ray2, axis, &its2);
-    its1Valid = its1Valid && its1.primitive->GetMaterial() == material;
-    its2Valid = its2Valid && its2.primitive->GetMaterial() == material;
-
-    SurfaceInteraction *its;
-    if (its1Valid && its2Valid)
-        its = (its1.p - origin).LengthSquared() <
-                      (its2.p - origin).LengthSquared()
-                  ? &its1
-                  : &its2;
-    else if (its1Valid)
-        its = &its1;
-    else if (its2Valid)
-        its = &its2;
+    // Select the closest valid intersection
+    if (it1Valid && it2Valid)
+        *pi =
+            (it1.p - origin).LengthSquared() < (it2.p - origin).LengthSquared()
+                ? it1
+                : it2;
+    else if (it1Valid)
+        *pi = it1;
+    else if (it2Valid)
+        *pi = it2;
     else
         return Spectrum(0.0f);
 
-    // XXX is this still needed? (we just need the shading frame to be computed
-    // for this intersection)
-    its->ComputeScatteringFunctions(RayDifferential(its == &its1 ? ray1 : ray2),
-                                    arena, true);
+    // Compute position sampling weight and set output arguments
+    *pdf = Pdf_Sp(*pi);
+    Spectrum value(0.f);
+    if (*pdf != 0) value = Sp(*pi) / *pdf;
 
-    its->bsdf = ARENA_ALLOC(arena, BSDF)(*its);
-    its->bsdf->Add(ARENA_ALLOC(arena, LambertianReflection)(Spectrum(1.0f)));
-
-    *pdf = Pdf(isect, *its);
-    *isect_in = *its;
-
-    if (*pdf == 0.f) return Spectrum(0.f);
-
-    return f(isect, *its) *
-           (mode == TransportMode::Radiance ? (eta * eta) : 1.f) / *pdf;
+    // Update BSSRDF sampling weight to account for adjoint light transport
+    if (mode == TransportMode::Radiance) value *= eta * eta;
+    return value;
 }
 
-Float TabulatedBSSRDF::Pdf(Float distance) const {
-    Float result = 0.f;
-    for (int c = 0; c < Spectrum::nSamples; ++c) {
-        int albedoOffset, radiusOffset;
-        Float albedoWeights[4], radiusWeights[4];
+Spectrum SeparableBSSRDF::Sample_S(const Scene &scene, const Point2f &sample1,
+                                   Float sample2, MemoryArena &arena,
+                                   SurfaceInteraction *si, Float *pdf) const {
+    Spectrum result = Sample_Sp(scene, sample1, sample2, arena, si, pdf);
+    if (!result.IsBlack()) {
+        // Initialize material model at sampled surface interaction
+        si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
+        si->bsdf->Add(ARENA_ALLOC(arena, LambertianReflection)(Spectrum(1.0f)));
+        si->wo = Vector3f(si->shading.n);
+    }
+    return result;
+}
 
+Float TabulatedBSSRDF::Sample_Sd(const Point2f &sample) const {
+    // Choose channel _ch_ of BSSRDF profile
+    int ch =
+        Clamp((int)(sample.x * Spectrum::nSamples), 0, Spectrum::nSamples - 1);
+    if (sigma_t[ch] == 0) return -1.f;
+
+    // Sample spline interpolant for given channel _ch_
+    return SampleCatmullRom2D(table.nAlbedoSamples, table.nDistanceSamples,
+                              table.albedoSamples.get(),
+                              table.distanceSamples.get(), table.profile.get(),
+                              table.profileCDF.get(), albedo[ch], sample.y) /
+           sigma_t[ch];
+}
+
+Float TabulatedBSSRDF::Pdf_Sd(Float distance) const {
+    Float result = 0.f;
+    for (int ch = 0; ch < Spectrum::nSamples; ++ch) {
+        // Compute tensor product weights for profile interpolation
+        int albedoOffset, distanceOffset;
+        Float albedoWeights[4], distanceWeights[4];
         if (!CatmullRomWeights(table.nAlbedoSamples, table.albedoSamples.get(),
-                               albedo[c], &albedoOffset, albedoWeights) ||
-            !CatmullRomWeights(table.nRadiusSamples, table.radiusSamples.get(),
-                               distance * sigma_t[c], &radiusOffset,
-                               radiusWeights))
+                               albedo[ch], &albedoOffset, albedoWeights) ||
+            !CatmullRomWeights(
+                table.nDistanceSamples, table.distanceSamples.get(),
+                distance * sigma_t[ch], &distanceOffset, distanceWeights))
             continue;
 
+        // Add PDF term due to channel _ch_
         Float lookup = 0.f, finalAlbedo = 0;
         for (int i = 0; i < 4; ++i) {
             if (albedoWeights[i] == 0) continue;
             finalAlbedo +=
                 table.profileAlbedo[albedoOffset + i] * albedoWeights[i];
-
             for (int j = 0; j < 4; ++j) {
-                if (radiusWeights[j] == 0) continue;
+                if (distanceWeights[j] == 0) continue;
                 lookup +=
-                    table.evalProfile(albedoOffset + i, radiusOffset + j) *
-                    albedoWeights[i] * radiusWeights[j];
+                    table.EvalProfile(albedoOffset + i, distanceOffset + j) *
+                    albedoWeights[i] * distanceWeights[j];
             }
         }
-
-        result += std::max((Float)0, lookup * sigma_t[c] / finalAlbedo);
+        result += std::max((Float)0, lookup * sigma_t[ch] / finalAlbedo);
     }
-
-    return result * (1.f / Spectrum::nSamples);
+    return result / Spectrum::nSamples;
 }
 
-Float TabulatedBSSRDF::Pdf(const SurfaceInteraction &isect,
-                           const SurfaceInteraction &isect_in) const {
-    Vector3f d = isect.p - isect_in.p;
-    Vector3f dlocal = Vector3f(Dot(sn, d), Dot(tn, d), Dot(nn, d));
-    Normal3f nlocal(Dot(sn, isect_in.n), Dot(tn, isect_in.n),
-                    Dot(nn, isect_in.n));
+Float SeparableBSSRDF::Pdf_Sp(const SurfaceInteraction &pi) const {
+    Vector3f d = po.p - pi.p;
+    Vector3f dLocal = Vector3f(Dot(ss, d), Dot(ts, d), Dot(ns, d));
+    // Compute cosines and distances for each projection axis
+    Normal3f nLocal(Dot(ss, pi.n), Dot(ts, pi.n), Dot(ns, pi.n));
+    Float distSqr[3] = {dLocal.y * dLocal.y + dLocal.z * dLocal.z,
+                        dLocal.z * dLocal.z + dLocal.x * dLocal.x,
+                        dLocal.x * dLocal.x + dLocal.y * dLocal.y};
 
-    Float axisProb[3] = {.25f, .25f, .5f};
-    Float distSqr[3] = {dlocal.y * dlocal.y + dlocal.z * dlocal.z,
-                        dlocal.z * dlocal.z + dlocal.x * dlocal.x,
-                        dlocal.x * dlocal.x + dlocal.y * dlocal.y};
-
-    Float result = 0;
+    // Return combined probability from all strategies
+    Float result = 0, axisProb[3] = {.25f, .25f, .5f};
     for (int i = 0; i < 3; ++i)
-        result += 0.5f * Pdf(std::sqrt(distSqr[i])) * axisProb[i] *
-                  std::abs(nlocal[i]);
+        result += 0.5f * Pdf_Sd(std::sqrt(distSqr[i])) * axisProb[i] *
+                  std::abs(nLocal[i]);
     return result;
 }

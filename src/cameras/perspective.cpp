@@ -55,13 +55,13 @@ PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
     dyCamera =
         RasterToCamera(Point3f(0, 1, 0)) - RasterToCamera(Point3f(0, 0, 0));
 
-    // Compute image plane bounds for _PerspectiveCamera_
+    // Compute image plane bounds at $z=1$ for _PerspectiveCamera_
     Point2i res = film->fullResolution;
     Point3f pMin = RasterToCamera(Point3f(0, 0, 0));
     Point3f pMax = RasterToCamera(Point3f(res.x, res.y, 0));
     pMin /= pMin.z;
     pMax /= pMax.z;
-    A = (pMax.x - pMin.x) * (pMax.y - pMin.y);
+    A = std::abs((pMax.x - pMin.x) * (pMax.y - pMin.y));
 }
 
 Float PerspectiveCamera::GenerateRay(const CameraSample &sample,
@@ -152,26 +152,54 @@ Spectrum PerspectiveCamera::We(const Interaction &it, const Vector3f &w,
     Point3f pFocus =
         it.p + w * invCosTheta * (lensRadius > 0 ? focalDistance : 1);
     Point3f pRaster = Inverse(RasterToCamera)(Inverse(c2w)(pFocus));
-    if (pRaster.x < 0 || pRaster.x >= film->fullResolution.x || pRaster.y < 0 ||
-        pRaster.y >= film->fullResolution.y)
-        return 0;
+
+    // Return raster position if requested
     if (pRasterPtr) *pRasterPtr = Point2f(pRaster.x, pRaster.y);
 
+    // Return zero importance for out of bounds points
+    Bounds2i sampleBounds = film->GetSampleBounds();
+    if (pRaster.x < sampleBounds.pMin.x || pRaster.x >= sampleBounds.pMax.x ||
+        pRaster.y < sampleBounds.pMin.y || pRaster.y >= sampleBounds.pMax.y)
+        return 0;
+
+    // Compute lens area of perspective camera
+    Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1.f;
+
     // Return importance for point on image plane
-    return Spectrum(std::abs(invCosTheta * invCosTheta * invCosTheta / A));
+    Float invCosTheta2 = invCosTheta * invCosTheta;
+    return Spectrum((invCosTheta2 * invCosTheta2) / (A * lensArea));
 }
 
-Float PerspectiveCamera::Pdf(const Interaction &it, const Vector3f &w) const {
-    return We(it, w).y();
+Float PerspectiveCamera::Pdf_Wi(const Interaction &it,
+                                const Vector3f &w) const {
+    // Interpolate camera matrix and check if _w_ is forward-facing
+    Transform c2w;
+    CameraToWorld.Interpolate(it.time, &c2w);
+    Float cosTheta = Dot(w, c2w(Vector3f(0, 0, 1)));
+    if (cosTheta <= 0) return 0;
+
+    // Map direction _w_ onto the raster grid
+    Float invCosTheta = 1 / cosTheta;
+    Point3f pFocus =
+        it.p + w * invCosTheta * (lensRadius > 0 ? focalDistance : 1);
+    Point3f pRaster = Inverse(RasterToCamera)(Inverse(c2w)(pFocus));
+
+    // Return zero importance for out of bounds points
+    Bounds2i sampleBounds = film->GetSampleBounds();
+    if (pRaster.x < sampleBounds.pMin.x || pRaster.x >= sampleBounds.pMax.x ||
+        pRaster.y < sampleBounds.pMin.y || pRaster.y >= sampleBounds.pMax.y)
+        return 0;
+    return invCosTheta * invCosTheta * invCosTheta / A;
 }
 
-Spectrum PerspectiveCamera::Sample_We(const Interaction &ref, const Point2f &u,
-                                      Vector3f *wi, Float *pdf, Point2f *raster,
+Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &u,
+                                      Vector3f *wi, Float *pdf,
+                                      Point2f *pRaster,
                                       VisibilityTester *vis) const {
     // Uniformly sample a lens interaction _lensIntr_
     Point2f pLens = lensRadius * ConcentricSampleDisk(u);
-    Point3f pLens3 = CameraToWorld(ref.time, Point3f(pLens.x, pLens.y, 0));
-    Interaction lensIntr(pLens3, ref.time, medium);
+    Point3f pLensWorld = CameraToWorld(ref.time, Point3f(pLens.x, pLens.y, 0));
+    Interaction lensIntr(pLensWorld, ref.time, medium);
     lensIntr.n = Normal3f(CameraToWorld(ref.time, Vector3f(0, 0, 1)));
 
     // Populate arguments and compute the importance value
@@ -179,8 +207,13 @@ Spectrum PerspectiveCamera::Sample_We(const Interaction &ref, const Point2f &u,
     *wi = lensIntr.p - ref.p;
     Float dist = wi->Length();
     *wi /= dist;
-    *pdf = lensRadius == 0.f ? 1.0f : (1 / (Pi * lensRadius * lensRadius));
-    return We(lensIntr, -*wi, raster) / (dist * dist);
+
+    // Compute PDF for importance arriving at _ref_
+
+    // Compute lens area of perspective camera
+    Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1.f;
+    *pdf = (dist * dist) / (AbsDot(lensIntr.n, *wi) * lensArea);
+    return We(lensIntr, -*wi, pRaster);
 }
 
 PerspectiveCamera *CreatePerspectiveCamera(const ParamSet &params,

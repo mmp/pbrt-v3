@@ -73,9 +73,9 @@ Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     pShape.mediumInterface = mediumInterface;
     Vector3f w = CosineSampleHemisphere(u2);
     *pdfDir = CosineHemispherePdf(w.z);
-    // Transform cosine-weighted direction to coordinate system around normal
+    // Transform cosine-weighted direction to normal's coordinate system
     Vector3f v1, v2, n(pShape.n);
-    CoordinateSystem(Vector3f(n), &v1, &v2);
+    CoordinateSystem(n, &v1, &v2);
     w = w.x * v1 + w.y * v2 + w.z * n;
     *ray = pShape.SpawnRay(w);
     *nLight = pShape.n;

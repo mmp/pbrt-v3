@@ -114,7 +114,7 @@ class FilmTile {
         pixels = std::vector<FilmTilePixel>(std::max(0, pixelBounds.Area()));
     }
     void AddSample(const Point2f &pFilm, const Spectrum &L,
-                   Float sampleWeight) {
+                   Float sampleWeight = 1.) {
         // Compute sample's raster bounds
         Point2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
         Point2i p0 = (Point2i)Ceil(pFilmDiscrete - filterRadius);

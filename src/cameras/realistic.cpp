@@ -687,11 +687,10 @@ Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
     Float cosTheta = Normalize(rFilm.d).z;
     if (simpleWeighting)
         return (cosTheta * cosTheta) * (cosTheta * cosTheta);
-    else {
-        Float pdf = ExitPupilPdf(pFilm, pRear);
-        return ((cosTheta * cosTheta) * (cosTheta * cosTheta)) /
-               (LensRearZ() * LensRearZ() * pdf);
-    }
+    else
+        return (shutterClose - shutterOpen) *
+               ((cosTheta * cosTheta) * (cosTheta * cosTheta)) /
+               (LensRearZ() * LensRearZ() * ExitPupilPdf(pFilm, pRear));
 }
 
 Float RealisticCamera::ExitPupilPdf(const Point3f &pFilm,

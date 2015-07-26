@@ -103,12 +103,14 @@ Spectrum SamplerIntegrator::SpecularTransmit(const RayDifferential &ray,
     return L;
 }
 
-Distribution1D *ComputeLightSamplingCDF(const Scene &scene) {
+std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
+    const Scene &scene) {
     Assert(scene.lights.size() > 0);
     std::vector<Float> lightPower;
     for (const auto &light : scene.lights)
         lightPower.push_back(light->Power().y());
-    return new Distribution1D(&lightPower[0], lightPower.size());
+    return std::unique_ptr<Distribution1D>(
+        new Distribution1D(&lightPower[0], lightPower.size()));
 }
 
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
@@ -287,10 +289,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 tileSampler->StartPixel(pixel);
                 do {
                     // Initialize _CameraSample_ for current sample
-                    CameraSample cameraSample;
-                    cameraSample.pFilm = (Point2f)pixel + tileSampler->Get2D();
-                    cameraSample.time = tileSampler->Get1D();
-                    cameraSample.pLens = tileSampler->Get2D();
+                    CameraSample cameraSample =
+                        tileSampler->GetCameraSample(pixel);
 
                     // Generate camera ray for current sample
                     RayDifferential ray;

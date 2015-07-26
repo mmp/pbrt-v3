@@ -56,7 +56,8 @@ class Integrator {
     virtual void Render(const Scene &scene) = 0;
 };
 
-Distribution1D *ComputeLightSamplingCDF(const Scene &scene);
+std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
+    const Scene &scene);
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 Sampler &sampler,
                                 const std::vector<int> &numLightSamples,

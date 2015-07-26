@@ -96,13 +96,14 @@ bool GeometricPrimitive::Intersect(const Ray &r, SurfaceInteraction *si) const {
     Float tHit;
     if (!shape->Intersect(r, &tHit, si)) return false;
     r.tMax = tHit;
-    // Initialize _SurfaceInteraction_ members after _Shape_ intersection
     si->primitive = this;
+    Assert(Dot(si->n, si->shading.n) >= 0.);
+    // Initialize _SurfaceInteraction::mediumInterface_ after _Shape_
+    // intersection
     if (mediumInterface.IsMediumTransition())
         si->mediumInterface = mediumInterface;
     else
         si->mediumInterface = MediumInterface(r.medium);
-    Assert(Dot(si->n, si->shading.n) >= 0.);
     return true;
 }
 

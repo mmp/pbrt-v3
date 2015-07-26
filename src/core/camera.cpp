@@ -111,14 +111,14 @@ Spectrum Camera::We(const Interaction &it, const Vector3f &w,
     return Spectrum(0.f);
 }
 
-Float Camera::Pdf(const Interaction &it, const Vector3f &w) const {
-    Severe("Camera::Pdf() is not implemented!");
+Float Camera::Pdf_Wi(const Interaction &it, const Vector3f &w) const {
+    Severe("Camera::Pdf_Wi() is not implemented!");
     return 0.f;
 }
 
-Spectrum Camera::Sample_We(const Interaction &ref, const Point2f &u,
-                           Vector3f *wi, Float *pdf, Point2f *raster,
+Spectrum Camera::Sample_Wi(const Interaction &ref, const Point2f &u,
+                           Vector3f *wi, Float *pdf, Point2f *pRaster,
                            VisibilityTester *vis) const {
-    Severe("Camera::Sample_We() is not implemented!");
+    Severe("Camera::Sample_Wi() is not implemented!");
     return Spectrum(0.f);
 }

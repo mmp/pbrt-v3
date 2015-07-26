@@ -52,32 +52,39 @@ class MLTSampler : public Sampler {
   public:
     // MLTSampler Public Methods
     MLTSampler(int64_t mutationsPerPixel, int id, Float sigma,
-               Float largeStepProb);
+               Float largeStepProb, int streamCount)
+        : Sampler(mutationsPerPixel),
+          rng(PCG32_DEFAULT_STATE, (uint64_t)id),
+          sigma(sigma),
+          largeStepProb(largeStepProb),
+          streamCount(streamCount) {}
     Float Get1D();
     Point2f Get2D();
     std::unique_ptr<Sampler> Clone(int seed);
-    void Begin();
+    void StartIteration();
     void Accept();
     void Reject();
-    void SetStream(int streamCount_, int streamIndex_);
+    void StartStream(int index);
     int GetNextIndex() { return streamIndex + streamCount * sampleIndex++; }
 
   protected:
     // MLTSampler Private Declarations
     struct PrimarySample {
         Float value = 0;
-        // PrimarySample Members
-        int modify = 0;
-        Float valueBackup = 0;
-        int modifyBackup = 0;
+        // PrimarySample Public Methods
         void Backup() {
             valueBackup = value;
-            modifyBackup = modify;
+            modifyBackup = lastModificationIteration;
         }
         void Restore() {
             value = valueBackup;
-            modify = modifyBackup;
+            lastModificationIteration = modifyBackup;
         }
+
+        // PrimarySample Public Data
+        int lastModificationIteration = 0;
+        Float valueBackup = 0;
+        int modifyBackup = 0;
     };
 
     // MLTSampler Private Methods
@@ -87,12 +94,12 @@ class MLTSampler : public Sampler {
     RNG rng;
     Float sigma;
     Float largeStepProb;
-    std::vector<PrimarySample> samples;
+    std::vector<PrimarySample> X;
+    const int streamCount;
     int iteration = 0;
     bool largeStep = true;
-    int lastLargeStep = 0;
+    int lastLargeStepIteration = 0;
     int streamIndex;
-    int streamCount;
     int sampleIndex;
 };
 
@@ -117,13 +124,13 @@ class MLTIntegrator : public Integrator {
   private:
     // MLTIntegrator Private Data
     std::shared_ptr<const Camera> camera;
-    std::unique_ptr<Distribution1D> lightDistr;
     int maxDepth;
     int nBootstrap;
     int nChains;
     int64_t mutationsPerPixel;
     Float sigma;
     Float largeStepProb;
+    std::unique_ptr<Distribution1D> lightDistr;
 };
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,

@@ -41,7 +41,7 @@
 // VolPathIntegrator Method Definitions
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena) const {
-    Spectrum L(0.f), pathThroughput(1.f);
+    Spectrum L(0.f), alpha(1.f);
     RayDifferential ray(r);
     bool specularBounce = false;
     for (int bounces = 0;; ++bounces) {
@@ -51,16 +51,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Sample the participating medium, if present
         MediumInteraction mi;
-        if (ray.medium)
-            pathThroughput *= ray.medium->Sample(ray, sampler, arena, &mi);
-        if (pathThroughput.IsBlack()) break;
+        if (ray.medium) alpha *= ray.medium->Sample(ray, sampler, arena, &mi);
+        if (alpha.IsBlack()) break;
 
         // Handle an interaction with a medium or a surface
         if (mi.IsValid()) {
             // Handle medium scattering case
             Vector3f wo = -ray.d, wi;
-            L += pathThroughput *
-                 UniformSampleOneLight(mi, scene, sampler, arena, true);
+            L += alpha * UniformSampleOneLight(mi, scene, sampler, arena, true);
             Point2f phaseSample = sampler.Get2D();
             mi.phase->Sample_p(wo, &wi, phaseSample);
             ray = mi.SpawnRay(wi);
@@ -71,10 +69,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             if (bounces == 0 || specularBounce) {
                 // Add emitted light at path vertex or from the environment
                 if (foundIntersection)
-                    L += pathThroughput * isect.Le(-ray.d);
+                    L += alpha * isect.Le(-ray.d);
                 else
                     for (const auto &light : scene.lights)
-                        L += pathThroughput * light->Le(ray);
+                        L += alpha * light->Le(ray);
             }
             if (!foundIntersection || bounces >= maxDepth) break;
 
@@ -88,7 +86,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
             // Sample illumination from lights to find attenuated path
             // contribution
-            L += pathThroughput *
+            L += alpha *
                  UniformSampleOneLight(isect, scene, sampler, arena, true);
 
             // Sample BSDF to get new path direction
@@ -98,52 +96,48 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                               BSDF_ALL, &flags);
             if (f.IsBlack() || pdf == 0.f) break;
-            pathThroughput *= f * AbsDot(wi, isect.shading.n) / pdf;
-            Assert(std::isinf(pathThroughput.y()) == false);
+            alpha *= f * AbsDot(wi, isect.shading.n) / pdf;
+            Assert(std::isinf(alpha.y()) == false);
             specularBounce = (flags & BSDF_SPECULAR) != 0;
             ray = isect.SpawnRay(wi);
 
             // Account for attenuated subsurface scattering, if applicable
             if (isect.bssrdf && (flags & BSDF_TRANSMISSION)) {
                 // Importance sample the BSSRDF
-                BSSRDFSample bssrdfSample;
-                bssrdfSample.uDiscrete = sampler.Get1D();
-                bssrdfSample.pos = sampler.Get2D();
-                SurfaceInteraction isect_out = isect;
-                pathThroughput *=
-                    isect.bssrdf->Sample_f(isect_out, scene, ray.time,
-                                           bssrdfSample, arena, &isect, &pdf);
+                SurfaceInteraction isect_sampled;
+                alpha *= isect.bssrdf->Sample_S(scene, sampler.Get2D(),
+                                                sampler.Get1D(), arena,
+                                                &isect_sampled, &pdf);
 #ifndef NDEBUG
-                Assert(std::isinf(pathThroughput.y()) == false);
+                Assert(std::isinf(alpha.y()) == false);
 #endif
-                if (pathThroughput.IsBlack()) break;
+                if (alpha.IsBlack()) break;
 
                 // Account for the attenuated direct subsurface scattering
                 // component
-                const Normal3f &ns = isect.shading.n;
-                wo = Vector3f(ns);
-                L += UniformSampleOneLight(isect, scene, sampler, arena, true) *
-                     pathThroughput;
+                L += alpha * UniformSampleOneLight(isect_sampled, scene,
+                                                   sampler, arena, true);
 
                 // Account for the indirect subsurface scattering component
-                Spectrum f = isect.bsdf->Sample_f(
-                    isect.wo, &wi, sampler.Get2D(), &pdf, BSDF_ALL, &flags);
+                Spectrum f = isect_sampled.bsdf->Sample_f(isect_sampled.wo, &wi,
+                                                          sampler.Get2D(), &pdf,
+                                                          BSDF_ALL, &flags);
                 if (f.IsBlack() || pdf == 0.f) break;
-                pathThroughput *= f * AbsDot(wi, isect.shading.n) / pdf;
+                alpha *= f * AbsDot(wi, isect_sampled.shading.n) / pdf;
 #ifndef NDEBUG
-                Assert(std::isinf(pathThroughput.y()) == false);
+                Assert(std::isinf(alpha.y()) == false);
 #endif
                 specularBounce = (flags & BSDF_SPECULAR) != 0;
-                ray = isect.SpawnRay(wi);
+                ray = isect_sampled.SpawnRay(wi);
             }
         }
 
         // Possibly terminate the path
         if (bounces > 3) {
-            Float continueProbability = std::min((Float).5, pathThroughput.y());
+            Float continueProbability = std::min((Float).5, alpha.y());
             if (sampler.Get1D() > continueProbability) break;
-            pathThroughput /= continueProbability;
-            Assert(std::isinf(pathThroughput.y()) == false);
+            alpha /= continueProbability;
+            Assert(std::isinf(alpha.y()) == false);
         }
     }
     return L;
