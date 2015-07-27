@@ -559,11 +559,11 @@ class SeparableBSSRDF : public BSSRDF {
 
     // SeparableBSSRDF Interface
     Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) {
-        return Sw(po.wo) * Sp(pi) * Sw(wi);
+        return (1 - FrDielectric(CosTheta(po.wo), 1.f, eta)) * Sp(pi) * Sw(wi);
     }
     virtual Spectrum Sd(Float d) const = 0;
     virtual Float Pdf_Sd(Float r) const = 0;
-    virtual Float Sample_Sd(const Point2f &sample) const = 0;
+    virtual Float Sample_Sd(int ch, Float sample) const = 0;
 
   private:
     // SeparableBSSRDF Private Data
@@ -571,18 +571,6 @@ class SeparableBSSRDF : public BSSRDF {
     Vector3f ss, ts;
     const Material *material;
     const TransportMode mode;
-};
-
-class BSSRDFAdapter : public BxDF {
-  public:
-    BSSRDFAdapter(SeparableBSSRDF *bssrdf)
-        : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), bssrdf(bssrdf) {}
-    Spectrum f(const Vector3f &, const Vector3f &wi) const {
-        return bssrdf->Sw(wi);
-    }
-
-  private:
-    SeparableBSSRDF *bssrdf;
 };
 
 class TabulatedBSSRDF : public SeparableBSSRDF {
@@ -598,7 +586,7 @@ class TabulatedBSSRDF : public SeparableBSSRDF {
     }
     Spectrum Sd(Float distance) const;
     Float Pdf_Sd(Float distance) const;
-    Float Sample_Sd(const Point2f &sample) const;
+    Float Sample_Sd(int ch, Float sample) const;
 
   private:
     // TabulatedBSSRDF Private Data
@@ -611,13 +599,25 @@ struct BSSRDFTable {
     const int nAlbedoSamples, nDistanceSamples;
     std::unique_ptr<Float[]> albedoSamples, distanceSamples;
     std::unique_ptr<Float[]> profile;
-    std::unique_ptr<Float[]> profileAlbedo, profileCDF;
+    std::unique_ptr<Float[]> effAlbedo, profileCDF;
 
     // BSSRDFTable Public Methods
     BSSRDFTable(int nAlbedoSamples, int nDistanceSamples);
     inline Float EvalProfile(int albedoIndex, int distanceIndex) const {
         return profile[albedoIndex * nDistanceSamples + distanceIndex];
     }
+};
+
+class BSSRDFAdapter : public BxDF {
+  public:
+    BSSRDFAdapter(const SeparableBSSRDF *bssrdf)
+        : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), bssrdf(bssrdf) {}
+    Spectrum f(const Vector3f &, const Vector3f &wi) const {
+        return bssrdf->Sw(wi);
+    }
+
+  private:
+    const SeparableBSSRDF *bssrdf;
 };
 
 Float BeamDiffusionSS(Float sig_s, Float sig_a, Float g, Float eta, Float r);

@@ -77,12 +77,17 @@ SubsurfaceMaterial *CreateSubsurfaceMaterial(const TextureParams &mp) {
              sig_s = Spectrum::FromRGB(sig_s_rgb);
     std::string name = mp.FindString("name");
     bool found = GetMediumScatteringProperties(name, &sig_a, &sig_s);
-    if (name != "" && !found)
-        Warning("Named material \"%s\" not found.  Using defaults.",
-                name.c_str());
+    Float g = mp.FindFloat("g", 0.0f);
+    if (name != "") {
+        if (!found)
+            Warning("Named material \"%s\" not found.  Using defaults.",
+                    name.c_str());
+        else
+            g = 0; /* Enforce g=0 (the database specifies reduced scattering
+                      coefficients) */
+    }
     Float scale = mp.FindFloat("scale", 1.f);
     Float eta = mp.FindFloat("eta", 1.33f);
-    Float g = mp.FindFloat("g", 0.0f);
 
     std::shared_ptr<Texture<Spectrum>> sigma_a, sigma_s;
     sigma_a = mp.GetSpectrumTexture("sigma_a", sig_a);

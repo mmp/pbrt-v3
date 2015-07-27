@@ -175,7 +175,7 @@ static MeasuredSS SubsurfaceParameterTable[] = {
 
 // Media Definitions
 Float HenyeyGreenstein::p(const Vector3f &wo, const Vector3f &wi) const {
-    return PhaseHG(Dot(wo, wi), g);
+    return PhaseHG(-Dot(wo, wi), g);
 }
 
 bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
@@ -204,7 +204,6 @@ Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
     Float phi = 2 * Pi * sample.y;
     Vector3f v1, v2;
     CoordinateSystem(wo, &v1, &v2);
-
     *wi = SphericalDirection(sinTheta, cosTheta, phi, v1, v2, -wo);
-    return PhaseHG(-cosTheta, g);
+    return PhaseHG(cosTheta, g);
 }

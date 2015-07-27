@@ -63,7 +63,6 @@ void KdSubsurfaceMaterial::ComputeScatteringFunctions(
     }
 
     Spectrum sig_t = scale * sigma_t->Evaluate(*si).Clamp();
-
     Spectrum kd = Kd->Evaluate(*si).Clamp();
     Spectrum sig_a, sig_s;
     SubsurfaceFromDiffuse(table, kd, sig_t, &sig_a, &sig_s);

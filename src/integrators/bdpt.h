@@ -75,7 +75,6 @@ struct EndpointInteraction : Interaction {
 
 // BDPT Helper Definitions
 struct Vertex;
-Float ConvertDensity(const Vertex &cur, Float pdfDir, const Vertex &next);
 template <typename Type>
 class ScopedAssignment {
   public:
@@ -153,7 +152,7 @@ struct Vertex {
         {
         EndpointInteraction ei;
         MediumInteraction mi;
-        SurfaceInteraction isect;
+        SurfaceInteraction si;
     };
     Float pdfFwd = 0.f, pdfRev = 0.f;
 
@@ -162,8 +161,32 @@ struct Vertex {
     Vertex(VertexType type, const EndpointInteraction &ei,
            const Spectrum &weight)
         : type(type), weight(weight), ei(ei) {}
-    Vertex(const SurfaceInteraction &isect, const Spectrum &weight)
-        : type(VertexType::Surface), weight(weight), isect(isect) {}
+    Vertex(const SurfaceInteraction &si, const Spectrum &weight)
+        : type(VertexType::Surface), weight(weight), si(si) {}
+    static Vertex CreateCamera(const Camera *camera, const Ray &ray,
+                               const Spectrum &weight) {
+        return Vertex(VertexType::Camera, EndpointInteraction(camera, ray),
+                      weight);
+    }
+    static Vertex CreateCamera(const Camera *camera, const Interaction &it,
+                               const Spectrum &weight) {
+        return Vertex(VertexType::Camera, EndpointInteraction(it, camera),
+                      weight);
+    }
+    static Vertex CreateLight(const Light *light, const Ray &ray,
+                              const Normal3f &Nl, const Spectrum &Le,
+                              Float pdf) {
+        Vertex v(VertexType::Light, EndpointInteraction(light, ray, Nl), Le);
+        v.pdfFwd = pdf;
+        return v;
+    }
+    static Vertex CreateSurface(const SurfaceInteraction &si,
+                                const Spectrum &weight, Float pdf,
+                                const Vertex &prev) {
+        Vertex v(si, weight);
+        v.pdfFwd = prev.ConvertDensity(pdf, v);
+        return v;
+    }
     Vertex(const MediumInteraction &mi, const Spectrum &weight)
         : type(VertexType::Medium), weight(weight), mi(mi) {}
     const Interaction &GetInteraction() const {
@@ -171,7 +194,7 @@ struct Vertex {
         case VertexType::Medium:
             return mi;
         case VertexType::Surface:
-            return isect;
+            return si;
         default:
             return ei;
         };
@@ -181,7 +204,7 @@ struct Vertex {
     const Normal3f &ng() const { return GetInteraction().n; }
     const Normal3f &ns() const {
         if (type == VertexType::Surface)
-            return isect.shading.n;
+            return si.shading.n;
         else
             return GetInteraction().n;
     }
@@ -190,7 +213,7 @@ struct Vertex {
         Vector3f wi = Normalize(next.p() - p());
         switch (type) {
         case VertexType::Surface:
-            return isect.bsdf->f(isect.wo, wi);
+            return si.bsdf->f(si.wo, wi);
         case VertexType::Medium:
             return mi.phase->p(mi.wo, wi);
         default:
@@ -199,16 +222,14 @@ struct Vertex {
         }
     }
     bool IsConnectible() const {
-        if (type == VertexType::Surface)
-            return isect.bsdf->NumComponents(
-                       BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION |
-                                BSDF_TRANSMISSION)) > 0;
-        else
-            return true;
+        return (type != VertexType::Surface) ||
+               si.bsdf->NumComponents(BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY |
+                                               BSDF_REFLECTION |
+                                               BSDF_TRANSMISSION)) > 0;
     }
     bool IsLight() const {
         return type == VertexType::Light ||
-               (type == VertexType::Surface && isect.primitive->GetAreaLight());
+               (type == VertexType::Surface && si.primitive->GetAreaLight());
     }
     bool IsDeltaLight() const {
         return type == VertexType::Light && ei.light &&
@@ -219,17 +240,17 @@ struct Vertex {
                (!ei.light || ei.light->flags == LightFlags::Infinite);
     }
     Spectrum Le(const Scene &scene, const Vertex &v) const {
-        Vector3f d = Normalize(v.p() - p());
+        Vector3f w = Normalize(v.p() - p());
         if (IsInfiniteLight()) {
             // Return emitted radiance for infinite light sources
             Spectrum Le(0.f);
             for (const auto &light : scene.lights)
-                Le += light->Le(Ray(p(), -d));
+                Le += light->Le(Ray(p(), -w));
             return Le;
         } else {
-            const AreaLight *light = isect.primitive->GetAreaLight();
+            const AreaLight *light = si.primitive->GetAreaLight();
             Assert(light != nullptr);
-            return light->L(isect, d);
+            return light->L(si, w);
         }
     }
     friend std::ostream &operator<<(std::ostream &os, const Vertex &v) {
@@ -258,68 +279,81 @@ struct Vertex {
            << "]" << std::endl;
         return os;
     };
+    Float ConvertDensity(Float pdf, const Vertex &next) const {
+        // Return solid angle density if _next_ is an infinite area light
+        if (next.IsInfiniteLight()) return pdf;
+        Vector3f w = next.p() - p();
+        Float invL2 = 1 / w.LengthSquared();
+        if (next.IsOnSurface()) pdf *= AbsDot(next.ng(), w * std::sqrt(invL2));
+        return pdf * invL2;
+    }
     Float Pdf(const Scene &scene, const Vertex *prev,
               const Vertex &next) const {
         if (type == VertexType::Light) return PdfLight(scene, next);
         // Compute directions to preceding and next vertex
         Vector3f wp, wn = Normalize(next.p() - p());
-        if (prev) wp = Normalize(prev->p() - p());
+        if (prev)
+            wp = Normalize(prev->p() - p());
+        else
+            Assert(type == VertexType::Camera);
 
         // Compute directional density depending on the vertex types
         Float pdf;
         if (type == VertexType::Camera)
             pdf = ei.camera->Pdf_Wi(ei, wn);
         else if (type == VertexType::Surface)
-            pdf = isect.bsdf->Pdf(wp, wn);
+            pdf = si.bsdf->Pdf(wp, wn);
         else if (type == VertexType::Medium)
             pdf = mi.phase->p(wp, wn);
         else
             Severe("Vertex::Pdf(): Unimplemented");
 
         // Return probability per unit area at vertex _next_
-        return ConvertDensity(*this, pdf, next);
+        return ConvertDensity(pdf, next);
     }
     Float PdfLight(const Scene &scene, const Vertex &v) const {
-        Vector3f d = v.p() - p();
-        Float invDist2 = 1 / d.LengthSquared();
-        d *= std::sqrt(invDist2);
+        Vector3f w = v.p() - p();
+        Float invDist2 = 1 / w.LengthSquared();
+        w *= std::sqrt(invDist2);
         Float pdf;
         if (IsInfiniteLight()) {
             // Compute planar sampling density for infinite light sources
             Point3f worldCenter;
             Float worldRadius;
             scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-            pdf = 1.f / (Pi * worldRadius * worldRadius);
+            pdf = 1 / (Pi * worldRadius * worldRadius);
         } else {
-            // Compute sampling density for all other light sources
+            // Compute sampling density for non-infinite light sources
 
-            // Get pointer _light_ to the light source
+            // Get pointer _light_ to the light source at the vertex
             Assert(IsLight());
             const Light *light = type == VertexType::Light
                                      ? ei.light
-                                     : isect.primitive->GetAreaLight();
+                                     : si.primitive->GetAreaLight();
+            Assert(light != nullptr);
             Float pdfPos, pdfDir;
-            light->Pdf_Le(Ray(p(), d, time()), ng(), &pdfPos, &pdfDir);
+            light->Pdf_Le(Ray(p(), w, time()), ng(), &pdfPos, &pdfDir);
             pdf = pdfDir * invDist2;
         }
-        if (v.IsOnSurface()) pdf *= AbsDot(v.ng(), d);
+        if (v.IsOnSurface()) pdf *= AbsDot(v.ng(), w);
         return pdf;
     }
     Float PdfLightOrigin(const Scene &scene, const Vertex &v,
                          const Distribution1D &lightDistr) const {
-        Vector3f d = Normalize(v.p() - p());
+        Vector3f w = Normalize(v.p() - p());
         if (IsInfiniteLight()) {
             // Return solid angle density for infinite light sources
-            return InfiniteLightDensity(scene, lightDistr, d);
+            return InfiniteLightDensity(scene, lightDistr, w);
         } else {
             // Return solid angle density for other light sources
             Float pdfPos, pdfDir, pdfChoice = 0;
 
-            // Get pointer _light_ to the light source
+            // Get pointer _light_ to the light source at the vertex
             Assert(IsLight());
             const Light *light = type == VertexType::Light
                                      ? ei.light
-                                     : isect.primitive->GetAreaLight();
+                                     : si.primitive->GetAreaLight();
+            Assert(light != nullptr);
 
             // Set _pdfChoice_ to the discrete probability of sampling _light_
             for (size_t i = 0; i < scene.lights.size(); ++i) {
@@ -330,7 +364,7 @@ struct Vertex {
                 }
             }
             Assert(pdfChoice != 0);
-            light->Pdf_Le(Ray(p(), d, time()), ng(), &pdfPos, &pdfDir);
+            light->Pdf_Le(Ray(p(), w, time()), ng(), &pdfPos, &pdfDir);
             return pdfPos * pdfChoice;
         }
     }
