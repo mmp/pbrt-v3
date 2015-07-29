@@ -68,7 +68,7 @@ struct EndpointInteraction : Interaction {
     EndpointInteraction(const Interaction &it, const Light *light)
         : Interaction(it), light(light) {}
     EndpointInteraction(const Ray &ray)
-        : Interaction(ray(1.f), ray.time, ray.medium), light(nullptr) {
+        : Interaction(ray(1), ray.time, ray.medium), light(nullptr) {
         n = Normal3f(-ray.d);
     }
 };
@@ -104,12 +104,12 @@ class ScopedAssignment {
 
 inline Float InfiniteLightDensity(const Scene &scene,
                                   const Distribution1D &lightDistr,
-                                  const Vector3f &d) {
+                                  const Vector3f &w) {
     Float pdf = 0;
     for (size_t i = 0; i < scene.lights.size(); ++i)
         if (scene.lights[i]->flags == LightFlags::Infinite)
             pdf +=
-                scene.lights[i]->Pdf_Li(Interaction(), -d) * lightDistr.func[i];
+                scene.lights[i]->Pdf_Li(Interaction(), -w) * lightDistr.func[i];
     return pdf / (lightDistr.funcInt * lightDistr.Count());
 }
 
@@ -184,6 +184,13 @@ struct Vertex {
                                 const Spectrum &weight, Float pdf,
                                 const Vertex &prev) {
         Vertex v(si, weight);
+        v.pdfFwd = prev.ConvertDensity(pdf, v);
+        return v;
+    }
+    static Vertex CreateMedium(const MediumInteraction &mi,
+                               const Spectrum &weight, Float pdf,
+                               const Vertex &prev) {
+        Vertex v(mi, weight);
         v.pdfFwd = prev.ConvertDensity(pdf, v);
         return v;
     }

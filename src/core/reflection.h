@@ -559,11 +559,12 @@ class SeparableBSSRDF : public BSSRDF {
 
     // SeparableBSSRDF Interface
     Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) {
-        return (1 - FrDielectric(CosTheta(po.wo), 1.f, eta)) * Sp(pi) * Sw(wi);
+        Float Ft = (1 - FrDielectric(CosTheta(po.wo), 1.f, eta));
+        return Ft * Sp(pi) * Sw(wi);
     }
-    virtual Spectrum Sd(Float d) const = 0;
-    virtual Float Pdf_Sd(Float r) const = 0;
-    virtual Float Sample_Sd(int ch, Float sample) const = 0;
+    virtual Spectrum Sr(Float d) const = 0;
+    virtual Float Pdf_Sr(Float r) const = 0;
+    virtual Float Sample_Sr(int ch, Float sample) const = 0;
 
   private:
     // SeparableBSSRDF Private Data
@@ -584,9 +585,9 @@ class TabulatedBSSRDF : public SeparableBSSRDF {
         for (int c = 0; c < Spectrum::nSamples; ++c)
             albedo[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0.f;
     }
-    Spectrum Sd(Float distance) const;
-    Float Pdf_Sd(Float distance) const;
-    Float Sample_Sd(int ch, Float sample) const;
+    Spectrum Sr(Float distance) const;
+    Float Pdf_Sr(Float distance) const;
+    Float Sample_Sr(int ch, Float sample) const;
 
   private:
     // TabulatedBSSRDF Private Data
@@ -596,15 +597,15 @@ class TabulatedBSSRDF : public SeparableBSSRDF {
 
 struct BSSRDFTable {
     // BSSRDFTable Public Data
-    const int nAlbedoSamples, nDistanceSamples;
-    std::unique_ptr<Float[]> albedoSamples, distanceSamples;
+    const int nAlbedoSamples, nRadiusSamples;
+    std::unique_ptr<Float[]> albedoSamples, radiusSamples;
     std::unique_ptr<Float[]> profile;
     std::unique_ptr<Float[]> effAlbedo, profileCDF;
 
     // BSSRDFTable Public Methods
-    BSSRDFTable(int nAlbedoSamples, int nDistanceSamples);
-    inline Float EvalProfile(int albedoIndex, int distanceIndex) const {
-        return profile[albedoIndex * nDistanceSamples + distanceIndex];
+    BSSRDFTable(int nAlbedoSamples, int nRadiusSamples);
+    inline Float EvalProfile(int albedoIndex, int radiusIndex) const {
+        return profile[albedoIndex * nRadiusSamples + radiusIndex];
     }
 };
 

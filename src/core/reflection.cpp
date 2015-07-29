@@ -783,31 +783,31 @@ Float BeamDiffusionSS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
 
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
     // Choose radii of the diffusion profile disretization
-    t->distanceSamples[0] = 0;
-    t->distanceSamples[1] = 2.5e-3f;
-    for (int i = 2; i < t->nDistanceSamples; ++i)
-        t->distanceSamples[i] = t->distanceSamples[i - 1] * 1.2f;
+    t->radiusSamples[0] = 0;
+    t->radiusSamples[1] = 2.5e-3f;
+    for (int i = 2; i < t->nRadiusSamples; ++i)
+        t->radiusSamples[i] = t->radiusSamples[i - 1] * 1.2f;
     ParallelFor([&](int i) {
         // Compute the diffusion profile for the _i_-th albedo sample
         Float albedo = (1 - std::exp(-8 * i / (Float)(t->nAlbedoSamples - 1))) /
                        (1 - std::exp(-8));
 
         // Compute profile for chosen _albedo_
-        t->profile[i * t->nDistanceSamples] = 0.0f;
-        for (int j = 0; j < t->nDistanceSamples; ++j)
-            t->profile[i * t->nDistanceSamples + j] =
-                2 * Pi * t->distanceSamples[j] *
+        t->profile[i * t->nRadiusSamples] = 0.0f;
+        for (int j = 0; j < t->nRadiusSamples; ++j)
+            t->profile[i * t->nRadiusSamples + j] =
+                2 * Pi * t->radiusSamples[j] *
                 (BeamDiffusionSS(albedo, 1 - albedo, g, eta,
-                                 t->distanceSamples[j]) +
+                                 t->radiusSamples[j]) +
                  BeamDiffusionMS(albedo, 1 - albedo, g, eta,
-                                 t->distanceSamples[j]));
+                                 t->radiusSamples[j]));
 
         // Compute multiple scattering albedo and importance sampling CDF
         t->albedoSamples[i] = albedo;
         t->effAlbedo[i] =
-            IntegrateCatmullRom(t->nDistanceSamples, t->distanceSamples.get(),
-                                &t->profile[i * t->nDistanceSamples],
-                                &t->profileCDF[i * t->nDistanceSamples]);
+            IntegrateCatmullRom(t->nRadiusSamples, t->radiusSamples.get(),
+                                &t->profile[i * t->nRadiusSamples],
+                                &t->profileCDF[i * t->nRadiusSamples]);
     }, t->nAlbedoSamples);
 }
 
@@ -825,42 +825,48 @@ void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &Kd,
 
 // BSSRDF Method Definitions
 Spectrum SeparableBSSRDF::Sp(const SurfaceInteraction &pi) const {
-    return Sd(Distance(po.p, pi.p));
+    return Sr(Distance(po.p, pi.p));
 }
 
-BSSRDFTable::BSSRDFTable(int nAlbedoSamples, int nDistanceSamples)
+BSSRDFTable::BSSRDFTable(int nAlbedoSamples, int nRadiusSamples)
     : nAlbedoSamples(nAlbedoSamples),
-      nDistanceSamples(nDistanceSamples),
+      nRadiusSamples(nRadiusSamples),
       albedoSamples(new Float[nAlbedoSamples]),
-      distanceSamples(new Float[nDistanceSamples]),
-      profile(new Float[nDistanceSamples * nAlbedoSamples]),
+      radiusSamples(new Float[nRadiusSamples]),
+      profile(new Float[nRadiusSamples * nAlbedoSamples]),
       effAlbedo(new Float[nAlbedoSamples]),
-      profileCDF(new Float[nDistanceSamples * nAlbedoSamples]) {}
+      profileCDF(new Float[nRadiusSamples * nAlbedoSamples]) {}
 
-Spectrum TabulatedBSSRDF::Sd(Float distance) const {
+Spectrum TabulatedBSSRDF::Sr(Float r) const {
     Spectrum fs(0.f);
-    for (int c = 0; c < Spectrum::nSamples; ++c) {
-        // Compute BSSRDF sample weights for spectrum component _c_
-        int albedoOffset, distanceOffset;
-        Float albedoWeights[4], distanceWeights[4];
+    for (int ch = 0; ch < Spectrum::nSamples; ++ch) {
+        // Convert _r_ into unitless optical distance _rLocal_
+        Float rLocal = r * sigma_t[ch];
+
+        // Compute spline weights to interpolate BSSRDF on channel _ch_
+        int albedoOffset, radiusOffset;
+        Float albedoWeights[4], radiusWeights[4];
         if (!CatmullRomWeights(table.nAlbedoSamples, table.albedoSamples.get(),
-                               albedo[c], &albedoOffset, albedoWeights) ||
-            !CatmullRomWeights(
-                table.nDistanceSamples, table.distanceSamples.get(),
-                distance * sigma_t[c], &distanceOffset, distanceWeights))
+                               albedo[ch], &albedoOffset, albedoWeights) ||
+            !CatmullRomWeights(table.nRadiusSamples, table.radiusSamples.get(),
+                               rLocal, &radiusOffset, radiusWeights))
             continue;
 
-        // Compute weighted BSSRDF value using weights
-        for (int i = 0; i < 4; ++i)
+        // Find BSSRDF value using tensor spline interpolation
+        for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
-                Float weight = albedoWeights[i] * distanceWeights[j];
+                Float weight = albedoWeights[i] * radiusWeights[j];
                 if (weight != 0)
-                    fs[c] +=
+                    fs[ch] +=
                         weight *
-                        table.EvalProfile(albedoOffset + i, distanceOffset + j);
+                        table.EvalProfile(albedoOffset + i, radiusOffset + j);
             }
+        }
+        fs[ch] /= 2 * Pi * rLocal;
     }
-    return (fs * sigma_t).Clamp();
+    // Transform BSSRDF value into world space units
+    fs *= sigma_t * sigma_t;
+    return fs.Clamp();
 }
 
 Spectrum SeparableBSSRDF::Sample_Sp(const Scene &scene, const Point2f &sample1,
@@ -888,12 +894,14 @@ Spectrum SeparableBSSRDF::Sample_Sp(const Scene &scene, const Point2f &sample1,
 
     // Sample BSSRDF profile using polar coordinates
     Float phi = 2 * Pi * sample1.x;
-    Float r = Sample_Sd(ch, sample1.y);
+    Float r = Sample_Sr(ch, sample1.y);
     if (r < 0) return Spectrum(0.f);
 
-    // Compute BSSRDF sampling ray origin in world space
-    Float bsphereRadius = std::max(r, Sample_Sd(ch, 0.9999));
+    // Compute BSSRDF profile bounds and intersection height
+    Float bsphereRadius = std::max(r, Sample_Sr(ch, 0.9999));
     Float height = std::sqrt(bsphereRadius * bsphereRadius - r * r);
+
+    // Compute BSSRDF sampling ray origin in world space
     Vector3f v0, v1;
     CoordinateSystem(axis, &v0, &v1);
     Interaction base;
@@ -950,26 +958,30 @@ Spectrum SeparableBSSRDF::Sample_S(const Scene &scene, const Point2f &sample1,
     return result;
 }
 
-Float TabulatedBSSRDF::Sample_Sd(int ch, Float sample) const {
+Float TabulatedBSSRDF::Sample_Sr(int ch, Float sample) const {
     if (sigma_t[ch] == 0) return -1;
-    return SampleCatmullRom2D(table.nAlbedoSamples, table.nDistanceSamples,
-                              table.albedoSamples.get(),
-                              table.distanceSamples.get(), table.profile.get(),
-                              table.profileCDF.get(), albedo[ch], sample) /
-           sigma_t[ch];
+    Float r = SampleCatmullRom2D(table.nAlbedoSamples, table.nRadiusSamples,
+                                 table.albedoSamples.get(),
+                                 table.radiusSamples.get(), table.profile.get(),
+                                 table.profileCDF.get(), albedo[ch], sample) /
+              sigma_t[ch];
+
+    return r;
 }
 
-Float TabulatedBSSRDF::Pdf_Sd(Float distance) const {
+Float TabulatedBSSRDF::Pdf_Sr(Float r) const {
     Float result = 0.f;
     for (int ch = 0; ch < Spectrum::nSamples; ++ch) {
-        // Compute tensor product weights for profile interpolation
-        int albedoOffset, distanceOffset;
-        Float albedoWeights[4], distanceWeights[4];
+        // Convert _r_ into unitless optical distance _rLocal_
+        Float rLocal = r * sigma_t[ch];
+
+        // Compute spline weights to interpolate BSSRDF on channel _ch_
+        int albedoOffset, radiusOffset;
+        Float albedoWeights[4], radiusWeights[4];
         if (!CatmullRomWeights(table.nAlbedoSamples, table.albedoSamples.get(),
                                albedo[ch], &albedoOffset, albedoWeights) ||
-            !CatmullRomWeights(
-                table.nDistanceSamples, table.distanceSamples.get(),
-                distance * sigma_t[ch], &distanceOffset, distanceWeights))
+            !CatmullRomWeights(table.nRadiusSamples, table.radiusSamples.get(),
+                               rLocal, &radiusOffset, radiusWeights))
             continue;
 
         // Add PDF term due to channel _ch_
@@ -978,13 +990,14 @@ Float TabulatedBSSRDF::Pdf_Sd(Float distance) const {
             if (albedoWeights[i] == 0) continue;
             finalAlbedo += table.effAlbedo[albedoOffset + i] * albedoWeights[i];
             for (int j = 0; j < 4; ++j) {
-                if (distanceWeights[j] == 0) continue;
+                if (radiusWeights[j] == 0) continue;
                 lookup +=
-                    table.EvalProfile(albedoOffset + i, distanceOffset + j) *
-                    albedoWeights[i] * distanceWeights[j];
+                    table.EvalProfile(albedoOffset + i, radiusOffset + j) *
+                    albedoWeights[i] * radiusWeights[j];
             }
         }
-        result += std::max((Float)0, lookup * sigma_t[ch] / finalAlbedo);
+        result += std::max((Float)0, lookup * sigma_t[ch] * sigma_t[ch] /
+                                         (finalAlbedo * 2 * Pi * rLocal));
     }
     return result / Spectrum::nSamples;
 }
@@ -1002,6 +1015,6 @@ Float SeparableBSSRDF::Pdf_Sp(const SurfaceInteraction &pi) const {
     Float result = 0, axisProb[3] = {.25f, .25f, .5f};
     for (int i = 0; i < 3; ++i)
         result +=
-            Pdf_Sd(std::sqrt(distSqr[i])) * axisProb[i] * std::abs(nLocal[i]);
+            Pdf_Sr(std::sqrt(distSqr[i])) * axisProb[i] * std::abs(nLocal[i]);
     return result;
 }

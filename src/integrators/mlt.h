@@ -51,12 +51,12 @@
 class MLTSampler : public Sampler {
   public:
     // MLTSampler Public Methods
-    MLTSampler(int64_t mutationsPerPixel, int id, Float sigma,
-               Float largeStepProb, int streamCount)
+    MLTSampler(int mutationsPerPixel, int rngStreamIndex, Float sigma,
+               Float largeStepProbability, int streamCount)
         : Sampler(mutationsPerPixel),
-          rng(PCG32_DEFAULT_STATE, (uint64_t)id),
+          rng(PCG32_DEFAULT_STATE, rngStreamIndex),
           sigma(sigma),
-          largeStepProb(largeStepProb),
+          largeStepProbability(largeStepProbability),
           streamCount(streamCount) {}
     Float Get1D();
     Point2f Get2D();
@@ -92,11 +92,10 @@ class MLTSampler : public Sampler {
 
     // MLTSampler Private Data
     RNG rng;
-    Float sigma;
-    Float largeStepProb;
-    std::vector<PrimarySample> X;
+    const Float sigma, largeStepProbability;
     const int streamCount;
-    int iteration = 0;
+    std::vector<PrimarySample> X;
+    int currentIteration = 0;
     bool largeStep = true;
     int lastLargeStepIteration = 0;
     int streamIndex;
@@ -109,28 +108,27 @@ class MLTIntegrator : public Integrator {
     // MLTIntegrator Public Methods
     MLTIntegrator(std::shared_ptr<const Camera> camera, int maxDepth,
                   int nBootstrap, int nChains, int64_t mutationsPerPixel,
-                  Float sigma, Float largeStepProb)
+                  Float sigma, Float largeStepProbability)
         : camera(camera),
           maxDepth(maxDepth),
           nBootstrap(nBootstrap),
           nChains(nChains),
           mutationsPerPixel(mutationsPerPixel),
           sigma(sigma),
-          largeStepProb(largeStepProb){};
+          largeStepProbability(largeStepProbability){};
     void Render(const Scene &scene);
-    Spectrum L(const Scene &scene, MemoryArena &arena, MLTSampler &sampler,
-               int k, Point2f *samplePos);
+    Spectrum L(const Scene &scene, MemoryArena &arena,
+               const std::unique_ptr<Distribution1D> &lightDistr,
+               MLTSampler &sampler, int k, Point2f *samplePos);
 
   private:
     // MLTIntegrator Private Data
     std::shared_ptr<const Camera> camera;
     int maxDepth;
     int nBootstrap;
+    int mutationsPerPixel;
+    Float sigma, largeStepProbability;
     int nChains;
-    int64_t mutationsPerPixel;
-    Float sigma;
-    Float largeStepProb;
-    std::unique_ptr<Distribution1D> lightDistr;
 };
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,

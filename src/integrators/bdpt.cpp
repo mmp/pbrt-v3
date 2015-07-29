@@ -50,9 +50,8 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
                TransportMode mode, Vertex *path);
 
 // BDPT Utility Functions
-Float ShadingNormalCorrection(const SurfaceInteraction &isect,
-                              const Vector3f &wo, const Vector3f &wi,
-                              TransportMode mode) {
+Float CorrectShadingNormal(const SurfaceInteraction &isect, const Vector3f &wo,
+                           const Vector3f &wi, TransportMode mode) {
     if (mode == TransportMode::Importance)
         return std::abs((Dot(wo, isect.shading.n) * Dot(wi, isect.n)) /
                         (Dot(wo, isect.n) * Dot(wi, isect.shading.n)));
@@ -105,14 +104,14 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
 
     // Correct subpath sampling densities for infinite area lights
     if (path[0].IsInfiniteLight()) {
-        // Set spatial density of _path[1]_
+        // Set spatial density of _path[1]_ for infinite area light
         if (nVertices > 0) {
             path[1].pdfFwd = pdfPos;
             if (path[1].IsOnSurface())
                 path[1].pdfFwd *= AbsDot(ray.d, path[1].ng());
         }
 
-        // Set spatial density of _path[0]_
+        // Set spatial density of _path[0]_ for infinite area light
         path[0].pdfFwd = InfiniteLightDensity(scene, lightDistr, ray.d);
     }
     return nVertices + 1;
@@ -134,8 +133,7 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
         Float pdfRev;
         if (mi.IsValid()) {
             // Record medium interaction in _path_ and compute forward density
-            vertex = Vertex(mi, weight);
-            vertex.pdfFwd = prev.ConvertDensity(pdfFwd, vertex);
+            vertex = Vertex::CreateMedium(mi, weight, pdfFwd, prev);
             if (++bounces >= maxDepth) break;
 
             // Sample direction and compute reverse density at preceding vertex
@@ -179,7 +177,7 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
                 vertex.delta = true;
                 pdfRev = pdfFwd = 0;
             }
-            weight *= ShadingNormalCorrection(isect, wo, wi, mode);
+            weight *= CorrectShadingNormal(isect, wo, wi, mode);
             ray = isect.SpawnRay(wi);
         }
         // Compute reverse area density at preceding vertex

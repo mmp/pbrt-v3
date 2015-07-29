@@ -392,7 +392,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     Float pdf;
                     BxDFType flags;
 
-                    // Generate _bsdfSample_ for outoing photon sample
+                    // Generate _bsdfSample_ for outgoing photon sample
                     Point2f bsdfSample(
                         RadicalInverse(haltonDim, haltonIndex),
                         RadicalInverse(haltonDim + 1, haltonIndex));
