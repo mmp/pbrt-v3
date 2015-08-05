@@ -44,6 +44,7 @@
 #include "geometry.h"
 #include <mutex>
 #include <functional>
+#include <atomic>
 
 // Parallel Declarations
 class AtomicFloat {
