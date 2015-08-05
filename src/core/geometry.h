@@ -1285,7 +1285,7 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, Float *hitt0,
         if (tNear > tFar) std::swap(tNear, tFar);
 
         // Update _tFar_ to ensure robust ray--bounds intersection
-        tFar *= 1.f + 2 * gamma(3);
+        tFar *= 1 + 2 * gamma(3);
         t0 = tNear > t0 ? tNear : t0;
         t1 = tFar < t1 ? tFar : t1;
         if (t0 > t1) return false;
@@ -1306,8 +1306,8 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, const Vector3f &invDir,
     Float tyMax = (bounds[1 - dirIsNeg[1]].y - ray.o.y) * invDir.y;
 
     // Update _tMax_ and _tyMax_ to ensure robust bounds intersection
-    tMax *= 1.f + 2 * gamma(3);
-    tyMax *= 1.f + 2 * gamma(3);
+    tMax *= 1 + 2 * gamma(3);
+    tyMax *= 1 + 2 * gamma(3);
     if (tMin > tyMax || tyMin > tMax) return false;
     if (tyMin > tMin) tMin = tyMin;
     if (tyMax < tMax) tMax = tyMax;
@@ -1317,7 +1317,7 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, const Vector3f &invDir,
     Float tzMax = (bounds[1 - dirIsNeg[2]].z - ray.o.z) * invDir.z;
 
     // Update _tzMax_ to ensure robust bounds intersection
-    tzMax *= 1.f + 2 * gamma(3);
+    tzMax *= 1 + 2 * gamma(3);
     if (tMin > tzMax || tzMin > tMax) return false;
     if (tzMin > tMin) tMin = tzMin;
     if (tzMax < tMax) tMax = tzMax;
@@ -1326,8 +1326,7 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, const Vector3f &invDir,
 
 inline Point3f OffsetRayOrigin(const Point3f &p, const Vector3f &pError,
                                const Normal3f &n, const Vector3f &w) {
-    Normal3f nAbs = Abs(n);
-    Float d = Dot(nAbs, pError);
+    Float d = Dot(Abs(n), pError);
 #ifdef PBRT_FLOAT_AS_DOUBLE
     // We have tons of precision; for now bump up the offset a bunch just
     // to be extra sure that we start on the right side of the surface

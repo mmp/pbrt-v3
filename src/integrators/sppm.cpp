@@ -65,10 +65,10 @@ STAT_FLOAT_DISTRIBUTION("Memory/SPPM BSDF and Grid Memory", memoryArenaMB);
 // SPPM Local Definitions
 struct SPPMPixel {
     // SPPMPixel Public Methods
-    SPPMPixel(Float radius) : radius(radius) {}
+    SPPMPixel() : M(0) {}
 
     // SPPMPixel Public Data
-    Float radius;
+    Float radius = 0;
     Spectrum Ld;
     struct VisiblePoint {
         // VisiblePoint Public Methods
@@ -81,8 +81,8 @@ struct SPPMPixel {
         const BSDF *bsdf = nullptr;
         Spectrum alpha;
     } vp;
-    Spectrum Phi;
-    int M = 0;
+    AtomicFloat Phi[Spectrum::nSamples];
+    std::atomic<int> M;
     Float N = 0;
     Spectrum tau;
 };
@@ -115,7 +115,8 @@ void SPPMIntegrator::Render(const Scene &scene) {
     // Initialize _pixelBounds_ and _pixels_ array for SPPM
     Bounds2i pixelBounds = camera->film->croppedPixelBounds;
     int nPixels = pixelBounds.Area();
-    std::vector<SPPMPixel> pixels(nPixels, SPPMPixel(initialSearchRadius));
+    std::unique_ptr<SPPMPixel[]> pixels(new SPPMPixel[nPixels]);
+    for (int i = 0; i < nPixels; ++i) pixels[i].radius = initialSearchRadius;
     const Float invSqrtSPP = 1.f / std::sqrt(nIterations);
     pixelMemoryBytes = nPixels * sizeof(SPPMPixel);
     // Compute _lightDistr_ for sampling lights proportional to power
@@ -241,13 +242,14 @@ void SPPMIntegrator::Render(const Scene &scene) {
         // Create grid of all SPPM visible points
 
         // Allocate grid for SPPM visible points
-        int hashSize = pixels.size();
+        int hashSize = nPixels;
         std::vector<std::atomic<SPPMPixelListNode *>> grid(hashSize);
 
         // Compute grid bounds for SPPM visible points
         Bounds3f gridBounds;
         Float maxRadius = 0.;
-        for (const SPPMPixel &pixel : pixels) {
+        for (int i = 0; i < nPixels; ++i) {
+            const SPPMPixel &pixel = pixels[i];
             if (pixel.vp.alpha.IsBlack()) continue;
             Bounds3f vpBound = Expand(Bounds3f(pixel.vp.p), pixel.radius);
             gridBounds = Union(gridBounds, vpBound);
@@ -271,7 +273,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 SPPMPixel &pixel = pixels[pixelIndex];
                 if (!pixel.vp.alpha.IsBlack()) {
                     // Add pixel's visible point to applicable grid cells
-                    float radius = pixel.radius;
+                    Float radius = pixel.radius;
                     Point3i pMin, pMax;
                     ToGrid(pixel.vp.p - Vector3f(radius, radius, radius),
                            gridBounds, gridRes, &pMin);
@@ -297,7 +299,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                 (1 + pMax.x - pMin.x) * (1 + pMax.y - pMin.y) *
                                     (1 + pMax.z - pMin.z));
                 }
-            }, pixels.size(), 4096);
+            }, nPixels, 4096);
         }
 
         // Trace photons and accumulate contributions
@@ -339,9 +341,9 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                                lightSampleTime, &photonRay, &Nl,
                                                &pdfPos, &pdfDir);
                 if (pdfPos == 0.f || pdfDir == 0.f || Le.IsBlack()) return;
-                Spectrum alpha = (AbsDot(Nl, photonRay.d) * Le) /
-                                 (pdfPos * pdfDir * lightPdf);
-                if (alpha.IsBlack()) return;
+                Spectrum beta = (AbsDot(Nl, photonRay.d) * Le) /
+                                (lightPdf * pdfPos * pdfDir);
+                if (beta.IsBlack()) return;
 
                 // Follow photon path through scene and record intersections
                 SurfaceInteraction isect;
@@ -368,8 +370,10 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                 // Update _pixel_ $\Phi$ and $M$ for nearby
                                 // photon
                                 Vector3f wi = -photonRay.d;
-                                pixel.Phi +=
-                                    alpha * pixel.vp.bsdf->f(pixel.vp.wo, wi);
+                                Spectrum Phi =
+                                    beta * pixel.vp.bsdf->f(pixel.vp.wo, wi);
+                                for (int i = 0; i < Spectrum::nSamples; ++i)
+                                    pixel.Phi[i].Add(Phi[i]);
                                 ++pixel.M;
                             }
                         }
@@ -387,8 +391,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     const BSDF &photonBSDF = *isect.bsdf;
 
                     // Sample BSDF _fr_ and direction _wi_ for reflected photon
-                    Vector3f wo = -photonRay.d;
-                    Vector3f wi;
+                    Vector3f wi, wo = -photonRay.d;
                     Float pdf;
                     BxDFType flags;
 
@@ -400,15 +403,15 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     Spectrum fr = photonBSDF.Sample_f(wo, &wi, bsdfSample, &pdf,
                                                       BSDF_ALL, &flags);
                     if (fr.IsBlack() || pdf == 0.f) break;
-                    Spectrum anew =
-                        alpha * fr * AbsDot(wi, isect.shading.n) / pdf;
+                    Spectrum bnew =
+                        beta * fr * AbsDot(wi, isect.shading.n) / pdf;
 
                     // Possibly terminate photon path with Russian roulette
                     Float continueProb =
-                        std::min((Float)1, anew.y() / alpha.y());
+                        std::min((Float)1, bnew.y() / beta.y());
                     if (RadicalInverse(haltonDim++, haltonIndex) > continueProb)
                         break;
-                    alpha = anew / continueProb;
+                    beta = bnew / continueProb;
                     photonRay = (RayDifferential)isect.SpawnRay(
                         wi, photonRay.depth + 1);
                 }
@@ -421,19 +424,24 @@ void SPPMIntegrator::Render(const Scene &scene) {
         // Update pixel values from this pass's photons
         {
             StatTimer timer(&statsUpdateTimer);
-            for (SPPMPixel &p : pixels) {
+            for (int i = 0; i < nPixels; ++i) {
+                SPPMPixel &p = pixels[i];
                 if (p.M > 0) {
                     // Update pixel photon count, search radius, and $\tau$ from
                     // photons
                     Float gamma = 0.6666666666667f;
                     Float Nnew = p.N + gamma * p.M;
                     Float Rnew = p.radius * std::sqrt(Nnew / (p.N + p.M));
-                    p.tau = (p.tau + p.vp.alpha * p.Phi) * (Rnew * Rnew) /
+                    Spectrum Phi(0.);
+                    for (int j = 0; j < Spectrum::nSamples; ++j)
+                        Phi[j] = p.Phi[j];
+                    p.tau = (p.tau + p.vp.alpha * Phi) * (Rnew * Rnew) /
                             (p.radius * p.radius);
                     p.N = Nnew;
                     p.radius = Rnew;
                     p.M = 0;
-                    p.Phi = 0.;
+                    for (int j = 0; j < Spectrum::nSamples; ++j)
+                        p.Phi[j] = (Float)0;
                 }
                 // Reset _VisiblePoint_ in pixel
                 p.vp.alpha = 0.;

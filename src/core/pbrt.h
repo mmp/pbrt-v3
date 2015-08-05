@@ -247,7 +247,7 @@ inline float NextFloatUp(float v) {
 
     // Advance _v_ to next higher float
     uint32_t ui = FloatToBits(v);
-    if (v >= 0.)
+    if (v >= 0)
         ++ui;
     else
         --ui;
@@ -259,7 +259,7 @@ inline float NextFloatDown(float v) {
     if (std::isinf(v) && v < 0.) return v;
     if (v == 0.f) v = -0.f;
     uint32_t ui = FloatToBits(v);
-    if (v > 0.)
+    if (v > 0)
         --ui;
     else
         ++ui;

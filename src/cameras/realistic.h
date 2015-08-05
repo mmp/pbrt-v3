@@ -64,16 +64,17 @@ class RealisticCamera : public Camera {
     };
 
     // RealisticCamera Private Data
-    bool simpleWeighting;
+    const bool simpleWeighting;
     std::vector<LensElementInterface> elementInterfaces;
     std::vector<Bounds2f> exitPupilBounds;
 
     // RealisticCamera Private Methods
     Float LensRearZ() const { return elementInterfaces.back().thickness; }
     Float LensFrontZ() const {
-        Float zsum = 0.f;
-        for (auto element : elementInterfaces) zsum += element.thickness;
-        return zsum;
+        Float zSum = 0.f;
+        for (const LensElementInterface &element : elementInterfaces)
+            zSum += element.thickness;
+        return zSum;
     }
     Float RearElementRadius() const {
         return elementInterfaces.back().apertureRadius;
@@ -90,11 +91,11 @@ class RealisticCamera : public Camera {
                               bool toOpticalIntercept) const;
     static void ComputeCardinalPoints(const Ray &rIn, const Ray &rOut, Float *p,
                                       Float *f);
-    void ComputeThickLensApproximation(Float P[2], Float f[2]) const;
+    void ComputeThickLensApproximation(Float pz[2], Float f[2]) const;
     Float FocusThickLens(Float focusDistance);
     Float FocusBinarySearch(Float focusDistance);
     Float FocusDistance(Float filmDist);
-    Bounds2f BoundExitPupil(const Point2f &pFilm) const;
+    Bounds2f BoundExitPupil(Float pFilmX0, Float pFilmX1) const;
     void RenderExitPupil(Float sx, Float sy, const char *filename) const;
     Point3f SampleExitPupil(const Point2f &pFilm,
                             const Point2f &lensSample) const;

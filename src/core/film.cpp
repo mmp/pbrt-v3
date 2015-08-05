@@ -77,11 +77,11 @@ Bounds2i Film::GetSampleBounds() const {
     return (Bounds2i)floatBounds;
 }
 
-Point2f Film::GetPhysicalSize() const {
+Bounds2f Film::GetPhysicalExtent() const {
     Float aspect = (Float)fullResolution.y / (Float)fullResolution.x;
-    Float x = std::sqrt(diagonal * diagonal / (1.f + aspect * aspect));
+    Float x = std::sqrt(diagonal * diagonal / (1 + aspect * aspect));
     Float y = aspect * x;
-    return Point2f(x, y);
+    return Bounds2f(Point2f(-x / 2, -y / 2), Point2f(x / 2, y / 2));
 }
 
 std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
@@ -107,19 +107,6 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
         for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
         mergePixel.filterWeightSum += unnormalizedPixel.filterWeightSum;
     }
-    for (const auto &splat : tile->splats) {
-        // Add contribution of _splat_ into _Film::pixels_
-        if (splat.second.HasNaNs()) {
-            Warning("Film ignoring splatted spectrum with NaN values");
-            return;
-        }
-        Point2i pi = (Point2i)Floor(splat.first);
-        if (!InsideExclusive(pi, croppedPixelBounds)) continue;
-        Float xyz[3];
-        splat.second.ToXYZ(xyz);
-        Pixel &pixel = GetPixel(pi);
-        for (int i = 0; i < 3; ++i) pixel.splatXYZ[i] += xyz[i];
-    }
 }
 
 void Film::SetImage(const Spectrum *img) const {
@@ -127,9 +114,21 @@ void Film::SetImage(const Spectrum *img) const {
     for (int i = 0; i < nPixels; ++i) {
         Pixel &p = pixels[i];
         img[i].ToXYZ(p.xyz);
-        p.filterWeightSum = 1.f;
-        p.splatXYZ[0] = p.splatXYZ[1] = p.splatXYZ[2] = 0.f;
+        p.filterWeightSum = 1;
+        p.splatXYZ[0] = p.splatXYZ[1] = p.splatXYZ[2] = 0;
     }
+}
+
+void Film::AddSplat(const Point2f &p, const Spectrum &v) {
+    if (v.HasNaNs()) {
+        Warning("Film ignoring splatted spectrum with NaN values");
+        return;
+    }
+    if (!InsideExclusive((Point2i)p, croppedPixelBounds)) return;
+    Float xyz[3];
+    v.ToXYZ(xyz);
+    Pixel &pixel = GetPixel((Point2i)p);
+    for (int i = 0; i < 3; ++i) pixel.splatXYZ[i].Add(xyz[i]);
 }
 
 void Film::WriteImage(Float splatScale) {
@@ -143,8 +142,8 @@ void Film::WriteImage(Float splatScale) {
 
         // Normalize pixel with weight sum
         Float filterWeightSum = pixel.filterWeightSum;
-        if (filterWeightSum != 0.f) {
-            Float invWt = (Float)1. / filterWeightSum;
+        if (filterWeightSum != 0) {
+            Float invWt = (Float)1 / filterWeightSum;
             rgb[3 * offset] = std::max((Float)0., rgb[3 * offset] * invWt);
             rgb[3 * offset + 1] =
                 std::max((Float)0., rgb[3 * offset + 1] * invWt);

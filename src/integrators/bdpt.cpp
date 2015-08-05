@@ -46,7 +46,7 @@ STAT_TIMER("Time/Rendering", renderingTime);
 
 // BDPT Forward Declarations
 int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
-               MemoryArena &arena, Spectrum weight, Float pdfFwd, int maxDepth,
+               MemoryArena &arena, Spectrum weight, Float pdf, int maxDepth,
                TransportMode mode, Vertex *path);
 
 // BDPT Utility Functions
@@ -69,13 +69,13 @@ int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
     cameraSample.time = sampler.Get1D();
     cameraSample.pLens = sampler.Get2D();
     RayDifferential ray;
-    Spectrum rayWeight = camera.GenerateRayDifferential(cameraSample, &ray);
+    Spectrum We = camera.GenerateRayDifferential(cameraSample, &ray);
     ray.ScaleDifferentials(1 / std::sqrt(sampler.samplesPerPixel));
 
     // Generate first vertex on camera subpath and start random walk
-    path[0] = Vertex::CreateCamera(&camera, ray, rayWeight);
-    return RandomWalk(scene, ray, sampler, arena, rayWeight,
-                      camera.Pdf_Wi(path[0].ei, ray.d), maxDepth - 1,
+    path[0] = Vertex::CreateCamera(&camera, ray, We);
+    return RandomWalk(scene, ray, sampler, arena, We,
+                      camera.Pdf_We(path[0].ei, ray.d), maxDepth - 1,
                       TransportMode::Radiance, path + 1) +
            1;
 }
@@ -96,8 +96,8 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
     if (pdfPos == 0.f || pdfDir == 0.f || Le.IsBlack()) return 0;
 
     // Generate first vertex on light subpath and start random walk
-    Spectrum weight = Le * AbsDot(Nl, ray.d) / (lightPdf * pdfPos * pdfDir);
     path[0] = Vertex::CreateLight(light.get(), ray, Nl, Le, pdfPos * lightPdf);
+    Spectrum weight = Le * AbsDot(Nl, ray.d) / (lightPdf * pdfPos * pdfDir);
     int nVertices =
         RandomWalk(scene, ray, sampler, arena, weight, pdfDir, maxDepth - 1,
                    TransportMode::Importance, path + 1);
@@ -118,19 +118,22 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
 }
 
 int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
-               MemoryArena &arena, Spectrum weight, Float pdfFwd, int maxDepth,
+               MemoryArena &arena, Spectrum weight, Float pdf, int maxDepth,
                TransportMode mode, Vertex *path) {
     if (maxDepth == 0) return 0;
     int bounces = 0;
+    // Declare variables for forward and reverse probability densities
+    Float pdfFwd = pdf, pdfRev = 0;
     while (true) {
+        // Attempt to create the next subpath vertex in _path_
         MediumInteraction mi;
+
         // Trace a ray and sample the medium, if any
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
         if (ray.medium) weight *= ray.medium->Sample(ray, sampler, arena, &mi);
         if (weight.IsBlack()) break;
         Vertex &vertex = path[bounces], &prev = path[bounces - 1];
-        Float pdfRev;
         if (mi.IsValid()) {
             // Record medium interaction in _path_ and compute forward density
             vertex = Vertex::CreateMedium(mi, weight, pdfFwd, prev);
@@ -145,9 +148,8 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             if (!foundIntersection) {
                 // Capture escaped rays when tracing from the camera
                 if (mode == TransportMode::Radiance) {
-                    vertex = Vertex(VertexType::Light, EndpointInteraction(ray),
-                                    weight);
-                    vertex.pdfFwd = pdfFwd;
+                    vertex = Vertex::CreateLight(EndpointInteraction(ray),
+                                                 weight, pdfFwd);
                     ++bounces;
                 }
                 break;
@@ -161,25 +163,26 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
                 continue;
             }
 
-            // Fill _vertex_ with intersection information
+            // Initialize _vertex_ with surface intersection information
             vertex = Vertex::CreateSurface(isect, weight, pdfFwd, prev);
             if (++bounces >= maxDepth) break;
 
             // Sample BSDF at current vertex and compute reverse probability
             Vector3f wi, wo = isect.wo;
-            BxDFType flags;
+            BxDFType type;
             Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdfFwd,
-                                              BSDF_ALL, &flags);
+                                              BSDF_ALL, &type);
             if (f.IsBlack() || pdfFwd == 0.f) break;
             weight *= f * AbsDot(wi, isect.shading.n) / pdfFwd;
             pdfRev = isect.bsdf->Pdf(wi, wo, BSDF_ALL);
-            if (flags & BSDF_SPECULAR) {
+            if (type & BSDF_SPECULAR) {
                 vertex.delta = true;
                 pdfRev = pdfFwd = 0;
             }
             weight *= CorrectShadingNormal(isect, wo, wi, mode);
             ray = isect.SpawnRay(wi);
         }
+
         // Compute reverse area density at preceding vertex
         prev.pdfRev = vertex.ConvertDensity(pdfRev, prev);
     }
@@ -201,9 +204,9 @@ Float MISWeight(const Scene &scene, Vertex *lightVertices,
                 Vertex *cameraVertices, Vertex &sampled, int s, int t,
                 const Distribution1D &lightPdf) {
     if (s + t == 2) return 1;
-    Float sumRatios = 0;
+    Float sumRi = 0;
     // Define helper function _remap0_ that deals with Dirac delta functions
-    auto remap0 = [](float f) -> float { return f != 0 ? f : 1.0f; };
+    auto remap0 = [](float f) -> float { return f != 0 ? f : 1; };
 
     // Temporarily update vertex properties for current strategy
 
@@ -238,11 +241,9 @@ Float MISWeight(const Scene &scene, Vertex *lightVertices,
         a5 = {&ptMinus->pdfRev, s > 0 ? pt->Pdf(scene, qs, *ptMinus)
                                       : pt->PdfLight(scene, *ptMinus)};
 
-    // Update reverse density of vertex $\pq{}_s$
+    // Update reverse density of vertices $\pq{}_s$ and $\pq{}_{s-1}$
     ScopedAssignment<Float> a6;
     if (qs) a6 = {&qs->pdfRev, pt->Pdf(scene, ptMinus, *qs)};
-
-    // Update reverse density of vertex $\pq{}_{s-1}$
     ScopedAssignment<Float> a7;
     if (qsMinus) a7 = {&qsMinus->pdfRev, qs->Pdf(scene, pt, *qsMinus)};
 
@@ -252,7 +253,7 @@ Float MISWeight(const Scene &scene, Vertex *lightVertices,
         ri *=
             remap0(cameraVertices[i].pdfRev) / remap0(cameraVertices[i].pdfFwd);
         if (!cameraVertices[i].delta && !cameraVertices[i - 1].delta)
-            sumRatios += ri;
+            sumRi += ri;
     }
 
     // Consider hypothetical connection strategies along the light subpath
@@ -261,9 +262,9 @@ Float MISWeight(const Scene &scene, Vertex *lightVertices,
         ri *= remap0(lightVertices[i].pdfRev) / remap0(lightVertices[i].pdfFwd);
         bool deltaLightvertex = i > 0 ? lightVertices[i - 1].delta
                                       : lightVertices[0].IsDeltaLight();
-        if (!lightVertices[i].delta && !deltaLightvertex) sumRatios += ri;
+        if (!lightVertices[i].delta && !deltaLightvertex) sumRi += ri;
     }
-    return 1 / (1 + sumRatios);
+    return 1 / (1 + sumRi);
 }
 
 // BDPT Method Definitions
@@ -323,18 +324,13 @@ void BDPTIntegrator::Render(const Scene &scene) {
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
-            std::vector<std::unique_ptr<FilmTile>> weightFilmTiles;
-            if (visualizeStrategies || visualizeWeights)
-                for (auto &wFilm : weightFilms)
-                    weightFilmTiles.emplace_back(
-                        wFilm->GetFilmTile(tileBounds));
             for (Point2i pPixel : tileBounds) {
                 tileSampler->StartPixel(pPixel);
                 do {
                     // Generate a single sample using BDPT
                     Point2f pFilm = (Point2f)pPixel + tileSampler->Get2D();
 
-                    // Trace the light and camera subpaths
+                    // Trace the camera and light subpaths
                     Vertex *cameraVertices = arena.Alloc<Vertex>(maxDepth + 2);
                     Vertex *lightVertices = arena.Alloc<Vertex>(maxDepth + 1);
                     int nCamera = GenerateCameraSubpath(
@@ -363,15 +359,16 @@ void BDPTIntegrator::Render(const Scene &scene) {
                             if (visualizeStrategies || visualizeWeights) {
                                 Spectrum value;
                                 if (visualizeStrategies)
-                                    value = Lpath / misWeight;
+                                    value =
+                                        misWeight == 0 ? 0 : Lpath / misWeight;
                                 if (visualizeWeights) value = Lpath;
-                                weightFilmTiles[BufferIndex(s, t)]->AddSplat(
+                                weightFilms[BufferIndex(s, t)]->AddSplat(
                                     pFilmNew, value);
                             }
                             if (t != 1)
                                 L += Lpath;
                             else
-                                filmTile->AddSplat(pFilmNew, Lpath);
+                                film->AddSplat(pFilmNew, Lpath);
                         }
                     }
                     filmTile->AddSample(pFilm, L);
@@ -379,8 +376,6 @@ void BDPTIntegrator::Render(const Scene &scene) {
                 } while (tileSampler->StartNextSample());
             }
             film->MergeFilmTile(std::move(filmTile));
-            for (size_t i = 0; i < weightFilmTiles.size(); ++i)
-                weightFilms[i]->MergeFilmTile(std::move(weightFilmTiles[i]));
             reporter.Update();
         }, Point2i(nXTiles, nYTiles));
         reporter.Done();
@@ -390,9 +385,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
     // Write buffers for debug visualization
     if (visualizeStrategies || visualizeWeights) {
         const Float invSampleCount = 1.0f / sampler->samplesPerPixel;
-        for (size_t i = 0; i < weightFilms.size(); ++i) {
+        for (size_t i = 0; i < weightFilms.size(); ++i)
             if (weightFilms[i]) weightFilms[i]->WriteImage(invSampleCount);
-        }
     }
 }
 
@@ -442,9 +436,9 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
             Spectrum lightWeight = light->Sample_Li(
                 pt.GetInteraction(), sampler.Get2D(), &wi, &pdf, &vis);
             if (pdf > 0 && !lightWeight.IsBlack()) {
-                sampled = Vertex(VertexType::Light,
-                                 EndpointInteraction(vis.P1(), light.get()),
-                                 lightWeight / (pdf * lightPdf));
+                EndpointInteraction ei(vis.P1(), light.get());
+                sampled =
+                    Vertex::CreateLight(ei, lightWeight / (pdf * lightPdf), 0);
                 sampled.pdfFwd = sampled.PdfLightOrigin(scene, pt, lightDistr);
                 L = pt.weight * pt.f(sampled) * vis.T(scene, sampler) *
                     sampled.weight;

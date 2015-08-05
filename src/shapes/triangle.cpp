@@ -254,21 +254,18 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit,
     Float deltaZ = gamma(3) * maxZt;
 
     // Compute $\delta_x$ and $\delta_y$ terms for triangle $t$ error bounds
-    Float maxX = MaxComponent(Abs(Vector3f(p0t.x, p1t.x, p2t.x)));
-    Float maxY = MaxComponent(Abs(Vector3f(p0t.y, p1t.y, p2t.y)));
-    Float maxZ = MaxComponent(Abs(Vector3f(p0t.z, p1t.z, p2t.z)));
-    Float deltaX = gamma(5) * (maxX + maxZ);
-    Float deltaY = gamma(5) * (maxY + maxZ);
-
-    // Compute $\delta_e$ term for triangle $t$ error bounds
     Float maxXt = MaxComponent(Abs(Vector3f(p0t.x, p1t.x, p2t.x)));
     Float maxYt = MaxComponent(Abs(Vector3f(p0t.y, p1t.y, p2t.y)));
+    Float deltaX = gamma(5) * (maxXt + maxZt);
+    Float deltaY = gamma(5) * (maxYt + maxZt);
+
+    // Compute $\delta_e$ term for triangle $t$ error bounds
     Float deltaE =
         2 * (gamma(2) * maxXt * maxYt + deltaY * maxXt + deltaX * maxYt);
 
-    // Compute $\delta_t$ term for triangle $t$ error bounds
+    // Compute $\delta_t$ term for triangle $t$ error bounds and check _t_
     Float maxE = MaxComponent(Abs(Vector3f(e0, e1, e2)));
-    Float deltaT = 3.f *
+    Float deltaT = 3 *
                    (gamma(3) * maxE * maxZt + deltaE * maxZt + deltaZ * maxE) *
                    std::abs(invDet);
     if (t <= deltaT) return false;
@@ -372,11 +369,11 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit,
 
     // Compute error bounds for triangle intersection
     Float xAbsSum =
-        std::abs(b0 * p0.x) + std::abs(b1 * p1.x) + std::abs(b2 * p2.x);
+        (std::abs(b0 * p0.x) + std::abs(b1 * p1.x) + std::abs(b2 * p2.x));
     Float yAbsSum =
-        std::abs(b0 * p0.y) + std::abs(b1 * p1.y) + std::abs(b2 * p2.y);
+        (std::abs(b0 * p0.y) + std::abs(b1 * p1.y) + std::abs(b2 * p2.y));
     Float zAbsSum =
-        std::abs(b0 * p0.z) + std::abs(b1 * p1.z) + std::abs(b2 * p2.z);
+        (std::abs(b0 * p0.z) + std::abs(b1 * p1.z) + std::abs(b2 * p2.z));
     Vector3f pError = gamma(7) * Vector3f(xAbsSum, yAbsSum, zAbsSum);
 
     // Interpolate $(u,v)$ parametric coordinates and hit point
@@ -545,21 +542,18 @@ bool Triangle::IntersectP(const Ray &ray) const {
     Float deltaZ = gamma(3) * maxZt;
 
     // Compute $\delta_x$ and $\delta_y$ terms for triangle $t$ error bounds
-    Float maxX = MaxComponent(Abs(Vector3f(p0t.x, p1t.x, p2t.x)));
-    Float maxY = MaxComponent(Abs(Vector3f(p0t.y, p1t.y, p2t.y)));
-    Float maxZ = MaxComponent(Abs(Vector3f(p0t.z, p1t.z, p2t.z)));
-    Float deltaX = gamma(5) * (maxX + maxZ);
-    Float deltaY = gamma(5) * (maxY + maxZ);
-
-    // Compute $\delta_e$ term for triangle $t$ error bounds
     Float maxXt = MaxComponent(Abs(Vector3f(p0t.x, p1t.x, p2t.x)));
     Float maxYt = MaxComponent(Abs(Vector3f(p0t.y, p1t.y, p2t.y)));
+    Float deltaX = gamma(5) * (maxXt + maxZt);
+    Float deltaY = gamma(5) * (maxYt + maxZt);
+
+    // Compute $\delta_e$ term for triangle $t$ error bounds
     Float deltaE =
         2 * (gamma(2) * maxXt * maxYt + deltaY * maxXt + deltaX * maxYt);
 
-    // Compute $\delta_t$ term for triangle $t$ error bounds
+    // Compute $\delta_t$ term for triangle $t$ error bounds and check _t_
     Float maxE = MaxComponent(Abs(Vector3f(e0, e1, e2)));
-    Float deltaT = 3.f *
+    Float deltaT = 3 *
                    (gamma(3) * maxE * maxZt + deltaE * maxZt + deltaZ * maxE) *
                    std::abs(invDet);
     if (t <= deltaT) return false;

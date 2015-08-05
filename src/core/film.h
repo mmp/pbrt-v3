@@ -59,11 +59,12 @@ class Film {
     Film(const Point2i &resolution, const Bounds2f &cropWindow, Filter *filter,
          Float diagonal, const std::string &filename, Float scale, Float gamma);
     Bounds2i GetSampleBounds() const;
-    Point2f GetPhysicalSize() const;
+    Bounds2f GetPhysicalExtent() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
     void MergeFilmTile(std::unique_ptr<FilmTile> tile);
     void SetImage(const Spectrum *img) const;
-    void WriteImage(Float splatScale = 1.f);
+    void AddSplat(const Point2f &p, const Spectrum &v);
+    void WriteImage(Float splatScale = 1);
     void Clear();
 
     // Film Public Data
@@ -77,12 +78,14 @@ class Film {
     // Film Private Data
     struct Pixel {
         Pixel() {
-            for (int i = 0; i < 3; ++i) xyz[i] = splatXYZ[i] = 0.f;
-            filterWeightSum = 0.f;
+            for (int i = 0; i < 3; ++i) {
+                xyz[i] = splatXYZ[i] = (Float)0;
+            }
+            filterWeightSum = 0;
         }
         Float xyz[3];
         Float filterWeightSum;
-        Float splatXYZ[3];
+        AtomicFloat splatXYZ[3];
         Float pad;
     };
     std::unique_ptr<Pixel[]> pixels;
@@ -108,7 +111,7 @@ class FilmTile {
              const Float *filterTable, int filterTableSize)
         : pixelBounds(pixelBounds),
           filterRadius(filterRadius),
-          invFilterRadius(1.f / filterRadius.x, 1.f / filterRadius.y),
+          invFilterRadius(1 / filterRadius.x, 1 / filterRadius.y),
           filterTable(filterTable),
           filterTableSize(filterTableSize) {
         pixels = std::vector<FilmTilePixel>(std::max(0, pixelBounds.Area()));
@@ -165,9 +168,6 @@ class FilmTile {
             (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;
         return pixels[offset];
     }
-    void AddSplat(const Point2f &pRaster, const Spectrum &L) {
-        splats.push_back(std::make_pair((Point2i)pRaster, L));
-    }
     Bounds2i GetPixelBounds() const { return pixelBounds; }
 
   private:
@@ -177,7 +177,6 @@ class FilmTile {
     const Float *filterTable;
     const int filterTableSize;
     std::vector<FilmTilePixel> pixels;
-    std::vector<std::pair<Point2i, Spectrum>> splats;
     friend class Film;
 };
 

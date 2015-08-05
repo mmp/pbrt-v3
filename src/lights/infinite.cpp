@@ -150,16 +150,15 @@ Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     *ray = Ray(pDisk + worldRadius * -d, d, Infinity, time);
 
     // Compute _InfiniteAreaLight_ ray PDFs
-    *pdfDir = mapPdf / (2 * Pi * Pi * sinTheta);
+    *pdfDir = sinTheta == 0 ? 0 : mapPdf / (2 * Pi * Pi * sinTheta);
     *pdfPos = 1 / (Pi * worldRadius * worldRadius);
-    if (sinTheta == 0) *pdfDir = 0;
     return Spectrum(Lmap->Lookup(uv), SpectrumType::Illuminant);
 }
 
 void InfiniteAreaLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
                                Float *pdfDir) const {
     Vector3f d = -WorldToLight(ray.d);
-    Float theta = std::acos(d.z), phi = std::atan2(d.y, d.x);
+    Float theta = std::acos(Clamp(d.z, -1, 1)), phi = std::atan2(d.y, d.x);
     Point2f uv(phi * Inv2Pi, theta * InvPi);
     Float mapPdf = distribution->Pdf(uv);
     *pdfDir = mapPdf / (2 * Pi * Pi * std::sin(theta));

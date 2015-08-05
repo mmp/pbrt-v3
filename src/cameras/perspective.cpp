@@ -139,18 +139,16 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
     return 1.f;
 }
 
-Spectrum PerspectiveCamera::We(const Interaction &it, const Vector3f &w,
+Spectrum PerspectiveCamera::We(const Interaction &p0, const Vector3f &w,
                                Point2f *pRasterPtr) const {
     // Interpolate camera matrix and check if _w_ is forward-facing
     Transform c2w;
-    CameraToWorld.Interpolate(it.time, &c2w);
+    CameraToWorld.Interpolate(p0.time, &c2w);
     Float cosTheta = Dot(w, c2w(Vector3f(0, 0, 1)));
     if (cosTheta <= 0) return 0;
 
     // Map direction _w_ onto the raster grid
-    Float invCosTheta = 1 / cosTheta;
-    Point3f pFocus =
-        it.p + w * invCosTheta * (lensRadius > 0 ? focalDistance : 1);
+    Point3f pFocus = p0.p + w / cosTheta * (lensRadius > 0 ? focalDistance : 1);
     Point3f pRaster = Inverse(RasterToCamera)(Inverse(c2w)(pFocus));
 
     // Return raster position if requested
@@ -163,25 +161,23 @@ Spectrum PerspectiveCamera::We(const Interaction &it, const Vector3f &w,
         return 0;
 
     // Compute lens area of perspective camera
-    Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1.f;
+    Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1;
 
     // Return importance for point on image plane
-    Float invCosTheta2 = invCosTheta * invCosTheta;
-    return Spectrum((invCosTheta2 * invCosTheta2) / (A * lensArea));
+    Float cos2Theta = cosTheta * cosTheta;
+    return Spectrum(1 / (A * lensArea * cos2Theta * cos2Theta));
 }
 
-Float PerspectiveCamera::Pdf_Wi(const Interaction &it,
+Float PerspectiveCamera::Pdf_We(const Interaction &p0,
                                 const Vector3f &w) const {
     // Interpolate camera matrix and check if _w_ is forward-facing
     Transform c2w;
-    CameraToWorld.Interpolate(it.time, &c2w);
+    CameraToWorld.Interpolate(p0.time, &c2w);
     Float cosTheta = Dot(w, c2w(Vector3f(0, 0, 1)));
     if (cosTheta <= 0) return 0;
 
     // Map direction _w_ onto the raster grid
-    Float invCosTheta = 1 / cosTheta;
-    Point3f pFocus =
-        it.p + w * invCosTheta * (lensRadius > 0 ? focalDistance : 1);
+    Point3f pFocus = p0.p + w / cosTheta * (lensRadius > 0 ? focalDistance : 1);
     Point3f pRaster = Inverse(RasterToCamera)(Inverse(c2w)(pFocus));
 
     // Return zero importance for out of bounds points
@@ -189,7 +185,7 @@ Float PerspectiveCamera::Pdf_Wi(const Interaction &it,
     if (pRaster.x < sampleBounds.pMin.x || pRaster.x >= sampleBounds.pMax.x ||
         pRaster.y < sampleBounds.pMin.y || pRaster.y >= sampleBounds.pMax.y)
         return 0;
-    return invCosTheta * invCosTheta * invCosTheta / A;
+    return 1 / (A * cosTheta * cosTheta * cosTheta);
 }
 
 Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &u,
@@ -211,7 +207,7 @@ Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &u,
     // Compute PDF for importance arriving at _ref_
 
     // Compute lens area of perspective camera
-    Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1.f;
+    Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1;
     *pdf = (dist * dist) / (AbsDot(lensIntr.n, *wi) * lensArea);
     return We(lensIntr, -*wi, pRaster);
 }

@@ -69,17 +69,19 @@ Float DiffuseAreaLight::Pdf_Li(const Interaction &ref,
 Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                      Float time, Ray *ray, Normal3f *nLight,
                                      Float *pdfPos, Float *pdfDir) const {
+    // Sample a point on the area light's _Shape_, _pShape_
     Interaction pShape = shape->Sample(u1);
     pShape.mediumInterface = mediumInterface;
+    *pdfPos = shape->Pdf(pShape);
+    *nLight = pShape.n;
+
+    // Sample a cosine-weighted outgoing direction _w_ for area light
     Vector3f w = CosineSampleHemisphere(u2);
     *pdfDir = CosineHemispherePdf(w.z);
-    // Transform cosine-weighted direction to normal's coordinate system
     Vector3f v1, v2, n(pShape.n);
     CoordinateSystem(n, &v1, &v2);
     w = w.x * v1 + w.y * v2 + w.z * n;
     *ray = pShape.SpawnRay(w);
-    *nLight = pShape.n;
-    *pdfPos = shape->Pdf(pShape);
     return L(pShape, w);
 }
 

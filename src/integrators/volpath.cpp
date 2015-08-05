@@ -104,31 +104,30 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             // Account for attenuated subsurface scattering, if applicable
             if (isect.bssrdf && (flags & BSDF_TRANSMISSION)) {
                 // Importance sample the BSSRDF
-                SurfaceInteraction isect_sampled;
-                alpha *= isect.bssrdf->Sample_S(scene, sampler.Get2D(),
-                                                sampler.Get1D(), arena,
-                                                &isect_sampled, &pdf);
+                SurfaceInteraction pi;
+                Spectrum S = isect.bssrdf->Sample_S(
+                    scene, sampler.Get1D(), sampler.Get2D(), arena, &pi, &pdf);
 #ifndef NDEBUG
                 Assert(std::isinf(alpha.y()) == false);
 #endif
-                if (alpha.IsBlack()) break;
+                if (S.IsBlack() || pdf == 0) break;
+                alpha *= S / pdf;
 
                 // Account for the attenuated direct subsurface scattering
                 // component
-                L += alpha * UniformSampleOneLight(isect_sampled, scene,
-                                                   sampler, arena, true);
+                L += alpha *
+                     UniformSampleOneLight(pi, scene, sampler, arena, true);
 
                 // Account for the indirect subsurface scattering component
-                Spectrum f = isect_sampled.bsdf->Sample_f(isect_sampled.wo, &wi,
-                                                          sampler.Get2D(), &pdf,
-                                                          BSDF_ALL, &flags);
+                Spectrum f = pi.bsdf->Sample_f(pi.wo, &wi, sampler.Get2D(),
+                                               &pdf, BSDF_ALL, &flags);
                 if (f.IsBlack() || pdf == 0.f) break;
-                alpha *= f * AbsDot(wi, isect_sampled.shading.n) / pdf;
+                alpha *= f * AbsDot(wi, pi.shading.n) / pdf;
 #ifndef NDEBUG
                 Assert(std::isinf(alpha.y()) == false);
 #endif
                 specularBounce = (flags & BSDF_SPECULAR) != 0;
-                ray = isect_sampled.SpawnRay(wi);
+                ray = pi.SpawnRay(wi);
             }
         }
 

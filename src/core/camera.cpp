@@ -105,14 +105,14 @@ ProjectiveCamera::ProjectiveCamera(const AnimatedTransform &CameraToWorld,
     RasterToCamera = Inverse(CameraToScreen) * RasterToScreen;
 }
 
-Spectrum Camera::We(const Interaction &it, const Vector3f &w,
-                    Point2f *pRaster) const {
+Spectrum Camera::We(const Interaction &p0, const Vector3f &w,
+                    Point2f *pRasterPtr) const {
     Severe("Camera::We() is not implemented!");
     return Spectrum(0.f);
 }
 
-Float Camera::Pdf_Wi(const Interaction &it, const Vector3f &w) const {
-    Severe("Camera::Pdf_Wi() is not implemented!");
+Float Camera::Pdf_We(const Interaction &p0, const Vector3f &w) const {
+    Severe("Camera::Pdf_We() is not implemented!");
     return 0.f;
 }
 

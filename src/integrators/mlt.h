@@ -98,8 +98,7 @@ class MLTSampler : public Sampler {
     int currentIteration = 0;
     bool largeStep = true;
     int lastLargeStepIteration = 0;
-    int streamIndex;
-    int sampleIndex;
+    int streamIndex, sampleIndex;
 };
 
 // MLT Declarations
@@ -119,7 +118,7 @@ class MLTIntegrator : public Integrator {
     void Render(const Scene &scene);
     Spectrum L(const Scene &scene, MemoryArena &arena,
                const std::unique_ptr<Distribution1D> &lightDistr,
-               MLTSampler &sampler, int k, Point2f *samplePos);
+               MLTSampler &sampler, int k, Point2f *pRaster);
 
   private:
     // MLTIntegrator Private Data

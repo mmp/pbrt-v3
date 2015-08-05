@@ -141,7 +141,6 @@ struct Vertex {
     // Vertex Public Data
     VertexType type;
     Spectrum weight;
-    bool delta = false;
 // Switch to a struct in debug mode to avoid a compiler error regarding
 // non-trivial constructors
 #if defined(NDEBUG) && !defined(PBRT_IS_MSVC)
@@ -154,6 +153,7 @@ struct Vertex {
         MediumInteraction mi;
         SurfaceInteraction si;
     };
+    bool delta = false;
     Float pdfFwd = 0.f, pdfRev = 0.f;
 
     // Vertex Public Methods
@@ -163,37 +163,25 @@ struct Vertex {
         : type(type), weight(weight), ei(ei) {}
     Vertex(const SurfaceInteraction &si, const Spectrum &weight)
         : type(VertexType::Surface), weight(weight), si(si) {}
-    static Vertex CreateCamera(const Camera *camera, const Ray &ray,
-                               const Spectrum &weight) {
-        return Vertex(VertexType::Camera, EndpointInteraction(camera, ray),
-                      weight);
-    }
-    static Vertex CreateCamera(const Camera *camera, const Interaction &it,
-                               const Spectrum &weight) {
-        return Vertex(VertexType::Camera, EndpointInteraction(it, camera),
-                      weight);
-    }
-    static Vertex CreateLight(const Light *light, const Ray &ray,
-                              const Normal3f &Nl, const Spectrum &Le,
-                              Float pdf) {
-        Vertex v(VertexType::Light, EndpointInteraction(light, ray, Nl), Le);
-        v.pdfFwd = pdf;
-        return v;
-    }
-    static Vertex CreateSurface(const SurfaceInteraction &si,
-                                const Spectrum &weight, Float pdf,
-                                const Vertex &prev) {
-        Vertex v(si, weight);
-        v.pdfFwd = prev.ConvertDensity(pdf, v);
-        return v;
-    }
-    static Vertex CreateMedium(const MediumInteraction &mi,
-                               const Spectrum &weight, Float pdf,
-                               const Vertex &prev) {
-        Vertex v(mi, weight);
-        v.pdfFwd = prev.ConvertDensity(pdf, v);
-        return v;
-    }
+    static inline Vertex CreateCamera(const Camera *camera, const Ray &ray,
+                                      const Spectrum &weight);
+    static inline Vertex CreateCamera(const Camera *camera,
+                                      const Interaction &it,
+                                      const Spectrum &weight);
+    static inline Vertex CreateEndpoint(VertexType type,
+                                        const EndpointInteraction &ei,
+                                        const Spectrum &weight);
+    static inline Vertex CreateLight(const Light *light, const Ray &ray,
+                                     const Normal3f &Nl, const Spectrum &Le,
+                                     Float pdf);
+    static inline Vertex CreateLight(const EndpointInteraction &ei,
+                                     const Spectrum &weight, Float pdf);
+    static inline Vertex CreateMedium(const MediumInteraction &mi,
+                                      const Spectrum &weight, Float pdf,
+                                      const Vertex &prev);
+    static inline Vertex CreateSurface(const SurfaceInteraction &si,
+                                       const Spectrum &weight, Float pdf,
+                                       const Vertex &prev);
     Vertex(const MediumInteraction &mi, const Spectrum &weight)
         : type(VertexType::Medium), weight(weight), mi(mi) {}
     const Interaction &GetInteraction() const {
@@ -247,6 +235,7 @@ struct Vertex {
                (!ei.light || ei.light->flags == LightFlags::Infinite);
     }
     Spectrum Le(const Scene &scene, const Vertex &v) const {
+        if (!IsLight()) return Spectrum(0.f);
         Vector3f w = Normalize(v.p() - p());
         if (IsInfiniteLight()) {
             // Return emitted radiance for infinite light sources
@@ -307,7 +296,7 @@ struct Vertex {
         // Compute directional density depending on the vertex types
         Float pdf;
         if (type == VertexType::Camera)
-            pdf = ei.camera->Pdf_Wi(ei, wn);
+            pdf = ei.camera->Pdf_We(ei, wn);
         else if (type == VertexType::Surface)
             pdf = si.bsdf->Pdf(wp, wn);
         else if (type == VertexType::Medium)
@@ -330,14 +319,14 @@ struct Vertex {
             scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
             pdf = 1 / (Pi * worldRadius * worldRadius);
         } else {
-            // Compute sampling density for non-infinite light sources
-
             // Get pointer _light_ to the light source at the vertex
             Assert(IsLight());
             const Light *light = type == VertexType::Light
                                      ? ei.light
                                      : si.primitive->GetAreaLight();
             Assert(light != nullptr);
+
+            // Compute sampling density for non-infinite light sources
             Float pdfPos, pdfDir;
             light->Pdf_Le(Ray(p(), w, time()), ng(), &pdfPos, &pdfDir);
             pdf = pdfDir * invDist2;
@@ -352,7 +341,7 @@ struct Vertex {
             // Return solid angle density for infinite light sources
             return InfiniteLightDensity(scene, lightDistr, w);
         } else {
-            // Return solid angle density for other light sources
+            // Return solid angle density for non-infinite light sources
             Float pdfPos, pdfDir, pdfChoice = 0;
 
             // Get pointer _light_ to the light source at the vertex
@@ -362,7 +351,7 @@ struct Vertex {
                                      : si.primitive->GetAreaLight();
             Assert(light != nullptr);
 
-            // Set _pdfChoice_ to the discrete probability of sampling _light_
+            // Compute the discrete probability of sampling _light_, _pdfChoice_
             for (size_t i = 0; i < scene.lights.size(); ++i) {
                 if (scene.lights[i].get() == light) {
                     pdfChoice = lightDistr.func[i] /
@@ -393,5 +382,53 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera);
+
+// Vertex Inline Method Definitions
+inline Vertex Vertex::CreateCamera(const Camera *camera, const Ray &ray,
+                                   const Spectrum &weight) {
+    return Vertex(VertexType::Camera, EndpointInteraction(camera, ray), weight);
+}
+
+inline Vertex Vertex::CreateEndpoint(VertexType type,
+                                     const EndpointInteraction &ei,
+                                     const Spectrum &weight) {
+    return Vertex(type, ei, weight);
+}
+
+inline Vertex Vertex::CreateCamera(const Camera *camera, const Interaction &it,
+                                   const Spectrum &weight) {
+    return Vertex(VertexType::Camera, EndpointInteraction(it, camera), weight);
+}
+
+inline Vertex Vertex::CreateLight(const Light *light, const Ray &ray,
+                                  const Normal3f &Nl, const Spectrum &Le,
+                                  Float pdf) {
+    Vertex v(VertexType::Light, EndpointInteraction(light, ray, Nl), Le);
+    v.pdfFwd = pdf;
+    return v;
+}
+
+inline Vertex Vertex::CreateSurface(const SurfaceInteraction &si,
+                                    const Spectrum &weight, Float pdf,
+                                    const Vertex &prev) {
+    Vertex v(si, weight);
+    v.pdfFwd = prev.ConvertDensity(pdf, v);
+    return v;
+}
+
+inline Vertex Vertex::CreateMedium(const MediumInteraction &mi,
+                                   const Spectrum &weight, Float pdf,
+                                   const Vertex &prev) {
+    Vertex v(mi, weight);
+    v.pdfFwd = prev.ConvertDensity(pdf, v);
+    return v;
+}
+
+inline Vertex Vertex::CreateLight(const EndpointInteraction &ei,
+                                  const Spectrum &weight, Float pdf) {
+    Vertex v(VertexType::Light, ei, weight);
+    v.pdfFwd = pdf;
+    return v;
+}
 
 #endif  // PBRT_INTEGRATORS_BDPT_H

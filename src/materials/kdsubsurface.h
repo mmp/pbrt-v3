@@ -52,16 +52,22 @@ class KdSubsurfaceMaterial : public Material {
                          const std::shared_ptr<Texture<Spectrum>> &Kd,
                          const std::shared_ptr<Texture<Spectrum>> &Kr,
                          const std::shared_ptr<Texture<Spectrum>> &Kt,
-                         const std::shared_ptr<Texture<Spectrum>> &sigma_t,
-                         Float g, Float eta,
-                         const std::shared_ptr<Texture<Float>> &bumpMap)
+                         const std::shared_ptr<Texture<Spectrum>> &mfp, Float g,
+                         Float eta,
+                         const std::shared_ptr<Texture<Float>> &uRoughness,
+                         const std::shared_ptr<Texture<Float>> &vRoughness,
+                         const std::shared_ptr<Texture<Float>> &bumpMap,
+                         bool remapRoughness)
         : scale(scale),
           Kd(Kd),
           Kr(Kr),
           Kt(Kt),
-          sigma_t(sigma_t),
+          mfp(mfp),
+          uRoughness(uRoughness),
+          vRoughness(vRoughness),
           bumpMap(bumpMap),
           eta(eta),
+          remapRoughness(remapRoughness),
           table(100, 64) {
         ComputeBeamDiffusionBSSRDF(g, eta, &table);
     }
@@ -72,9 +78,11 @@ class KdSubsurfaceMaterial : public Material {
   private:
     // KdSubsurfaceMaterial Private Data
     Float scale;
-    std::shared_ptr<Texture<Spectrum>> Kd, Kr, Kt, sigma_t;
+    std::shared_ptr<Texture<Spectrum>> Kd, Kr, Kt, mfp;
+    std::shared_ptr<Texture<Float>> uRoughness, vRoughness;
     std::shared_ptr<Texture<Float>> bumpMap;
     Float eta;
+    bool remapRoughness;
     BSSRDFTable table;
 };
 

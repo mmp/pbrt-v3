@@ -523,8 +523,8 @@ class BSSRDF {
 
     // BSSRDF Interface
     virtual Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) = 0;
-    virtual Spectrum Sample_S(const Scene &scene, const Point2f &sample1,
-                              Float sample2, MemoryArena &arena,
+    virtual Spectrum Sample_S(const Scene &scene, Float sample1,
+                              const Point2f &sample2, MemoryArena &arena,
                               SurfaceInteraction *si, Float *pdf) const = 0;
 
   protected:
@@ -544,27 +544,27 @@ class SeparableBSSRDF : public BSSRDF {
           ts(Cross(ns, ss)),
           material(material),
           mode(mode) {}
+    Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) {
+        Float Ft = (1 - FrDielectric(CosTheta(po.wo), 1.f, eta));
+        return Ft * Sp(pi) * Sw(wi);
+    }
     Spectrum Sw(const Vector3f &w) const {
         Float c = 1 - 2 * FresnelMoment1(1 / eta);
         return InvPi * (1 - FrDielectric(CosTheta(w), 1.f, eta)) / c;
     }
     Spectrum Sp(const SurfaceInteraction &si) const;
-    Spectrum Sample_S(const Scene &scene, const Point2f &sample1, Float sample2,
+    Spectrum Sample_S(const Scene &scene, Float sample1, const Point2f &sample2,
                       MemoryArena &arena, SurfaceInteraction *si,
                       Float *pdf) const;
-    Spectrum Sample_Sp(const Scene &scene, const Point2f &sample1,
-                       Float sample2, MemoryArena &arena,
+    Spectrum Sample_Sp(const Scene &scene, Float sample1,
+                       const Point2f &sample2, MemoryArena &arena,
                        SurfaceInteraction *si, Float *pdf) const;
     Float Pdf_Sp(const SurfaceInteraction &si) const;
 
     // SeparableBSSRDF Interface
-    Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) {
-        Float Ft = (1 - FrDielectric(CosTheta(po.wo), 1.f, eta));
-        return Ft * Sp(pi) * Sw(wi);
-    }
     virtual Spectrum Sr(Float d) const = 0;
-    virtual Float Pdf_Sr(Float r) const = 0;
     virtual Float Sample_Sr(int ch, Float sample) const = 0;
+    virtual Float Pdf_Sr(Float r) const = 0;
 
   private:
     // SeparableBSSRDF Private Data
@@ -583,7 +583,7 @@ class TabulatedBSSRDF : public SeparableBSSRDF {
         : SeparableBSSRDF(po, eta, material, mode), table(table) {
         sigma_t = sigma_a + sigma_s;
         for (int c = 0; c < Spectrum::nSamples; ++c)
-            albedo[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0.f;
+            rho[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0.f;
     }
     Spectrum Sr(Float distance) const;
     Float Pdf_Sr(Float distance) const;
@@ -592,27 +592,27 @@ class TabulatedBSSRDF : public SeparableBSSRDF {
   private:
     // TabulatedBSSRDF Private Data
     const BSSRDFTable &table;
-    Spectrum sigma_t, albedo;
+    Spectrum sigma_t, rho;
 };
 
 struct BSSRDFTable {
     // BSSRDFTable Public Data
-    const int nAlbedoSamples, nRadiusSamples;
-    std::unique_ptr<Float[]> albedoSamples, radiusSamples;
+    const int nRhoSamples, nRadiusSamples;
+    std::unique_ptr<Float[]> rhoSamples, radiusSamples;
     std::unique_ptr<Float[]> profile;
-    std::unique_ptr<Float[]> effAlbedo, profileCDF;
+    std::unique_ptr<Float[]> rhoEff, profileCDF;
 
     // BSSRDFTable Public Methods
-    BSSRDFTable(int nAlbedoSamples, int nRadiusSamples);
-    inline Float EvalProfile(int albedoIndex, int radiusIndex) const {
-        return profile[albedoIndex * nRadiusSamples + radiusIndex];
+    BSSRDFTable(int nRhoSamples, int nRadiusSamples);
+    inline Float EvalProfile(int rhoIndex, int radiusIndex) const {
+        return profile[rhoIndex * nRadiusSamples + radiusIndex];
     }
 };
 
-class BSSRDFAdapter : public BxDF {
+class SeparableBSSRDFAdapter : public BxDF {
   public:
-    BSSRDFAdapter(const SeparableBSSRDF *bssrdf)
-        : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), bssrdf(bssrdf) {}
+    SeparableBSSRDFAdapter(const SeparableBSSRDF *bssrdf)
+        : BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE)), bssrdf(bssrdf) {}
     Spectrum f(const Vector3f &, const Vector3f &wi) const {
         return bssrdf->Sw(wi);
     }

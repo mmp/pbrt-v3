@@ -42,7 +42,7 @@ Float EnvironmentCamera::GenerateRay(const CameraSample &sample,
                                      Ray *ray) const {
     // Compute environment camera ray direction
     Float theta = Pi * sample.pFilm.y / film->fullResolution.y;
-    Float phi = 2.f * Pi * sample.pFilm.x / film->fullResolution.x;
+    Float phi = 2 * Pi * sample.pFilm.x / film->fullResolution.x;
     Vector3f dir(std::sin(theta) * std::cos(phi), std::cos(theta),
                  std::sin(theta) * std::sin(phi));
     *ray = Ray(Point3f(0, 0, 0), dir, Infinity,
