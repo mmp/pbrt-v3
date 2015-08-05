@@ -18,6 +18,10 @@
 #ifndef _TINY_OBJ_LOADER_H
 #define _TINY_OBJ_LOADER_H
 
+#ifdef _MSC_VER >= 1800
+#include <algorithm>
+#endif
+
 #include <string>
 #include <vector>
 #include <map>
