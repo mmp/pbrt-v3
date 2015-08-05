@@ -137,7 +137,8 @@ void SPPMIntegrator::Render(const Scene &scene) {
         std::vector<MemoryArena> perThreadArenas(MaxThreadIndex());
         {
             StatTimer timer(&hitPointTimer);
-            ParallelFor([&](Point2i tile, int threadIndex) {
+            ParallelFor(static_cast<std::function<void(Point2i, int)>>(
+                [&](Point2i tile, int threadIndex) {
                 MemoryArena &arena = perThreadArenas[threadIndex];
                 // Follow camera paths for _tile_ in image for SPPM
                 int tileIndex = tile.y * nTiles.x + tile.x;
@@ -235,7 +236,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                         }
                     }
                 }
-            }, nTiles);
+            }), nTiles);
         }
         progress.Update();
 
@@ -268,7 +269,8 @@ void SPPMIntegrator::Render(const Scene &scene) {
         // Add visible points to SPPM grid
         {
             StatTimer timer(&gridConstructionTimer);
-            ParallelFor([&](int pixelIndex, int threadIndex) {
+            ParallelFor(static_cast<std::function<void(int, int)>>(
+                [&](int pixelIndex, int threadIndex) {
                 MemoryArena &arena = perThreadArenas[threadIndex];
                 SPPMPixel &pixel = pixels[pixelIndex];
                 if (!pixel.vp.alpha.IsBlack()) {
@@ -299,14 +301,15 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                 (1 + pMax.x - pMin.x) * (1 + pMax.y - pMin.y) *
                                     (1 + pMax.z - pMin.z));
                 }
-            }, nPixels, 4096);
+            }), nPixels, 4096);
         }
 
         // Trace photons and accumulate contributions
         {
             StatTimer timer(&photonTimer);
             std::vector<MemoryArena> photonShootArenas(MaxThreadIndex());
-            ParallelFor([&](int photonIndex, int threadIndex) {
+            ParallelFor(static_cast<std::function<void(int, int)>>(
+                [&](int photonIndex, int threadIndex) {
                 MemoryArena &arena = photonShootArenas[threadIndex];
                 // Follow photon path for _photonIndex_
                 uint64_t haltonIndex =
@@ -416,7 +419,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                         wi, photonRay.depth + 1);
                 }
                 arena.Reset();
-            }, photonsPerIteration, 8192);
+            }), photonsPerIteration, 8192);
             progress.Update();
             photonPaths += photonsPerIteration;
         }

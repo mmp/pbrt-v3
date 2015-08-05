@@ -77,9 +77,11 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
                 lensData[i + 3] = apertureDiameter;
             }
         }
-        elementInterfaces.push_back((LensElementInterface){
+
+        LensElementInterface lensInterface {
             lensData[i] * (Float).001, lensData[i + 1] * (Float).001,
-            lensData[i + 2], lensData[i + 3] * Float(.001) / Float(2.)});
+            lensData[i + 2], lensData[i + 3] * Float(.001) / Float(2.)};
+        elementInterfaces.push_back(lensInterface);
     }
 
     // Compute lens--film distance for given focus distance
@@ -92,11 +94,11 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
     // Compute exit pupil bounds at sampled points on the film
     int nSamples = 64;
     exitPupilBounds.resize(nSamples);
-    ParallelFor([&](int i) {
+    ParallelFor(static_cast<std::function<void(int)>>([&](int i) {
         Float r0 = (Float)i / (Float)(nSamples)*film->diagonal / 2;
         Float r1 = (Float)(i + 1) / (Float)(nSamples)*film->diagonal / 2;
         exitPupilBounds[i] = BoundExitPupil(r0, r1);
-    }, nSamples);
+    }), nSamples);
 }
 
 bool RealisticCamera::TraceLensesFromFilm(const Ray &ray, Ray *rOut) const {

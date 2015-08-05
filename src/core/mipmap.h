@@ -132,7 +132,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         resampledImage.reset(new T[resPow2[0] * resPow2[1]]);
 
         // Apply _sWeights_ to zoom in $s$ direction
-        ParallelFor([&](int t) {
+        ParallelFor(static_cast<std::function<void(int)>>([&](int t) {
             for (int s = 0; s < resPow2[0]; ++s) {
                 // Compute texel $(s,t)$ in $s$-zoomed image
                 resampledImage[t * resPow2[0] + s] = 0.f;
@@ -148,7 +148,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
                             img[t * resolution[0] + origS];
                 }
             }
-        }, resolution[1], 16);
+        }), resolution[1], 16);
 
         // Resample image in $t$ direction
         std::unique_ptr<ResampleWeight[]> tWeights =
@@ -157,7 +157,8 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         int nThreads = MaxThreadIndex();
         for (int i = 0; i < nThreads; ++i)
             resampleBufs.push_back(new T[resPow2[1]]);
-        ParallelFor([&](int s, int threadIndex) {
+        ParallelFor(static_cast<std::function<void(int, int)>>(
+            [&](int s, int threadIndex) {
             T *workData = resampleBufs[threadIndex];
             for (int t = 0; t < resPow2[1]; ++t) {
                 workData[t] = 0.f;
@@ -174,7 +175,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
             }
             for (int t = 0; t < resPow2[1]; ++t)
                 resampledImage[t * resPow2[0] + s] = clamp(workData[t]);
-        }, resPow2[0], 32);
+        }), resPow2[0], 32);
         for (auto ptr : resampleBufs) delete[] ptr;
         resolution = resPow2;
     }
@@ -193,14 +194,14 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         pyramid[i] = new BlockedArray<T>(sRes, tRes);
 
         // Filter four texels from finer level of pyramid
-        ParallelFor([&](int t) {
+        ParallelFor(static_cast<std::function<void(int)>>([&](int t) {
             for (int s = 0; s < sRes; ++s)
                 (*pyramid[i])(s, t) =
                     .25f * (Texel(i - 1, 2 * s, 2 * t) +
                             Texel(i - 1, 2 * s + 1, 2 * t) +
                             Texel(i - 1, 2 * s, 2 * t + 1) +
                             Texel(i - 1, 2 * s + 1, 2 * t + 1));
-        }, tRes, 16);
+        }), tRes, 16);
     }
 
     // Initialize EWA filter weights if needed
