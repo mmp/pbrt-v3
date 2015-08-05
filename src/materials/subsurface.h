@@ -43,6 +43,7 @@
 #include "pbrt.h"
 #include "material.h"
 #include "reflection.h"
+#include "bssrdf.h"
 
 // SubsurfaceMaterial Declarations
 class SubsurfaceMaterial : public Material {

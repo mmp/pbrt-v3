@@ -37,6 +37,7 @@
 #include "scene.h"
 #include "interaction.h"
 #include "paramset.h"
+#include "bssrdf.h"
 
 // VolPathIntegrator Method Definitions
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,

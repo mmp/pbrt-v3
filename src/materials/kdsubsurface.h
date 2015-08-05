@@ -43,6 +43,7 @@
 #include "pbrt.h"
 #include "reflection.h"
 #include "material.h"
+#include "bssrdf.h"
 
 // KdSubsurfaceMaterial Declarations
 class KdSubsurfaceMaterial : public Material {

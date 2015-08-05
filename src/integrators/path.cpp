@@ -37,6 +37,7 @@
 #include "scene.h"
 #include "interaction.h"
 #include "paramset.h"
+#include "bssrdf.h"
 
 // PathIntegrator Method Definitions
 Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
