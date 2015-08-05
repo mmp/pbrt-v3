@@ -81,6 +81,7 @@
 #if defined(PBRT_IS_MSVC)
 #include <float.h>
 #include <intrin.h>
+#include <functional>            // used to resolve a trailing return type error C3551
 #pragma warning(disable : 4305)  // double constant assigned to float
 #pragma warning(disable : 4244)  // int -> float conversion
 #pragma warning(disable : 4267)  // size_t -> unsigned int conversion
@@ -208,6 +209,11 @@ static const Float Inv4Pi = 0.07957747154594766788;
 static const Float PiOver2 = 1.57079632679489661923;
 static const Float PiOver4 = 0.78539816339744830961;
 static const Float Sqrt2 = 1.41421356237309504880;
+#ifdef _MSC_VER
+static const Float OneOverTwoToThe32 = ldexp(1.0f, -32);
+#else
+static const Float OneOverTwoToThe32 = 0x1p-32f;
+#endif
 #if defined(PBRT_IS_MSVC)
 #define alloca _alloca
 #endif

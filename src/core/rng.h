@@ -83,7 +83,7 @@ class RNG {
         }
     }
     Float UniformFloat() {
-        return std::min(OneMinusEpsilon, UniformUInt32() * 0x1p-32f);
+        return std::min(OneMinusEpsilon, UniformUInt32() * OneOverTwoToThe32);
     }
     template <typename Iterator>
     void Shuffle(Iterator begin, Iterator end) {

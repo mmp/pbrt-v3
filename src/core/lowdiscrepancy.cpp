@@ -450,7 +450,11 @@ Float RadicalInverse(int baseIndex, uint64_t a) {
     switch (baseIndex) {
     case 0:
         // Compute base-2 radical inverse
+#ifdef _MSC_VER
+        return ReverseBits64(a) * ldexp(1.0f, -64);
+#else
         return ReverseBits64(a) * 0x1p-64;
+#endif
     case 1:
         return RadicalInverseSpecialized<3>(a);
     case 2:
