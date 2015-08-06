@@ -67,7 +67,7 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
         return;
     }
     for (int i = 0; i < (int)lensData.size(); i += 4) {
-        if (lensData[i] == 0.f) {
+        if (lensData[i] == 0) {
             if (apertureDiameter > lensData[i + 3]) {
                 Warning(
                     "Specified aperture diameter %f is greater than maximum "
@@ -112,7 +112,7 @@ bool RealisticCamera::TraceLensesFromFilm(const Ray &ray, Ray *rOut) const {
         // Compute intersection of ray with lens element
         Float t;
         Normal3f n;
-        bool isStop = (element.curvatureRadius == 0.f);
+        bool isStop = (element.curvatureRadius == 0);
         if (isStop)
             t = (elementZ - rLens.o.z) / rLens.d.z;
         else {
@@ -121,7 +121,7 @@ bool RealisticCamera::TraceLensesFromFilm(const Ray &ray, Ray *rOut) const {
             if (!IntersectSphericalElement(radius, center, rLens, &t, &n))
                 return false;
         }
-        Assert(t >= 0.f);
+        Assert(t >= 0);
 
         // Test intersection point against element aperture
         Point3f pHit = rLens(t);
@@ -154,7 +154,7 @@ bool RealisticCamera::IntersectSphericalElement(Float radius, Float center,
     // Compute _t0_ and _t1_ for ray--element intersection
     Point3f o = ray.o - Vector3f(0, 0, center);
     Float A = ray.d.x * ray.d.x + ray.d.y * ray.d.y + ray.d.z * ray.d.z;
-    Float B = 2.f * (ray.d.x * o.x + ray.d.y * o.y + ray.d.z * o.z);
+    Float B = 2 * (ray.d.x * o.x + ray.d.y * o.y + ray.d.z * o.z);
     Float C = o.x * o.x + o.y * o.y + o.z * o.z - radius * radius;
     Float t0, t1;
     if (!Quadratic(A, B, C, &t0, &t1)) return false;
@@ -180,7 +180,7 @@ bool RealisticCamera::TraceLensesFromScene(const Ray &ray, Ray *rOut) const {
         // Compute intersection of ray with lens element
         Float t;
         Normal3f n;
-        bool isStop = (element.curvatureRadius == 0.f);
+        bool isStop = (element.curvatureRadius == 0);
         if (isStop)
             t = (elementZ - rLens.o.z) / rLens.d.z;
         else {
@@ -189,7 +189,7 @@ bool RealisticCamera::TraceLensesFromScene(const Ray &ray, Ray *rOut) const {
             if (!IntersectSphericalElement(radius, center, rLens, &t, &n))
                 return false;
         }
-        Assert(t >= 0.f);
+        Assert(t >= 0);
 
         // Test intersection point against element aperture
         Point3f pHit = rLens(t);
@@ -244,7 +244,7 @@ void RealisticCamera::DrawLensSystem() const {
                 Float t1 = theta;
                 printf("Circle[{%f, 0}, %f, {%f, %f}], ", z + r, -r, t0, t1);
             }
-            if (element.eta != 0.f && element.eta != 1) {
+            if (element.eta != 0 && element.eta != 1) {
                 // connect top/bottom to next element
                 Assert(i + 1 < elementInterfaces.size());
                 Float nextApertureRadius =
@@ -308,7 +308,7 @@ void RealisticCamera::DrawRayPathFromFilm(const Ray &r, bool arrow,
     for (int i = elementInterfaces.size() - 1; i >= 0; --i) {
         const LensElementInterface &element = elementInterfaces[i];
         elementZ -= element.thickness;
-        bool isStop = (element.curvatureRadius == 0.f);
+        bool isStop = (element.curvatureRadius == 0);
         // Compute intersection of ray with lens element
         Float t;
         Normal3f n;
@@ -320,7 +320,7 @@ void RealisticCamera::DrawRayPathFromFilm(const Ray &r, bool arrow,
             if (!IntersectSphericalElement(radius, center, ray, &t, &n))
                 goto done;
         }
-        Assert(t >= 0.f);
+        Assert(t >= 0);
 
         printf("Line[{{%f, %f}, {%f, %f}}],", ray.o.z, ray.o.x, ray(t).z,
                ray(t).x);
@@ -336,9 +336,9 @@ void RealisticCamera::DrawRayPathFromFilm(const Ray &r, bool arrow,
         if (!isStop) {
             Vector3f wt;
             Float etaI = element.eta;
-            Float etaT = (i > 0 && elementInterfaces[i - 1].eta != 0.f)
+            Float etaT = (i > 0 && elementInterfaces[i - 1].eta != 0)
                              ? elementInterfaces[i - 1].eta
-                             : 1.f;
+                             : 1;
             if (!Refract(Normalize(-ray.d), n, etaI / etaT, &wt)) goto done;
             ray.d = wt;
         }
@@ -372,7 +372,7 @@ void RealisticCamera::DrawRayPathFromScene(const Ray &r, bool arrow,
     Ray ray = CameraToLens(r);
     for (size_t i = 0; i < elementInterfaces.size(); ++i) {
         const LensElementInterface &element = elementInterfaces[i];
-        bool isStop = (element.curvatureRadius == 0.f);
+        bool isStop = (element.curvatureRadius == 0);
         // Compute intersection of ray with lens element
         Float t;
         Normal3f n;
@@ -613,9 +613,9 @@ void RealisticCamera::TestExitPupilBounds() const {
     static RNG rng;
 
     Float u = rng.UniformFloat();
-    Point3f pFilm(u * filmDiagonal / 2.f, 0.f, 0.f);
+    Point3f pFilm(u * filmDiagonal / 2, 0, 0);
 
-    Float r = pFilm.x / (filmDiagonal / 2.f);
+    Float r = pFilm.x / (filmDiagonal / 2);
     int pupilIndex =
         std::min((int)exitPupilBounds.size() - 1,
                  (int)std::floor(r * (exitPupilBounds.size() - 1)));

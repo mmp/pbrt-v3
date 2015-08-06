@@ -296,8 +296,7 @@ SurfaceInteraction Transform::operator()(const SurfaceInteraction &is) const {
 }
 
 Transform Orthographic(Float znear, Float zfar) {
-    return Scale(1.f, 1.f, 1.f / (zfar - znear)) *
-           Translate(Vector3f(0.f, 0.f, -znear));
+    return Scale(1, 1, 1 / (zfar - znear)) * Translate(Vector3f(0, 0, -znear));
 }
 
 Transform Perspective(Float fov, Float n, Float f) {
@@ -306,7 +305,7 @@ Transform Perspective(Float fov, Float n, Float f) {
                     0, 0, 1, 0);
 
     // Scale canonical perspective view to specified field of view
-    Float invTanAng = 1.f / std::tan(Radians(fov) / 2.f);
+    Float invTanAng = 1 / std::tan(Radians(fov) / 2);
     return Scale(invTanAng, invTanAng, 1) * Transform(persp);
 }
 

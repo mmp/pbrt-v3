@@ -65,7 +65,7 @@ Float Camera::GenerateRayDifferential(const CameraSample &sample,
     sshift.pFilm.x++;
     Ray rx;
     Float wtx = GenerateRay(sshift, &rx);
-    if (wtx == 0.f) return 0.f;
+    if (wtx == 0) return 0;
     rd->rxOrigin = rx.o;
     rd->rxDirection = rx.d;
 
@@ -74,7 +74,7 @@ Float Camera::GenerateRayDifferential(const CameraSample &sample,
     sshift.pFilm.y++;
     Ray ry;
     Float wty = GenerateRay(sshift, &ry);
-    if (wty == 0.f) return 0.f;
+    if (wty == 0) return 0;
     rd->ryOrigin = ry.o;
     rd->ryDirection = ry.d;
     rd->hasDifferentials = true;
@@ -97,10 +97,10 @@ ProjectiveCamera::ProjectiveCamera(const AnimatedTransform &CameraToWorld,
 
     // Compute projective camera screen transformations
     ScreenToRaster =
-        Scale(film->fullResolution.x, film->fullResolution.y, 1.f) *
-        Scale(1.f / (screenWindow.pMax.x - screenWindow.pMin.x),
-              1.f / (screenWindow.pMin.y - screenWindow.pMax.y), 1.f) *
-        Translate(Vector3f(-screenWindow.pMin.x, -screenWindow.pMax.y, 0.f));
+        Scale(film->fullResolution.x, film->fullResolution.y, 1) *
+        Scale(1 / (screenWindow.pMax.x - screenWindow.pMin.x),
+              1 / (screenWindow.pMin.y - screenWindow.pMax.y), 1) *
+        Translate(Vector3f(-screenWindow.pMin.x, -screenWindow.pMax.y, 0));
     RasterToScreen = Inverse(ScreenToRaster);
     RasterToCamera = Inverse(CameraToScreen) * RasterToScreen;
 }

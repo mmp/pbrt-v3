@@ -74,9 +74,9 @@ Float BeamDiffusionMS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
     Float sig_tr = std::sqrt(sig_a / D_g);
 
     // Determine boundary conditions
-    Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
 
     // Determine the position of the extrapolated boundary
+    Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
     Float zb = 2 * D_g * (1 + 3 * fm2) / (1 - 2 * fm1);
 
     // Determine fluence and vector irradiance weights

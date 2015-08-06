@@ -49,7 +49,7 @@ Float EnvironmentCamera::GenerateRay(const CameraSample &sample,
                Lerp(sample.time, shutterOpen, shutterClose));
     ray->medium = medium;
     *ray = CameraToWorld(*ray);
-    return 1.f;
+    return 1;
 }
 
 EnvironmentCamera *CreateEnvironmentCamera(const ParamSet &params,

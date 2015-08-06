@@ -71,7 +71,7 @@ Float PerspectiveCamera::GenerateRay(const CameraSample &sample,
     Point3f pCamera = RasterToCamera(pFilm);
     *ray = Ray(Point3f(0, 0, 0), Normalize(Vector3f(pCamera)));
     // Modify ray for depth of field
-    if (lensRadius > 0.f) {
+    if (lensRadius > 0) {
         // Sample point on lens
         Point2f pLens = lensRadius * ConcentricSampleDisk(sample.pLens);
 
@@ -80,13 +80,13 @@ Float PerspectiveCamera::GenerateRay(const CameraSample &sample,
         Point3f pFocus = (*ray)(ft);
 
         // Update ray for effect of lens
-        ray->o = Point3f(pLens.x, pLens.y, 0.f);
+        ray->o = Point3f(pLens.x, pLens.y, 0);
         ray->d = Normalize(pFocus - ray->o);
     }
     ray->time = Lerp(sample.time, shutterOpen, shutterClose);
     ray->medium = medium;
     *ray = CameraToWorld(*ray);
-    return 1.f;
+    return 1;
 }
 
 Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
@@ -97,7 +97,7 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
     Vector3f dir = Normalize(Vector3f(pCamera.x, pCamera.y, pCamera.z));
     *ray = RayDifferential(Point3f(0, 0, 0), dir);
     // Modify ray for depth of field
-    if (lensRadius > 0.f) {
+    if (lensRadius > 0) {
         // Sample point on lens
         Point2f pLens = lensRadius * ConcentricSampleDisk(sample.pLens);
 
@@ -106,7 +106,7 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
         Point3f pFocus = (*ray)(ft);
 
         // Update ray for effect of lens
-        ray->o = Point3f(pLens.x, pLens.y, 0.f);
+        ray->o = Point3f(pLens.x, pLens.y, 0);
         ray->d = Normalize(pFocus - ray->o);
     }
 
@@ -119,13 +119,13 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
         Vector3f dx = Normalize(Vector3f(pCamera + dxCamera));
         Float ft = focalDistance / dx.z;
         Point3f pFocus = Point3f(0, 0, 0) + (ft * dx);
-        ray->rxOrigin = Point3f(pLens.x, pLens.y, 0.f);
+        ray->rxOrigin = Point3f(pLens.x, pLens.y, 0);
         ray->rxDirection = Normalize(pFocus - ray->rxOrigin);
 
         Vector3f dy = Normalize(Vector3f(pCamera + dyCamera));
         ft = focalDistance / dy.z;
         pFocus = Point3f(0, 0, 0) + (ft * dy);
-        ray->ryOrigin = Point3f(pLens.x, pLens.y, 0.f);
+        ray->ryOrigin = Point3f(pLens.x, pLens.y, 0);
         ray->ryDirection = Normalize(pFocus - ray->ryOrigin);
     } else {
         ray->rxOrigin = ray->ryOrigin = ray->o;
@@ -136,7 +136,7 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
     ray->medium = medium;
     *ray = CameraToWorld(*ray);
     ray->hasDifferentials = true;
-    return 1.f;
+    return 1;
 }
 
 Spectrum PerspectiveCamera::We(const Interaction &p0, const Vector3f &w,

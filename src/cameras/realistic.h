@@ -71,7 +71,7 @@ class RealisticCamera : public Camera {
     // RealisticCamera Private Methods
     Float LensRearZ() const { return elementInterfaces.back().thickness; }
     Float LensFrontZ() const {
-        Float zSum = 0.f;
+        Float zSum = 0;
         for (const LensElementInterface &element : elementInterfaces)
             zSum += element.thickness;
         return zSum;
