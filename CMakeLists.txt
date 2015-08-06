@@ -41,7 +41,7 @@ IF(BISON_FOUND AND FLEX_FOUND)
     OUTPUT ${FlexOutput}
     DEPENDS ${CMAKE_BINARY_DIR}/pbrtparse.hh
     COMMAND ${FLEX_EXECUTABLE}
-            --outfile=${FlexOutput}
+            -o${FlexOutput}
             ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
     COMMENT "Generating pbrtlex.cpp"
   )
@@ -207,26 +207,32 @@ ADD_EXECUTABLE ( obj2pbrt
 
 TARGET_LINK_LIBRARIES ( bsdftest
   pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 TARGET_LINK_LIBRARIES ( chi2test
   pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 TARGET_LINK_LIBRARIES ( exrdiff
   pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 TARGET_LINK_LIBRARIES ( exravg
   pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 TARGET_LINK_LIBRARIES ( hdrtoldr
   pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 TARGET_LINK_LIBRARIES ( obj2pbrt
   pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
   )
 
 # Unit test
