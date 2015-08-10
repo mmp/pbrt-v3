@@ -135,7 +135,7 @@ void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
     t->radiusSamples[1] = 2.5e-3f;
     for (int i = 2; i < t->nRadiusSamples; ++i)
         t->radiusSamples[i] = t->radiusSamples[i - 1] * 1.2f;
-    ParallelFor([&](int i) {
+    ParallelFor(static_cast<std::function<void(int)>>([&](int i) {
         // Compute the diffusion profile for the _i_-th albedo sample
         Float rho = (1 - std::exp(-8 * i / (Float)(t->nRhoSamples - 1))) /
                     (1 - std::exp(-8));
@@ -154,7 +154,7 @@ void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
             IntegrateCatmullRom(t->nRadiusSamples, t->radiusSamples.get(),
                                 &t->profile[i * t->nRadiusSamples],
                                 &t->profileCDF[i * t->nRadiusSamples]);
-    }, t->nRhoSamples);
+    }), t->nRhoSamples);
 }
 
 void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &Kd,

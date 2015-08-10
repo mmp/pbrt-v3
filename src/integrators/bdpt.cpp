@@ -312,7 +312,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
     // Render and write the output image to disk
     {
         StatTimer timer(&renderingTime);
-        ParallelFor([&](const Point2i tile) {
+        ParallelFor(static_cast<std::function<void(Point2i)>>(
+            [&](const Point2i tile) {
             // Render a single tile using BDPT
             MemoryArena arena;
             int seed = tile.y * nXTiles + tile.x;
@@ -377,7 +378,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
             }
             film->MergeFilmTile(std::move(filmTile));
             reporter.Update();
-        }, Point2i(nXTiles, nYTiles));
+        }), Point2i(nXTiles, nYTiles));
         reporter.Done();
     }
     film->WriteImage(1.0f / sampler->samplesPerPixel);

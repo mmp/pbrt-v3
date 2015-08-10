@@ -263,7 +263,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
     ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
         StatTimer timer(&renderingTime);
-        ParallelFor([&](Point2i tile) {
+        ParallelFor(static_cast<std::function<void(Point2i)>>([&](Point2i tile) {
             // Render section of image corresponding to _tile_
 
             // Allocate _MemoryArena_ for tile
@@ -336,7 +336,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
             reporter.Update();
-        }, nTiles);
+        }), nTiles);
         reporter.Done();
     }
 
