@@ -93,8 +93,8 @@ TEST(FloatingPoint, DoubleBits) {
 }
 
 TEST(FloatingPoint, EFloat) {
-  static RNG rng(10);
   for (int trial = 0; trial < 1000; ++trial) {
+    RNG rng(trial);
     EFloat ef = -10000 + 20000 * rng.UniformFloat();
     long double ld = (float)ef;
 
