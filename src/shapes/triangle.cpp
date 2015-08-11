@@ -638,7 +638,7 @@ bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
 #endif  // !NDEBUG
 
     // Test shadow ray intersection against alpha texture, if present
-    if (mesh->alphaMask) {
+    if (testAlphaTexture && mesh->alphaMask) {
         // Compute triangle partial derivatives
         Vector3f dpdu, dpdv;
         Point2f uv[3];
