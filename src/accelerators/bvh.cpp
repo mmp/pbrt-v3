@@ -635,6 +635,7 @@ BVHAccel::~BVHAccel() { FreeAligned(nodes); }
 
 bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *si) const {
     if (!nodes) return false;
+    ProfilePhase p(Prof::AccelIntersect);
     bool hit = false;
     Vector3f invDir(1.f / ray.d.x, 1.f / ray.d.y, 1.f / ray.d.z);
     int dirIsNeg[3] = {invDir.x < 0, invDir.y < 0, invDir.z < 0};
@@ -673,6 +674,7 @@ bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *si) const {
 
 bool BVHAccel::IntersectP(const Ray &ray) const {
     if (!nodes) return false;
+    ProfilePhase p(Prof::AccelIntersectP);
     Vector3f invDir(1.f / ray.d.x, 1.f / ray.d.y, 1.f / ray.d.z);
     int dirIsNeg[3] = {invDir.x < 0, invDir.y < 0, invDir.z < 0};
     int todo[64];

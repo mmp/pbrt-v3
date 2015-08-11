@@ -157,7 +157,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         int nThreads = MaxThreadIndex();
         for (int i = 0; i < nThreads; ++i)
             resampleBufs.push_back(new T[resPow2[1]]);
-        ParallelFor([&](int s, int threadIndex) {
+        ParallelFor([&](int s) {
             T *workData = resampleBufs[threadIndex];
             for (int t = 0; t < resPow2[1]; ++t) {
                 workData[t] = 0.f;
@@ -246,6 +246,7 @@ MIPMap<T>::~MIPMap() {
 template <typename T>
 T MIPMap<T>::Lookup(const Point2f &st, Float width) const {
     ++nTrilerpLookups;
+    ProfilePhase p(Prof::TexFiltTrilerp);
     // Compute MIPMap level for trilinear filtering
     Float level = Levels() - 1 + Log2(std::max(width, (Float)1e-8));
 
@@ -282,6 +283,7 @@ T MIPMap<T>::Lookup(const Point2f &st, Vector2f dst0, Vector2f dst1) const {
         return Lookup(st, 2 * width);
     }
     ++nEWALookups;
+    ProfilePhase p(Prof::TexFiltEWA);
     // Compute ellipse minor and major axes
     if (dst0.LengthSquared() < dst1.LengthSquared()) std::swap(dst0, dst1);
     Float majorLength = dst0.Length();

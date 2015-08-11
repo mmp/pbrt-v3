@@ -162,6 +162,7 @@ Spectrum MLTIntegrator::L(const Scene &scene, MemoryArena &arena,
 }
 
 void MLTIntegrator::Render(const Scene &scene) {
+    ProfilePhase p(Prof::IntegratorRender);
     std::unique_ptr<Distribution1D> lightDistr =
         ComputeLightPowerDistribution(scene);
     // Generate bootstrap samples and compute normalization constant $b$

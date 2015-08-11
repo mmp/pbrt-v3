@@ -36,6 +36,7 @@
 #include "integrators/directlighting.h"
 #include "interaction.h"
 #include "paramset.h"
+#include "stats.h"
 
 // DirectLightingIntegrator Method Definitions
 void DirectLightingIntegrator::Preprocess(const Scene &scene,
@@ -56,6 +57,7 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
 Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
                                       const Scene &scene, Sampler &sampler,
                                       MemoryArena &arena) const {
+    ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;

@@ -274,6 +274,7 @@ inline int BufferIndex(int s, int t) {
 }
 
 void BDPTIntegrator::Render(const Scene &scene) {
+    ProfilePhase p(Prof::IntegratorRender);
     // Compute _lightDistr_ for sampling lights proportional to power
     std::unique_ptr<Distribution1D> lightDistr =
         ComputeLightPowerDistribution(scene);

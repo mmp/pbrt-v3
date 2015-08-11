@@ -112,6 +112,7 @@ inline unsigned int hash(const Point3i &p, int hashSize) {
 
 // SPPM Method Definitions
 void SPPMIntegrator::Render(const Scene &scene) {
+    ProfilePhase p(Prof::IntegratorRender);
     // Initialize _pixelBounds_ and _pixels_ array for SPPM
     Bounds2i pixelBounds = camera->film->croppedPixelBounds;
     int nPixels = pixelBounds.Area();
@@ -137,7 +138,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         std::vector<MemoryArena> perThreadArenas(MaxThreadIndex());
         {
             StatTimer timer(&hitPointTimer);
-            ParallelFor([&](Point2i tile, int threadIndex) {
+            ParallelFor([&](Point2i tile) {
                 MemoryArena &arena = perThreadArenas[threadIndex];
                 // Follow camera paths for _tile_ in image for SPPM
                 int tileIndex = tile.y * nTiles.x + tile.x;
@@ -268,7 +269,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         // Add visible points to SPPM grid
         {
             StatTimer timer(&gridConstructionTimer);
-            ParallelFor([&](int pixelIndex, int threadIndex) {
+            ParallelFor([&](int pixelIndex) {
                 MemoryArena &arena = perThreadArenas[threadIndex];
                 SPPMPixel &pixel = pixels[pixelIndex];
                 if (!pixel.vp.alpha.IsBlack()) {
@@ -306,7 +307,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         {
             StatTimer timer(&photonTimer);
             std::vector<MemoryArena> photonShootArenas(MaxThreadIndex());
-            ParallelFor([&](int photonIndex, int threadIndex) {
+            ParallelFor([&](int photonIndex) {
                 MemoryArena &arena = photonShootArenas[threadIndex];
                 // Follow photon path for _photonIndex_
                 uint64_t haltonIndex =

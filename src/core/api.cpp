@@ -681,6 +681,7 @@ void pbrtInit(const Options &opt) {
 
     // General \pbrt Initialization
     SampledSpectrum::Init();
+    InitProfiler();
 }
 
 void pbrtCleanup() {
@@ -1155,7 +1156,11 @@ void pbrtWorldEnd() {
     graphicsState = GraphicsState();
     transformCache.Clear();
     currentApiState = APIState::OptionsBlock;
-    if (PbrtOptions.quiet == false) PrintStats(stdout);
+    ReportThreadStats();
+    if (PbrtOptions.quiet == false) {
+        PrintStats(stdout);
+        ReportProfilerResults(stdout);
+    }
     for (int i = 0; i < MaxTransforms; ++i) curTransform[i] = Transform();
     activeTransformBits = AllTransformsBits;
     namedCoordinateSystems.erase(namedCoordinateSystems.begin(),

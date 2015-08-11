@@ -97,6 +97,7 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
 }
 
 void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
+    ProfilePhase p(Prof::MergeFilmTile);
     std::lock_guard<std::mutex> lock(mutex);
     for (Point2i pixel : tile->GetPixelBounds()) {
         // Merge _pixel_ into _Film::pixels_
@@ -124,6 +125,7 @@ void Film::AddSplat(const Point2f &p, const Spectrum &v) {
         Warning("Film ignoring splatted spectrum with NaN values");
         return;
     }
+    ProfilePhase pp(Prof::SplatFilm);
     if (!InsideExclusive((Point2i)p, croppedPixelBounds)) return;
     Float xyz[3];
     v.ToXYZ(xyz);

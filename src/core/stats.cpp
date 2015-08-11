@@ -37,10 +37,16 @@
 #include <algorithm>
 #include <mutex>
 #include <cinttypes>
+#include <type_traits>
+#include <atomic>
+#include <signal.h>
+#include <sys/time.h>
 
 // Statistics Local Variables
 std::vector<void (*)(StatsAccumulator &)> *StatRegisterer::funcs;
 static StatsAccumulator statsAccumulator;
+static std::unique_ptr<std::atomic<uint64_t>[]> profileSamples;
+static void ReportProfileSample(int, siginfo_t *, void *);
 
 // Statistics Definitions
 void ReportThreadStats() {
@@ -53,10 +59,7 @@ void StatRegisterer::CallCallbacks(StatsAccumulator &accum) {
     for (auto func : *funcs) func(accum);
 }
 
-void PrintStats(FILE *dest) {
-    ReportThreadStats();
-    statsAccumulator.Print(dest);
-}
+void PrintStats(FILE *dest) { statsAccumulator.Print(dest); }
 
 static void getCategoryAndTitle(const std::string &str, std::string *category,
                                 std::string *title) {
@@ -151,4 +154,102 @@ void StatsAccumulator::Print(FILE *dest) {
         for (auto &item : categories.second)
             fprintf(dest, "    %s\n", item.c_str());
     }
+}
+
+static constexpr int NumProfEvents = (int)Prof::NumProfEvents;
+thread_local uint32_t profilerState;
+
+#ifdef PBRT_IS_OSX
+#include <execinfo.h>
+#endif
+void InitProfiler() {
+    static_assert(NumProfEvents == sizeof(ProfNames) / sizeof(ProfNames[0]),
+                  "ProfNames[] array and Prof enumerant have different "
+                  "number of entries!");
+    profileSamples.reset(new std::atomic<uint64_t>[1 << NumProfEvents]);
+// Set timer to periodically interrupt the system for profiling
+#ifndef PBRT_IS_WINDOWS
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = ReportProfileSample;
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGPROF, &sa, NULL);
+
+    static struct itimerval timer;
+    timer.it_interval.tv_sec = 0;
+    timer.it_interval.tv_usec = 1000000 / 100;  // 100 Hz sampling
+    timer.it_value = timer.it_interval;
+
+    if (setitimer(ITIMER_PROF, &timer, NULL) != 0)
+        Error("Timer could not be initialized");
+#endif
+}
+
+static void ReportProfileSample(int, siginfo_t *, void *) {
+#if 0
+    // Print stack trace if context is unknown
+#if 0 && defined(PBRT_IS_OSX)
+    static std::atomic<int> foo(20);
+    if (profilerState == 0 && --foo == 0) {
+        void* callstack[128];
+        int i, frames = backtrace(callstack, 128);
+        char** strs = backtrace_symbols(callstack, frames);
+        for (i = 0; i < frames; ++i) {
+            printf("%s\n", strs[i]);
+        }
+        free(strs);
+        foo = 20;
+    }
+#endif
+#endif
+    if (profileSamples) profileSamples[profilerState]++;
+}
+
+void ReportProfilerResults(FILE *dest) {
+#ifndef PBRT_IS_WINDOWS
+    fprintf(dest, "  Profile\n");
+
+    uint64_t overallCount = 0;
+    uint64_t eventCount[NumProfEvents] = {0};
+    for (int i = 0; i < 1 << NumProfEvents; ++i) {
+        uint64_t count = profileSamples[i].load();
+        overallCount += count;
+        for (int b = 0; b < NumProfEvents; ++b) {
+            if (i & (1 << b)) eventCount[b] += count;
+        }
+    }
+
+    std::map<std::string, uint64_t> hierarchicalResults;
+    for (int i = 0; i < 1 << NumProfEvents; ++i) {
+        uint64_t count = profileSamples[i].load();
+        if (count == 0) continue;
+        std::string s;
+        for (int b = 0; b < NumProfEvents; ++b) {
+            if (i & (1 << b)) {
+                if (s.size() > 0) {
+                    // contribute to the parents...
+                    hierarchicalResults[s] += count;
+                    s += "/";
+                }
+                s += ProfNames[b];
+            }
+        }
+        if (s == "") s = "Startup and scene construction";
+        hierarchicalResults[s] = count;
+    }
+    for (const auto &r : hierarchicalResults) {
+        float pct = (100.f * r.second) / overallCount;
+        int indent = 4;
+        int slashIndex = r.first.find_last_of("/");
+        if (slashIndex == std::string::npos)
+            slashIndex = -1;
+        else
+            indent += 2 * std::count(r.first.begin(), r.first.end(), '/');
+        const char *toPrint = r.first.c_str() + slashIndex + 1;
+        fprintf(dest, "%*c%s%*c %5.2f %%\n", indent, ' ', toPrint,
+                std::max(0, int(67 - strlen(toPrint) - indent)), ' ', pct);
+    }
+    fprintf(dest, "\n");
+#endif
 }

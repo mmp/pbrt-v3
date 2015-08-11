@@ -40,6 +40,7 @@
 #include "interpolation.h"
 #include "scene.h"
 #include "interaction.h"
+#include "stats.h"
 #include <stdarg.h>
 
 // BxDF Utility Functions
@@ -589,6 +590,7 @@ Spectrum BxDF::rho(int nSamples, const Point2f *u1, const Point2f *u2) const {
 // BSDF Method Definitions
 Spectrum BSDF::f(const Vector3f &woW, const Vector3f &wiW,
                  BxDFType flags) const {
+    ProfilePhase pp(Prof::BSDFEvaluation);
     Vector3f wi = WorldToLocal(wiW), wo = WorldToLocal(woW);
     bool reflect = Dot(wiW, ng) * Dot(woW, ng) > 0;
     Spectrum f(0.f);
@@ -621,6 +623,7 @@ Spectrum BSDF::rho(const Vector3f &wo, int nSamples, const Point2f *samples,
 Spectrum BSDF::Sample_f(const Vector3f &woW, Vector3f *wiW, const Point2f &u,
                         Float *pdf, BxDFType type,
                         BxDFType *sampledType) const {
+    ProfilePhase pp(Prof::BSDFEvaluation);
     // Choose which _BxDF_ to sample
     int matchingComps = NumComponents(type);
     if (matchingComps == 0) {

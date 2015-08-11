@@ -36,6 +36,7 @@
 #include "accelerators/kdtreeaccel.h"
 #include "paramset.h"
 #include "interaction.h"
+#include "stats.h"
 #include <algorithm>
 
 // KdTreeAccel Local Declarations
@@ -260,6 +261,7 @@ retrySplit:
 }
 
 bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *si) const {
+    ProfilePhase p(Prof::AccelIntersect);
     // Compute initial parametric range of ray inside kd-tree extent
     Float tMin, tMax;
     if (!bounds.IntersectP(ray, &tMin, &tMax)) {
@@ -344,6 +346,7 @@ bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *si) const {
 }
 
 bool KdTreeAccel::IntersectP(const Ray &ray) const {
+    ProfilePhase p(Prof::AccelIntersectP);
     // Compute initial parametric range of ray inside kd-tree extent
     Float tMin, tMax;
     if (!bounds.IntersectP(ray, &tMin, &tMax)) {

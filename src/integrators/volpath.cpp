@@ -38,10 +38,12 @@
 #include "interaction.h"
 #include "paramset.h"
 #include "bssrdf.h"
+#include "stats.h"
 
 // VolPathIntegrator Method Definitions
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena) const {
+    ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f), alpha(1.f);
     RayDifferential ray(r);
     bool specularBounce = false;

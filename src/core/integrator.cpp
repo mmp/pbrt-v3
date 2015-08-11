@@ -117,6 +117,7 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 Sampler &sampler,
                                 const std::vector<int> &numLightSamples,
                                 MemoryArena &arena, bool handleMedia) {
+    ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
     for (size_t i = 0; i < scene.lights.size(); ++i) {
         // Accumulate contribution of _i_th light to _L_
@@ -146,6 +147,7 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
 Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena,
                                bool handleMedia) {
+    ProfilePhase p(Prof::DirectLighting);
     // Randomly choose a single light to sample, _light_
     int nLights = int(scene.lights.size());
     if (nLights == 0) return Spectrum(0.f);
@@ -251,6 +253,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
 
 // SamplerIntegrator Method Definitions
 void SamplerIntegrator::Render(const Scene &scene) {
+    ProfilePhase p(Prof::IntegratorRender);
     Preprocess(scene, *sampler);
     // Run parallel tasks to render the image
 
@@ -286,7 +289,10 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
             // Loop over pixels in tile to render them
             for (Point2i pixel : tileBounds) {
-                tileSampler->StartPixel(pixel);
+                {
+                    ProfilePhase pp(Prof::StartPixel);
+                    tileSampler->StartPixel(pixel);
+                }
                 do {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =

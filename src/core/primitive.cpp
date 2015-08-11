@@ -36,6 +36,7 @@
 #include "primitive.h"
 #include "light.h"
 #include "interaction.h"
+#include "stats.h"
 
 // Primitive Method Definitions
 Primitive::~Primitive() {}
@@ -118,6 +119,7 @@ const Material *GeometricPrimitive::GetMaterial() const {
 void GeometricPrimitive::ComputeScatteringFunctions(
     SurfaceInteraction *isect, MemoryArena &arena, TransportMode mode,
     bool allowMultipleLobes) const {
+    ProfilePhase p(Prof::ComputeScatteringFuncs);
     if (material)
         material->ComputeScatteringFunctions(isect, arena, mode,
                                              allowMultipleLobes);

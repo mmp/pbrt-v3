@@ -42,6 +42,7 @@
 // core/bssrdf.h*
 #include "interaction.h"
 #include "reflection.h"
+#include "stats.h"
 
 // BSSRDF Declarations
 Float FresnelMoment1(Float eta);
@@ -77,6 +78,7 @@ class SeparableBSSRDF : public BSSRDF {
           material(material),
           mode(mode) {}
     Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) {
+        ProfilePhase pp(Prof::BSSRDFEvaluation);
         Float Ft = (1 - FrDielectric(CosTheta(po.wo), 1.f, eta));
         return Ft * Sp(pi) * Sw(wi);
     }
