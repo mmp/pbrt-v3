@@ -56,11 +56,13 @@ class Shape {
     virtual Bounds3f ObjectBound() const = 0;
     virtual Bounds3f WorldBound() const;
     virtual bool Intersect(const Ray &ray, Float *tHit,
-                           SurfaceInteraction *isect) const = 0;
-    virtual bool IntersectP(const Ray &ray) const {
+                           SurfaceInteraction *isect,
+                           bool testAlphaTexture = true) const = 0;
+    virtual bool IntersectP(const Ray &ray,
+                            bool testAlphaTexture = true) const {
         Float tHit = ray.tMax;
         SurfaceInteraction isect;
-        return Intersect(ray, &tHit, &isect);
+        return Intersect(ray, &tHit, &isect, testAlphaTexture);
     }
     virtual Float Area() const = 0;
     virtual Interaction Sample(const Point2f &u) const = 0;

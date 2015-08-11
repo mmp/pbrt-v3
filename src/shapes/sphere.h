@@ -57,9 +57,9 @@ class Sphere : public Shape {
           thetaMax(std::acos(Clamp(zMax / radius, -1, 1))),
           phiMax(Radians(Clamp(phiMax, 0, 360))) {}
     Bounds3f ObjectBound() const;
-    bool Intersect(const Ray &ray, Float *tHit,
-                   SurfaceInteraction *isect) const;
-    bool IntersectP(const Ray &ray) const;
+    bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
+                   bool testAlphaTexture) const;
+    bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
     Float Area() const;
     Interaction Sample(const Point2f &u) const;
     Interaction Sample(const Interaction &ref, const Point2f &u) const;

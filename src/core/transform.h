@@ -159,7 +159,7 @@ class Transform {
     Bounds3f operator()(const Bounds3f &b) const;
     Transform operator*(const Transform &t2) const;
     bool SwapsHandedness() const;
-    SurfaceInteraction operator()(const SurfaceInteraction &is) const;
+    SurfaceInteraction operator()(const SurfaceInteraction &si) const;
     template <typename T>
     inline Point3<T> operator()(const Point3<T> &pt,
                                 Vector3<T> *absError) const;
@@ -187,9 +187,9 @@ class Transform {
 
 Transform Translate(const Vector3f &delta);
 Transform Scale(Float x, Float y, Float z);
-Transform RotateX(Float angle);
-Transform RotateY(Float angle);
-Transform RotateZ(Float angle);
+Transform RotateX(Float theta);
+Transform RotateY(Float theta);
+Transform RotateZ(Float theta);
 Transform Rotate(Float theta, const Vector3f &axis);
 Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up);
 Transform Orthographic(Float znear, Float zfar);
@@ -206,7 +206,7 @@ inline Point3<T> Transform::operator()(const Point3<T> &p) const {
     T zp = m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z + m.m[2][3];
     T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
     Assert(wp != 0);
-    if (wp == 1.f)
+    if (wp == 1)
         return Point3<T>(xp, yp, zp);
     else
         return Point3<T>(xp, yp, zp) / wp;
@@ -240,12 +240,12 @@ inline Ray Transform::operator()(const Ray &r) const {
         o += d * dt;
         //    tMax -= dt;
     }
-    return Ray(o, d, tMax, r.time, r.depth, r.medium);
+    return Ray(o, d, tMax, r.time, r.medium);
 }
 
 inline RayDifferential Transform::operator()(const RayDifferential &r) const {
     Ray tr = (*this)(Ray(r));
-    RayDifferential ret(tr.o, tr.d, tr.tMax, tr.time, tr.depth, tr.medium);
+    RayDifferential ret(tr.o, tr.d, tr.tMax, tr.time, tr.medium);
     ret.hasDifferentials = r.hasDifferentials;
     ret.rxOrigin = (*this)(r.rxOrigin);
     ret.ryOrigin = (*this)(r.ryOrigin);
@@ -364,15 +364,13 @@ inline Ray Transform::operator()(const Ray &r, Vector3f *oError,
     Point3f o = (*this)(r.o, oError);
     Vector3f d = (*this)(r.d, dError);
     Float tMax = r.tMax;
-#if 1
     Float lengthSquared = d.LengthSquared();
     if (lengthSquared > 0) {
         Float dt = Dot(Abs(d), *oError) / lengthSquared;
         o += d * dt;
         //        tMax -= dt;
     }
-#endif
-    return Ray(o, d, tMax, r.time, r.depth, r.medium);
+    return Ray(o, d, tMax, r.time, r.medium);
 }
 
 inline Ray Transform::operator()(const Ray &r, const Vector3f &oErrorIn,
@@ -381,15 +379,13 @@ inline Ray Transform::operator()(const Ray &r, const Vector3f &oErrorIn,
     Point3f o = (*this)(r.o, oErrorIn, oErrorOut);
     Vector3f d = (*this)(r.d, dErrorIn, dErrorOut);
     Float tMax = r.tMax;
-#if 1
     Float lengthSquared = d.LengthSquared();
     if (lengthSquared > 0) {
         Float dt = Dot(Abs(d), *oErrorOut) / lengthSquared;
         o += d * dt;
         //        tMax -= dt;
     }
-#endif
-    return Ray(o, d, tMax, r.time, r.depth, r.medium);
+    return Ray(o, d, tMax, r.time, r.medium);
 }
 
 // AnimatedTransform Declarations
@@ -409,7 +405,7 @@ class AnimatedTransform {
         return startTransform->HasScale() || endTransform->HasScale();
     }
     Bounds3f MotionBounds(const Bounds3f &b) const;
-    Bounds3f BoundPointMotion(const Point3f &pt) const;
+    Bounds3f BoundPointMotion(const Point3f &p) const;
 
   private:
     // AnimatedTransform Private Data
@@ -423,10 +419,10 @@ class AnimatedTransform {
     struct DerivativeTerm {
         DerivativeTerm() {}
         DerivativeTerm(Float c, Float x, Float y, Float z)
-            : dc(c), dx(x), dy(y), dz(z) {}
-        Float dc, dx, dy, dz;
+            : kc(c), kx(x), ky(y), kz(z) {}
+        Float kc, kx, ky, kz;
         Float Eval(const Point3f &p) const {
-            return dc + dx * p.x + dy * p.y + dz * p.z;
+            return kc + kx * p.x + ky * p.y + kz * p.z;
         }
     };
     DerivativeTerm c1[3], c2[3], c3[3], c4[3], c5[3];

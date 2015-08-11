@@ -39,7 +39,8 @@
 
 // WhittedIntegrator Method Definitions
 Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
-                               Sampler &sampler, MemoryArena &arena) const {
+                               Sampler &sampler, MemoryArena &arena,
+                               int depth) const {
     Spectrum L(0.);
     // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;
@@ -72,10 +73,10 @@ Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
         if (!f.IsBlack() && visibility.Unoccluded(scene))
             L += f * Li * AbsDot(wi, n) / pdf;
     }
-    if (ray.depth + 1 < maxDepth) {
+    if (depth + 1 < maxDepth) {
         // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, isect, scene, sampler, arena);
-        L += SpecularTransmit(ray, isect, scene, sampler, arena);
+        L += SpecularReflect(ray, isect, scene, sampler, arena, depth);
+        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth);
     }
     return L;
 }

@@ -34,7 +34,6 @@
 
 // core/camera.cpp*
 #include "camera.h"
-#include "film.h"
 #include "sampling.h"
 #include "sampler.h"
 
@@ -79,30 +78,6 @@ Float Camera::GenerateRayDifferential(const CameraSample &sample,
     rd->ryDirection = ry.d;
     rd->hasDifferentials = true;
     return wt;
-}
-
-ProjectiveCamera::ProjectiveCamera(const AnimatedTransform &CameraToWorld,
-                                   const Transform &CameraToScreen,
-                                   const Bounds2f &screenWindow,
-                                   Float shutterOpen, Float shutterClose,
-                                   Float lensr, Float focald, Film *film,
-                                   const Medium *medium)
-    : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium),
-      CameraToScreen(CameraToScreen) {
-    // Initialize depth of field parameters
-    lensRadius = lensr;
-    focalDistance = focald;
-
-    // Compute projective camera transformations
-
-    // Compute projective camera screen transformations
-    ScreenToRaster =
-        Scale(film->fullResolution.x, film->fullResolution.y, 1) *
-        Scale(1 / (screenWindow.pMax.x - screenWindow.pMin.x),
-              1 / (screenWindow.pMin.y - screenWindow.pMax.y), 1) *
-        Translate(Vector3f(-screenWindow.pMin.x, -screenWindow.pMax.y, 0));
-    RasterToScreen = Inverse(ScreenToRaster);
-    RasterToCamera = Inverse(CameraToScreen) * RasterToScreen;
 }
 
 Spectrum Camera::We(const Interaction &p0, const Vector3f &w,

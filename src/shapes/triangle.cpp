@@ -166,8 +166,8 @@ Bounds3f Triangle::WorldBound() const {
     return Union(Bounds3f(p0, p1), p2);
 }
 
-bool Triangle::Intersect(const Ray &ray, Float *tHit,
-                         SurfaceInteraction *isect) const {
+bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
+                         bool testAlphaTexture) const {
     ProfilePhase p(Prof::TriIntersect);
     ++nTests;
     // Get triangle vertices in _p0_, _p1_, and _p2_
@@ -382,13 +382,11 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit,
     Point2f uvHit = b0 * uv[0] + b1 * uv[1] + b2 * uv[2];
 
     // Test intersection against alpha texture, if present
-    if (ray.depth != -1) {
-        if (mesh->alphaMask) {
-            SurfaceInteraction isectLocal(
-                pHit, Vector3f(0, 0, 0), uvHit, Vector3f(0, 0, 0), dpdu, dpdv,
-                Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time, this);
-            if (mesh->alphaMask->Evaluate(isectLocal) == 0) return false;
-        }
+    if (testAlphaTexture && mesh->alphaMask) {
+        SurfaceInteraction isectLocal(
+            pHit, Vector3f(0, 0, 0), uvHit, Vector3f(0, 0, 0), dpdu, dpdv,
+            Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time, this);
+        if (mesh->alphaMask->Evaluate(isectLocal) == 0) return false;
     }
 
     // Fill in _SurfaceInteraction_ from triangle hit
@@ -456,7 +454,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit,
     return true;
 }
 
-bool Triangle::IntersectP(const Ray &ray) const {
+bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
     ProfilePhase p(Prof::TriIntersectP);
     ++nTests;
     // Get triangle vertices in _p0_, _p1_, and _p2_
@@ -640,7 +638,7 @@ bool Triangle::IntersectP(const Ray &ray) const {
 #endif  // !NDEBUG
 
     // Test shadow ray intersection against alpha texture, if present
-    if (ray.depth != -1 && mesh->alphaMask) {
+    if (mesh->alphaMask) {
         // Compute triangle partial derivatives
         Vector3f dpdu, dpdv;
         Point2f uv[3];

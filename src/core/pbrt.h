@@ -57,14 +57,14 @@
 
 // Global Include Files
 #include <type_traits>
+#include <algorithm>
+#include <cinttypes>
 #include <cmath>
-#include <string>
-#include <vector>
 #include <iostream>
 #include <limits>
 #include <memory>
-#include <cinttypes>
-#include <algorithm>
+#include <string>
+#include <vector>
 #include "error.h"
 #if !defined(PBRT_IS_OSX) && !defined(PBRT_IS_OPENBSD)
 #include <malloc.h>  // for _alloca, memalign
@@ -196,9 +196,6 @@ static constexpr Float MachineEpsilon =
     std::numeric_limits<Float>::epsilon() * 0.5;
 #endif
 const Float ShadowEpsilon = 0.0001f;
-#ifdef M_PI
-#undef M_PI
-#endif
 static const Float Pi = 3.14159265358979323846;
 static const Float InvPi = 0.31830988618379067154;
 static const Float Inv2Pi = 0.15915494309189533577;
@@ -311,9 +308,9 @@ inline Float Mod(Float a, Float b) {
     return std::fmod(a, b);
 }
 
-inline Float Radians(Float deg) { return (Pi / (Float)180) * deg; }
+inline Float Radians(Float deg) { return (Pi / 180) * deg; }
 
-inline Float Degrees(Float rad) { return ((Float)180 / Pi) * rad; }
+inline Float Degrees(Float rad) { return (180 / Pi) * rad; }
 
 inline Float Log2(Float x) {
     const Float invLog2 = 1.442695040888963387004650940071;
@@ -356,19 +353,18 @@ inline int64_t RoundUpPow2(int64_t v) {
     return v + 1;
 }
 
-#if defined(PBRT_IS_MSVC)
 inline int CountTrailingZeros(uint32_t v) {
+#if defined(PBRT_IS_MSVC)
     unsigned long index;
     if (_BitScanForward(&index, v))
         return index;
     else
         return 32;
+#else
+    return __builtin_ctz(v);
+#endif
 }
 
-#else
-inline int CountTrailingZeros(uint32_t v) { return __builtin_ctz(v); }
-
-#endif
 template <typename Predicate>
 int FindInterval(int size, const Predicate &pred) {
     int first = 0, len = size;
@@ -378,9 +374,8 @@ int FindInterval(int size, const Predicate &pred) {
         if (pred(middle)) {
             first = middle + 1;
             len -= half + 1;
-        } else {
+        } else
             len = half;
-        }
     }
     return Clamp(first - 1, 0, size - 2);
 }
@@ -396,8 +391,8 @@ inline Float Lerp(Float t, Float v1, Float v2) { return (1 - t) * v1 + t * v2; }
 
 inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {
     // Find quadratic discriminant
-    double discrim = (double)b * (double)b - 4. * (double)a * (double)c;
-    if (discrim < 0.) return false;
+    double discrim = (double)b * (double)b - 4 * (double)a * (double)c;
+    if (discrim < 0) return false;
     double rootDiscrim = std::sqrt(discrim);
 
     // Compute quadratic _t_ values

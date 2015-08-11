@@ -111,8 +111,8 @@ Bounds3f Curve::ObjectBound() const {
     return Expand(b, std::max(width[0], width[1]) * 0.5f);
 }
 
-bool Curve::Intersect(const Ray &r, Float *tHit,
-                      SurfaceInteraction *isect) const {
+bool Curve::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
+                      bool testAlphaTexture) const {
     ++nTests;
     // Transform _Ray_ to object space
     Vector3f oErr, dErr;

@@ -65,7 +65,7 @@ Spectrum GonioPhotometricLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                           Float time, Ray *ray,
                                           Normal3f *nLight, Float *pdfPos,
                                           Float *pdfDir) const {
-    *ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time, 0,
+    *ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time,
                mediumInterface.inside);
     *nLight = (Normal3f)ray->d;
     *pdfPos = 1.f;

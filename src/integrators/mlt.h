@@ -51,10 +51,10 @@
 class MLTSampler : public Sampler {
   public:
     // MLTSampler Public Methods
-    MLTSampler(int mutationsPerPixel, int rngStreamIndex, Float sigma,
+    MLTSampler(int mutationsPerPixel, int rngSequenceIndex, Float sigma,
                Float largeStepProbability, int streamCount)
         : Sampler(mutationsPerPixel),
-          rng(PCG32_DEFAULT_STATE, rngStreamIndex),
+          rng(rngSequenceIndex),
           sigma(sigma),
           largeStepProbability(largeStepProbability),
           streamCount(streamCount) {}

@@ -46,10 +46,7 @@
 // Quaternion Declarations
 struct Quaternion {
     // Quaternion Public Methods
-    Quaternion() {
-        v = Vector3f(0.f, 0.f, 0.f);
-        w = 1.f;
-    }
+    Quaternion() : v(0, 0, 0), w(1) {}
     Quaternion &operator+=(const Quaternion &q) {
         v += q.v;
         w += q.w;

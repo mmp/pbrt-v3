@@ -56,14 +56,14 @@ class DirectLightingIntegrator : public SamplerIntegrator {
           strategy(strategy),
           maxDepth(maxDepth) {}
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena) const;
+                Sampler &sampler, MemoryArena &arena, int depth) const;
     void Preprocess(const Scene &scene, Sampler &sampler);
 
   private:
     // DirectLightingIntegrator Private Data
     const LightStrategy strategy;
     const int maxDepth;
-    std::vector<int> numLightSamples;
+    std::vector<int> nLightSamples;
 };
 
 DirectLightingIntegrator *CreateDirectLightingIntegrator(

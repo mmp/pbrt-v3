@@ -53,7 +53,7 @@ STAT_PERCENT("Integrator/Acceptance rate", acceptedMutations, totalMutations);
 static const int cameraStreamIndex = 0;
 static const int lightStreamIndex = 1;
 static const int connectionStreamIndex = 2;
-static const int numSampleStreams = 3;
+static const int nSampleStreams = 3;
 
 // MLTSampler Method Definitions
 Float MLTSampler::Get1D() {
@@ -176,7 +176,7 @@ void MLTIntegrator::Render(const Scene &scene) {
             for (int depth = 0; depth <= maxDepth; ++depth) {
                 int rngIndex = i * (maxDepth + 1) + depth;
                 MLTSampler sampler(mutationsPerPixel, rngIndex, sigma,
-                                   largeStepProbability, numSampleStreams);
+                                   largeStepProbability, nSampleStreams);
                 Point2f pRaster;
                 bootstrapWeights[rngIndex] =
                     L(scene, arena, lightDistr, sampler, depth, &pRaster).y();
@@ -204,13 +204,13 @@ void MLTIntegrator::Render(const Scene &scene) {
             MemoryArena arena;
 
             // Select initial state from the set of bootstrap samples
-            RNG rng(PCG32_DEFAULT_STATE, i);
+            RNG rng(i);
             int bootstrapIndex = bootstrap.SampleDiscrete(rng.UniformFloat());
             int depth = bootstrapIndex % (maxDepth + 1);
 
             // Initialize local variables for selected state
             MLTSampler sampler(mutationsPerPixel, bootstrapIndex, sigma,
-                               largeStepProbability, numSampleStreams);
+                               largeStepProbability, nSampleStreams);
             Point2f pCurrent;
             Spectrum LCurrent =
                 L(scene, arena, lightDistr, sampler, depth, &pCurrent);

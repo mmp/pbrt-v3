@@ -43,8 +43,8 @@ Bounds3f Cylinder::ObjectBound() const {
                     Point3f(radius, radius, zMax));
 }
 
-bool Cylinder::Intersect(const Ray &r, Float *tHit,
-                         SurfaceInteraction *isect) const {
+bool Cylinder::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
+                         bool testAlphaTexture) const {
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -140,7 +140,7 @@ bool Cylinder::Intersect(const Ray &r, Float *tHit,
     return true;
 }
 
-bool Cylinder::IntersectP(const Ray &r) const {
+bool Cylinder::IntersectP(const Ray &r, bool testAlphaTexture) const {
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space

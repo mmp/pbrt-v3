@@ -59,25 +59,13 @@ static const Float OneMinusEpsilon = 0x1.fffffep-1;
 class RNG {
   public:
     // RNG Public Methods
-    RNG() : state(0x853c49e6748fea9bULL), inc(0xda3e39cb94b95bdbULL) {}
-    RNG(uint64_t initstate, uint64_t initseq = 1u) { Seed(initstate, initseq); }
-    void Seed(uint64_t initstate, uint64_t initseq = 1) {
-        state = 0U;
-        inc = (initseq << 1u) | 1u;
-        UniformUInt32();
-        state += initstate;
-        UniformUInt32();
-    }
-    uint32_t UniformUInt32() {
-        uint64_t oldstate = state;
-        state = oldstate * PCG32_MULT + inc;
-        uint32_t xorshifted = (uint32_t)(((oldstate >> 18u) ^ oldstate) >> 27u);
-        uint32_t rot = (uint32_t)(oldstate >> 59u);
-        return (xorshifted >> rot) | (xorshifted << ((~rot + 1u) & 31));
-    }
+    RNG();
+    RNG(uint64_t sequenceIndex) { SetSequence(sequenceIndex); }
+    void SetSequence(uint64_t sequenceIndex);
+    uint32_t UniformUInt32();
     uint32_t UniformUInt32(uint32_t bound) {
         uint32_t threshold = (~bound + 1u) % bound;
-        for (;;) {
+        while (true) {
             uint32_t r = UniformUInt32();
             if (r >= threshold) return r % bound;
         }
@@ -91,9 +79,9 @@ class RNG {
             std::iter_swap(it,
                            begin + UniformUInt32((uint32_t)(it - begin + 1)));
     }
-    void Advance(int64_t delta_) {
+    void Advance(int64_t idelta) {
         uint64_t cur_mult = PCG32_MULT, cur_plus = inc, acc_mult = 1u,
-                 acc_plus = 0u, delta = (uint64_t)delta_;
+                 acc_plus = 0u, delta = (uint64_t)idelta;
         while (delta > 0) {
             if (delta & 1) {
                 acc_mult *= cur_mult;
@@ -124,8 +112,25 @@ class RNG {
 
   private:
     // RNG Private Data
-    uint64_t state;
-    uint64_t inc;
+    uint64_t state, inc;
 };
+
+// RNG Inline Method Definitions
+inline RNG::RNG() : state(PCG32_DEFAULT_STATE), inc(PCG32_DEFAULT_STREAM) {}
+inline void RNG::SetSequence(uint64_t initseq) {
+    state = 0u;
+    inc = (initseq << 1u) | 1u;
+    UniformUInt32();
+    state += PCG32_DEFAULT_STATE;
+    UniformUInt32();
+}
+
+inline uint32_t RNG::UniformUInt32() {
+    uint64_t oldstate = state;
+    state = oldstate * PCG32_MULT + inc;
+    uint32_t xorshifted = (uint32_t)(((oldstate >> 18u) ^ oldstate) >> 27u);
+    uint32_t rot = (uint32_t)(oldstate >> 59u);
+    return (xorshifted >> rot) | (xorshifted << ((~rot + 1u) & 31));
+}
 
 #endif  // PBRT_CORE_RNG_H

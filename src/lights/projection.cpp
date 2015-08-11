@@ -110,8 +110,7 @@ Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                     Float time, Ray *ray, Normal3f *nLight,
                                     Float *pdfPos, Float *pdfDir) const {
     Vector3f v = UniformSampleCone(u1, cosTotalWidth);
-    *ray =
-        Ray(pLight, LightToWorld(v), Infinity, time, 0, mediumInterface.inside);
+    *ray = Ray(pLight, LightToWorld(v), Infinity, time, mediumInterface.inside);
     *nLight = (Normal3f)ray->d;  /// same here
     *pdfPos = 1.f;
     *pdfDir = UniformConePdf(cosTotalWidth);

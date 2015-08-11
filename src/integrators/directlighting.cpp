@@ -48,7 +48,7 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
                 int nSamples = sampler.RoundCount(light->nSamples);
                 sampler.Request2DArray(nSamples);
                 sampler.Request2DArray(nSamples);
-                if (i == 0) numLightSamples.push_back(nSamples);
+                if (i == 0) nLightSamples.push_back(nSamples);
             }
         }
     }
@@ -56,7 +56,7 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
 
 Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
                                       const Scene &scene, Sampler &sampler,
-                                      MemoryArena &arena) const {
+                                      MemoryArena &arena, int depth) const {
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     // Find closest ray intersection or return background radiance
@@ -74,16 +74,16 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
     if (scene.lights.size() > 0) {
         // Compute direct lighting for _DirectLightingIntegrator_ integrator
         if (strategy == LightStrategy::UniformSampleAll)
-            L += UniformSampleAllLights(isect, scene, sampler, numLightSamples,
+            L += UniformSampleAllLights(isect, scene, sampler, nLightSamples,
                                         arena);
         else
             L += UniformSampleOneLight(isect, scene, sampler, arena);
     }
-    if (ray.depth + 1 < maxDepth) {
+    if (depth + 1 < maxDepth) {
         Vector3f wi;
         // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, isect, scene, sampler, arena);
-        L += SpecularTransmit(ray, isect, scene, sampler, arena);
+        L += SpecularReflect(ray, isect, scene, sampler, arena, depth);
+        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth);
     }
     return L;
 }

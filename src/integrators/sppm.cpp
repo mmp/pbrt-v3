@@ -231,8 +231,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                 if (tileSampler->Get1D() > continueProb) break;
                                 alpha /= continueProb;
                             }
-                            ray = (RayDifferential)isect.SpawnRay(
-                                wi, ray.depth + 1);
+                            ray = (RayDifferential)isect.SpawnRay(wi);
                         }
                     }
                 }
@@ -413,8 +412,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     if (RadicalInverse(haltonDim++, haltonIndex) > continueProb)
                         break;
                     beta = bnew / continueProb;
-                    photonRay = (RayDifferential)isect.SpawnRay(
-                        wi, photonRay.depth + 1);
+                    photonRay = (RayDifferential)isect.SpawnRay(wi);
                 }
                 arena.Reset();
             }, photonsPerIteration, 8192);

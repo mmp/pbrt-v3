@@ -62,30 +62,30 @@ SurfaceInteraction::SurfaceInteraction(
     // Adjust normal based on orientation and handedness
     if (shape &&
         (shape->ReverseOrientation ^ shape->TransformSwapsHandedness)) {
-        n *= -1.f;
-        shading.n *= -1.f;
+        n *= -1;
+        shading.n *= -1;
     }
 }
 
-void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdu,
-                                            const Vector3f &dpdv,
-                                            const Normal3f &dndu,
-                                            const Normal3f &dndv,
+void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdus,
+                                            const Vector3f &dpdvs,
+                                            const Normal3f &dndus,
+                                            const Normal3f &dndvs,
                                             bool orientationIsAuthoritative) {
-    shading.n = Normalize((Normal3f)Cross(dpdu, dpdv));
+    // Compute _shading.n_ for _SurfaceInteraction_
+    shading.n = Normalize((Normal3f)Cross(dpdus, dpdvs));
     if (shape && (shape->ReverseOrientation ^ shape->TransformSwapsHandedness))
         shading.n = -shading.n;
-    // Reorient geometric or shading normal, as appropriate
     if (orientationIsAuthoritative)
         n = Faceforward(n, shading.n);
     else
         shading.n = Faceforward(shading.n, n);
 
     // Initialize _shading_ partial derivative values
-    shading.dpdu = dpdu;
-    shading.dpdv = dpdv;
-    shading.dndu = dndu;
-    shading.dndv = dndv;
+    shading.dpdu = dpdus;
+    shading.dpdv = dpdvs;
+    shading.dndu = dndus;
+    shading.dndv = dndvs;
 }
 
 void SurfaceInteraction::ComputeScatteringFunctions(const RayDifferential &ray,

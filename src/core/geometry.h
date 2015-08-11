@@ -208,12 +208,12 @@ class Vector3 {
     bool operator!=(const Vector3<T> &v) const {
         return x != v.x || y != v.y || z != v.z;
     }
-    Vector3<T> operator*(T f) const { return Vector3<T>(f * x, f * y, f * z); }
-    Vector3<T> &operator*=(T f) {
-        Assert(!std::isnan(f));
-        x *= f;
-        y *= f;
-        z *= f;
+    Vector3<T> operator*(T s) const { return Vector3<T>(s * x, s * y, s * z); }
+    Vector3<T> &operator*=(T s) {
+        Assert(!std::isnan(s));
+        x *= s;
+        y *= s;
+        z *= s;
         return *this;
     }
     Vector3<T> operator/(T f) const {
@@ -782,17 +782,17 @@ class Bounds2iIterator : public std::forward_iterator_tag {
 class Ray {
   public:
     // Ray Public Methods
-    Ray() : tMax(Infinity), time(0.f), depth(0), medium(nullptr) {}
+    Ray() : tMax(Infinity), time(0.f), medium(nullptr) {}
     Ray(const Point3f &o, const Vector3f &d, Float tMax = Infinity,
-        Float time = 0.f, int depth = 0, const Medium *medium = nullptr)
-        : o(o), d(d), tMax(tMax), time(time), depth(depth), medium(medium) {}
+        Float time = 0.f, const Medium *medium = nullptr)
+        : o(o), d(d), tMax(tMax), time(time), medium(medium) {}
     Point3f operator()(Float t) const { return o + d * t; }
     bool HasNaNs() const {
         return (o.HasNaNs() || d.HasNaNs() || std::isnan(tMax));
     }
     friend std::ostream &operator<<(std::ostream &os, const Ray &r) {
         os << "[o=" << r.o << ", d=" << r.d << ", tMax=" << r.tMax
-           << ", time=" << r.time << ", depth=" << r.depth << "]";
+           << ", time=" << r.time << "]";
         return os;
     }
 
@@ -801,7 +801,6 @@ class Ray {
     Vector3f d;
     mutable Float tMax;
     Float time;
-    int depth;
     const Medium *medium;
 };
 
@@ -810,9 +809,8 @@ class RayDifferential : public Ray {
     // RayDifferential Public Methods
     RayDifferential() { hasDifferentials = false; }
     RayDifferential(const Point3f &o, const Vector3f &d, Float tMax = Infinity,
-                    Float time = 0.f, int depth = 0,
-                    const Medium *medium = nullptr)
-        : Ray(o, d, tMax, time, depth, medium) {
+                    Float time = 0.f, const Medium *medium = nullptr)
+        : Ray(o, d, tMax, time, medium) {
         hasDifferentials = false;
     }
     RayDifferential(const Ray &ray) : Ray(ray) { hasDifferentials = false; }
@@ -843,8 +841,8 @@ inline Vector3<T>::Vector3(const Point3<T> &p)
 }
 
 template <typename T>
-inline Vector3<T> operator*(T f, const Vector3<T> &v) {
-    return v * f;
+inline Vector3<T> operator*(T s, const Vector3<T> &v) {
+    return v * s;
 }
 template <typename T>
 Vector3<T> Abs(const Vector3<T> &v) {
@@ -930,11 +928,9 @@ template <typename T>
 inline void CoordinateSystem(const Vector3<T> &v1, Vector3<T> *v2,
                              Vector3<T> *v3) {
     if (std::abs(v1.x) > std::abs(v1.y))
-        *v2 =
-            Vector3<T>(-v1.z, 0.f, v1.x) / std::sqrt(v1.x * v1.x + v1.z * v1.z);
+        *v2 = Vector3<T>(-v1.z, 0, v1.x) / std::sqrt(v1.x * v1.x + v1.z * v1.z);
     else
-        *v2 =
-            Vector3<T>(0.f, v1.z, -v1.y) / std::sqrt(v1.y * v1.y + v1.z * v1.z);
+        *v2 = Vector3<T>(0, v1.z, -v1.y) / std::sqrt(v1.y * v1.y + v1.z * v1.z);
     *v3 = Cross(v1, *v2);
 }
 
@@ -1364,7 +1360,7 @@ inline Float SphericalTheta(const Vector3f &v) {
 
 inline Float SphericalPhi(const Vector3f &v) {
     Float p = std::atan2(v.y, v.x);
-    return (p < 0.f) ? p + 2.f * Pi : p;
+    return (p < 0) ? (p + 2 * Pi) : p;
 }
 
 #endif  // PBRT_CORE_GEOMETRY_H

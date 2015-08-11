@@ -52,11 +52,9 @@ STAT_TIMER("Time/Rendering", renderingTime);
 Integrator::~Integrator() {}
 
 // Integrator Utility Functions
-Spectrum SamplerIntegrator::SpecularTransmit(const RayDifferential &ray,
-                                             const SurfaceInteraction &isect,
-                                             const Scene &scene,
-                                             Sampler &sampler,
-                                             MemoryArena &arena) const {
+Spectrum SamplerIntegrator::SpecularTransmit(
+    const RayDifferential &ray, const SurfaceInteraction &isect,
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) const {
     Vector3f wo = isect.wo, wi;
     Float pdf;
     const Point3f &p = isect.p;
@@ -67,7 +65,7 @@ Spectrum SamplerIntegrator::SpecularTransmit(const RayDifferential &ray,
     Spectrum L = Spectrum(0.f);
     if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
         // Compute ray differential _rd_ for specular transmission
-        RayDifferential rd = isect.SpawnRay(wi, ray.depth + 1);
+        RayDifferential rd = isect.SpawnRay(wi);
         if (ray.hasDifferentials) {
             rd.hasDifferentials = true;
             rd.rxOrigin = p + isect.dpdx;
@@ -98,7 +96,7 @@ Spectrum SamplerIntegrator::SpecularTransmit(const RayDifferential &ray,
             rd.ryDirection =
                 wi + eta * dwody - Vector3f(mu * dndy + dmudy * ns);
         }
-        L = f * Li(rd, scene, sampler, arena) * AbsDot(wi, ns) / pdf;
+        L = f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
     }
     return L;
 }
@@ -115,14 +113,14 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
 
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 Sampler &sampler,
-                                const std::vector<int> &numLightSamples,
+                                const std::vector<int> &nLightSamples,
                                 MemoryArena &arena, bool handleMedia) {
     ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
     for (size_t i = 0; i < scene.lights.size(); ++i) {
         // Accumulate contribution of _i_th light to _L_
         const std::shared_ptr<Light> &light = scene.lights[i];
-        int nSamples = numLightSamples[i];
+        int nSamples = nLightSamples[i];
         const Point2f *lightSamples = sampler.Get2DArray(nSamples);
         const Point2f *shadingSamples = sampler.Get2DArray(nSamples);
         if (lightSamples == nullptr || shadingSamples == nullptr) {
@@ -350,11 +348,9 @@ void SamplerIntegrator::Render(const Scene &scene) {
     camera->film->WriteImage();
 }
 
-Spectrum SamplerIntegrator::SpecularReflect(const RayDifferential &ray,
-                                            const SurfaceInteraction &isect,
-                                            const Scene &scene,
-                                            Sampler &sampler,
-                                            MemoryArena &arena) const {
+Spectrum SamplerIntegrator::SpecularReflect(
+    const RayDifferential &ray, const SurfaceInteraction &isect,
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) const {
     // Compute specular reflection direction _wi_ and BSDF value
     Vector3f wo = isect.wo, wi;
     Float pdf;
@@ -366,7 +362,7 @@ Spectrum SamplerIntegrator::SpecularReflect(const RayDifferential &ray,
     const Normal3f &ns = isect.shading.n;
     if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
         // Compute ray differential _rd_ for specular reflection
-        RayDifferential rd = isect.SpawnRay(wi, ray.depth + 1);
+        RayDifferential rd = isect.SpawnRay(wi);
         if (ray.hasDifferentials) {
             rd.hasDifferentials = true;
             rd.rxOrigin = isect.p + isect.dpdx;
@@ -385,7 +381,8 @@ Spectrum SamplerIntegrator::SpecularReflect(const RayDifferential &ray,
             rd.ryDirection =
                 wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
         }
-        return f * Li(rd, scene, sampler, arena) * AbsDot(wi, ns) / pdf;
+        return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) /
+               pdf;
     } else
         return Spectrum(0.f);
 }

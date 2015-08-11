@@ -49,9 +49,9 @@ class Hyperboloid : public Shape {
     Hyperboloid(const Transform *o2w, const Transform *w2o, bool ro,
                 const Point3f &point1, const Point3f &point2, Float tm);
     Bounds3f ObjectBound() const;
-    bool Intersect(const Ray &ray, Float *tHit,
-                   SurfaceInteraction *isect) const;
-    bool IntersectP(const Ray &ray) const;
+    bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
+                   bool testAlphaTexture) const;
+    bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
     Float Area() const;
     Interaction Sample(const Point2f &u) const;
 

@@ -39,23 +39,10 @@
 #include "sampling.h"
 
 // OrthographicCamera Definitions
-OrthographicCamera::OrthographicCamera(const AnimatedTransform &CameraToWorld,
-                                       const Bounds2f &screenWindow,
-                                       Float shutterOpen, Float shutterClose,
-                                       Float lensRadius, Float focalDistance,
-                                       Film *film, const Medium *medium)
-    : ProjectiveCamera(CameraToWorld, Orthographic(0, 1), screenWindow,
-                       shutterOpen, shutterClose, lensRadius, focalDistance,
-                       film, medium) {
-    // Compute differential changes in origin for orthographic camera rays
-    dxCamera = RasterToCamera(Vector3f(1, 0, 0));
-    dyCamera = RasterToCamera(Vector3f(0, 1, 0));
-}
-
 Float OrthographicCamera::GenerateRay(const CameraSample &sample,
                                       Ray *ray) const {
     // Compute raster and camera sample positions
-    Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0.);
+    Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
     Point3f pCamera = RasterToCamera(pFilm);
     *ray = Ray(pCamera, Vector3f(0, 0, 1));
     // Modify ray for depth of field
@@ -82,7 +69,7 @@ Float OrthographicCamera::GenerateRayDifferential(const CameraSample &sample,
     // Compute main orthographic viewing ray
 
     // Compute raster and camera sample positions
-    Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0.);
+    Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
     Point3f pCamera = RasterToCamera(pFilm);
     *ray = RayDifferential(pCamera, Vector3f(0, 0, 1));
 

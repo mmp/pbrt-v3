@@ -44,8 +44,8 @@ Bounds3f Sphere::ObjectBound() const {
                     Point3f(radius, radius, zMax));
 }
 
-bool Sphere::Intersect(const Ray &r, Float *tHit,
-                       SurfaceInteraction *isect) const {
+bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
+                       bool testAlphaTexture) const {
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -152,7 +152,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit,
     return true;
 }
 
-bool Sphere::IntersectP(const Ray &r) const {
+bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space

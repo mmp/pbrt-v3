@@ -70,7 +70,7 @@ void LatinHypercube(Float *samples, int nSamples, int nDim, RNG &rng) {
     // Permute LHS samples in each dimension
     for (int i = 0; i < nDim; ++i) {
         for (int j = 0; j < nSamples; ++j) {
-            int other = j + (rng.UniformUInt32() % (nSamples - j));
+            int other = j + rng.UniformUInt32(nSamples - j);
             std::swap(samples[nDim * j + i], samples[nDim * other + i]);
         }
     }

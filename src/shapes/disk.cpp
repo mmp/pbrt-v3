@@ -43,8 +43,8 @@ Bounds3f Disk::ObjectBound() const {
                     Point3f(radius, radius, height));
 }
 
-bool Disk::Intersect(const Ray &r, Float *tHit,
-                     SurfaceInteraction *isect) const {
+bool Disk::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
+                     bool testAlphaTexture) const {
     // Transform _Ray_ to object space
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
@@ -93,7 +93,7 @@ bool Disk::Intersect(const Ray &r, Float *tHit,
     return true;
 }
 
-bool Disk::IntersectP(const Ray &r) const {
+bool Disk::IntersectP(const Ray &r, bool testAlphaTexture) const {
     // Transform _Ray_ to object space
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);

@@ -42,7 +42,8 @@
 
 // VolPathIntegrator Method Definitions
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
-                               Sampler &sampler, MemoryArena &arena) const {
+                               Sampler &sampler, MemoryArena &arena,
+                               int depth) const {
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f), alpha(1.f);
     RayDifferential ray(r);

@@ -51,9 +51,9 @@ PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
                        focalDistance, film, medium) {
     // Compute differential changes in origin for perspective camera rays
     dxCamera =
-        RasterToCamera(Point3f(1, 0, 0)) - RasterToCamera(Point3f(0, 0, 0));
+        (RasterToCamera(Point3f(1, 0, 0)) - RasterToCamera(Point3f(0, 0, 0)));
     dyCamera =
-        RasterToCamera(Point3f(0, 1, 0)) - RasterToCamera(Point3f(0, 0, 0));
+        (RasterToCamera(Point3f(0, 1, 0)) - RasterToCamera(Point3f(0, 0, 0)));
 
     // Compute image plane bounds at $z=1$ for _PerspectiveCamera_
     Point2i res = film->fullResolution;
@@ -67,7 +67,7 @@ PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
 Float PerspectiveCamera::GenerateRay(const CameraSample &sample,
                                      Ray *ray) const {
     // Compute raster and camera sample positions
-    Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0.);
+    Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
     Point3f pCamera = RasterToCamera(pFilm);
     *ray = Ray(Point3f(0, 0, 0), Normalize(Vector3f(pCamera)));
     // Modify ray for depth of field
@@ -92,7 +92,7 @@ Float PerspectiveCamera::GenerateRay(const CameraSample &sample,
 Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
                                                  RayDifferential *ray) const {
     // Compute raster and camera sample positions
-    Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0.);
+    Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
     Point3f pCamera = RasterToCamera(pFilm);
     Vector3f dir = Normalize(Vector3f(pCamera.x, pCamera.y, pCamera.z));
     *ray = RayDifferential(Point3f(0, 0, 0), dir);
@@ -111,7 +111,7 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
     }
 
     // Compute offset rays for _PerspectiveCamera_ ray differentials
-    if (lensRadius > 0.) {
+    if (lensRadius > 0) {
         // Compute _PerspectiveCamera_ ray differentials accounting for lens
 
         // Sample point on lens

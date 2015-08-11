@@ -51,7 +51,7 @@ class Primitive {
     // Primitive Interface
     virtual ~Primitive();
     virtual Bounds3f WorldBound() const = 0;
-    virtual bool Intersect(const Ray &r, SurfaceInteraction *in) const = 0;
+    virtual bool Intersect(const Ray &r, SurfaceInteraction *) const = 0;
     virtual bool IntersectP(const Ray &r) const = 0;
     virtual const AreaLight *GetAreaLight() const = 0;
     virtual const Material *GetMaterial() const = 0;

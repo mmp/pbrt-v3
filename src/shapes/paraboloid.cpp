@@ -53,8 +53,8 @@ Bounds3f Paraboloid::ObjectBound() const {
     return Bounds3f(p1, p2);
 }
 
-bool Paraboloid::Intersect(const Ray &r, Float *tHit,
-                           SurfaceInteraction *isect) const {
+bool Paraboloid::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
+                           bool testAlphaTexture) const {
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -151,7 +151,7 @@ bool Paraboloid::Intersect(const Ray &r, Float *tHit,
     return true;
 }
 
-bool Paraboloid::IntersectP(const Ray &r) const {
+bool Paraboloid::IntersectP(const Ray &r, bool testAlphaTexture) const {
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space

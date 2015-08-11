@@ -43,7 +43,7 @@
 #include <sys/time.h>
 
 // Statistics Local Variables
-std::vector<void (*)(StatsAccumulator &)> *StatRegisterer::funcs;
+std::vector<std::function<void(StatsAccumulator &)>> *StatRegisterer::funcs;
 static StatsAccumulator statsAccumulator;
 static std::unique_ptr<std::atomic<uint64_t>[]> profileSamples;
 static void ReportProfileSample(int, siginfo_t *, void *);

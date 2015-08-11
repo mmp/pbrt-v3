@@ -45,8 +45,8 @@
 #endif  // !PBRT_IS_WINDOWS
 
 // ProgressReporter Method Definitions
-ProgressReporter::ProgressReporter(int64_t tw, const std::string &title)
-    : totalWork(tw) {
+ProgressReporter::ProgressReporter(int64_t totalWork, const std::string &title)
+    : totalWork(totalWork) {
     int barLength = TerminalWidth() - 28;
     totalPlusses = std::max(2, barLength - (int)title.size());
     plussesPrinted = 0;
@@ -55,21 +55,19 @@ ProgressReporter::ProgressReporter(int64_t tw, const std::string &title)
     outFile = stdout;
     // Initialize progress string
     const int bufLen = title.size() + totalPlusses + 64;
-    buf = new char[bufLen];
-    snprintf(buf, bufLen, "\r%s: [", title.c_str());
-    curSpace = buf + strlen(buf);
+    buf.reset(new char[bufLen]);
+    snprintf(buf.get(), bufLen, "\r%s: [", title.c_str());
+    curSpace = buf.get() + strlen(buf.get());
     char *s = curSpace;
     for (int i = 0; i < totalPlusses; ++i) *s++ = ' ';
     *s++ = ']';
     *s++ = ' ';
     *s++ = '\0';
     if (!PbrtOptions.quiet) {
-        fputs(buf, outFile);
+        fputs(buf.get(), outFile);
         fflush(outFile);
     }
 }
-
-ProgressReporter::~ProgressReporter() { delete[] buf; }
 
 void ProgressReporter::Update(int64_t num) {
     if (num == 0 || PbrtOptions.quiet) return;
@@ -82,7 +80,7 @@ void ProgressReporter::Update(int64_t num) {
         *curSpace++ = '+';
         ++plussesPrinted;
     }
-    fputs(buf, outFile);
+    fputs(buf.get(), outFile);
     // Update elapsed time and estimated time to completion
     Float seconds = ElapsedMS() / 1000.f;
     Float estRemaining = seconds / percentDone - seconds;
@@ -98,7 +96,7 @@ void ProgressReporter::Done() {
     if (PbrtOptions.quiet) return;
     std::lock_guard<std::mutex> lock(mutex);
     while (plussesPrinted++ < totalPlusses) *curSpace++ = '+';
-    fputs(buf, outFile);
+    fputs(buf.get(), outFile);
     Float seconds = ElapsedMS() / 1000.f;
     fprintf(outFile, " (%.1fs)       \n", seconds);
     fflush(outFile);

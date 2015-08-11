@@ -66,15 +66,15 @@ void Aggregate::ComputeScatteringFunctions(SurfaceInteraction *isect,
 // TransformedPrimitive Method Definitions
 bool TransformedPrimitive::Intersect(const Ray &r,
                                      SurfaceInteraction *isect) const {
+    // Compute _ray_ after transformation by _PrimitiveToWorld_
     Transform InterpolatedPrimToWorld;
     PrimitiveToWorld.Interpolate(r.time, &InterpolatedPrimToWorld);
     Ray ray = Inverse(InterpolatedPrimToWorld)(r);
     if (!primitive->Intersect(ray, isect)) return false;
     r.tMax = ray.tMax;
     // Transform instance's intersection data to world space
-    if (!InterpolatedPrimToWorld.IsIdentity()) {
+    if (!InterpolatedPrimToWorld.IsIdentity())
         *isect = InterpolatedPrimToWorld(*isect);
-    }
     Assert(Dot(isect->n, isect->shading.n) >= 0.);
     return true;
 }
@@ -93,18 +93,19 @@ bool GeometricPrimitive::IntersectP(const Ray &r) const {
     return shape->IntersectP(r);
 }
 
-bool GeometricPrimitive::Intersect(const Ray &r, SurfaceInteraction *si) const {
+bool GeometricPrimitive::Intersect(const Ray &r,
+                                   SurfaceInteraction *isect) const {
     Float tHit;
-    if (!shape->Intersect(r, &tHit, si)) return false;
+    if (!shape->Intersect(r, &tHit, isect)) return false;
     r.tMax = tHit;
-    si->primitive = this;
-    Assert(Dot(si->n, si->shading.n) >= 0.);
+    isect->primitive = this;
+    Assert(Dot(isect->n, isect->shading.n) >= 0.);
     // Initialize _SurfaceInteraction::mediumInterface_ after _Shape_
     // intersection
     if (mediumInterface.IsMediumTransition())
-        si->mediumInterface = mediumInterface;
+        isect->mediumInterface = mediumInterface;
     else
-        si->mediumInterface = MediumInterface(r.medium);
+        isect->mediumInterface = MediumInterface(r.medium);
     return true;
 }
 

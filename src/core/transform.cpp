@@ -147,30 +147,29 @@ Transform Translate(const Vector3f &delta) {
 
 Transform Scale(Float x, Float y, Float z) {
     Matrix4x4 m(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1);
-    Matrix4x4 minv(1.f / x, 0, 0, 0, 0, 1.f / y, 0, 0, 0, 0, 1.f / z, 0, 0, 0,
-                   0, 1);
+    Matrix4x4 minv(1 / x, 0, 0, 0, 0, 1 / y, 0, 0, 0, 0, 1 / z, 0, 0, 0, 0, 1);
     return Transform(m, minv);
 }
 
-Transform RotateX(Float angle) {
-    Float sinTheta = std::sin(Radians(angle));
-    Float cosTheta = std::cos(Radians(angle));
+Transform RotateX(Float theta) {
+    Float sinTheta = std::sin(Radians(theta));
+    Float cosTheta = std::cos(Radians(theta));
     Matrix4x4 m(1, 0, 0, 0, 0, cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0,
                 0, 0, 0, 1);
     return Transform(m, Transpose(m));
 }
 
-Transform RotateY(Float angle) {
-    Float sinTheta = std::sin(Radians(angle));
-    Float cosTheta = std::cos(Radians(angle));
+Transform RotateY(Float theta) {
+    Float sinTheta = std::sin(Radians(theta));
+    Float cosTheta = std::cos(Radians(theta));
     Matrix4x4 m(cosTheta, 0, sinTheta, 0, 0, 1, 0, 0, -sinTheta, 0, cosTheta, 0,
                 0, 0, 0, 1);
     return Transform(m, Transpose(m));
 }
 
-Transform RotateZ(Float angle) {
-    Float sinTheta = std::sin(Radians(angle));
-    Float cosTheta = std::cos(Radians(angle));
+Transform RotateZ(Float theta) {
+    Float sinTheta = std::sin(Radians(theta));
+    Float cosTheta = std::cos(Radians(theta));
     Matrix4x4 m(cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0, 0, 0, 0, 1, 0,
                 0, 0, 0, 1);
     return Transform(m, Transpose(m));
@@ -259,44 +258,44 @@ bool Transform::SwapsHandedness() const {
     return det < 0;
 }
 
-SurfaceInteraction Transform::operator()(const SurfaceInteraction &is) const {
+SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const {
     SurfaceInteraction ret;
     // Transform _p_ and _pError_ in _SurfaceInteraction_
-    ret.p = (*this)(is.p, is.pError, &ret.pError);
+    ret.p = (*this)(si.p, si.pError, &ret.pError);
 
     // Transform remaining members of _SurfaceInteraction_
     const Transform &t = *this;
-    ret.n = Normalize(t(is.n));
-    ret.wo = t(is.wo);
-    ret.time = is.time;
-    ret.mediumInterface = is.mediumInterface;
-    ret.uv = is.uv;
-    ret.shape = is.shape;
-    ret.dpdu = t(is.dpdu);
-    ret.dpdv = t(is.dpdv);
-    ret.dndu = t(is.dndu);
-    ret.dndv = t(is.dndv);
-    ret.shading.n = Normalize(t(is.shading.n));
-    ret.shading.dpdu = t(is.shading.dpdu);
-    ret.shading.dpdv = t(is.shading.dpdv);
-    ret.shading.dndu = t(is.shading.dndu);
-    ret.shading.dndv = t(is.shading.dndv);
-    ret.dudx = is.dudx;
-    ret.dvdx = is.dvdx;
-    ret.dudy = is.dudy;
-    ret.dvdy = is.dvdy;
-    ret.dpdx = t(is.dpdx);
-    ret.dpdy = t(is.dpdy);
-    ret.bsdf = is.bsdf;
-    ret.bssrdf = is.bssrdf;
-    ret.primitive = is.primitive;
+    ret.n = Normalize(t(si.n));
+    ret.wo = t(si.wo);
+    ret.time = si.time;
+    ret.mediumInterface = si.mediumInterface;
+    ret.uv = si.uv;
+    ret.shape = si.shape;
+    ret.dpdu = t(si.dpdu);
+    ret.dpdv = t(si.dpdv);
+    ret.dndu = t(si.dndu);
+    ret.dndv = t(si.dndv);
+    ret.shading.n = Normalize(t(si.shading.n));
+    ret.shading.dpdu = t(si.shading.dpdu);
+    ret.shading.dpdv = t(si.shading.dpdv);
+    ret.shading.dndu = t(si.shading.dndu);
+    ret.shading.dndv = t(si.shading.dndv);
+    ret.dudx = si.dudx;
+    ret.dvdx = si.dvdx;
+    ret.dudy = si.dudy;
+    ret.dvdy = si.dvdy;
+    ret.dpdx = t(si.dpdx);
+    ret.dpdy = t(si.dpdy);
+    ret.bsdf = si.bsdf;
+    ret.bssrdf = si.bssrdf;
+    ret.primitive = si.primitive;
     //    ret.n = Faceforward(ret.n, ret.shading.n);
     ret.shading.n = Faceforward(ret.shading.n, ret.n);
     return ret;
 }
 
-Transform Orthographic(Float znear, Float zfar) {
-    return Scale(1, 1, 1 / (zfar - znear)) * Translate(Vector3f(0, 0, -znear));
+Transform Orthographic(Float zNear, Float zFar) {
+    return Scale(1, 1, 1 / (zFar - zNear)) * Translate(Vector3f(0, 0, -zNear));
 }
 
 Transform Perspective(Float fov, Float n, Float f) {
@@ -380,7 +379,7 @@ void IntervalFindZeros(Float c1, Float c2, Float c3, Float c4, Float c5,
                                      std::cos(2.f * tNewton * theta) +
                                  (c5 - 2 * (c2 + c3 * tNewton) * theta) *
                                      std::sin(2.f * tNewton * theta);
-            if (fNewton == 0.f || fPrimeNewton == 0.f) break;
+            if (fNewton == 0 || fPrimeNewton == 0) break;
             tNewton = tNewton - fNewton / fPrimeNewton;
         }
         zeros[*zeroCount] = tNewton;
@@ -1254,16 +1253,16 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
     for (int c = 0; c < 3; ++c) {
         // Find any motion derivative zeros for the component _c_
         Float zeros[4];
-        int numZeros = 0;
+        int nZeros = 0;
         IntervalFindZeros(c1[c].Eval(p), c2[c].Eval(p), c3[c].Eval(p),
                           c4[c].Eval(p), c5[c].Eval(p), theta, Interval(0., 1.),
-                          zeros, &numZeros);
-        Assert(numZeros <= sizeof(zeros) / sizeof(zeros[0]));
+                          zeros, &nZeros);
+        Assert(nZeros <= sizeof(zeros) / sizeof(zeros[0]));
 
         // Expand bounding box for any motion derivative zeros found
-        for (int i = 0; i < numZeros; ++i) {
-            Point3f pm = (*this)(Lerp(zeros[i], startTime, endTime), p);
-            bounds = Union(bounds, pm);
+        for (int i = 0; i < nZeros; ++i) {
+            Point3f pz = (*this)(Lerp(zeros[i], startTime, endTime), p);
+            bounds = Union(bounds, pz);
         }
     }
     return bounds;

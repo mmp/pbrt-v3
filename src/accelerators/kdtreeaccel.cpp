@@ -74,12 +74,6 @@ struct BoundEdge {
     BoundEdge(Float t, int primNum, bool starting) : t(t), primNum(primNum) {
         type = starting ? EdgeType::Start : EdgeType::End;
     }
-    bool operator<(const BoundEdge &e) const {
-        if (t == e.t)
-            return (int)type < (int)e.type;
-        else
-            return t < e.t;
-    }
     Float t;
     int primNum;
     EdgeType type;
@@ -109,8 +103,9 @@ KdTreeAccel::KdTreeAccel(const std::vector<std::shared_ptr<Primitive>> &p,
     }
 
     // Allocate working memory for kd-tree construction
-    BoundEdge *edges[3];
-    for (int i = 0; i < 3; ++i) edges[i] = new BoundEdge[2 * primitives.size()];
+    std::unique_ptr<BoundEdge[]> edges[3];
+    for (int i = 0; i < 3; ++i)
+        edges[i].reset(new BoundEdge[2 * primitives.size()]);
     std::unique_ptr<int[]> prims0(new int[primitives.size()]);
     std::unique_ptr<int[]> prims1(new int[(maxDepth + 1) * primitives.size()]);
 
@@ -121,9 +116,6 @@ KdTreeAccel::KdTreeAccel(const std::vector<std::shared_ptr<Primitive>> &p,
     // Start recursive construction of kd-tree
     buildTree(0, bounds, primBounds, primNums.get(), primitives.size(),
               maxDepth, edges, prims0.get(), prims1.get());
-
-    // Free working memory for kd-tree construction
-    for (int i = 0; i < 3; ++i) delete[] edges[i];
 }
 
 void KdAccelNode::InitLeaf(int *primNums, int np,
@@ -146,19 +138,19 @@ KdTreeAccel::~KdTreeAccel() { FreeAligned(nodes); }
 void KdTreeAccel::buildTree(int nodeNum, const Bounds3f &nodeBounds,
                             const std::vector<Bounds3f> &allPrimBounds,
                             int *primNums, int nPrimitives, int depth,
-                            BoundEdge *edges[3], int *prims0, int *prims1,
-                            int badRefines) {
+                            const std::unique_ptr<BoundEdge[]> edges[3],
+                            int *prims0, int *prims1, int badRefines) {
     Assert(nodeNum == nextFreeNode);
     // Get next free node from _nodes_ array
     if (nextFreeNode == nAllocedNodes) {
-        int nAlloc = std::max(2 * nAllocedNodes, 512);
-        KdAccelNode *n = AllocAligned<KdAccelNode>(nAlloc);
+        int nNewAllocNodes = std::max(2 * nAllocedNodes, 512);
+        KdAccelNode *n = AllocAligned<KdAccelNode>(nNewAllocNodes);
         if (nAllocedNodes > 0) {
             memcpy(n, nodes, nAllocedNodes * sizeof(KdAccelNode));
             FreeAligned(nodes);
         }
         nodes = n;
-        nAllocedNodes = nAlloc;
+        nAllocedNodes = nNewAllocNodes;
     }
     ++nextFreeNode;
 
@@ -175,7 +167,7 @@ void KdTreeAccel::buildTree(int nodeNum, const Bounds3f &nodeBounds,
     Float bestCost = Infinity;
     Float oldCost = isectCost * Float(nPrimitives);
     Float totalSA = nodeBounds.SurfaceArea();
-    Float invTotalSA = 1.f / totalSA;
+    Float invTotalSA = 1 / totalSA;
     Vector3f d = nodeBounds.pMax - nodeBounds.pMin;
 
     // Choose which axis to split along
@@ -190,30 +182,38 @@ retrySplit:
         edges[axis][2 * i] = BoundEdge(bounds.pMin[axis], pn, true);
         edges[axis][2 * i + 1] = BoundEdge(bounds.pMax[axis], pn, false);
     }
-    std::sort(&edges[axis][0], &edges[axis][2 * nPrimitives]);
+
+    // Sort _edges_ for _axis_
+    std::sort(&edges[axis][0], &edges[axis][2 * nPrimitives],
+              [](const BoundEdge &e0, const BoundEdge &e1) -> bool {
+                  if (e0.t == e1.t)
+                      return (int)e0.type < (int)e1.type;
+                  else
+                      return e0.t < e1.t;
+              });
 
     // Compute cost of all splits for _axis_ to find best
     int nBelow = 0, nAbove = nPrimitives;
     for (int i = 0; i < 2 * nPrimitives; ++i) {
         if (edges[axis][i].type == EdgeType::End) --nAbove;
-        Float edget = edges[axis][i].t;
-        if (edget > nodeBounds.pMin[axis] && edget < nodeBounds.pMax[axis]) {
+        Float edgeT = edges[axis][i].t;
+        if (edgeT > nodeBounds.pMin[axis] && edgeT < nodeBounds.pMax[axis]) {
             // Compute cost for split at _i_th edge
 
-            // Compute child surface areas for split at _edget_
+            // Compute child surface areas for split at _edgeT_
             int otherAxis0 = (axis + 1) % 3, otherAxis1 = (axis + 2) % 3;
             Float belowSA = 2 * (d[otherAxis0] * d[otherAxis1] +
-                                 (edget - nodeBounds.pMin[axis]) *
+                                 (edgeT - nodeBounds.pMin[axis]) *
                                      (d[otherAxis0] + d[otherAxis1]));
             Float aboveSA = 2 * (d[otherAxis0] * d[otherAxis1] +
-                                 (nodeBounds.pMax[axis] - edget) *
+                                 (nodeBounds.pMax[axis] - edgeT) *
                                      (d[otherAxis0] + d[otherAxis1]));
             Float pBelow = belowSA * invTotalSA;
             Float pAbove = aboveSA * invTotalSA;
-            Float eb = (nAbove == 0 || nBelow == 0) ? emptyBonus : 0.f;
+            Float eb = (nAbove == 0 || nBelow == 0) ? emptyBonus : 0;
             Float cost =
                 traversalCost +
-                isectCost * (1.f - eb) * (pBelow * nBelow + pAbove * nAbove);
+                isectCost * (1 - eb) * (pBelow * nBelow + pAbove * nAbove);
 
             // Update best split if this is lowest cost so far
             if (cost < bestCost) {
@@ -233,7 +233,7 @@ retrySplit:
         goto retrySplit;
     }
     if (bestCost > oldCost) ++badRefines;
-    if ((bestCost > 4.f * oldCost && nPrimitives < 16) || bestAxis == -1 ||
+    if ((bestCost > 4 * oldCost && nPrimitives < 16) || bestAxis == -1 ||
         badRefines == 3) {
         nodes[nodeNum].InitLeaf(primNums, nPrimitives, &primitiveIndices);
         return;
@@ -249,18 +249,18 @@ retrySplit:
             prims1[n1++] = edges[bestAxis][i].primNum;
 
     // Recursively initialize children nodes
-    Float tsplit = edges[bestAxis][bestOffset].t;
+    Float tSplit = edges[bestAxis][bestOffset].t;
     Bounds3f bounds0 = nodeBounds, bounds1 = nodeBounds;
-    bounds0.pMax[bestAxis] = bounds1.pMin[bestAxis] = tsplit;
+    bounds0.pMax[bestAxis] = bounds1.pMin[bestAxis] = tSplit;
     buildTree(nodeNum + 1, bounds0, allPrimBounds, prims0, n0, depth - 1, edges,
               prims0, prims1 + nPrimitives, badRefines);
     int aboveChild = nextFreeNode;
-    nodes[nodeNum].InitInterior(bestAxis, aboveChild, tsplit);
+    nodes[nodeNum].InitInterior(bestAxis, aboveChild, tSplit);
     buildTree(aboveChild, bounds1, allPrimBounds, prims1, n1, depth - 1, edges,
               prims0, prims1 + nPrimitives, badRefines);
 }
 
-bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *si) const {
+bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const {
     ProfilePhase p(Prof::AccelIntersect);
     // Compute initial parametric range of ray inside kd-tree extent
     Float tMin, tMax;
@@ -269,7 +269,7 @@ bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *si) const {
     }
 
     // Prepare to traverse kd-tree for ray
-    Vector3f invDir(1.f / ray.d.x, 1.f / ray.d.y, 1.f / ray.d.z);
+    Vector3f invDir(1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z);
     constexpr int maxTodo = 64;
     KdToDo todo[maxTodo];
     int todoPos = 0;
@@ -321,14 +321,14 @@ bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *si) const {
                 const std::shared_ptr<Primitive> &p =
                     primitives[node->onePrimitive];
                 // Check one primitive inside leaf node
-                if (p->Intersect(ray, si)) hit = true;
+                if (p->Intersect(ray, isect)) hit = true;
             } else {
                 for (int i = 0; i < nPrimitives; ++i) {
                     int index =
                         primitiveIndices[node->primitiveIndicesOffset + i];
                     const std::shared_ptr<Primitive> &p = primitives[index];
                     // Check one primitive inside leaf node
-                    if (p->Intersect(ray, si)) hit = true;
+                    if (p->Intersect(ray, isect)) hit = true;
                 }
             }
 
@@ -354,7 +354,7 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
     }
 
     // Prepare to traverse kd-tree for ray
-    Vector3f invDir(1.f / ray.d.x, 1.f / ray.d.y, 1.f / ray.d.z);
+    Vector3f invDir(1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z);
     constexpr int maxTodo = 64;
     KdToDo todo[maxTodo];
     int todoPos = 0;

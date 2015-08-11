@@ -81,8 +81,7 @@ Spectrum SpotLight::Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
                               Ray *ray, Normal3f *nLight, Float *pdfPos,
                               Float *pdfDir) const {
     Vector3f w = UniformSampleCone(u1, cosTotalWidth);
-    *ray =
-        Ray(pLight, LightToWorld(w), Infinity, time, 0, mediumInterface.inside);
+    *ray = Ray(pLight, LightToWorld(w), Infinity, time, mediumInterface.inside);
     *nLight = (Normal3f)ray->d;
     *pdfPos = 1;
     *pdfDir = UniformConePdf(cosTotalWidth);

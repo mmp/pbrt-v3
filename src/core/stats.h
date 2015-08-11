@@ -50,15 +50,16 @@ class StatsAccumulator;
 class StatRegisterer {
   public:
     // StatRegisterer Public Methods
-    StatRegisterer(void (*func)(StatsAccumulator &)) {
-        if (!funcs) funcs = new std::vector<void (*)(StatsAccumulator &)>;
+    StatRegisterer(std::function<void(StatsAccumulator &)> func) {
+        if (!funcs)
+            funcs = new std::vector<std::function<void(StatsAccumulator &)>>;
         funcs->push_back(func);
     }
     static void CallCallbacks(StatsAccumulator &accum);
 
   private:
     // StatRegisterer Private Data
-    static std::vector<void (*)(StatsAccumulator &)> *funcs;
+    static std::vector<std::function<void(StatsAccumulator &)>> *funcs;
 };
 
 void PrintStats(FILE *dest);

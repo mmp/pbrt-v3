@@ -64,43 +64,56 @@ Float FresnelMoment2(Float eta) {
 }
 
 Float BeamDiffusionMS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
-    // Compute reduced scattering coefficients and albedo
+    const int nSamples = 100;
+    Float integral = 0.0f;
+    // Precompute information for dipole integrand
+
+    // Compute reduced scattering coefficients $\sigmaps, \sigmapt$ and albedo
+    // $\rhop$
     Float sigp_s = sig_s * (1 - g);
     Float sigp_t = sig_a + sigp_s;
-    Float alphap = sigp_s / sigp_t;
+    Float rhop = sigp_s / sigp_t;
 
-    // Compute diffusion and transport coefficients
+    // Compute non-classical diffusion coefficient $D_\roman{G}$ using Equation
+    // $(\ref{eq:diffusion-coefficient-grosjean})$
     Float D_g = (2 * sig_a + sigp_s) / (3 * sigp_t * sigp_t);
+
+    // Compute effective transport coefficient $\sigmatr$ based on $D_\roman{G}$
     Float sig_tr = std::sqrt(sig_a / D_g);
 
-    // Determine boundary conditions
-
-    // Determine the position of the extrapolated boundary
+    // Determine linear extrapolation distance $\depthextrapolation$ using
+    // Equation $(\ref{eq:dipole-boundary-condition})$
     Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
-    Float zb = 2 * D_g * (1 + 3 * fm2) / (1 - 2 * fm1);
+    Float ze = -2 * D_g * (1 + 3 * fm2) / (1 - 2 * fm1);
 
-    // Determine fluence and vector irradiance weights
-    Float c_phi = .25f * (1 - 2 * fm1), c_E = .5f * (1 - 3 * fm2);
-    Float integral = 0.0f;
-    const int nSamples = 100;
+    // Determine exitance scale factors using Equation
+    // $(\ref{eq:kp-exitance-phi})$ and $(\ref{eq:kp-exitance-e})$
+    Float cPhi = .25f * (1 - 2 * fm1), cE = .5f * (1 - 3 * fm2);
     for (int i = 0; i < nSamples; ++i) {
-        // Evaluate dipole integrand and add to _integral_
-        Float zr = -std::log(1 - (i + .5f) / nSamples) / sigp_t,
-              zv = zr + 2 * zb, dr = std::sqrt(r * r + zr * zr),
+        // Sample real point source depth $\depthreal$
+        Float zr = -std::log(1 - (i + .5f) / nSamples) / sigp_t;
+
+        // Evaluate dipole integrand $E_{\roman{d}}$ at $\depthreal$ and add to
+        // _integral_
+        Float zv = -zr + 2 * ze, dr = std::sqrt(r * r + zr * zr),
               dv = std::sqrt(r * r + zv * zv);
 
-        // Compute fluence _phi_ and vector irradiance _E\_n_ due to the dipole
-        Float phi = alphap * Inv4Pi / D_g *
-                    (std::exp(-sig_tr * dr) / dr - std::exp(-sig_tr * dv) / dv);
-        Float E_n =
-            alphap * Inv4Pi *
-            (zr * (1 + sig_tr * dr) * std::exp(-sig_tr * dr) / (dr * dr * dr) +
-             (zr + 2 * zb) * (1 + sig_tr * dv) * std::exp(-sig_tr * dv) /
-                 (dv * dv * dv));
+        // Compute dipole fluence $\dipole(r)$ using Equation
+        // $(\ref{eq:diffusion-dipole})$
+        Float phiD = Inv4Pi / D_g * (std::exp(-sig_tr * dr) / dr -
+                                     std::exp(-sig_tr * dv) / dv);
 
-        // Compute empirical correction factor _kappa_
+        // Compute dipole vector irradiance $\N{}\cdot\dipoleE(r)$ using
+        // Equation $(\ref{eq:diffusion-dipole-vector-irradiance-normal})$
+        Float EDn =
+            Inv4Pi *
+            (zr * (1 + sig_tr * dr) * std::exp(-sig_tr * dr) / (dr * dr * dr) -
+             zv * (1 + sig_tr * dv) * std::exp(-sig_tr * dv) / (dv * dv * dv));
+
+        // Add contribution from dipole for depth $\depthreal$ to _integral_
+        Float E = phiD * cPhi + EDn * cE;
         Float kappa = 1 - std::exp(-2 * sigp_t * (dr + zr));
-        integral += kappa * alphap * (phi * c_phi + E_n * c_E);
+        integral += kappa * rhop * rhop * E;
     }
     return integral / nSamples;
 }
@@ -299,13 +312,14 @@ Spectrum SeparableBSSRDF::Sample_Sp(const Scene &scene, Float sample1,
     while (selected-- > 0) chain = chain->next;
     *pi = chain->si;
 
-    // Compute sample PDF and return the BSSRDF value
+    // Compute sample PDF and return the spatial BSSRDF term $\Sp$
     *pdf = Pdf_Sp(*pi) / nFound;
     return Sp(*pi);
 }
 
 Float SeparableBSSRDF::Pdf_Sp(const SurfaceInteraction &pi) const {
-    // Express $\pti-\pto$ and $N_i$ with respect to local coordinates at $\pto$
+    // Express $\pti-\pto$ and $\bold{n}_i$ with respect to local coordinates at
+    // $\pto$
     Vector3f d = po.p - pi.p;
     Vector3f dLocal(Dot(ss, d), Dot(ts, d), Dot(ns, d));
     Normal3f nLocal(Dot(ss, pi.n), Dot(ts, pi.n), Dot(ns, pi.n));

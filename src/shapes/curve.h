@@ -69,8 +69,8 @@ class Curve : public Shape {
           uMin(uMin),
           uMax(uMax) {}
     Bounds3f ObjectBound() const;
-    bool Intersect(const Ray &ray, Float *tHit,
-                   SurfaceInteraction *isect) const;
+    bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
+                   bool testAlphaTexture) const;
     Float Area() const;
     Interaction Sample(const Point2f &u) const;
 

@@ -80,10 +80,10 @@ class RealisticCamera : public Camera {
         return elementInterfaces.back().apertureRadius;
     }
     bool TraceLensesFromFilm(const Ray &ray, Ray *rOut) const;
-    static bool IntersectSphericalElement(Float radius, Float center,
+    static bool IntersectSphericalElement(Float radius, Float zCenter,
                                           const Ray &ray, Float *t,
                                           Normal3f *n);
-    bool TraceLensesFromScene(const Ray &ray, Ray *rOut) const;
+    bool TraceLensesFromScene(const Ray &rCamera, Ray *rOut) const;
     void DrawLensSystem() const;
     void DrawRayPathFromFilm(const Ray &r, bool arrow,
                              bool toOpticalIntercept) const;
