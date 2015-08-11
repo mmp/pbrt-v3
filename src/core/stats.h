@@ -180,8 +180,8 @@ class ProfilePhase {
     // ProfilePhase Public Methods
     ProfilePhase(Prof p) {
         categoryBit = (1 << (int)p);
-        profilerState |= categoryBit;
         reset = (profilerState & categoryBit) == 0;
+        profilerState |= categoryBit;
     }
     ~ProfilePhase() {
         if (reset) profilerState &= ~categoryBit;
