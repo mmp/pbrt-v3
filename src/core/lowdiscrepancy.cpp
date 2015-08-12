@@ -36,7 +36,7 @@
 #include "lowdiscrepancy.h"
 
 // Low Discrepancy Data Definitions
-const int primes[kPrimeTableSize] = {
+const int Primes[PrimeTableSize] = {
     2, 3, 5, 7, 11,
     // Subsequent prime numbers
     13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89,
@@ -120,7 +120,7 @@ const int primes[kPrimeTableSize] = {
     7703, 7717, 7723, 7727, 7741, 7753, 7757, 7759, 7789, 7793, 7817, 7823,
     7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919};
 
-const int primeSums[kPrimeTableSize] = {
+const int PrimeSums[PrimeTableSize] = {
     0, 2, 5, 10, 17,
     // Subsequent prime sums
     28, 41, 58, 77, 100, 129, 160, 197, 238, 281, 328, 381, 440, 501, 568, 639,
@@ -2508,14 +2508,14 @@ std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng) {
     std::vector<uint16_t> perms;
     // Allocate space in _perms_ for radical inverse permutations
     int permArraySize = 0;
-    for (int i = 0; i < kPrimeTableSize; ++i) permArraySize += primes[i];
+    for (int i = 0; i < PrimeTableSize; ++i) permArraySize += Primes[i];
     perms.resize(permArraySize);
     uint16_t *p = &perms[0];
-    for (int i = 0; i < kPrimeTableSize; ++i) {
+    for (int i = 0; i < PrimeTableSize; ++i) {
         // Generate random permutation for $i$th prime base
-        for (int j = 0; j < primes[i]; ++j) p[j] = j;
-        Shuffle(p, primes[i], 1, rng);
-        p += primes[i];
+        for (int j = 0; j < Primes[i]; ++j) p[j] = j;
+        Shuffle(p, Primes[i], 1, rng);
+        p += Primes[i];
     }
     return perms;
 }

@@ -48,10 +48,10 @@
 // Low Discrepancy Declarations
 Float RadicalInverse(int baseIndex, uint64_t a);
 std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng);
-static constexpr int kPrimeTableSize = 1000;
-extern const int primes[kPrimeTableSize];
+static constexpr int PrimeTableSize = 1000;
+extern const int Primes[PrimeTableSize];
 Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm);
-extern const int primeSums[kPrimeTableSize];
+extern const int PrimeSums[PrimeTableSize];
 extern uint32_t CMaxMinDist[32 * 32];
 inline uint64_t SobolIntervalToIndex(const uint32_t log2Resolution,
                                      uint32_t sampleNum, const Point2i &p);
@@ -104,7 +104,7 @@ inline uint32_t ReverseMultiplyGenerator(const uint32_t *C, uint32_t a) {
 
 inline Float SampleGeneratorMatrix(const uint32_t *C, uint32_t a,
                                    uint32_t scramble = 0) {
-    return (ReverseMultiplyGenerator(C, a) ^ scramble) * 0x1p-32f /* 1/2^32 */;
+    return (ReverseMultiplyGenerator(C, a) ^ scramble) * 0x1p-32f;
 }
 
 inline uint32_t GrayCode(uint32_t v) { return (v >> 1) ^ v; }
@@ -208,9 +208,9 @@ inline Float SobolSample(int64_t index, int dimension, uint64_t scramble = 0) {
 }
 
 inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
-    Assert(dimension < kNumSobolDimensions);
+    Assert(dimension < NumSobolDimensions);
     uint32_t v = scramble;
-    for (int i = dimension * kSobolMatrixSize + kSobolMatrixSize - 1; a != 0;
+    for (int i = dimension * SobolMatrixSize + SobolMatrixSize - 1; a != 0;
          a >>= 1, --i)
         if (a & 1) v ^= SobolMatrices32[i];
     return v * 0x1p-32f; /* 1/2^32 */
@@ -218,12 +218,12 @@ inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
 
 inline double SobolSampleDouble(int64_t index, int dimension,
                                 uint64_t scramble) {
-    Assert(dimension < kNumSobolDimensions);
-    uint64_t result = scramble & ~ - (1LL << kSobolMatrixSize);
-    for (int i = dimension * kSobolMatrixSize + kSobolMatrixSize - 1;
-         index != 0; index >>= 1, --i)
+    Assert(dimension < NumSobolDimensions);
+    uint64_t result = scramble & ~ - (1LL << SobolMatrixSize);
+    for (int i = dimension * SobolMatrixSize + SobolMatrixSize - 1; index != 0;
+         index >>= 1, --i)
         if (index & 1) result ^= SobolMatrices64[i];
-    return result * (1.0 / (1ULL << kSobolMatrixSize));
+    return result * (1.0 / (1ULL << SobolMatrixSize));
 }
 
 #endif  // PBRT_CORE_LOWDISCREPANCY_H

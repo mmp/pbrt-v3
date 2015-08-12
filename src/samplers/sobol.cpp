@@ -43,9 +43,9 @@ int64_t SobolSampler::GetIndexForSample(int64_t sampleNum) const {
 }
 
 Float SobolSampler::SampleDimension(int64_t index, int dimension) const {
-    if (dimension >= kNumSobolDimensions)
+    if (dimension >= NumSobolDimensions)
         Severe("SobolSampler can only sample up to %d dimensions! Exiting.",
-               kNumSobolDimensions);
+               NumSobolDimensions);
     Float s = SobolSample(index, dimension);
     // Remap Sobol$'$ dimensions used for pixel samples
     if (dimension == 0 || dimension == 1) {

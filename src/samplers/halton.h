@@ -54,7 +54,7 @@ class HaltonSampler : public GlobalSampler {
 
   private:
     // HaltonSampler Private Data
-    std::vector<uint16_t> radicalInversePermutations;
+    static std::vector<uint16_t> radicalInversePermutations;
     Point2i baseScales, baseExponents;
     int sampleStride;
     int multInverse[2];
@@ -64,10 +64,10 @@ class HaltonSampler : public GlobalSampler {
 
     // HaltonSampler Private Methods
     const uint16_t *PermutationForDimension(int dim) const {
-        if (dim >= kPrimeTableSize)
+        if (dim >= PrimeTableSize)
             Severe("HaltonSampler can only sample %d dimensions.",
-                   kPrimeTableSize);
-        return &radicalInversePermutations[primeSums[dim]];
+                   PrimeTableSize);
+        return &radicalInversePermutations[PrimeSums[dim]];
     }
 };
 

@@ -64,8 +64,10 @@ static void extendedGCD(uint64_t a, uint64_t b, int64_t *x, int64_t *y) {
 HaltonSampler::HaltonSampler(int samplesPerPixel, const Bounds2i &sampleBounds)
     : GlobalSampler(samplesPerPixel) {
     // Generate random digit permutations for Halton sampler
-    RNG permRNG;
-    radicalInversePermutations = ComputeRadicalInversePermutations(permRNG);
+    if (radicalInversePermutations.size() == 0) {
+        RNG rng;
+        radicalInversePermutations = ComputeRadicalInversePermutations(rng);
+    }
 
     // Find radical inverse base scales and exponents that cover sampling area
     Vector2i res = sampleBounds.pMax - sampleBounds.pMin;
@@ -88,6 +90,7 @@ HaltonSampler::HaltonSampler(int samplesPerPixel, const Bounds2i &sampleBounds)
     multInverse[1] = multiplicativeInverse(baseScales[0], baseScales[1]);
 }
 
+std::vector<uint16_t> HaltonSampler::radicalInversePermutations;
 int64_t HaltonSampler::GetIndexForSample(int64_t sampleNum) const {
     if (currentPixel != pixelForOffset) {
         // Compute Halton sample offset for _currentPixel_
