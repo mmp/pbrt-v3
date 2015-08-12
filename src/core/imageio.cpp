@@ -76,7 +76,7 @@ std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
     }
     Error(
         "Unable to load image stored in format \"%s\" for filename \"%s\". "
-        "Returning a constant grey image instead.",
+        "Returning a constant gray image instead.",
         strrchr(name.c_str(), '.') ? (strrchr(name.c_str(), '.') + 1)
                                    : "(unknown)",
         name.c_str());
@@ -163,6 +163,14 @@ static RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
                                  int *height) {
     EXRImage img;
     const char *err = nullptr;
+    if (ParseMultiChannelEXRHeaderFromFile(&img, name.c_str(), &err) != 0) {
+        Error("Unable to read \"%s\": %s", name.c_str(), err);
+        return nullptr;
+    }
+    for (int i = 0; i < img.num_channels; ++i) {
+        if (img.requested_pixel_types[i] == TINYEXR_PIXELTYPE_HALF)
+            img.requested_pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT;
+    }
     if (LoadMultiChannelEXRFromFile(&img, name.c_str(), &err) != 0) {
         Error("Unable to read \"%s\": %s", name.c_str(), err);
         return nullptr;
@@ -198,6 +206,8 @@ static RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
             }
         }
     }
+    FreeEXRImage(&img);
+
     return ret;
 }
 
@@ -208,9 +218,12 @@ static void WriteImageEXR(const std::string &name, const Float *pixels,
     image.num_channels = 3;
     const char *channel_names[] = {"B", "G", "R"};
     image.channel_names = channel_names;
-    int pixel_types[3] = {TINYEXR_PIXELTYPE_HALF, TINYEXR_PIXELTYPE_HALF,
-                          TINYEXR_PIXELTYPE_HALF};
+    int pixel_types[3] = {TINYEXR_PIXELTYPE_FLOAT, TINYEXR_PIXELTYPE_FLOAT,
+                          TINYEXR_PIXELTYPE_FLOAT};
     image.pixel_types = pixel_types;
+    int requestedPixelTypes[] = {TINYEXR_PIXELTYPE_HALF, TINYEXR_PIXELTYPE_HALF,
+                                 TINYEXR_PIXELTYPE_HALF};
+    image.requested_pixel_types = requestedPixelTypes;
     image.width = xRes;
     image.height = yRes;
     image.images = new unsigned char *[3];
