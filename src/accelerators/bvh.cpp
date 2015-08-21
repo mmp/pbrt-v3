@@ -79,7 +79,6 @@ struct MortonPrimitive {
     uint32_t mortonCode;
 };
 
-inline uint32_t LeftShift3(uint32_t x);
 struct LBVHTreelet {
     int startIndex, nPrimitives;
     BVHBuildNode *buildNodes;
@@ -252,6 +251,10 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                         return pi.centroid[dim] < pmid;
                     });
                 mid = midPtr - &primitiveInfo[0];
+                // For lots of prims with large overlapping bounding boxes, this
+                // may fail to partition; in that case don't break and fall
+                // through
+                // to EqualCounts.
                 if (mid != start && mid != end) break;
             }
             case SplitMethod::EqualCounts: {
@@ -594,7 +597,7 @@ BVHBuildNode *BVHAccel::buildUpperSAH(MemoryArena &arena,
     return node;
 }
 
-int BVHAccel::flattenBVHTree(BVHBuildNode *node, int *offset, int depth) {
+int BVHAccel::flattenBVHTree(BVHBuildNode *node, int *offset) {
     LinearBVHNode *linearNode = &nodes[*offset];
     linearNode->bounds = node->bounds;
     int myOffset = (*offset)++;
@@ -607,9 +610,9 @@ int BVHAccel::flattenBVHTree(BVHBuildNode *node, int *offset, int depth) {
         // Create interior flattened BVH node
         linearNode->axis = node->splitAxis;
         linearNode->nPrimitives = 0;
-        flattenBVHTree(node->children[0], offset, depth + 1);
+        flattenBVHTree(node->children[0], offset);
         linearNode->secondChildOffset =
-            flattenBVHTree(node->children[1], offset, depth + 1);
+            flattenBVHTree(node->children[1], offset);
     }
     return myOffset;
 }

@@ -84,7 +84,7 @@ class BVHAccel : public Aggregate {
     BVHBuildNode *buildUpperSAH(MemoryArena &arena,
                                 std::vector<BVHBuildNode *> &treeletRoots,
                                 int start, int end, int *totalNodes) const;
-    int flattenBVHTree(BVHBuildNode *node, int *offset, int depth = 0);
+    int flattenBVHTree(BVHBuildNode *node, int *offset);
 
     // BVHAccel Private Data
     const int maxPrimsInNode;
