@@ -48,7 +48,8 @@ class SobolSampler : public GlobalSampler {
     // SobolSampler Public Methods
     std::unique_ptr<Sampler> Clone(int seed);
     SobolSampler(int64_t samplesPerPixel, const Bounds2i &sampleBounds)
-        : GlobalSampler(RoundUpPow2(samplesPerPixel)) {
+        : GlobalSampler(RoundUpPow2(samplesPerPixel)),
+          sampleBounds(sampleBounds) {
         if (!IsPowerOf2(samplesPerPixel))
             Warning("Non power-of-two sample count rounded up to %" PRId64
                     "for SobolSampler.",
@@ -63,6 +64,7 @@ class SobolSampler : public GlobalSampler {
 
   private:
     // SobolSampler Private Data
+    const Bounds2i sampleBounds;
     int resolution, log2Resolution;
 };
 
