@@ -166,15 +166,9 @@ class ParamSet;
 template <typename T>
 struct ParamSetItem;
 struct Options {
-    Options() {
-        nCores = 0;
-        quickRender = quiet = openWindow = verbose = false;
-        imageFile = "";
-    }
-    int nCores;
-    bool quickRender;
-    bool quiet, verbose;
-    bool openWindow;
+    int nThreads = 0;
+    bool quickRender = false;
+    bool quiet = false, verbose = false;
     std::string imageFile;
 };
 
@@ -283,7 +277,7 @@ inline double NextFloatDown(double v, int delta = 1) {
     return BitsToFloat(ui);
 }
 
-inline Float gamma(int n) {
+inline constexpr Float gamma(int n) {
     return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 }
 

@@ -51,7 +51,7 @@ class Shape {
   public:
     // Shape Interface
     Shape(const Transform *ObjectToWorld, const Transform *WorldToObject,
-          bool ReverseOrientation);
+          bool reverseOrientation);
     virtual ~Shape();
     virtual Bounds3f ObjectBound() const = 0;
     virtual Bounds3f WorldBound() const;
@@ -74,8 +74,8 @@ class Shape {
 
     // Shape Public Data
     const Transform *ObjectToWorld, *WorldToObject;
-    const bool ReverseOrientation;
-    const bool TransformSwapsHandedness;
+    const bool reverseOrientation;
+    const bool transformSwapsHandedness;
 };
 
 #endif  // PBRT_CORE_SHAPE_H

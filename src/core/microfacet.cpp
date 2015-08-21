@@ -156,7 +156,7 @@ Float TrowbridgeReitzDistribution::D(const Vector3f &wh) const {
     Float e =
         (Cos2Phi(wh) / (alphax * alphax) + Sin2Phi(wh) / (alphay * alphay)) *
         tan2Theta;
-    return 1. / (Pi * alphax * alphay * cos4Theta * (1. + e) * (1. + e));
+    return 1 / (Pi * alphax * alphay * cos4Theta * (1 + e) * (1 + e));
 }
 
 Float BeckmannDistribution::Lambda(const Vector3f &w) const {
@@ -165,9 +165,9 @@ Float BeckmannDistribution::Lambda(const Vector3f &w) const {
     // Compute _alpha_ for direction _w_
     Float alpha =
         std::sqrt(Cos2Phi(w) * alphax * alphax + Sin2Phi(w) * alphay * alphay);
-    Float a = 1.f / (alpha * absTanTheta);
-    if (a >= 1.6) return 0.f;
-    return (1.f - 1.259f * a + 0.396f * a * a) / (3.535f * a + 2.181f * a * a);
+    Float a = 1 / (alpha * absTanTheta);
+    if (a >= 1.6f) return 0;
+    return (1 - 1.259f * a + 0.396f * a * a) / (3.535f * a + 2.181f * a * a);
 }
 
 Float TrowbridgeReitzDistribution::Lambda(const Vector3f &w) const {
@@ -177,7 +177,7 @@ Float TrowbridgeReitzDistribution::Lambda(const Vector3f &w) const {
     Float alpha =
         std::sqrt(Cos2Phi(w) * alphax * alphax + Sin2Phi(w) * alphay * alphay);
     Float alpha2Tan2Theta = (alpha * absTanTheta) * (alpha * absTanTheta);
-    return (-1.f + std::sqrt(1.f + alpha2Tan2Theta)) / 2.f;
+    return (-1 + std::sqrt(1.f + alpha2Tan2Theta)) / 2;
 }
 
 Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,

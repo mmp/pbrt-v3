@@ -62,9 +62,9 @@ class Curve : public Shape {
   public:
     // Curve Public Methods
     Curve(const Transform *ObjectToWorld, const Transform *WorldToObject,
-          bool ReverseOrientation, const std::shared_ptr<CurveCommon> &common,
+          bool reverseOrientation, const std::shared_ptr<CurveCommon> &common,
           Float uMin, Float uMax)
-        : Shape(ObjectToWorld, WorldToObject, ReverseOrientation),
+        : Shape(ObjectToWorld, WorldToObject, reverseOrientation),
           common(common),
           uMin(uMin),
           uMax(uMax) {}

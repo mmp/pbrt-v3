@@ -48,17 +48,16 @@
 class MarbleTexture : public Texture<Spectrum> {
   public:
     // MarbleTexture Public Methods
-    ~MarbleTexture() { delete mapping; }
-    MarbleTexture(int octaves, Float omega, Float scale, Float variation,
-                  TextureMapping3D *mapping)
-        : octaves(octaves),
+    MarbleTexture(std::unique_ptr<TextureMapping3D> mapping, int octaves,
+                  Float omega, Float scale, Float variation)
+        : mapping(std::move(mapping)),
+          octaves(octaves),
           omega(omega),
           scale(scale),
-          variation(variation),
-          mapping(mapping) {}
-    Spectrum Evaluate(const SurfaceInteraction &isect) const {
+          variation(variation) {}
+    Spectrum Evaluate(const SurfaceInteraction &si) const {
         Vector3f dpdx, dpdy;
-        Point3f p = mapping->Map(isect, &dpdx, &dpdy);
+        Point3f p = mapping->Map(si, &dpdx, &dpdy);
         p *= scale;
         Float marble =
             p.y +
@@ -90,9 +89,9 @@ class MarbleTexture : public Texture<Spectrum> {
 
   private:
     // MarbleTexture Private Data
+    std::unique_ptr<TextureMapping3D> mapping;
     const int octaves;
     const Float omega, scale, variation;
-    const TextureMapping3D *mapping;
 };
 
 Texture<Float> *CreateMarbleFloatTexture(const Transform &tex2world,

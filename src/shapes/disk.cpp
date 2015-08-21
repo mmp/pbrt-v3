@@ -72,7 +72,7 @@ bool Disk::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Float rHit = std::sqrt(dist2);
     Float oneMinusV = ((rHit - innerRadius) / (radius - innerRadius));
     Float v = 1 - oneMinusV;
-    Vector3f dpdu(-phiMax * pHit.y, phiMax * pHit.x, 0.);
+    Vector3f dpdu(-phiMax * pHit.y, phiMax * pHit.x, 0);
     Vector3f dpdv =
         Vector3f(pHit.x, pHit.y, 0.) * (innerRadius - radius) / rHit;
     Normal3f dndu(0, 0, 0), dndv(0, 0, 0);
@@ -81,7 +81,7 @@ bool Disk::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     pHit.z = height;
 
     // Compute error bounds for disk intersection
-    Vector3f pError(0., 0., 0.);
+    Vector3f pError(0, 0, 0);
 
     // Initialize _SurfaceInteraction_ from parametric information
     *isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v),
@@ -127,7 +127,7 @@ Interaction Disk::Sample(const Point2f &u) const {
     Point2f pd = ConcentricSampleDisk(u);
     Point3f pObj(pd.x * radius, pd.y * radius, height);
     it.n = Normalize((*ObjectToWorld)(Normal3f(0, 0, 1)));
-    if (ReverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1.f;
     Vector3f pObjError(0, 0, 0);
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
     return it;

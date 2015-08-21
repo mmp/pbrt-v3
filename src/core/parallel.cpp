@@ -140,14 +140,14 @@ static void workerThreadFunc(int tIndex) {
 void ParallelFor(const std::function<void(int)> &func, int count,
                  int chunkSize) {
     // Run iterations immediately if not using threads or if _count_ is small
-    if (PbrtOptions.nCores == 1 || count < chunkSize) {
+    if (PbrtOptions.nThreads == 1 || count < chunkSize) {
         for (int i = 0; i < count; ++i) func(i);
         return;
     }
 
     // Launch worker threads if needed
     if (threads.size() == 0) {
-        Assert(PbrtOptions.nCores != 1);
+        Assert(PbrtOptions.nThreads != 1);
         threadIndex = 0;
         for (int i = 0; i < NumSystemCores() - 1; ++i)
             threads.push_back(std::thread(workerThreadFunc, i + 1));
@@ -201,10 +201,10 @@ void ParallelFor(const std::function<void(int)> &func, int count,
 
 thread_local int threadIndex;
 int MaxThreadIndex() {
-    if (PbrtOptions.nCores != 1) {
+    if (PbrtOptions.nThreads != 1) {
         // Launch worker threads if needed
         if (threads.size() == 0) {
-            Assert(PbrtOptions.nCores != 1);
+            Assert(PbrtOptions.nThreads != 1);
             threadIndex = 0;
             for (int i = 0; i < NumSystemCores() - 1; ++i)
                 threads.push_back(std::thread(workerThreadFunc, i + 1));
@@ -214,14 +214,14 @@ int MaxThreadIndex() {
 }
 
 void ParallelFor(std::function<void(Point2i)> func, const Point2i &count) {
-    if (PbrtOptions.nCores == 1) {
+    if (PbrtOptions.nThreads == 1) {
         for (int y = 0; y < count.y; ++y)
             for (int x = 0; x < count.x; ++x) func(Point2i(x, y));
         return;
     }
     // Launch worker threads if needed
     if (threads.size() == 0) {
-        Assert(PbrtOptions.nCores != 1);
+        Assert(PbrtOptions.nThreads != 1);
         threadIndex = 0;
         for (int i = 0; i < NumSystemCores() - 1; ++i)
             threads.push_back(std::thread(workerThreadFunc, i + 1));
@@ -273,7 +273,7 @@ void ParallelFor(std::function<void(Point2i)> func, const Point2i &count) {
 }
 
 int NumSystemCores() {
-    if (PbrtOptions.nCores > 0) return PbrtOptions.nCores;
+    if (PbrtOptions.nThreads > 0) return PbrtOptions.nThreads;
 #ifdef PBRT_IS_WINDOWS
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);

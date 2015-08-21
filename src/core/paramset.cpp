@@ -135,18 +135,16 @@ void ParamSet::AddBlackbodySpectrum(const std::string &name,
     EraseSpectrum(name);
     Assert(nValues % 2 == 0);  // temperature (K), scale, ...
     nValues /= 2;
-    Spectrum *s = new Spectrum[nValues];
-    Float *v = new Float[nCIESamples];
+    std::unique_ptr<Spectrum[]> s(new Spectrum[nValues]);
+    std::unique_ptr<Float[]> v(new Float[nCIESamples]);
     for (int i = 0; i < nValues; ++i) {
-        BlackbodyNormalized(CIE_lambda, nCIESamples, values[2 * i], v);
+        BlackbodyNormalized(CIE_lambda, nCIESamples, values[2 * i], v.get());
         s[i] = values[2 * i + 1] *
-               Spectrum::FromSampled(CIE_lambda, v, nCIESamples);
+               Spectrum::FromSampled(CIE_lambda, v.get(), nCIESamples);
     }
     std::shared_ptr<ParamSetItem<Spectrum>> psi(
-        new ParamSetItem<Spectrum>(name, s, nValues));
+        new ParamSetItem<Spectrum>(name, s.get(), nValues));
     spectra.push_back(psi);
-    delete[] s;
-    delete[] v;
 }
 
 void ParamSet::AddSampledSpectrum(const std::string &name, const Float *values,
@@ -698,8 +696,8 @@ std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTexture(
                 "for parameter \"%s\"",
                 name.c_str(), n.c_str());
     }
-    Spectrum val =
-        geomParams.FindOneSpectrum(n, materialParams.FindOneSpectrum(n, def));
+    Spectrum val = materialParams.FindOneSpectrum(n, def);
+    val = geomParams.FindOneSpectrum(n, val);
     return std::make_shared<ConstantTexture<Spectrum>>(val);
 }
 

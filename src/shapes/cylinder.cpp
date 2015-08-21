@@ -58,7 +58,7 @@ bool Cylinder::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     EFloat dx(ray.d.x, dErr.x), dy(ray.d.y, dErr.y), dz(ray.d.z, dErr.z);
     EFloat a = dx * dx + dy * dy;
     EFloat b = 2 * (dx * ox + dy * oy);
-    EFloat c = ox * ox + oy * oy - radius * radius;
+    EFloat c = ox * ox + oy * oy - EFloat(radius) * EFloat(radius);
 
     // Solve quadratic equation for _t_ values
     EFloat t0, t1;
@@ -128,7 +128,7 @@ bool Cylinder::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
                              (f * F - g * E) * invEGF2 * dpdv);
 
     // Compute error bounds for cylinder intersection
-    Vector3f pError = gamma(3) * Abs(Vector3f(pHit.x, pHit.y, 0.f));
+    Vector3f pError = gamma(3) * Abs(Vector3f(pHit.x, pHit.y, 0));
 
     // Initialize _SurfaceInteraction_ from parametric information
     *isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v),
@@ -154,7 +154,7 @@ bool Cylinder::IntersectP(const Ray &r, bool testAlphaTexture) const {
     EFloat dx(ray.d.x, dErr.x), dy(ray.d.y, dErr.y), dz(ray.d.z, dErr.z);
     EFloat a = dx * dx + dy * dy;
     EFloat b = 2 * (dx * ox + dy * oy);
-    EFloat c = ox * ox + oy * oy - radius * radius;
+    EFloat c = ox * ox + oy * oy - EFloat(radius) * EFloat(radius);
 
     // Solve quadratic equation for _t_ values
     EFloat t0, t1;
@@ -197,7 +197,7 @@ bool Cylinder::IntersectP(const Ray &r, bool testAlphaTexture) const {
     return true;
 }
 
-Float Cylinder::Area() const { return (zMax - zMin) * phiMax * radius; }
+Float Cylinder::Area() const { return (zMax - zMin) * radius * phiMax; }
 
 Interaction Cylinder::Sample(const Point2f &u) const {
     Interaction it;
@@ -205,7 +205,7 @@ Interaction Cylinder::Sample(const Point2f &u) const {
     Float t = u[1] * phiMax;
     Point3f pObj = Point3f(radius * std::cos(t), radius * std::sin(t), z);
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, 0)));
-    if (ReverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1.f;
     // Reproject _pObj_ to cylinder surface and compute _pObjError_
     Float hitRad = std::sqrt(pObj.x * pObj.x + pObj.y * pObj.y);
     pObj.x *= radius / hitRad;

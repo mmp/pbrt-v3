@@ -45,7 +45,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena,
                                int depth) const {
     ProfilePhase p(Prof::SamplerIntegratorLi);
-    Spectrum L(0.f), alpha(1.f);
+    Spectrum L(0.f), beta(1.f);
     RayDifferential ray(r);
     bool specularBounce = false;
     for (int bounces = 0;; ++bounces) {
@@ -55,14 +55,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Sample the participating medium, if present
         MediumInteraction mi;
-        if (ray.medium) alpha *= ray.medium->Sample(ray, sampler, arena, &mi);
-        if (alpha.IsBlack()) break;
+        if (ray.medium) beta *= ray.medium->Sample(ray, sampler, arena, &mi);
+        if (beta.IsBlack()) break;
 
         // Handle an interaction with a medium or a surface
         if (mi.IsValid()) {
             // Handle medium scattering case
             Vector3f wo = -ray.d, wi;
-            L += alpha * UniformSampleOneLight(mi, scene, sampler, arena, true);
+            L += beta * UniformSampleOneLight(mi, scene, sampler, arena, true);
             Point2f phaseSample = sampler.Get2D();
             mi.phase->Sample_p(wo, &wi, phaseSample);
             ray = mi.SpawnRay(wi);
@@ -73,10 +73,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             if (bounces == 0 || specularBounce) {
                 // Add emitted light at path vertex or from the environment
                 if (foundIntersection)
-                    L += alpha * isect.Le(-ray.d);
+                    L += beta * isect.Le(-ray.d);
                 else
                     for (const auto &light : scene.lights)
-                        L += alpha * light->Le(ray);
+                        L += beta * light->Le(ray);
             }
             if (!foundIntersection || bounces >= maxDepth) break;
 
@@ -90,7 +90,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
             // Sample illumination from lights to find attenuated path
             // contribution
-            L += alpha *
+            L += beta *
                  UniformSampleOneLight(isect, scene, sampler, arena, true);
 
             // Sample BSDF to get new path direction
@@ -100,8 +100,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                               BSDF_ALL, &flags);
             if (f.IsBlack() || pdf == 0.f) break;
-            alpha *= f * AbsDot(wi, isect.shading.n) / pdf;
-            Assert(std::isinf(alpha.y()) == false);
+            beta *= f * AbsDot(wi, isect.shading.n) / pdf;
+            Assert(std::isinf(beta.y()) == false);
             specularBounce = (flags & BSDF_SPECULAR) != 0;
             ray = isect.SpawnRay(wi);
 
@@ -112,23 +112,23 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 Spectrum S = isect.bssrdf->Sample_S(
                     scene, sampler.Get1D(), sampler.Get2D(), arena, &pi, &pdf);
 #ifndef NDEBUG
-                Assert(std::isinf(alpha.y()) == false);
+                Assert(std::isinf(beta.y()) == false);
 #endif
                 if (S.IsBlack() || pdf == 0) break;
-                alpha *= S / pdf;
+                beta *= S / pdf;
 
                 // Account for the attenuated direct subsurface scattering
                 // component
-                L += alpha *
+                L += beta *
                      UniformSampleOneLight(pi, scene, sampler, arena, true);
 
                 // Account for the indirect subsurface scattering component
                 Spectrum f = pi.bsdf->Sample_f(pi.wo, &wi, sampler.Get2D(),
                                                &pdf, BSDF_ALL, &flags);
                 if (f.IsBlack() || pdf == 0.f) break;
-                alpha *= f * AbsDot(wi, pi.shading.n) / pdf;
+                beta *= f * AbsDot(wi, pi.shading.n) / pdf;
 #ifndef NDEBUG
-                Assert(std::isinf(alpha.y()) == false);
+                Assert(std::isinf(beta.y()) == false);
 #endif
                 specularBounce = (flags & BSDF_SPECULAR) != 0;
                 ray = pi.SpawnRay(wi);
@@ -137,10 +137,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Possibly terminate the path
         if (bounces > 3) {
-            Float continueProbability = std::min((Float).5, alpha.y());
+            Float continueProbability = std::min((Float).5, beta.y());
             if (sampler.Get1D() > continueProbability) break;
-            alpha /= continueProbability;
-            Assert(std::isinf(alpha.y()) == false);
+            beta /= continueProbability;
+            Assert(std::isinf(beta.y()) == false);
         }
     }
     return L;

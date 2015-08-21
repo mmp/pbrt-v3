@@ -49,7 +49,7 @@ class DiffuseAreaLight : public AreaLight {
   public:
     // DiffuseAreaLight Public Methods
     DiffuseAreaLight(const Transform &LightToWorld,
-                     const MediumInterface &medium, const Spectrum &Le,
+                     const MediumInterface &mediumInterface, const Spectrum &Le,
                      int nSamples, const std::shared_ptr<Shape> &shape);
     Spectrum L(const Interaction &intr, const Vector3f &w) const {
         return Dot(intr.n, w) > 0.f ? Lemit : Spectrum(0.f);
@@ -68,7 +68,7 @@ class DiffuseAreaLight : public AreaLight {
     // DiffuseAreaLight Protected Data
     const Spectrum Lemit;
     std::shared_ptr<Shape> shape;
-    Float area;
+    const Float area;
 };
 
 std::shared_ptr<AreaLight> CreateDiffuseAreaLight(

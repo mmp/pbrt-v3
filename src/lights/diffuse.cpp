@@ -39,15 +39,13 @@
 
 // DiffuseAreaLight Method Definitions
 DiffuseAreaLight::DiffuseAreaLight(const Transform &LightToWorld,
-                                   const MediumInterface &medium,
+                                   const MediumInterface &mediumInterface,
                                    const Spectrum &Lemit, int nSamples,
                                    const std::shared_ptr<Shape> &shape)
     : AreaLight(LightToWorld, mediumInterface, nSamples),
       Lemit(Lemit),
-      shape(shape) {
-    area = shape->Area();
-}
-
+      shape(shape),
+      area(shape->Area()) {}
 Spectrum DiffuseAreaLight::Power() const { return Lemit * area * Pi; }
 
 Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
@@ -67,13 +65,13 @@ Float DiffuseAreaLight::Pdf_Li(const Interaction &ref,
 }
 
 Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
-                                     Float time, Ray *ray, Normal3f *nLight,
+                                     Float time, Ray *ray, Normal3f *nL,
                                      Float *pdfPos, Float *pdfDir) const {
     // Sample a point on the area light's _Shape_, _pShape_
     Interaction pShape = shape->Sample(u1);
     pShape.mediumInterface = mediumInterface;
     *pdfPos = shape->Pdf(pShape);
-    *nLight = pShape.n;
+    *nL = pShape.n;
 
     // Sample a cosine-weighted outgoing direction _w_ for area light
     Vector3f w = CosineSampleHemisphere(u2);

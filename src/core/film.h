@@ -48,17 +48,17 @@
 
 // FilmTilePixel Declarations
 struct FilmTilePixel {
-    FilmTilePixel() : contribSum(0.), filterWeightSum(0) {}
-    Spectrum contribSum;
-    Float filterWeightSum;
+    Spectrum contribSum = 0.f;
+    Float filterWeightSum = 0.f;
 };
 
 // Film Declarations
 class Film {
   public:
     // Film Public Methods
-    Film(const Point2i &resolution, const Bounds2f &cropWindow, Filter *filter,
-         Float diagonal, const std::string &filename, Float scale, Float gamma);
+    Film(const Point2i &resolution, const Bounds2f &cropWindow,
+         std::unique_ptr<Filter> filter, Float diagonal,
+         const std::string &filename, Float scale, Float gamma);
     Bounds2i GetSampleBounds() const;
     Bounds2f GetPhysicalExtent() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
@@ -78,14 +78,8 @@ class Film {
   private:
     // Film Private Data
     struct Pixel {
-        Pixel() {
-            for (int i = 0; i < 3; ++i) {
-                xyz[i] = splatXYZ[i] = (Float)0;
-            }
-            filterWeightSum = 0;
-        }
-        Float xyz[3];
-        Float filterWeightSum;
+        Float xyz[3] = {0, 0, 0};
+        Float filterWeightSum = 0;
         AtomicFloat splatXYZ[3];
         Float pad;
     };
@@ -181,6 +175,6 @@ class FilmTile {
     friend class Film;
 };
 
-Film *CreateFilm(const ParamSet &params, Filter *filter);
+Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter);
 
 #endif  // PBRT_CORE_FILM_H

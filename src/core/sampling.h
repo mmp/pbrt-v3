@@ -55,12 +55,12 @@ struct Distribution1D {
     // Distribution1D Public Methods
     Distribution1D(const Float *f, int n) : func(f, f + n), cdf(n + 1) {
         // Compute integral of step function at $x_i$
-        cdf[0] = 0.f;
+        cdf[0] = 0;
         for (int i = 1; i < n + 1; ++i) cdf[i] = cdf[i - 1] + func[i - 1] / n;
 
         // Transform step function integral into CDF
         funcInt = cdf[n];
-        if (funcInt == 0.f) {
+        if (funcInt == 0) {
             for (int i = 1; i < n + 1; ++i) cdf[i] = Float(i) / Float(n);
         } else {
             for (int i = 1; i < n + 1; ++i) cdf[i] /= funcInt;
@@ -153,7 +153,7 @@ void Shuffle(T *samp, int count, int nDimensions, RNG &rng) {
 
 inline Vector3f CosineSampleHemisphere(const Point2f &u) {
     Point2f d = ConcentricSampleDisk(u);
-    Float z = std::sqrt(std::max((Float)0., 1 - d.x * d.x - d.y * d.y));
+    Float z = std::sqrt(std::max((Float)0, 1 - d.x * d.x - d.y * d.y));
     return Vector3f(d.x, d.y, z);
 }
 

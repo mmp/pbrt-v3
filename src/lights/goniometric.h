@@ -55,10 +55,10 @@ class GonioPhotometricLight : public Light {
                        Float *pdf, VisibilityTester *vis) const;
     GonioPhotometricLight(const Transform &LightToWorld,
                           const MediumInterface &mediumInterface,
-                          const Spectrum &intensity, const std::string &texname)
-        : Light(LightFlags::DeltaPosition, LightToWorld, mediumInterface),
+                          const Spectrum &I, const std::string &texname)
+        : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
           pLight(LightToWorld(Point3f(0, 0, 0))),
-          intensity(intensity) {
+          I(I) {
         // Create _mipmap_ for _GonioPhotometricLight_
         Point2i resolution;
         std::unique_ptr<RGBSpectrum[]> texels = ReadImage(texname, &resolution);
@@ -86,7 +86,7 @@ class GonioPhotometricLight : public Light {
   private:
     // GonioPhotometricLight Private Data
     const Point3f pLight;
-    const Spectrum intensity;
+    const Spectrum I;
     std::unique_ptr<MIPMap<RGBSpectrum>> mipmap;
 };
 

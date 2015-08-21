@@ -67,9 +67,9 @@ class Triangle : public Shape {
   public:
     // Triangle Public Methods
     Triangle(const Transform *ObjectToWorld, const Transform *WorldToObject,
-             bool ReverseOrientation, const std::shared_ptr<TriangleMesh> &mesh,
+             bool reverseOrientation, const std::shared_ptr<TriangleMesh> &mesh,
              int triNumber)
-        : Shape(ObjectToWorld, WorldToObject, ReverseOrientation), mesh(mesh) {
+        : Shape(ObjectToWorld, WorldToObject, reverseOrientation), mesh(mesh) {
         v = &mesh->vertexIndices[3 * triNumber];
         triMeshBytes += sizeof(*this);
     }

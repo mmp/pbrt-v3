@@ -42,11 +42,11 @@
 // ProjectionLight Method Definitions
 ProjectionLight::ProjectionLight(const Transform &LightToWorld,
                                  const MediumInterface &mediumInterface,
-                                 const Spectrum &intensity,
-                                 const std::string &texname, Float fov)
-    : Light(LightFlags::DeltaPosition, LightToWorld, mediumInterface),
+                                 const Spectrum &I, const std::string &texname,
+                                 Float fov)
+    : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
       pLight(LightToWorld(Point3f(0, 0, 0))),
-      intensity(intensity) {
+      I(I) {
     // Create _ProjectionLight_ MIP map
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> texels = ReadImage(texname, &resolution);
@@ -55,8 +55,8 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
 
     // Initialize _ProjectionLight_ projection matrix
     Float aspect =
-        projectionMap ? (Float(resolution.x) / Float(resolution.y)) : 1.f;
-    if (aspect > 1.f)
+        projectionMap ? (Float(resolution.x) / Float(resolution.y)) : 1;
+    if (aspect > 1)
         screenBounds = Bounds2f(Point2f(-aspect, -1), Point2f(aspect, 1));
     else
         screenBounds =
@@ -75,16 +75,16 @@ Spectrum ProjectionLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                     Vector3f *wi, Float *pdf,
                                     VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
-    *pdf = 1.f;
+    *pdf = 1;
     *vis =
         VisibilityTester(ref, Interaction(pLight, ref.time, mediumInterface));
-    return intensity * Projection(-*wi) / DistanceSquared(pLight, ref.p);
+    return I * Projection(-*wi) / DistanceSquared(pLight, ref.p);
 }
 
 Spectrum ProjectionLight::Projection(const Vector3f &w) const {
     Vector3f wl = WorldToLight(w);
     // Discard directions behind projection light
-    if (wl.z < hither) return 0.f;
+    if (wl.z < hither) return 0;
 
     // Project point onto projection plane and compute light
     Point3f p = lightProjection(Point3f(wl.x, wl.y, wl.z));
@@ -99,7 +99,7 @@ Spectrum ProjectionLight::Power() const {
                 ? Spectrum(projectionMap->Lookup(Point2f(.5f, .5f), .5f),
                            SpectrumType::Illuminant)
                 : Spectrum(1.f)) *
-           intensity * 2.f * Pi * (1.f - cosTotalWidth);
+           I * 2 * Pi * (1.f - cosTotalWidth);
 }
 
 Float ProjectionLight::Pdf_Li(const Interaction &, const Vector3f &) const {
@@ -114,7 +114,7 @@ Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     *nLight = (Normal3f)ray->d;  /// same here
     *pdfPos = 1.f;
     *pdfDir = UniformConePdf(cosTotalWidth);
-    return intensity * Projection(ray->d);
+    return I * Projection(ray->d);
 }
 
 void ProjectionLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,

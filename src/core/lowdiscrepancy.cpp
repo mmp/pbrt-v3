@@ -417,7 +417,7 @@ template <int base>
 static Float RadicalInverseSpecialized(uint64_t a) {
     const Float invBase = (Float)1 / (Float)base;
     uint64_t reversedDigits = 0;
-    Float invBaseN = 1.0f;
+    Float invBaseN = 1;
     while (a) {
         uint64_t next = a / base;
         uint64_t digit = a - next * base;
@@ -433,7 +433,7 @@ static Float ScrambledRadicalInverseSpecialized(const uint16_t *perm,
                                                 uint64_t a) {
     const Float invBase = (Float)1 / (Float)base;
     uint64_t reversedDigits = 0;
-    Float invBaseN = 1.0f;
+    Float invBaseN = 1;
     while (a) {
         uint64_t next = a / base;
         uint64_t digit = a - next * base;

@@ -44,29 +44,27 @@
 #include <stdarg.h>
 
 // BxDF Utility Functions
-Float FrDielectric(Float cosThetaI, Float etai, Float etat) {
+Float FrDielectric(Float cosThetaI, Float etaI, Float etaT) {
     cosThetaI = Clamp(cosThetaI, -1, 1);
     // Potentially swap indices of refraction
     bool entering = cosThetaI > 0.f;
     if (!entering) {
-        std::swap(etai, etat);
+        std::swap(etaI, etaT);
         cosThetaI = std::abs(cosThetaI);
     }
 
     // Compute _cosThetaT_ using Snell's law
-    Float sinThetaI =
-        std::sqrt(std::max((Float)0, 1.f - cosThetaI * cosThetaI));
-    Float sinThetaT = etai / etat * sinThetaI;
+    Float sinThetaI = std::sqrt(std::max((Float)0, 1 - cosThetaI * cosThetaI));
+    Float sinThetaT = etaI / etaT * sinThetaI;
 
     // Handle total internal reflection
-    if (sinThetaT >= 1.f) return 1.f;
-    Float cosThetaT =
-        std::sqrt(std::max((Float)0, 1.f - sinThetaT * sinThetaT));
-    Float Rparl = ((etat * cosThetaI) - (etai * cosThetaT)) /
-                  ((etat * cosThetaI) + (etai * cosThetaT));
-    Float Rperp = ((etai * cosThetaI) - (etat * cosThetaT)) /
-                  ((etai * cosThetaI) + (etat * cosThetaT));
-    return (Rparl * Rparl + Rperp * Rperp) / 2.f;
+    if (sinThetaT >= 1) return 1;
+    Float cosThetaT = std::sqrt(std::max((Float)0, 1 - sinThetaT * sinThetaT));
+    Float Rparl = ((etaT * cosThetaI) - (etaI * cosThetaT)) /
+                  ((etaT * cosThetaI) + (etaI * cosThetaT));
+    Float Rperp = ((etaI * cosThetaI) - (etaT * cosThetaT)) /
+                  ((etaI * cosThetaI) + (etaT * cosThetaT));
+    return (Rparl * Rparl + Rperp * Rperp) / 2;
 }
 
 // https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
@@ -108,7 +106,7 @@ Spectrum ScaledBxDF::Sample_f(const Vector3f &wo, Vector3f *wi,
 
 Fresnel::~Fresnel() {}
 Spectrum FresnelConductor::Evaluate(Float cosThetaI) const {
-    return FrConductor(std::abs(cosThetaI), etai, etat, k);
+    return FrConductor(std::abs(cosThetaI), etaI, etaT, k);
 }
 
 Spectrum FresnelDielectric::Evaluate(Float cosThetaI) const {
@@ -120,25 +118,25 @@ Spectrum SpecularReflection::Sample_f(const Vector3f &wo, Vector3f *wi,
                                       BxDFType *sampledType) const {
     // Compute perfect specular reflection direction
     *wi = Vector3f(-wo.x, -wo.y, wo.z);
-    *pdf = 1.f;
-    return fresnel->Evaluate(CosTheta(wo)) * R / AbsCosTheta(*wi);
+    *pdf = 1;
+    return fresnel->Evaluate(CosTheta(*wi)) * R / AbsCosTheta(*wi);
 }
 
 Spectrum SpecularTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
                                         const Point2f &sample, Float *pdf,
                                         BxDFType *sampledType) const {
     // Figure out which $\eta$ is incident and which is transmitted
-    bool entering = CosTheta(wo) > 0.f;
-    Float etai = entering ? etaa : etab;
-    Float etat = entering ? etab : etaa;
+    bool entering = CosTheta(wo) > 0;
+    Float etaI = entering ? etaA : etaB;
+    Float etaT = entering ? etaB : etaA;
 
     // Compute ray direction for specular transmission
-    if (!Refract(wo, Faceforward(Normal3f(0, 0, 1), wo), etai / etat, wi))
-        return 0.;
-    *pdf = 1.f;
+    if (!Refract(wo, Faceforward(Normal3f(0, 0, 1), wo), etaI / etaT, wi))
+        return 0;
+    *pdf = 1;
     Spectrum ft = T * (Spectrum(1.) - fresnel.Evaluate(CosTheta(*wi)));
     // Account for non-symmetry with transmission to different medium
-    if (mode == TransportMode::Radiance) ft *= (etai * etai) / (etat * etat);
+    if (mode == TransportMode::Radiance) ft *= (etaI * etaI) / (etaT * etaT);
     return ft / AbsCosTheta(*wi);
 }
 
@@ -155,12 +153,12 @@ Spectrum OrenNayar::f(const Vector3f &wo, const Vector3f &wi) const {
     Float sinThetaI = SinTheta(wi);
     Float sinThetaO = SinTheta(wo);
     // Compute cosine term of Oren-Nayar model
-    Float maxCos = 0.f;
+    Float maxCos = 0;
     if (sinThetaI > 1e-4 && sinThetaO > 1e-4) {
         Float sinPhiI = SinPhi(wi), cosPhiI = CosPhi(wi);
         Float sinPhiO = SinPhi(wo), cosPhiO = CosPhi(wo);
         Float dCos = cosPhiI * cosPhiO + sinPhiI * sinPhiO;
-        maxCos = std::max((Float)0., dCos);
+        maxCos = std::max((Float)0, dCos);
     }
 
     // Compute sine and tangent terms of Oren-Nayar model
@@ -177,34 +175,33 @@ Spectrum OrenNayar::f(const Vector3f &wo, const Vector3f &wi) const {
 
 Spectrum MicrofacetReflection::f(const Vector3f &wo, const Vector3f &wi) const {
     Float cosThetaO = AbsCosTheta(wo), cosThetaI = AbsCosTheta(wi);
-    if (cosThetaI == 0.f || cosThetaO == 0.f) return Spectrum(0.);
     Vector3f wh = wi + wo;
-    if (wh.x == 0.f && wh.y == 0.f && wh.z == 0.f) return Spectrum(0.);
+    // Handle degenerate cases for microfacet reflection
+    if (cosThetaI == 0 || cosThetaO == 0) return Spectrum(0.);
+    if (wh.x == 0 && wh.y == 0 && wh.z == 0) return Spectrum(0.);
     wh = Normalize(wh);
-    Float cosThetaH = Dot(wi, wh);
-    Spectrum F = fresnel->Evaluate(cosThetaH);
+    Spectrum F = fresnel->Evaluate(Dot(wi, wh));
     return R * distribution->D(wh) * distribution->G(wo, wi) * F /
-           (4.f * cosThetaI * cosThetaO);
+           (4 * cosThetaI * cosThetaO);
 }
 
 Spectrum MicrofacetTransmission::f(const Vector3f &wo,
                                    const Vector3f &wi) const {
-    if (SameHemisphere(wo, wi)) return 0.f;  // transmission only
+    if (SameHemisphere(wo, wi)) return 0;  // transmission only
 
     Float cosThetaO = CosTheta(wo);
     Float cosThetaI = CosTheta(wi);
-    if (cosThetaI == 0.f || cosThetaO == 0.f) return Spectrum(0.f);
+    if (cosThetaI == 0 || cosThetaO == 0) return Spectrum(0);
 
     // Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
-    Float eta = CosTheta(wo) > 0 ? (etaInterior / etaExterior)
-                                 : (etaExterior / etaInterior);
+    Float eta = CosTheta(wo) > 0 ? (etaB / etaA) : (etaA / etaB);
     Vector3f wh = Normalize(wo + wi * eta);
     if (wh.z < 0) wh = -wh;
 
     Spectrum F = fresnel.Evaluate(Dot(wo, wh));
 
     Float sqrtDenom = Dot(wo, wh) + eta * Dot(wi, wh);
-    Float factor = (mode == TransportMode::Radiance) ? (1.f / eta) : 1.f;
+    Float factor = (mode == TransportMode::Radiance) ? (1 / eta) : 1;
 
     return (Spectrum(1.f) - F) * T *
            std::abs(distribution->D(wh) * distribution->G(wo, wi) * eta * eta *
@@ -218,17 +215,17 @@ FresnelBlend::FresnelBlend(const Spectrum &Rd, const Spectrum &Rs,
       Rd(Rd),
       Rs(Rs),
       distribution(distribution) {}
-
 Spectrum FresnelBlend::f(const Vector3f &wo, const Vector3f &wi) const {
+    auto pow5 = [](Float v) { return (v * v) * (v * v) * v; };
     Spectrum diffuse = (28.f / (23.f * Pi)) * Rd * (Spectrum(1.f) - Rs) *
-                       (1.f - std::pow(1.f - .5f * AbsCosTheta(wi), 5)) *
-                       (1.f - std::pow(1.f - .5f * AbsCosTheta(wo), 5));
+                       (1 - pow5(1 - .5f * AbsCosTheta(wi))) *
+                       (1 - pow5(1 - .5f * AbsCosTheta(wo)));
     Vector3f wh = wi + wo;
-    if (wh.x == 0.f && wh.y == 0.f && wh.z == 0.f) return Spectrum(0.f);
+    if (wh.x == 0 && wh.y == 0 && wh.z == 0) return Spectrum(0);
     wh = Normalize(wh);
     Spectrum specular =
         distribution->D(wh) /
-        (4.f * AbsDot(wi, wh) * std::max(AbsCosTheta(wi), AbsCosTheta(wo))) *
+        (4 * AbsDot(wi, wh) * std::max(AbsCosTheta(wi), AbsCosTheta(wo))) *
         SchlickFresnel(Dot(wi, wh));
     return diffuse + specular;
 }
@@ -238,7 +235,7 @@ Spectrum KajiyaKay::f(const Vector3f &wo, const Vector3f &wi) const {
     if (!Ks.IsBlack()) {
         // Compute specular Kajiya-Kay term
         Vector3f wh = wi + wo;
-        if (!(wh.x == 0.f && wh.y == 0.f && wh.z == 0.f)) {
+        if (!(wh.x == 0 && wh.y == 0 && wh.z == 0)) {
             wh = Normalize(wh);
 #if 0
             Float cosThetaH = Dot(wo, wh);
@@ -284,7 +281,7 @@ Spectrum FourierBSDF::f(const Vector3f &wo, const Vector3f &wi) const {
         for (int a = 0; a < 4; ++a) {
             // Add contribution of _(a, b)_ to $a_k$ values
             Float weight = weightsI[a] * weightsO[b];
-            if (weight != 0.) {
+            if (weight != 0) {
                 int m;
                 const Float *ap = bsdfTable.GetAk(offsetI + a, offsetO + b, &m);
                 mMax = std::max(mMax, m);
@@ -369,8 +366,7 @@ Spectrum MicrofacetTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
                                           const Point2f &u, Float *pdf,
                                           BxDFType *sampledType) const {
     Vector3f wh = distribution->Sample_wh(wo, u);
-    Float eta = CosTheta(wo) > 0 ? (etaExterior / etaInterior)
-                                 : (etaInterior / etaExterior);
+    Float eta = CosTheta(wo) > 0 ? (etaA / etaB) : (etaB / etaA);
     if (!Refract(wo, (Normal3f)wh, eta, wi)) return 0;
     *pdf = Pdf(wo, *wi);
     return f(wo, *wi);
@@ -380,8 +376,7 @@ Float MicrofacetTransmission::Pdf(const Vector3f &wo,
                                   const Vector3f &wi) const {
     if (SameHemisphere(wo, wi)) return 0.f;
     // Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
-    Float eta = CosTheta(wo) > 0 ? (etaInterior / etaExterior)
-                                 : (etaExterior / etaInterior);
+    Float eta = CosTheta(wo) > 0 ? (etaB / etaA) : (etaA / etaB);
     Vector3f wh = Normalize(wo + wi * eta);
 
     // Compute change of variables _dwh\_dwi_ for microfacet transmission
@@ -420,7 +415,7 @@ Float FresnelBlend::Pdf(const Vector3f &wo, const Vector3f &wi) const {
 Spectrum FresnelSpecular::Sample_f(const Vector3f &wo, Vector3f *wi,
                                    const Point2f &u, Float *pdf,
                                    BxDFType *sampledType) const {
-    Float F = FrDielectric(CosTheta(wo), etaa, etab);
+    Float F = FrDielectric(CosTheta(wo), etaA, etaB);
     if (u[0] < F) {
         // Compute specular reflection for _FresnelSpecular_
 
@@ -434,18 +429,18 @@ Spectrum FresnelSpecular::Sample_f(const Vector3f &wo, Vector3f *wi,
         // Compute specular transmission for _FresnelSpecular_
 
         // Figure out which $\eta$ is incident and which is transmitted
-        bool entering = CosTheta(wo) > 0.f;
-        Float etai = entering ? etaa : etab;
-        Float etat = entering ? etab : etaa;
+        bool entering = CosTheta(wo) > 0;
+        Float etaI = entering ? etaA : etaB;
+        Float etaT = entering ? etaB : etaA;
 
         // Compute ray direction for specular transmission
-        if (!Refract(wo, Faceforward(Normal3f(0, 0, 1), wo), etai / etat, wi))
-            return 0.;
+        if (!Refract(wo, Faceforward(Normal3f(0, 0, 1), wo), etaI / etaT, wi))
+            return 0;
         Spectrum ft = T * (1 - F);
 
         // Account for non-symmetry with transmission to different medium
         if (mode == TransportMode::Radiance)
-            ft *= (etai * etai) / (etat * etat);
+            ft *= (etaI * etaI) / (etaT * etaT);
         if (sampledType)
             *sampledType = BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION);
         *pdf = 1 - F;
@@ -482,7 +477,7 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
         for (int a = 0; a < 4; ++a) {
             // Add contribution of _(a, b)_ to $a_k$ values
             Float weight = weightsI[a] * weightsO[b];
-            if (weight != 0.) {
+            if (weight != 0) {
                 int m;
                 const Float *ap = bsdfTable.GetAk(offsetI + a, offsetO + b, &m);
                 mMax = std::max(mMax, m);

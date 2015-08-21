@@ -48,15 +48,15 @@
 
 // Reflection Declarations
 Float FrDielectric(Float cosi, Float etai, Float etat);
-Spectrum FrConductor(Float cosThetaI, const Spectrum &etai,
-                     const Spectrum &etat, const Spectrum &k);
+Spectrum FrConductor(Float cosThetaI, const Spectrum &etaI,
+                     const Spectrum &etaT, const Spectrum &k);
 
 // BSDF Inline Functions
 inline Float CosTheta(const Vector3f &w) { return w.z; }
 inline Float Cos2Theta(const Vector3f &w) { return w.z * w.z; }
 inline Float AbsCosTheta(const Vector3f &w) { return std::abs(w.z); }
 inline Float Sin2Theta(const Vector3f &w) {
-    return std::max((Float)0., (Float)1. - Cos2Theta(w));
+    return std::max((Float)0, (Float)1 - Cos2Theta(w));
 }
 
 inline Float SinTheta(const Vector3f &w) { return std::sqrt(Sin2Theta(w)); }
@@ -69,12 +69,12 @@ inline Float Tan2Theta(const Vector3f &w) {
 
 inline Float CosPhi(const Vector3f &w) {
     Float sinTheta = SinTheta(w);
-    return (sinTheta == 0.) ? 1. : Clamp(w.x / sinTheta, -1, 1);
+    return (sinTheta == 0) ? 1 : Clamp(w.x / sinTheta, -1, 1);
 }
 
 inline Float SinPhi(const Vector3f &w) {
     Float sinTheta = SinTheta(w);
-    return (sinTheta == 0.) ? 0. : Clamp(w.y / sinTheta, -1, 1);
+    return (sinTheta == 0) ? 0 : Clamp(w.y / sinTheta, -1, 1);
 }
 
 inline Float Cos2Phi(const Vector3f &w) { return CosPhi(w) * CosPhi(w); }
@@ -89,7 +89,7 @@ inline Float CosDPhi(const Vector3f &wa, const Vector3f &wb) {
 }
 
 inline Vector3f Reflect(const Vector3f &wo, const Vector3f &n) {
-    return -wo + 2.f * Dot(wo, n) * n;
+    return -wo + 2 * Dot(wo, n) * n;
 }
 
 inline bool Refract(const Vector3f &wi, const Normal3f &n, Float eta,
@@ -100,8 +100,8 @@ inline bool Refract(const Vector3f &wi, const Normal3f &n, Float eta,
     Float sin2ThetaT = eta * eta * sin2ThetaI;
 
     // Handle total internal reflection for transmission
-    if (sin2ThetaT >= 1.f) return false;
-    Float cosThetaT = std::sqrt(1.f - sin2ThetaT);
+    if (sin2ThetaT >= 1) return false;
+    Float cosThetaT = std::sqrt(1 - sin2ThetaT);
     *wt = eta * -wi + (eta * cosThetaI - cosThetaT) * Vector3f(n);
     return true;
 }
@@ -121,10 +121,8 @@ enum BxDFType {
     BSDF_DIFFUSE = 1 << 2,
     BSDF_GLOSSY = 1 << 3,
     BSDF_SPECULAR = 1 << 4,
-    BSDF_ALL_MODES = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR,
-    BSDF_ALL_REFLECTION = BSDF_REFLECTION | BSDF_ALL_MODES,
-    BSDF_ALL_TRANSMISSION = BSDF_TRANSMISSION | BSDF_ALL_MODES,
-    BSDF_ALL = BSDF_ALL_REFLECTION | BSDF_ALL_TRANSMISSION
+    BSDF_ALL = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR | BSDF_REFLECTION |
+               BSDF_TRANSMISSION,
 };
 
 struct FourierBSDFTable {
@@ -164,8 +162,7 @@ class BSDF {
         Assert(nBxDFs < MaxBxDFs);
         bxdfs[nBxDFs++] = b;
     }
-    int NumComponents() const { return nBxDFs; }
-    int NumComponents(BxDFType flags) const;
+    int NumComponents(BxDFType flags = BSDF_ALL) const;
     Vector3f WorldToLocal(const Vector3f &v) const {
         return Vector3f(Dot(v, ss), Dot(v, ts), Dot(v, ns));
     }
@@ -249,19 +246,19 @@ class Fresnel {
   public:
     // Fresnel Interface
     virtual ~Fresnel();
-    virtual Spectrum Evaluate(Float cosi) const = 0;
+    virtual Spectrum Evaluate(Float cosI) const = 0;
 };
 
 class FresnelConductor : public Fresnel {
   public:
     // FresnelConductor Public Methods
     Spectrum Evaluate(Float cosThetaI) const;
-    FresnelConductor(const Spectrum &etai, const Spectrum &etat,
+    FresnelConductor(const Spectrum &etaI, const Spectrum &etaT,
                      const Spectrum &k)
-        : etai(etai), etat(etat), k(k) {}
+        : etaI(etaI), etaT(etaT), k(k) {}
 
   private:
-    Spectrum etai, etat, k;
+    Spectrum etaI, etaT, k;
 };
 
 class FresnelDielectric : public Fresnel {
@@ -302,13 +299,13 @@ class SpecularReflection : public BxDF {
 class SpecularTransmission : public BxDF {
   public:
     // SpecularTransmission Public Methods
-    SpecularTransmission(const Spectrum &T, Float etaa, Float etab,
+    SpecularTransmission(const Spectrum &T, Float etaA, Float etaB,
                          TransportMode mode)
         : BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
           T(T),
-          etaa(etaa),
-          etab(etab),
-          fresnel(etaa, etab),
+          etaA(etaA),
+          etaB(etaB),
+          fresnel(etaA, etaB),
           mode(mode) {}
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const {
         return Spectrum(0.f);
@@ -320,7 +317,7 @@ class SpecularTransmission : public BxDF {
   private:
     // SpecularTransmission Private Data
     const Spectrum T;
-    const Float etaa, etab;
+    const Float etaA, etaB;
     const FresnelDielectric fresnel;
     const TransportMode mode;
 };
@@ -328,14 +325,14 @@ class SpecularTransmission : public BxDF {
 class FresnelSpecular : public BxDF {
   public:
     // FresnelSpecular Public Methods
-    FresnelSpecular(const Spectrum &R, const Spectrum &T, Float etaa,
-                    Float etab, TransportMode mode)
+    FresnelSpecular(const Spectrum &R, const Spectrum &T, Float etaA,
+                    Float etaB, TransportMode mode)
         : BxDF(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR)),
           R(R),
           T(T),
-          etaa(etaa),
-          etab(etab),
-          fresnel(etaa, etab),
+          etaA(etaA),
+          etaB(etaB),
+          fresnel(etaA, etaB),
           mode(mode) {}
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const {
         return Spectrum(0.f);
@@ -347,7 +344,7 @@ class FresnelSpecular : public BxDF {
   private:
     // FresnelSpecular Private Data
     const Spectrum R, T;
-    const Float etaa, etab;
+    const Float etaA, etaB;
     const FresnelDielectric fresnel;
     const TransportMode mode;
 };
@@ -397,7 +394,7 @@ class OrenNayar : public BxDF {
 
   private:
     // OrenNayar Private Data
-    Spectrum R;
+    const Spectrum R;
     Float A, B;
 };
 
@@ -426,14 +423,14 @@ class MicrofacetTransmission : public BxDF {
   public:
     // MicrofacetTransmission Public Methods
     MicrofacetTransmission(const Spectrum &T,
-                           MicrofacetDistribution *distribution, Float eext,
-                           Float eint, TransportMode mode)
+                           MicrofacetDistribution *distribution, Float etaA,
+                           Float etaB, TransportMode mode)
         : BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY)),
           T(T),
           distribution(distribution),
-          etaExterior(eext),
-          etaInterior(eint),
-          fresnel(etaExterior, etaInterior),
+          etaA(etaA),
+          etaB(etaB),
+          fresnel(etaA, etaB),
           mode(mode) {}
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const;
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
@@ -444,7 +441,7 @@ class MicrofacetTransmission : public BxDF {
     // MicrofacetTransmission Private Data
     const Spectrum T;
     const MicrofacetDistribution *distribution;
-    const Float etaExterior, etaInterior;
+    const Float etaA, etaB;
     const FresnelDielectric fresnel;
     const TransportMode mode;
 };
@@ -456,7 +453,8 @@ class FresnelBlend : public BxDF {
                  MicrofacetDistribution *distrib);
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const;
     Spectrum SchlickFresnel(Float cosTheta) const {
-        return Rs + std::pow(1 - cosTheta, 5.f) * (Spectrum(1.) - Rs);
+        auto pow5 = [](Float v) { return (v * v) * (v * v) * v; };
+        return Rs + pow5(1 - cosTheta) * (Spectrum(1.) - Rs);
     }
     Spectrum Sample_f(const Vector3f &wi, Vector3f *sampled_f, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
@@ -464,7 +462,7 @@ class FresnelBlend : public BxDF {
 
   private:
     // FresnelBlend Private Data
-    Spectrum Rd, Rs;
+    const Spectrum Rd, Rs;
     MicrofacetDistribution *distribution;
 };
 

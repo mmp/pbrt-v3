@@ -76,15 +76,15 @@ template <typename Tmemory, typename Treturn>
 class ImageTexture : public Texture<Treturn> {
   public:
     // ImageTexture Public Methods
-    ImageTexture(TextureMapping2D *m, const std::string &filename, bool doTri,
-                 Float maxAniso, ImageWrap wm, Float scale, Float gamma);
-    ~ImageTexture();
+    ImageTexture(std::unique_ptr<TextureMapping2D> m,
+                 const std::string &filename, bool doTri, Float maxAniso,
+                 ImageWrap wm, Float scale, Float gamma);
     static void ClearCache() {
         textures.erase(textures.begin(), textures.end());
     }
-    Treturn Evaluate(const SurfaceInteraction &isect) const {
+    Treturn Evaluate(const SurfaceInteraction &si) const {
         Vector2f dstdx, dstdy;
-        Point2f st = mapping->Map(isect, &dstdx, &dstdy);
+        Point2f st = mapping->Map(si, &dstdx, &dstdy);
         Tmemory mem = mipmap->Lookup(st, dstdx, dstdy);
         Treturn ret;
         convertOut(mem, &ret);
@@ -112,8 +112,8 @@ class ImageTexture : public Texture<Treturn> {
     static void convertOut(Float from, Float *to) { *to = from; }
 
     // ImageTexture Private Data
+    std::unique_ptr<TextureMapping2D> mapping;
     MIPMap<Tmemory> *mipmap;
-    TextureMapping2D *mapping;
     static std::map<TexInfo, std::unique_ptr<MIPMap<Tmemory>>> textures;
 };
 

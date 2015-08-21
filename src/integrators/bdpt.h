@@ -107,7 +107,7 @@ inline Float InfiniteLightDensity(const Scene &scene,
                                   const Vector3f &w) {
     Float pdf = 0;
     for (size_t i = 0; i < scene.lights.size(); ++i)
-        if (scene.lights[i]->flags == LightFlags::Infinite)
+        if (scene.lights[i]->flags & (int)LightFlags::Infinite)
             pdf +=
                 scene.lights[i]->Pdf_Li(Interaction(), -w) * lightDistr.func[i];
     return pdf / (lightDistr.funcInt * lightDistr.Count());
@@ -140,7 +140,7 @@ enum class VertexType { Camera, Light, Surface, Medium };
 struct Vertex {
     // Vertex Public Data
     VertexType type;
-    Spectrum weight;
+    Spectrum beta;
 // Switch to a struct in debug mode to avoid a compiler error regarding
 // non-trivial constructors
 #if defined(NDEBUG) && !defined(PBRT_IS_MSVC)
@@ -158,32 +158,31 @@ struct Vertex {
 
     // Vertex Public Methods
     Vertex() : ei() {}
-    Vertex(VertexType type, const EndpointInteraction &ei,
-           const Spectrum &weight)
-        : type(type), weight(weight), ei(ei) {}
-    Vertex(const SurfaceInteraction &si, const Spectrum &weight)
-        : type(VertexType::Surface), weight(weight), si(si) {}
+    Vertex(VertexType type, const EndpointInteraction &ei, const Spectrum &beta)
+        : type(type), beta(beta), ei(ei) {}
+    Vertex(const SurfaceInteraction &si, const Spectrum &beta)
+        : type(VertexType::Surface), beta(beta), si(si) {}
     static inline Vertex CreateCamera(const Camera *camera, const Ray &ray,
-                                      const Spectrum &weight);
+                                      const Spectrum &beta);
     static inline Vertex CreateCamera(const Camera *camera,
                                       const Interaction &it,
-                                      const Spectrum &weight);
+                                      const Spectrum &beta);
     static inline Vertex CreateEndpoint(VertexType type,
                                         const EndpointInteraction &ei,
-                                        const Spectrum &weight);
+                                        const Spectrum &beta);
     static inline Vertex CreateLight(const Light *light, const Ray &ray,
                                      const Normal3f &Nl, const Spectrum &Le,
                                      Float pdf);
     static inline Vertex CreateLight(const EndpointInteraction &ei,
-                                     const Spectrum &weight, Float pdf);
+                                     const Spectrum &beta, Float pdf);
     static inline Vertex CreateMedium(const MediumInteraction &mi,
-                                      const Spectrum &weight, Float pdf,
+                                      const Spectrum &beta, Float pdf,
                                       const Vertex &prev);
     static inline Vertex CreateSurface(const SurfaceInteraction &si,
-                                       const Spectrum &weight, Float pdf,
+                                       const Spectrum &beta, Float pdf,
                                        const Vertex &prev);
-    Vertex(const MediumInteraction &mi, const Spectrum &weight)
-        : type(VertexType::Medium), weight(weight), mi(mi) {}
+    Vertex(const MediumInteraction &mi, const Spectrum &beta)
+        : type(VertexType::Medium), beta(beta), mi(mi) {}
     const Interaction &GetInteraction() const {
         switch (type) {
         case VertexType::Medium:
@@ -217,10 +216,18 @@ struct Vertex {
         }
     }
     bool IsConnectible() const {
-        return (type != VertexType::Surface) ||
-               si.bsdf->NumComponents(BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY |
-                                               BSDF_REFLECTION |
-                                               BSDF_TRANSMISSION)) > 0;
+        switch (type) {
+        case VertexType::Medium:
+            return true;
+        case VertexType::Light:
+            return (ei.light->flags & (int)LightFlags::DeltaDirection) == 0;
+        case VertexType::Camera:
+            return true;
+        case VertexType::Surface:
+            return si.bsdf->NumComponents(BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY |
+                                                   BSDF_REFLECTION |
+                                                   BSDF_TRANSMISSION)) > 0;
+        };
     }
     bool IsLight() const {
         return type == VertexType::Light ||
@@ -232,7 +239,7 @@ struct Vertex {
     }
     bool IsInfiniteLight() const {
         return type == VertexType::Light &&
-               (!ei.light || ei.light->flags == LightFlags::Infinite);
+               (!ei.light || ei.light->flags & (int)LightFlags::Infinite);
     }
     Spectrum Le(const Scene &scene, const Vertex &v) const {
         if (!IsLight()) return Spectrum(0.f);
@@ -271,7 +278,7 @@ struct Vertex {
            << "  n = " << v.ng() << "," << std::endl
            << "  pdfFwd = " << v.pdfFwd << "," << std::endl
            << "  pdfRev = " << v.pdfRev << "," << std::endl
-           << "  weight = " << v.weight << std::endl
+           << "  beta = " << v.beta << std::endl
            << "]" << std::endl;
         return os;
     };
@@ -294,9 +301,9 @@ struct Vertex {
             Assert(type == VertexType::Camera);
 
         // Compute directional density depending on the vertex types
-        Float pdf;
+        Float pdf, unused;
         if (type == VertexType::Camera)
-            pdf = ei.camera->Pdf_We(ei, wn);
+            ei.camera->Pdf_We(ei.SpawnRay(wn), &unused, &pdf);
         else if (type == VertexType::Surface)
             pdf = si.bsdf->Pdf(wp, wn);
         else if (type == VertexType::Medium)
@@ -385,19 +392,19 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
 
 // Vertex Inline Method Definitions
 inline Vertex Vertex::CreateCamera(const Camera *camera, const Ray &ray,
-                                   const Spectrum &weight) {
-    return Vertex(VertexType::Camera, EndpointInteraction(camera, ray), weight);
+                                   const Spectrum &beta) {
+    return Vertex(VertexType::Camera, EndpointInteraction(camera, ray), beta);
 }
 
 inline Vertex Vertex::CreateEndpoint(VertexType type,
                                      const EndpointInteraction &ei,
-                                     const Spectrum &weight) {
-    return Vertex(type, ei, weight);
+                                     const Spectrum &beta) {
+    return Vertex(type, ei, beta);
 }
 
 inline Vertex Vertex::CreateCamera(const Camera *camera, const Interaction &it,
-                                   const Spectrum &weight) {
-    return Vertex(VertexType::Camera, EndpointInteraction(it, camera), weight);
+                                   const Spectrum &beta) {
+    return Vertex(VertexType::Camera, EndpointInteraction(it, camera), beta);
 }
 
 inline Vertex Vertex::CreateLight(const Light *light, const Ray &ray,
@@ -409,24 +416,24 @@ inline Vertex Vertex::CreateLight(const Light *light, const Ray &ray,
 }
 
 inline Vertex Vertex::CreateSurface(const SurfaceInteraction &si,
-                                    const Spectrum &weight, Float pdf,
+                                    const Spectrum &beta, Float pdf,
                                     const Vertex &prev) {
-    Vertex v(si, weight);
+    Vertex v(si, beta);
     v.pdfFwd = prev.ConvertDensity(pdf, v);
     return v;
 }
 
 inline Vertex Vertex::CreateMedium(const MediumInteraction &mi,
-                                   const Spectrum &weight, Float pdf,
+                                   const Spectrum &beta, Float pdf,
                                    const Vertex &prev) {
-    Vertex v(mi, weight);
+    Vertex v(mi, beta);
     v.pdfFwd = prev.ConvertDensity(pdf, v);
     return v;
 }
 
 inline Vertex Vertex::CreateLight(const EndpointInteraction &ei,
-                                  const Spectrum &weight, Float pdf) {
-    Vertex v(VertexType::Light, ei, weight);
+                                  const Spectrum &beta, Float pdf) {
+    Vertex v(VertexType::Light, ei, beta);
     v.pdfFwd = pdf;
     return v;
 }

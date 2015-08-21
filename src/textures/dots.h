@@ -49,15 +49,16 @@ template <typename T>
 class DotsTexture : public Texture<T> {
   public:
     // DotsTexture Public Methods
-    ~DotsTexture() { delete mapping; }
-    DotsTexture(TextureMapping2D *mapping,
+    DotsTexture(std::unique_ptr<TextureMapping2D> mapping,
                 const std::shared_ptr<Texture<T>> &outsideDot,
                 const std::shared_ptr<Texture<T>> &insideDot)
-        : mapping(mapping), outsideDot(outsideDot), insideDot(insideDot) {}
-    T Evaluate(const SurfaceInteraction &isect) const {
+        : mapping(std::move(mapping)),
+          outsideDot(outsideDot),
+          insideDot(insideDot) {}
+    T Evaluate(const SurfaceInteraction &si) const {
         // Compute cell indices for dots
         Vector2f dstdx, dstdy;
-        Point2f st = mapping->Map(isect, &dstdx, &dstdy);
+        Point2f st = mapping->Map(si, &dstdx, &dstdy);
         int sCell = std::floor(st[0] + .5f), tCell = std::floor(st[1] + .5f);
 
         // Return _insideDot_ result if point is inside dot
@@ -70,14 +71,14 @@ class DotsTexture : public Texture<T> {
                 tCell + maxShift * Noise(sCell + 4.5f, tCell + 9.8f);
             Vector2f dst = st - Point2f(sCenter, tCenter);
             if (dst.LengthSquared() < radius * radius)
-                return insideDot->Evaluate(isect);
+                return insideDot->Evaluate(si);
         }
-        return outsideDot->Evaluate(isect);
+        return outsideDot->Evaluate(si);
     }
 
   private:
     // DotsTexture Private Data
-    TextureMapping2D *mapping;
+    std::unique_ptr<TextureMapping2D> mapping;
     std::shared_ptr<Texture<T>> outsideDot, insideDot;
 };
 

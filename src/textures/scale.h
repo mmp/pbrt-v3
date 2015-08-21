@@ -52,8 +52,8 @@ class ScaleTexture : public Texture<T2> {
     ScaleTexture(const std::shared_ptr<Texture<T1>> &tex1,
                  const std::shared_ptr<Texture<T2>> &tex2)
         : tex1(tex1), tex2(tex2) {}
-    T2 Evaluate(const SurfaceInteraction &isect) const {
-        return tex1->Evaluate(isect) * tex2->Evaluate(isect);
+    T2 Evaluate(const SurfaceInteraction &si) const {
+        return tex1->Evaluate(si) * tex2->Evaluate(si);
     }
 
   private:

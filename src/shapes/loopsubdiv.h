@@ -45,7 +45,7 @@
 // LoopSubdiv Declarations
 std::vector<std::shared_ptr<Shape>> LoopSubdivide(
     const Transform *ObjectToWorld, const Transform *WorldToObject,
-    bool ReverseOrientation, int nLevels, int nIndices,
+    bool reverseOrientation, int nLevels, int nIndices,
     const int *vertexIndices, int nVertices, const Point3f *p);
 std::vector<std::shared_ptr<Shape>> CreateLoopSubdiv(const Transform *o2w,
                                                      const Transform *w2o,

@@ -62,7 +62,7 @@ static Point3f EvalBezier(const Point3f cp[4], Float u,
     Point3f cp1[3] = {Lerp(u, cp[0], cp[1]), Lerp(u, cp[1], cp[2]),
                       Lerp(u, cp[2], cp[3])};
     Point3f cp2[2] = {Lerp(u, cp1[0], cp1[1]), Lerp(u, cp1[1], cp1[2])};
-    if (deriv) *deriv = (Float)3. * (cp2[1] - cp2[0]);
+    if (deriv) *deriv = (Float)3 * (cp2[1] - cp2[0]);
     return Lerp(u, cp2[0], cp2[1]);
 }
 
@@ -196,7 +196,7 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
         if (Dot(endTangent, Vector2f(cp[3])) < 0) return false;
 
         // Compute line $w$ that gives minimum distance to sample point
-        Float denom = Dot(segmentDirection, segmentDirection);
+        Float denom = segmentDirection.LengthSquared();
         if (denom == 0) return false;
         Float w = Dot(-Vector2f(cp[0]), segmentDirection) / denom;
 
@@ -224,8 +224,8 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
         // Compute $v$ coordinate of curve intersection point
         Float ptCurveDist = std::sqrt(ptCurveDist2);
         Float edgeFunc = dpcdw.x * -pc.y + pc.x * dpcdw.y;
-        Float v = (edgeFunc > 0.) ? 0.5f + ptCurveDist / hitWidth
-                                  : 0.5f - ptCurveDist / hitWidth;
+        Float v = (edgeFunc > 0) ? 0.5f + ptCurveDist / hitWidth
+                                 : 0.5f - ptCurveDist / hitWidth;
 
         // Compute hit _t_ and partial derivatives for curve intersection
         if (tHit != nullptr) {

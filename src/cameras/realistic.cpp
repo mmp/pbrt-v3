@@ -592,12 +592,14 @@ void RealisticCamera::RenderExitPupil(Float sx, Float sy,
 }
 
 Point3f RealisticCamera::SampleExitPupil(const Point2f &pFilm,
-                                         const Point2f &lensSample) const {
+                                         const Point2f &lensSample,
+                                         Float *sampleBoundsArea) const {
     // Find exit pupil bound for sample distance from film center
     Float rFilm = std::sqrt(pFilm.x * pFilm.x + pFilm.y * pFilm.y);
     int rIndex = rFilm / (film->diagonal / 2) * exitPupilBounds.size();
     rIndex = std::min((int)exitPupilBounds.size() - 1, rIndex);
     Bounds2f pupilBounds = exitPupilBounds[rIndex];
+    if (sampleBoundsArea) *sampleBoundsArea = pupilBounds.Area();
 
     // Generate sample point inside exit pupil bound
     Point2f pLens = pupilBounds.Lerp(lensSample);
@@ -656,6 +658,7 @@ void RealisticCamera::TestExitPupilBounds() const {
 }
 
 Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
+    ProfilePhase prof(Prof::GenerateCameraRay);
     ++totalRays;
     // Find point on film, _pFilm_, corresponding to _sample.pFilm_
     Point2f s(sample.pFilm.x / film->fullResolution.x,
@@ -664,7 +667,9 @@ Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
     Point3f pFilm(-pFilm2.x, pFilm2.y, 0);
 
     // Trace ray from _pFilm_ through lens system
-    Point3f pRear = SampleExitPupil(Point2f(pFilm.x, pFilm.y), sample.pLens);
+    Float exitPupilBoundsArea;
+    Point3f pRear = SampleExitPupil(Point2f(pFilm.x, pFilm.y), sample.pLens,
+                                    &exitPupilBoundsArea);
     Ray rFilm(pFilm, pRear - pFilm, Infinity,
               Lerp(sample.time, shutterOpen, shutterClose));
     if (!TraceLensesFromFilm(rFilm, ray)) {
@@ -679,33 +684,12 @@ Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 
     // Return weighting for _RealisticCamera_ ray
     Float cosTheta = Normalize(rFilm.d).z;
+    Float cos4Theta = (cosTheta * cosTheta) * (cosTheta * cosTheta);
     if (simpleWeighting)
-        return (cosTheta * cosTheta) * (cosTheta * cosTheta);
+        return cos4Theta;
     else
         return (shutterClose - shutterOpen) *
-               ((cosTheta * cosTheta) * (cosTheta * cosTheta)) /
-               (LensRearZ() * LensRearZ() * ExitPupilPdf(pFilm, pRear));
-}
-
-Float RealisticCamera::ExitPupilPdf(const Point3f &pFilm,
-                                    const Point3f &pExitPupil) const {
-    // Find exit pupil bound for sample distance from film center
-    Float rFilm = std::sqrt(pFilm.x * pFilm.x + pFilm.y * pFilm.y);
-    int rIndex = rFilm / (film->diagonal / 2) * exitPupilBounds.size();
-    rIndex = std::min((int)exitPupilBounds.size() - 1, rIndex);
-    Bounds2f pupilBounds = exitPupilBounds[rIndex];
-
-    // Rotate _pExitPupil_ by negative angle of _pFilm_ with $+x$ axis
-    Float sinTheta = (rFilm != 0.f) ? -pFilm.y / rFilm : 0;
-    Float cosTheta = (rFilm != 0.f) ? pFilm.x / rFilm : 1;
-    Point2f pRot(cosTheta * pExitPupil.x - sinTheta * pExitPupil.y,
-                 sinTheta * pExitPupil.x + cosTheta * pExitPupil.y);
-
-    // Return PDF based on whether lens point is inside lens sampling area
-    if (Inside(pRot, pupilBounds))
-        return 1 / pupilBounds.Area();
-    else
-        return 0;
+               (cos4Theta * exitPupilBoundsArea) / (LensRearZ() * LensRearZ());
 }
 
 RealisticCamera *CreateRealisticCamera(const ParamSet &params,

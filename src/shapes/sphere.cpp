@@ -216,7 +216,7 @@ Interaction Sphere::Sample(const Point2f &u) const {
     Interaction it;
     Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(u);
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
-    if (ReverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1.f;
     // Reproject _pObj_ to sphere surface and compute _pObjError_
     pObj *= radius / Distance(pObj, Point3f(0, 0, 0));
     Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
@@ -266,7 +266,7 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
     Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
     it.n = (*ObjectToWorld)(Normal3f(nObj));
-    if (ReverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1.f;
     return it;
 }
 

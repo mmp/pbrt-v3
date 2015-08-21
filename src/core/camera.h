@@ -55,9 +55,8 @@ class Camera {
     virtual Float GenerateRay(const CameraSample &sample, Ray *ray) const = 0;
     virtual Float GenerateRayDifferential(const CameraSample &sample,
                                           RayDifferential *rd) const;
-    virtual Spectrum We(const Interaction &p0, const Vector3f &w,
-                        Point2f *pRasterPtr = nullptr) const;
-    virtual Float Pdf_We(const Interaction &p0, const Vector3f &w) const;
+    virtual Spectrum We(const Ray &ray, Point2f *raster = nullptr) const;
+    virtual void Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const;
     virtual Spectrum Sample_Wi(const Interaction &ref, const Point2f &u,
                                Vector3f *wi, Float *pdf, Point2f *pRaster,
                                VisibilityTester *vis) const;

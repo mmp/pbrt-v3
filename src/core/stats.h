@@ -145,6 +145,7 @@ enum class Prof {
     // Remainder of _Prof_ _enum_ entries
     TriIntersectP,
     ComputeScatteringFuncs,
+    GenerateCameraRay,
     BSDFEvaluation,
     BSSRDFEvaluation,
     MergeFilmTile,
@@ -164,6 +165,7 @@ static const char *ProfNames[] = {
     "Triangle::Intersect()",
     "Triangle::IntersectP()",
     "Material::ComputeScatteringFunctions()",
+    "Camera::GenerateRay[Differential]()",
     "BSDF::f()",
     "BSSRDF::f()",
     "Film::MergeTile()",

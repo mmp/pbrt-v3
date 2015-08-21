@@ -944,12 +944,11 @@ void Blackbody(const Float *lambda, int n, Float T, Float *Le) {
     const Float h = 6.62606957e-34;
     const Float kb = 1.3806488e-23;
     for (int i = 0; i < n; ++i) {
-        // Compute emitted radiance for blackbody emitter at wavelength
-        // _lambda[i]_
+        // Compute emitted radiance for blackbody at wavelength _lambda[i]_
         Float l = lambda[i] * 1e-9;
         Float lambda5 = (l * l) * (l * l) * l;
-        Le[i] = (2. * h * c * c) /
-                (lambda5 * (std::exp((h * c) / (l * kb * T)) - 1.f));
+        Le[i] = (2 * h * c * c) /
+                (lambda5 * (std::exp((h * c) / (l * kb * T)) - 1));
         Assert(!std::isnan(Le[i]));
     }
 }

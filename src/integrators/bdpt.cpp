@@ -46,7 +46,7 @@ STAT_TIMER("Time/Rendering", renderingTime);
 
 // BDPT Forward Declarations
 int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
-               MemoryArena &arena, Spectrum weight, Float pdf, int maxDepth,
+               MemoryArena &arena, Spectrum beta, Float pdf, int maxDepth,
                TransportMode mode, Vertex *path);
 
 // BDPT Utility Functions
@@ -69,13 +69,14 @@ int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
     cameraSample.time = sampler.Get1D();
     cameraSample.pLens = sampler.Get2D();
     RayDifferential ray;
-    Spectrum We = camera.GenerateRayDifferential(cameraSample, &ray);
+    Spectrum beta = camera.GenerateRayDifferential(cameraSample, &ray);
     ray.ScaleDifferentials(1 / std::sqrt(sampler.samplesPerPixel));
 
     // Generate first vertex on camera subpath and start random walk
-    path[0] = Vertex::CreateCamera(&camera, ray, We);
-    return RandomWalk(scene, ray, sampler, arena, We,
-                      camera.Pdf_We(path[0].ei, ray.d), maxDepth - 1,
+    Float pdfPos, pdfDir;
+    path[0] = Vertex::CreateCamera(&camera, ray, beta);
+    camera.Pdf_We(ray, &pdfPos, &pdfDir);
+    return RandomWalk(scene, ray, sampler, arena, beta, pdfDir, maxDepth - 1,
                       TransportMode::Radiance, path + 1) +
            1;
 }
@@ -97,9 +98,9 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
 
     // Generate first vertex on light subpath and start random walk
     path[0] = Vertex::CreateLight(light.get(), ray, Nl, Le, pdfPos * lightPdf);
-    Spectrum weight = Le * AbsDot(Nl, ray.d) / (lightPdf * pdfPos * pdfDir);
+    Spectrum beta = Le * AbsDot(Nl, ray.d) / (lightPdf * pdfPos * pdfDir);
     int nVertices =
-        RandomWalk(scene, ray, sampler, arena, weight, pdfDir, maxDepth - 1,
+        RandomWalk(scene, ray, sampler, arena, beta, pdfDir, maxDepth - 1,
                    TransportMode::Importance, path + 1);
 
     // Correct subpath sampling densities for infinite area lights
@@ -118,7 +119,7 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
 }
 
 int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
-               MemoryArena &arena, Spectrum weight, Float pdf, int maxDepth,
+               MemoryArena &arena, Spectrum beta, Float pdf, int maxDepth,
                TransportMode mode, Vertex *path) {
     if (maxDepth == 0) return 0;
     int bounces = 0;
@@ -131,12 +132,12 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
         // Trace a ray and sample the medium, if any
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
-        if (ray.medium) weight *= ray.medium->Sample(ray, sampler, arena, &mi);
-        if (weight.IsBlack()) break;
+        if (ray.medium) beta *= ray.medium->Sample(ray, sampler, arena, &mi);
+        if (beta.IsBlack()) break;
         Vertex &vertex = path[bounces], &prev = path[bounces - 1];
         if (mi.IsValid()) {
             // Record medium interaction in _path_ and compute forward density
-            vertex = Vertex::CreateMedium(mi, weight, pdfFwd, prev);
+            vertex = Vertex::CreateMedium(mi, beta, pdfFwd, prev);
             if (++bounces >= maxDepth) break;
 
             // Sample direction and compute reverse density at preceding vertex
@@ -148,8 +149,8 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             if (!foundIntersection) {
                 // Capture escaped rays when tracing from the camera
                 if (mode == TransportMode::Radiance) {
-                    vertex = Vertex::CreateLight(EndpointInteraction(ray),
-                                                 weight, pdfFwd);
+                    vertex = Vertex::CreateLight(EndpointInteraction(ray), beta,
+                                                 pdfFwd);
                     ++bounces;
                 }
                 break;
@@ -164,7 +165,7 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             }
 
             // Initialize _vertex_ with surface intersection information
-            vertex = Vertex::CreateSurface(isect, weight, pdfFwd, prev);
+            vertex = Vertex::CreateSurface(isect, beta, pdfFwd, prev);
             if (++bounces >= maxDepth) break;
 
             // Sample BSDF at current vertex and compute reverse probability
@@ -173,13 +174,13 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdfFwd,
                                               BSDF_ALL, &type);
             if (f.IsBlack() || pdfFwd == 0.f) break;
-            weight *= f * AbsDot(wi, isect.shading.n) / pdfFwd;
+            beta *= f * AbsDot(wi, isect.shading.n) / pdfFwd;
             pdfRev = isect.bsdf->Pdf(wi, wo, BSDF_ALL);
             if (type & BSDF_SPECULAR) {
                 vertex.delta = true;
                 pdfRev = pdfFwd = 0;
             }
-            weight *= CorrectShadingNormal(isect, wo, wi, mode);
+            beta *= CorrectShadingNormal(isect, wo, wi, mode);
             ray = isect.SpawnRay(wi);
         }
 
@@ -197,7 +198,7 @@ Spectrum G(const Scene &scene, Sampler &sampler, const Vertex &v0,
     if (v0.IsOnSurface()) g *= AbsDot(v0.ns(), d);
     if (v1.IsOnSurface()) g *= AbsDot(v1.ns(), d);
     VisibilityTester vis(v0.GetInteraction(), v1.GetInteraction());
-    return g * vis.T(scene, sampler);
+    return g * vis.Tr(scene, sampler);
 }
 
 Float MISWeight(const Scene &scene, Vertex *lightVertices,
@@ -301,11 +302,11 @@ void BDPTIntegrator::Render(const Scene &scene) {
                 snprintf(filename, sizeof(filename),
                          "bdpt_d%02i_s%02i_t%02i.exr", depth, s, t);
 
-                weightFilms[BufferIndex(s, t)] = std::unique_ptr<Film>(
-                    new Film(film->fullResolution,
-                             Bounds2f(Point2f(0, 0), Point2f(1, 1)),
-                             CreateBoxFilter(ParamSet()), film->diagonal * 1000,
-                             filename, 1.f, 2.2f));
+                weightFilms[BufferIndex(s, t)] = std::unique_ptr<Film>(new Film(
+                    film->fullResolution,
+                    Bounds2f(Point2f(0, 0), Point2f(1, 1)),
+                    std::unique_ptr<Filter>(CreateBoxFilter(ParamSet())),
+                    film->diagonal * 1000, filename, 1.f, 2.2f));
             }
         }
     }
@@ -400,12 +401,12 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
     if (t > 1 && s != 0 && cameraVertices[t - 1].type == VertexType::Light)
         return Spectrum(0.f);
 
-    // Perform connection and write contribution to _weight_
+    // Perform connection and write contribution to _L_
     Vertex sampled;
     if (s == 0) {
         // Interpret the camera subpath as a complete path
         const Vertex &pt = cameraVertices[t - 1];
-        if (pt.IsLight()) L = pt.Le(scene, cameraVertices[t - 2]) * pt.weight;
+        if (pt.IsLight()) L = pt.Le(scene, cameraVertices[t - 2]) * pt.beta;
     } else if (t == 1) {
         // Sample a point on the camera and connect it to the light subpath
         const Vertex &qs = lightVertices[s - 1];
@@ -418,8 +419,8 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
             if (pdf > 0 && !Wi.IsBlack()) {
                 // Initialize dynamically sampled vertex and _L_ for $t=1$ case
                 sampled = Vertex::CreateCamera(&camera, vis.P1(), Wi / pdf);
-                L = qs.weight * qs.f(sampled) * vis.T(scene, sampler) *
-                    sampled.weight;
+                L = qs.beta * qs.f(sampled) * vis.Tr(scene, sampler) *
+                    sampled.beta;
                 if (qs.IsOnSurface()) L *= AbsDot(wi, qs.ns());
             }
         }
@@ -441,8 +442,8 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
                 sampled =
                     Vertex::CreateLight(ei, lightWeight / (pdf * lightPdf), 0);
                 sampled.pdfFwd = sampled.PdfLightOrigin(scene, pt, lightDistr);
-                L = pt.weight * pt.f(sampled) * vis.T(scene, sampler) *
-                    sampled.weight;
+                L = pt.beta * pt.f(sampled) * vis.Tr(scene, sampler) *
+                    sampled.beta;
                 if (pt.IsOnSurface()) L *= AbsDot(wi, pt.ns());
             }
         }
@@ -450,8 +451,8 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
         // Handle all other bidirectional connection cases
         const Vertex &qs = lightVertices[s - 1], &pt = cameraVertices[t - 1];
         if (qs.IsConnectible() && pt.IsConnectible())
-            L = qs.weight * qs.f(pt) * G(scene, sampler, qs, pt) * pt.f(qs) *
-                pt.weight;
+            L = qs.beta * qs.f(pt) * G(scene, sampler, qs, pt) * pt.f(qs) *
+                pt.beta;
     }
 
     // Compute MIS weight for connection strategy

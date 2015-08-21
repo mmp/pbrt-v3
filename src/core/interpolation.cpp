@@ -37,7 +37,7 @@
 
 // Spline Interpolation Definitions
 Float CatmullRom(int size, const Float *nodes, const Float *values, Float x) {
-    if (!(x >= nodes[0] && x <= nodes[size - 1])) return 0.f;
+    if (!(x >= nodes[0] && x <= nodes[size - 1])) return 0;
     int idx = FindInterval(size, [&](int i) { return nodes[i] <= x; });
     Float x0 = nodes[idx], x1 = nodes[idx + 1];
     Float f0 = values[idx], f1 = values[idx + 1];
@@ -351,11 +351,11 @@ Float Fourier(const Float *a, int m, double cosPhi) {
     double value = 0.0;
     // Initialize cosine iterates
     double cosKMinusOnePhi = cosPhi;
-    double cosKPhi = 1.0;
+    double cosKPhi = 1;
     for (int k = 0; k < m; ++k) {
         // Add the current summand and update the cosine iterates
         value += a[k] * cosKPhi;
-        double cosKPlusOnePhi = 2.0 * cosPhi * cosKPhi - cosKMinusOnePhi;
+        double cosKPlusOnePhi = 2 * cosPhi * cosKPhi - cosKMinusOnePhi;
         cosKMinusOnePhi = cosKPhi;
         cosKPhi = cosKPlusOnePhi;
     }

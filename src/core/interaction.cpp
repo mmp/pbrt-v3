@@ -61,7 +61,7 @@ SurfaceInteraction::SurfaceInteraction(
 
     // Adjust normal based on orientation and handedness
     if (shape &&
-        (shape->ReverseOrientation ^ shape->TransformSwapsHandedness)) {
+        (shape->reverseOrientation ^ shape->transformSwapsHandedness)) {
         n *= -1;
         shading.n *= -1;
     }
@@ -74,7 +74,7 @@ void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdus,
                                             bool orientationIsAuthoritative) {
     // Compute _shading.n_ for _SurfaceInteraction_
     shading.n = Normalize((Normal3f)Cross(dpdus, dpdvs));
-    if (shape && (shape->ReverseOrientation ^ shape->TransformSwapsHandedness))
+    if (shape && (shape->reverseOrientation ^ shape->transformSwapsHandedness))
         shading.n = -shading.n;
     if (orientationIsAuthoritative)
         n = Faceforward(n, shading.n);
@@ -135,12 +135,12 @@ void SurfaceInteraction::ComputeDifferentials(
                          {dpdu[dim[1]], dpdv[dim[1]]}};
         Float Bx[2] = {px[dim[0]] - p[dim[0]], px[dim[1]] - p[dim[1]]};
         Float By[2] = {py[dim[0]] - p[dim[0]], py[dim[1]] - p[dim[1]]};
-        if (!SolveLinearSystem2x2(A, Bx, &dudx, &dvdx)) dudx = dvdx = 0.f;
-        if (!SolveLinearSystem2x2(A, By, &dudy, &dvdy)) dudy = dvdy = 0.f;
+        if (!SolveLinearSystem2x2(A, Bx, &dudx, &dvdx)) dudx = dvdx = 0;
+        if (!SolveLinearSystem2x2(A, By, &dudy, &dvdy)) dudy = dvdy = 0;
     } else {
     fail:
-        dudx = dvdx = 0.f;
-        dudy = dvdy = 0.f;
+        dudx = dvdx = 0;
+        dudy = dvdy = 0;
         dpdx = dpdy = Vector3f(0, 0, 0);
     }
 }

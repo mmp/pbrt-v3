@@ -60,7 +60,7 @@ class GaussianFilter : public Filter {
 
     // GaussianFilter Utility Functions
     Float Gaussian(Float d, Float expv) const {
-        return std::max((Float)0., Float(std::exp(-alpha * d * d) - expv));
+        return std::max((Float)0, Float(std::exp(-alpha * d * d) - expv));
     }
 };
 

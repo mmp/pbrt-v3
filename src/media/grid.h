@@ -78,7 +78,7 @@ class GridDensityMedium : public Medium {
         if (!InsideExclusive(p, sampleBounds)) return 0;
         return density[(p.z * ny + p.y) * nx + p.x];
     }
-    Spectrum T(const Ray &ray, Sampler &sampler) const;
+    Spectrum Tr(const Ray &ray, Sampler &sampler) const;
     Spectrum Sample(const Ray &ray, Sampler &sampler, MemoryArena &arena,
                     MediumInteraction *mi) const;
     Float Pdf(const Ray &ray, const Interaction &it) const;

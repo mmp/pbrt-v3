@@ -63,20 +63,6 @@ TriangleMesh::TriangleMesh(const Transform &ObjectToWorld, int nTriangles,
     triMeshBytes += sizeof(*this) + (3 * nTriangles * sizeof(int)) +
                     nVertices * (sizeof(*P) + (N ? sizeof(*N) : 0) +
                                  (S ? sizeof(*S) : 0) + (UV ? sizeof(*UV) : 0));
-    // Copy _UV_, _N_, and _S_ vertex data, if present
-    if (UV) {
-        uv.reset(new Point2f[nVertices]);
-        memcpy(uv.get(), UV, nVertices * sizeof(Point2f));
-    }
-    p.reset(new Point3f[nVertices]);
-    if (N) {
-        n.reset(new Normal3f[nVertices]);
-        for (int i = 0; i < nVertices; ++i) n[i] = ObjectToWorld(N[i]);
-    }
-    if (S) {
-        s.reset(new Vector3f[nVertices]);
-        for (int i = 0; i < nVertices; ++i) s[i] = ObjectToWorld(S[i]);
-    }
     if (getenv("PBRT_DUMP_PLY")) {
         // Write out triangle mesh as PLY file
         static int count = 1;
@@ -94,7 +80,7 @@ TriangleMesh::TriangleMesh(const Transform &ObjectToWorld, int nTriangles,
                 ply_add_scalar_property(plyFile, "ny", PLY_FLOAT);
                 ply_add_scalar_property(plyFile, "nz", PLY_FLOAT);
             }
-            if (uv != nullptr) {
+            if (UV != nullptr) {
                 ply_add_scalar_property(plyFile, "u", PLY_FLOAT);
                 ply_add_scalar_property(plyFile, "v", PLY_FLOAT);
             }
@@ -114,9 +100,9 @@ TriangleMesh::TriangleMesh(const Transform &ObjectToWorld, int nTriangles,
                     ply_write(plyFile, N[i].y);
                     ply_write(plyFile, N[i].z);
                 }
-                if (uv) {
-                    ply_write(plyFile, uv[i].x);
-                    ply_write(plyFile, uv[i].y);
+                if (UV) {
+                    ply_write(plyFile, UV[i].x);
+                    ply_write(plyFile, UV[i].y);
                 }
             }
 
@@ -130,7 +116,22 @@ TriangleMesh::TriangleMesh(const Transform &ObjectToWorld, int nTriangles,
         }
     }
     // Transform mesh vertices to world space
+    p.reset(new Point3f[nVertices]);
     for (int i = 0; i < nVertices; ++i) p[i] = ObjectToWorld(P[i]);
+
+    // Copy _UV_, _N_, and _S_ vertex data, if present
+    if (UV) {
+        uv.reset(new Point2f[nVertices]);
+        memcpy(uv.get(), UV, nVertices * sizeof(Point2f));
+    }
+    if (N) {
+        n.reset(new Normal3f[nVertices]);
+        for (int i = 0; i < nVertices; ++i) n[i] = ObjectToWorld(N[i]);
+    }
+    if (S) {
+        s.reset(new Vector3f[nVertices]);
+        for (int i = 0; i < nVertices; ++i) s[i] = ObjectToWorld(S[i]);
+    }
 }
 
 std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
@@ -196,15 +197,15 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     p2t = Permute(p2t, kx, ky, kz);
 
     // Apply shear transformation to translated vertex positions
-    Float Sx = d.x / d.z;
-    Float Sy = d.y / d.z;
+    Float Sx = -d.x / d.z;
+    Float Sy = -d.y / d.z;
     Float Sz = 1.f / d.z;
-    p0t.x -= Sx * p0t.z;
-    p0t.y -= Sy * p0t.z;
-    p1t.x -= Sx * p1t.z;
-    p1t.y -= Sy * p1t.z;
-    p2t.x -= Sx * p2t.z;
-    p2t.y -= Sy * p2t.z;
+    p0t.x += Sx * p0t.z;
+    p0t.y += Sy * p0t.z;
+    p1t.x += Sx * p1t.z;
+    p1t.y += Sy * p1t.z;
+    p2t.x += Sx * p2t.z;
+    p2t.y += Sy * p2t.z;
 
     // Compute edge function coefficients _e0_, _e1_, and _e2_
     Float e0 = p1t.x * p2t.y - p1t.y * p2t.x;
@@ -359,7 +360,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     Vector2f duv02 = uv[0] - uv[2], duv12 = uv[1] - uv[2];
     Vector3f dp02 = p0 - p2, dp12 = p1 - p2;
     Float determinant = duv02[0] * duv12[1] - duv02[1] * duv12[0];
-    if (determinant == 0.f) {
+    if (determinant == 0) {
         // Handle zero determinant for triangle partial derivative matrix
         CoordinateSystem(Normalize(Cross(p2 - p0, p1 - p0)), &dpdu, &dpdv);
     } else {
@@ -447,7 +448,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     // Ensure correct orientation of the geometric normal
     if (mesh->n)
         isect->n = Faceforward(isect->n, isect->shading.n);
-    else if (ReverseOrientation ^ TransformSwapsHandedness)
+    else if (reverseOrientation ^ transformSwapsHandedness)
         isect->n = isect->shading.n = -isect->n;
     *tHit = t;
     ++nHits;
@@ -483,15 +484,15 @@ bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
     p2t = Permute(p2t, kx, ky, kz);
 
     // Apply shear transformation to translated vertex positions
-    Float Sx = d.x / d.z;
-    Float Sy = d.y / d.z;
+    Float Sx = -d.x / d.z;
+    Float Sy = -d.y / d.z;
     Float Sz = 1.f / d.z;
-    p0t.x -= Sx * p0t.z;
-    p0t.y -= Sy * p0t.z;
-    p1t.x -= Sx * p1t.z;
-    p1t.y -= Sy * p1t.z;
-    p2t.x -= Sx * p2t.z;
-    p2t.y -= Sy * p2t.z;
+    p0t.x += Sx * p0t.z;
+    p0t.y += Sy * p0t.z;
+    p1t.x += Sx * p1t.z;
+    p1t.y += Sy * p1t.z;
+    p2t.x += Sx * p2t.z;
+    p2t.y += Sy * p2t.z;
 
     // Compute edge function coefficients _e0_, _e1_, and _e2_
     Float e0 = p1t.x * p2t.y - p1t.y * p2t.x;
@@ -648,7 +649,7 @@ bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
         Vector2f duv02 = uv[0] - uv[2], duv12 = uv[1] - uv[2];
         Vector3f dp02 = p0 - p2, dp12 = p1 - p2;
         Float determinant = duv02[0] * duv12[1] - duv02[1] * duv12[0];
-        if (determinant == 0.f) {
+        if (determinant == 0) {
             // Handle zero determinant for triangle partial derivative matrix
             CoordinateSystem(Normalize(Cross(p2 - p0, p1 - p0)), &dpdu, &dpdv);
         } else {
@@ -691,7 +692,7 @@ Interaction Triangle::Sample(const Point2f &u) const {
                          (1 - b[0] - b[1]) * mesh->n[v[2]]);
     else
         it.n = Normalize(Normal3f(Cross(p1 - p0, p2 - p0)));
-    if (ReverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1.f;
 
     // Compute error bounds for sampled point on triangle
     Point3f pAbsSum =

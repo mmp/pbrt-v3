@@ -41,11 +41,11 @@ Shape::~Shape() {}
 
 STAT_COUNTER("Scene/Shapes created", nShapesCreated);
 Shape::Shape(const Transform *ObjectToWorld, const Transform *WorldToObject,
-             bool ReverseOrientation)
+             bool reverseOrientation)
     : ObjectToWorld(ObjectToWorld),
       WorldToObject(WorldToObject),
-      ReverseOrientation(ReverseOrientation),
-      TransformSwapsHandedness(ObjectToWorld->SwapsHandedness()) {
+      reverseOrientation(reverseOrientation),
+      transformSwapsHandedness(ObjectToWorld->SwapsHandedness()) {
     ++nShapesCreated;
 }
 

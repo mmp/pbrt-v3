@@ -154,71 +154,49 @@ struct TransformSet {
 
 struct RenderOptions {
     // RenderOptions Public Methods
-    RenderOptions();
+    Integrator *MakeIntegrator() const;
     Scene *MakeScene();
     Camera *MakeCamera() const;
-    Integrator *MakeIntegrator() const;
 
     // RenderOptions Public Data
-    Float transformStartTime, transformEndTime;
-    std::string FilterName;
+    Float transformStartTime = 0, transformEndTime = 1;
+    std::string FilterName = "box";
     ParamSet FilterParams;
-    std::string FilmName;
+    std::string FilmName = "image";
     ParamSet FilmParams;
-    std::string SamplerName;
+    std::string SamplerName = "halton";
     ParamSet SamplerParams;
-    std::string AcceleratorName;
+    std::string AcceleratorName = "bvh";
     ParamSet AcceleratorParams;
-    std::string IntegratorName;
+    std::string IntegratorName = "path";
     ParamSet IntegratorParams;
-    std::string CameraName;
+    std::string CameraName = "perspective";
     ParamSet CameraParams;
     TransformSet CameraToWorld;
     std::map<std::string, std::shared_ptr<Medium>> namedMedia;
     std::vector<std::shared_ptr<Light>> lights;
     std::vector<std::shared_ptr<Primitive>> primitives;
     std::map<std::string, std::vector<std::shared_ptr<Primitive>>> instances;
-    std::vector<std::shared_ptr<Primitive>> *currentInstance;
+    std::vector<std::shared_ptr<Primitive>> *currentInstance = nullptr;
 };
-
-RenderOptions::RenderOptions() {
-    // RenderOptions Constructor Implementation
-    transformStartTime = 0.f;
-    transformEndTime = 1.f;
-    FilterName = "box";
-    FilmName = "image";
-    SamplerName = "lowdiscrepancy";
-    AcceleratorName = "bvh";
-    IntegratorName = "directlighting";
-    CameraName = "perspective";
-    currentInstance = nullptr;
-}
 
 struct GraphicsState {
     // Graphics State Methods
-    GraphicsState();
     std::shared_ptr<Material> CreateMaterial(const ParamSet &params);
     MediumInterface CreateMediumInterface();
 
     // Graphics State
-    std::string currentInsideMedium;
-    std::string currentOutsideMedium;
+    std::string currentInsideMedium, currentOutsideMedium;
     std::map<std::string, std::shared_ptr<Texture<Float>>> floatTextures;
     std::map<std::string, std::shared_ptr<Texture<Spectrum>>> spectrumTextures;
     ParamSet materialParams;
-    std::string material;
+    std::string material = "matte";
     std::map<std::string, std::shared_ptr<Material>> namedMaterials;
     std::string currentNamedMaterial;
     ParamSet areaLightParams;
     std::string areaLight;
-    bool reverseOrientation;
+    bool reverseOrientation = false;
 };
-
-GraphicsState::GraphicsState() {
-    // GraphicsState Constructor Implementation
-    material = "matte";
-    reverseOrientation = false;
-}
 
 class TransformCache {
   public:
@@ -261,6 +239,13 @@ static std::vector<TransformSet> pushedTransforms;
 static std::vector<uint32_t> pushedActiveTransformBits;
 static TransformCache transformCache;
 
+// API Forward Declarations
+std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
+                                               const Transform *object2world,
+                                               const Transform *world2object,
+                                               bool reverseOrientation,
+                                               const ParamSet &paramSet);
+
 // API Macros
 #define VERIFY_INITIALIZED(func)                           \
     if (currentApiState == APIState::Uninitialized) {      \
@@ -300,7 +285,7 @@ static TransformCache transformCache;
                 "Animated transformations set; ignoring for \"%s\" " \
                 "and using the start transform only",                \
                 func);                                               \
-    } while (false)
+    } while (false) /* swallow trailing semicolon */
 
 // Object Creation Function Definitions
 std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
@@ -405,6 +390,16 @@ std::shared_ptr<Material> MakeMaterial(const std::string &name,
         material = CreateFourierMaterial(mp);
     else
         Warning("Material \"%s\" unknown.", name.c_str());
+
+    if ((name == "subsurface" || name == "kdsubsurface") &&
+        (renderOptions->IntegratorName != "path" &&
+         (renderOptions->IntegratorName != "volpath")))
+        Warning(
+            "Subsurface scattering material \"%s\" used, but \"%s\" "
+            "integrator doesn't support subsurface scattering. "
+            "Use \"path\" or \"volpath\".",
+            name.c_str(), renderOptions->IntegratorName.c_str());
+
     mp.ReportUnused();
     if (!material) Error("Unable to create material \"%s\"", name.c_str());
     return std::shared_ptr<Material>(material);
@@ -640,7 +635,8 @@ std::shared_ptr<Sampler> MakeSampler(const std::string &name,
     return std::shared_ptr<Sampler>(sampler);
 }
 
-Filter *MakeFilter(const std::string &name, const ParamSet &paramSet) {
+std::unique_ptr<Filter> MakeFilter(const std::string &name,
+                                   const ParamSet &paramSet) {
     Filter *filter = nullptr;
     if (name == "box")
         filter = CreateBoxFilter(paramSet);
@@ -655,14 +651,14 @@ Filter *MakeFilter(const std::string &name, const ParamSet &paramSet) {
     else
         Warning("Filter \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();
-    return filter;
+    return std::unique_ptr<Filter>(filter);
 }
 
 Film *MakeFilm(const std::string &name, const ParamSet &paramSet,
-               Filter *filter) {
+               std::unique_ptr<Filter> filter) {
     Film *film = nullptr;
     if (name == "image")
-        film = CreateFilm(paramSet, filter);
+        film = CreateFilm(paramSet, std::move(filter));
     else
         Warning("Film \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();
@@ -939,11 +935,10 @@ void pbrtNamedMaterial(const std::string &name) {
 void pbrtLightSource(const std::string &name, const ParamSet &params) {
     VERIFY_WORLD("LightSource");
     WARN_IF_ANIMATED_TRANSFORM("LightSource");
-    MediumInterface mediumInterface = graphicsState.CreateMediumInterface();
-    std::shared_ptr<Light> lt =
-        MakeLight(name, params, curTransform[0], mediumInterface);
+    MediumInterface mi = graphicsState.CreateMediumInterface();
+    std::shared_ptr<Light> lt = MakeLight(name, params, curTransform[0], mi);
     if (lt == nullptr)
-        Error("pbrtLightSource: light type \"%s\" unknown.", name.c_str());
+        Error("LightSource: light type \"%s\" unknown.", name.c_str());
     else
         renderOptions->lights.push_back(lt);
 }
@@ -959,7 +954,9 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
     std::vector<std::shared_ptr<Primitive>> prims;
     std::vector<std::shared_ptr<AreaLight>> areaLights;
     if (!curTransform.IsAnimated()) {
-        // Create primitives for static shape
+        // Initialize _prims_ and _areaLights_ for static shape
+
+        // Create shapes for shape _name_
         Transform *obj2world, *world2obj;
         transformCache.Lookup(curTransform[0], &obj2world, &world2obj);
         std::vector<std::shared_ptr<Shape>> shapes =
@@ -968,25 +965,22 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         if (shapes.size() == 0) return;
         std::shared_ptr<Material> mtl = graphicsState.CreateMaterial(params);
         params.ReportUnused();
-        MediumInterface mediumInterface = graphicsState.CreateMediumInterface();
+        MediumInterface mi = graphicsState.CreateMediumInterface();
         for (auto s : shapes) {
             // Possibly create area light for shape
             std::shared_ptr<AreaLight> area;
             if (graphicsState.areaLight != "") {
-                MediumInterface mediumInterface =
-                    graphicsState.CreateMediumInterface();
                 area = MakeAreaLight(graphicsState.areaLight, curTransform[0],
-                                     mediumInterface,
-                                     graphicsState.areaLightParams, s);
+                                     mi, graphicsState.areaLightParams, s);
                 areaLights.push_back(area);
             }
-            prims.push_back(std::make_shared<GeometricPrimitive>(
-                s, mtl, area, mediumInterface));
+            prims.push_back(
+                std::make_shared<GeometricPrimitive>(s, mtl, area, mi));
         }
     } else {
-        // Create primitives for animated shape
+        // Initialize _prims_ and _areaLights_ for animated shape
 
-        // Create initial _Shape_ for animated shape
+        // Create initial shape or shapes for animated shape
         if (graphicsState.areaLight != "")
             Warning(
                 "Ignoring currently set area light when creating "
@@ -996,8 +990,16 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         std::vector<std::shared_ptr<Shape>> shapes = MakeShapes(
             name, identity, identity, graphicsState.reverseOrientation, params);
         if (shapes.size() == 0) return;
+
+        // Create _GeometricPrimitive_(s) for animated shape
         std::shared_ptr<Material> mtl = graphicsState.CreateMaterial(params);
         params.ReportUnused();
+        MediumInterface mi = graphicsState.CreateMediumInterface();
+        for (auto s : shapes)
+            prims.push_back(
+                std::make_shared<GeometricPrimitive>(s, mtl, nullptr, mi));
+
+        // Create single _TransformedPrimitive_ for _prims_
 
         // Get _animatedObjectToWorld_ transform for shape
         Assert(MaxTransforms == 2);
@@ -1007,10 +1009,6 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         AnimatedTransform animatedObjectToWorld(
             obj2world[0], renderOptions->transformStartTime, obj2world[1],
             renderOptions->transformEndTime);
-        MediumInterface mediumInterface = graphicsState.CreateMediumInterface();
-        for (auto s : shapes)
-            prims.push_back(std::make_shared<GeometricPrimitive>(
-                s, mtl, nullptr, mediumInterface));
         if (prims.size() > 1) {
             std::shared_ptr<Primitive> bvh = std::make_shared<BVHAccel>(prims);
             prims.clear();
@@ -1019,7 +1017,7 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         prims[0] = std::make_shared<TransformedPrimitive>(
             prims[0], animatedObjectToWorld);
     }
-    // Add primitive to scene or current instance
+    // Add _prims_ and _areaLights_ to scene or current instance
     if (renderOptions->currentInstance) {
         if (areaLights.size())
             Warning("Area lights not supported with object instancing");
@@ -1028,10 +1026,9 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
     } else {
         renderOptions->primitives.insert(renderOptions->primitives.end(),
                                          prims.begin(), prims.end());
-        if (areaLights.size()) {
+        if (areaLights.size())
             renderOptions->lights.insert(renderOptions->lights.end(),
                                          areaLights.begin(), areaLights.end());
-        }
     }
 }
 
@@ -1096,7 +1093,7 @@ void pbrtObjectEnd() {
 STAT_COUNTER("Scene/Object instances used", nObjectInstancesUsed);
 void pbrtObjectInstance(const std::string &name) {
     VERIFY_WORLD("ObjectInstance");
-    // Object instance error checking
+    // Perform object instance error checking
     if (renderOptions->currentInstance) {
         Error("ObjectInstance can't be called inside instance definition");
         return;
@@ -1114,12 +1111,12 @@ void pbrtObjectInstance(const std::string &name) {
         std::shared_ptr<Primitive> accel(
             MakeAccelerator(renderOptions->AcceleratorName, in,
                             renderOptions->AcceleratorParams));
-        if (!accel) accel = MakeAccelerator("bvh", in, ParamSet());
-        Assert(accel != nullptr);
+        if (!accel) accel = std::make_shared<BVHAccel>(in);
         in.erase(in.begin(), in.end());
         in.push_back(accel);
     }
     Assert(MaxTransforms == 2);
+    // Create _animatedInstanceToWorld_ transform for instance
     Transform *instance2world[2];
     transformCache.Lookup(curTransform[0], &instance2world[0], nullptr);
     transformCache.Lookup(curTransform[1], &instance2world[1], nullptr);
@@ -1172,9 +1169,7 @@ void pbrtWorldEnd() {
 Scene *RenderOptions::MakeScene() {
     std::shared_ptr<Primitive> accelerator =
         MakeAccelerator(AcceleratorName, primitives, AcceleratorParams);
-    if (!accelerator)
-        accelerator = MakeAccelerator("bvh", primitives, ParamSet());
-    Assert(accelerator != nullptr);
+    if (!accelerator) accelerator = std::make_shared<BVHAccel>(primitives);
     Scene *scene = new Scene(accelerator, lights);
     // Erase primitives and lights from _RenderOptions_
     primitives.erase(primitives.begin(), primitives.end());
@@ -1220,8 +1215,8 @@ Integrator *RenderOptions::MakeIntegrator() const {
 }
 
 Camera *RenderOptions::MakeCamera() const {
-    Filter *filter = MakeFilter(FilterName, FilterParams);
-    Film *film = MakeFilm(FilmName, FilmParams, filter);
+    std::unique_ptr<Filter> filter = MakeFilter(FilterName, FilterParams);
+    Film *film = MakeFilm(FilmName, FilmParams, std::move(filter));
     if (!film) {
         Error("Unable to create film.");
         exit(1);

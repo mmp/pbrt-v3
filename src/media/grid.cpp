@@ -55,7 +55,7 @@ Float GridDensityMedium::Density(const Point3f &p) const {
     return Lerp(d.z, d0, d1);
 }
 
-Spectrum GridDensityMedium::T(const Ray &_ray, Sampler &sampler) const {
+Spectrum GridDensityMedium::Tr(const Ray &_ray, Sampler &sampler) const {
     // Transform the ray into local coordinates and determine overlap interval
     // [_tMin, tMax_]
     const Bounds3f dataBounds(Point3f(0.f, 0.f, 0.f), Point3f(1.f, 1.f, 1.f));

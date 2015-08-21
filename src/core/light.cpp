@@ -45,9 +45,9 @@ bool VisibilityTester::Unoccluded(const Scene &scene) const {
     return !scene.IntersectP(p0.SpawnRayTo(p1));
 }
 
-Spectrum VisibilityTester::T(const Scene &scene, Sampler &sampler) const {
+Spectrum VisibilityTester::Tr(const Scene &scene, Sampler &sampler) const {
     Ray ray(p0.SpawnRayTo(p1));
-    Spectrum tr(1.f);
+    Spectrum Tr(1.f);
     while (true) {
         SurfaceInteraction isect;
         bool hitSurface = scene.Intersect(ray, &isect);
@@ -56,13 +56,13 @@ Spectrum VisibilityTester::T(const Scene &scene, Sampler &sampler) const {
             return Spectrum(0.0f);
 
         // Update transmittance for current ray segment
-        if (ray.medium) tr *= ray.medium->T(ray, sampler);
+        if (ray.medium) Tr *= ray.medium->Tr(ray, sampler);
 
         // Generate next ray segment or return final transmittance
         if (!hitSurface) break;
         ray = isect.SpawnRayTo(p1);
     }
-    return tr;
+    return Tr;
 }
 
 Spectrum Light::Le(const RayDifferential &ray) const { return Spectrum(0.f); }

@@ -113,14 +113,14 @@ int64_t HaltonSampler::GetIndexForSample(int64_t sampleNum) const {
     return offsetForCurrentPixel + sampleNum * sampleStride;
 }
 
-Float HaltonSampler::SampleDimension(int64_t index, int dimension) const {
-    if (dimension == 0)
-        return RadicalInverse(dimension, index >> baseExponents[0]);
-    else if (dimension == 1)
-        return RadicalInverse(dimension, index / baseScales[1]);
+Float HaltonSampler::SampleDimension(int64_t index, int dim) const {
+    if (dim == 0)
+        return RadicalInverse(dim, index >> baseExponents[0]);
+    else if (dim == 1)
+        return RadicalInverse(dim, index / baseScales[1]);
     else
-        return ScrambledRadicalInverse(dimension, index,
-                                       PermutationForDimension(dimension));
+        return ScrambledRadicalInverse(dim, index,
+                                       PermutationForDimension(dim));
 }
 
 std::unique_ptr<Sampler> HaltonSampler::Clone(int seed) {
@@ -129,7 +129,7 @@ std::unique_ptr<Sampler> HaltonSampler::Clone(int seed) {
 
 HaltonSampler *CreateHaltonSampler(const ParamSet &params,
                                    const Bounds2i &sampleBounds) {
-    int nsamp = params.FindOneInt("pixelsamples", 4);
+    int nsamp = params.FindOneInt("pixelsamples", 16);
     if (PbrtOptions.quickRender) nsamp = 1;
     return new HaltonSampler(nsamp, sampleBounds);
 }

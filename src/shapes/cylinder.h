@@ -47,9 +47,9 @@ class Cylinder : public Shape {
   public:
     // Cylinder Public Methods
     Cylinder(const Transform *ObjectToWorld, const Transform *WorldToObject,
-             bool ReverseOrientation, Float radius, Float zMin, Float zMax,
+             bool reverseOrientation, Float radius, Float zMin, Float zMax,
              Float phiMax)
-        : Shape(ObjectToWorld, WorldToObject, ReverseOrientation),
+        : Shape(ObjectToWorld, WorldToObject, reverseOrientation),
           radius(radius),
           zMin(std::min(zMin, zMax)),
           zMax(std::max(zMin, zMax)),

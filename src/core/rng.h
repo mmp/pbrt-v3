@@ -44,7 +44,7 @@
 
 // Random Number Declarations
 #ifdef PBRT_IS_MSVC
-// sadly, MSVC2008 (at least) doesn't support hexidecimal fp constants...
+// sadly, MSVC2008 (at least) doesn't support hexadecimal fp constants...
 static const Float OneMinusEpsilon = 0.9999999403953552f;
 #else
 #ifdef PBRT_FLOAT_IS_DOUBLE

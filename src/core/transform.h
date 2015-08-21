@@ -238,7 +238,7 @@ inline Ray Transform::operator()(const Ray &r) const {
     if (lengthSquared > 0) {
         Float dt = Dot(Abs(d), oError) / lengthSquared;
         o += d * dt;
-        //    tMax -= dt;
+        tMax -= dt;
     }
     return Ray(o, d, tMax, r.time, r.medium);
 }
@@ -273,7 +273,7 @@ inline Point3<T> Transform::operator()(const Point3<T> &p,
                  std::abs(m.m[2][2] * z) + std::abs(m.m[2][3]));
     *pError = gamma(3) * Vector3<T>(xAbsSum, yAbsSum, zAbsSum);
     Assert(wp != 0);
-    if (wp == 1.)
+    if (wp == 1)
         return Point3<T>(xp, yp, zp);
     else
         return Point3<T>(xp, yp, zp) / wp;

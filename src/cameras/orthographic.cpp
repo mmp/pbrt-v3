@@ -37,10 +37,12 @@
 #include "paramset.h"
 #include "sampler.h"
 #include "sampling.h"
+#include "stats.h"
 
 // OrthographicCamera Definitions
 Float OrthographicCamera::GenerateRay(const CameraSample &sample,
                                       Ray *ray) const {
+    ProfilePhase prof(Prof::GenerateCameraRay);
     // Compute raster and camera sample positions
     Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
     Point3f pCamera = RasterToCamera(pFilm);
@@ -66,6 +68,7 @@ Float OrthographicCamera::GenerateRay(const CameraSample &sample,
 
 Float OrthographicCamera::GenerateRayDifferential(const CameraSample &sample,
                                                   RayDifferential *ray) const {
+    ProfilePhase prof(Prof::GenerateCameraRay);
     // Compute main orthographic viewing ray
 
     // Compute raster and camera sample positions

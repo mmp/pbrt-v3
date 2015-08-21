@@ -47,9 +47,9 @@ class Disk : public Shape {
   public:
     // Disk Public Methods
     Disk(const Transform *ObjectToWorld, const Transform *WorldToObject,
-         bool ReverseOrientation, Float height, Float radius, Float innerRadius,
+         bool reverseOrientation, Float height, Float radius, Float innerRadius,
          Float phiMax)
-        : Shape(ObjectToWorld, WorldToObject, ReverseOrientation),
+        : Shape(ObjectToWorld, WorldToObject, reverseOrientation),
           height(height),
           radius(radius),
           innerRadius(innerRadius),

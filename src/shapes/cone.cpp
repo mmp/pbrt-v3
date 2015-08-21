@@ -38,14 +38,12 @@
 #include "efloat.h"
 
 // Cone Method Definitions
-Cone::Cone(const Transform *o2w, const Transform *w2o, bool ro, Float ht,
-           Float rad, Float tm)
-    : Shape(o2w, w2o, ro) {
-    radius = rad;
-    height = ht;
-    phiMax = Radians(Clamp(tm, 0, 360));
-}
-
+Cone::Cone(const Transform *o2w, const Transform *w2o, bool ro, Float height,
+           Float radius, Float phiMax)
+    : Shape(o2w, w2o, ro),
+      radius(radius),
+      height(height),
+      phiMax(Radians(Clamp(phiMax, 0, 360))) {}
 Bounds3f Cone::ObjectBound() const {
     Point3f p1 = Point3f(-radius, -radius, 0);
     Point3f p2 = Point3f(radius, radius, height);
@@ -68,7 +66,7 @@ bool Cone::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     EFloat k = EFloat(radius) / EFloat(height);
     k = k * k;
     EFloat a = dx * dx + dy * dy - k * dz * dz;
-    EFloat b = 2.f * (dx * ox + dy * oy - k * dz * (oz - height));
+    EFloat b = 2 * (dx * ox + dy * oy - k * dz * (oz - height));
     EFloat c = ox * ox + oy * oy - k * (oz - height) * (oz - height);
 
     // Solve quadratic equation for _t_ values
@@ -161,7 +159,7 @@ bool Cone::IntersectP(const Ray &r, bool testAlphaTexture) const {
     EFloat k = EFloat(radius) / EFloat(height);
     k = k * k;
     EFloat a = dx * dx + dy * dy - k * dz * dz;
-    EFloat b = 2.f * (dx * ox + dy * oy - k * dz * (oz - height));
+    EFloat b = 2 * (dx * ox + dy * oy - k * dz * (oz - height));
     EFloat c = ox * ox + oy * oy - k * (oz - height) * (oz - height);
 
     // Solve quadratic equation for _t_ values
@@ -197,7 +195,7 @@ bool Cone::IntersectP(const Ray &r, bool testAlphaTexture) const {
 
 Float Cone::Area() const {
     return radius * std::sqrt((height * height) + (radius * radius)) * phiMax /
-           2.f;
+           2;
 }
 
 Interaction Cone::Sample(const Point2f &u) const {

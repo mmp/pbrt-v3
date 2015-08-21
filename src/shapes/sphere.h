@@ -47,9 +47,9 @@ class Sphere : public Shape {
   public:
     // Sphere Public Methods
     Sphere(const Transform *ObjectToWorld, const Transform *WorldToObject,
-           bool ReverseOrientation, Float radius, Float zMin, Float zMax,
+           bool reverseOrientation, Float radius, Float zMin, Float zMax,
            Float phiMax)
-        : Shape(ObjectToWorld, WorldToObject, ReverseOrientation),
+        : Shape(ObjectToWorld, WorldToObject, reverseOrientation),
           radius(radius),
           zMin(Clamp(std::min(zMin, zMax), -radius, radius)),
           zMax(Clamp(std::max(zMin, zMax), -radius, radius)),

@@ -39,19 +39,19 @@
 
 // Sampling Function Definitions
 void StratifiedSample1D(Float *samp, int nSamples, RNG &rng, bool jitter) {
-    Float invNSamples = (Float)1. / nSamples;
+    Float invNSamples = (Float)1 / nSamples;
     for (int i = 0; i < nSamples; ++i) {
-        Float delta = jitter ? rng.UniformFloat() : (Float)0.5;
-        *samp++ = std::min((i + delta) * invNSamples, OneMinusEpsilon);
+        Float delta = jitter ? rng.UniformFloat() : 0.5f;
+        samp[i] = std::min((i + delta) * invNSamples, OneMinusEpsilon);
     }
 }
 
 void StratifiedSample2D(Point2f *samp, int nx, int ny, RNG &rng, bool jitter) {
-    Float dx = (Float)1. / nx, dy = (Float)1. / ny;
+    Float dx = (Float)1 / nx, dy = (Float)1 / ny;
     for (int y = 0; y < ny; ++y)
         for (int x = 0; x < nx; ++x) {
-            Float jx = jitter ? rng.UniformFloat() : (Float)0.5;
-            Float jy = jitter ? rng.UniformFloat() : (Float)0.5;
+            Float jx = jitter ? rng.UniformFloat() : 0.5f;
+            Float jy = jitter ? rng.UniformFloat() : 0.5f;
             samp->x = std::min((x + jx) * dx, OneMinusEpsilon);
             samp->y = std::min((y + jy) * dy, OneMinusEpsilon);
             ++samp;
@@ -81,13 +81,13 @@ Point2f RejectionSampleDisk(RNG &rng) {
     do {
         p.x = 1 - 2 * rng.UniformFloat();
         p.y = 1 - 2 * rng.UniformFloat();
-    } while (p.x * p.x + p.y * p.y > 1.f);
+    } while (p.x * p.x + p.y * p.y > 1);
     return p;
 }
 
 Vector3f UniformSampleHemisphere(const Point2f &u) {
     Float z = u[0];
-    Float r = std::sqrt(std::max((Float)0., (Float)1. - z * z));
+    Float r = std::sqrt(std::max((Float)0, (Float)1. - z * z));
     Float phi = 2 * Pi * u[1];
     return Vector3f(r * std::cos(phi), r * std::sin(phi), z);
 }
@@ -95,9 +95,9 @@ Vector3f UniformSampleHemisphere(const Point2f &u) {
 Float UniformHemispherePdf() { return Inv2Pi; }
 
 Vector3f UniformSampleSphere(const Point2f &u) {
-    Float z = 1.f - 2.f * u[0];
-    Float r = std::sqrt(std::max((Float)0., (Float)1. - z * z));
-    Float phi = 2.f * Pi * u[1];
+    Float z = 1 - 2 * u[0];
+    Float r = std::sqrt(std::max((Float)0, (Float)1 - z * z));
+    Float phi = 2 * Pi * u[1];
     return Vector3f(r * std::cos(phi), r * std::sin(phi), z);
 }
 
@@ -111,10 +111,10 @@ Point2f UniformSampleDisk(const Point2f &u) {
 
 Point2f ConcentricSampleDisk(const Point2f &u) {
     // Map uniform random numbers to $[-1,1]^2$
-    Point2f uOffset = 2.f * u - Vector2f(1.f, 1.f);
+    Point2f uOffset = 2.f * u - Vector2f(1, 1);
 
     // Handle degeneracy at the origin
-    if (uOffset.x == 0.f && uOffset.y == 0.f) return Point2f(0.f, 0.f);
+    if (uOffset.x == 0 && uOffset.y == 0) return Point2f(0, 0);
 
     // Apply concentric mapping to point
     Float theta, r;
@@ -152,7 +152,7 @@ Vector3f UniformSampleCone(const Point2f &u, Float cosThetaMax,
 
 Point2f UniformSampleTriangle(const Point2f &u) {
     Float su0 = std::sqrt(u[0]);
-    return Point2f(1.f - su0, u[1] * su0);
+    return Point2f(1 - su0, u[1] * su0);
 }
 
 Distribution2D::Distribution2D(const Float *func, int nu, int nv) {

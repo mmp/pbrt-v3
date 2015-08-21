@@ -39,7 +39,7 @@
 #include "paramset.h"
 
 // HomogeneousMedium Method Definitions
-Spectrum HomogeneousMedium::T(const Ray &ray, Sampler &sampler) const {
+Spectrum HomogeneousMedium::Tr(const Ray &ray, Sampler &sampler) const {
     return Exp(-sigma_t * std::min(ray.tMax * ray.d.Length(), MaxFloat));
 }
 

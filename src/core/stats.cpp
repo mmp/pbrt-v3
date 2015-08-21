@@ -167,6 +167,7 @@ void InitProfiler() {
                   "ProfNames[] array and Prof enumerant have different "
                   "number of entries!");
     profileSamples.reset(new std::atomic<uint64_t>[1 << NumProfEvents]);
+    for (int i = 0; i < (1 << NumProfEvents); ++i) profileSamples[i] = 0;
 // Set timer to periodically interrupt the system for profiling
 #ifndef PBRT_IS_WINDOWS
     struct sigaction sa;

@@ -97,10 +97,9 @@ class RealisticCamera : public Camera {
     Float FocusDistance(Float filmDist);
     Bounds2f BoundExitPupil(Float pFilmX0, Float pFilmX1) const;
     void RenderExitPupil(Float sx, Float sy, const char *filename) const;
-    Point3f SampleExitPupil(const Point2f &pFilm,
-                            const Point2f &lensSample) const;
+    Point3f SampleExitPupil(const Point2f &pFilm, const Point2f &lensSample,
+                            Float *sampleBoundsArea) const;
     void TestExitPupilBounds() const;
-    Float ExitPupilPdf(const Point3f &pFilm, const Point3f &pExitPupil) const;
 };
 
 RealisticCamera *CreateRealisticCamera(const ParamSet &params,

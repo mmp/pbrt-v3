@@ -68,7 +68,7 @@ std::unique_ptr<Sampler> MaxMinDistSampler::Clone(int seed) {
 }
 
 MaxMinDistSampler *CreateMaxMinDistSampler(const ParamSet &params) {
-    int nsamp = params.FindOneInt("pixelsamples", 4);
+    int nsamp = params.FindOneInt("pixelsamples", 16);
     int sd = params.FindOneInt("dimensions", 4);
     if (PbrtOptions.quickRender) nsamp = 1;
     return new MaxMinDistSampler(nsamp, sd);

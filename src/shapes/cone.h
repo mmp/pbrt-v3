@@ -46,8 +46,8 @@
 class Cone : public Shape {
   public:
     // Cone Public Methods
-    Cone(const Transform *o2w, const Transform *w2o, bool ro, Float height,
-         Float rad, Float tm);
+    Cone(const Transform *o2w, const Transform *w2o, bool reverseOrientation,
+         Float height, Float radius, Float phiMax);
     Bounds3f ObjectBound() const;
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                    bool testAlphaTexture) const;
@@ -57,7 +57,7 @@ class Cone : public Shape {
 
   protected:
     // Cone Private Data
-    Float radius, height, phiMax;
+    const Float radius, height, phiMax;
 };
 
 std::shared_ptr<Cone> CreateConeShape(const Transform *o2w,

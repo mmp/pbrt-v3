@@ -51,7 +51,7 @@ CameraSample Sampler::GetCameraSample(const Point2i &pRaster) {
 
 void Sampler::StartPixel(const Point2i &p) {
     currentPixel = p;
-    currentPixelSample = 0;
+    currentPixelSampleIndex = 0;
     // Reset array offsets for next pixel sample
     array1DOffset = array2DOffset = 0;
 }
@@ -59,14 +59,14 @@ void Sampler::StartPixel(const Point2i &p) {
 bool Sampler::StartNextSample() {
     // Reset array offsets for next pixel sample
     array1DOffset = array2DOffset = 0;
-    return ++currentPixelSample < samplesPerPixel;
+    return ++currentPixelSampleIndex < samplesPerPixel;
 }
 
 bool Sampler::SetSampleNumber(int64_t sampleNum) {
     // Reset array offsets for next pixel sample
     array1DOffset = array2DOffset = 0;
-    currentPixelSample = sampleNum;
-    return currentPixelSample < samplesPerPixel;
+    currentPixelSampleIndex = sampleNum;
+    return currentPixelSampleIndex < samplesPerPixel;
 }
 
 void Sampler::Request1DArray(int n) {
@@ -84,15 +84,15 @@ void Sampler::Request2DArray(int n) {
 const Float *Sampler::Get1DArray(int n) {
     if (array1DOffset == sampleArray1D.size()) return nullptr;
     Assert(n == samples1DArraySizes[array1DOffset]);
-    Assert(currentPixelSample < samplesPerPixel);
-    return &sampleArray1D[array1DOffset++][currentPixelSample * n];
+    Assert(currentPixelSampleIndex < samplesPerPixel);
+    return &sampleArray1D[array1DOffset++][currentPixelSampleIndex * n];
 }
 
 const Point2f *Sampler::Get2DArray(int n) {
     if (array2DOffset == sampleArray2D.size()) return nullptr;
     Assert(n == samples2DArraySizes[array2DOffset]);
-    Assert(currentPixelSample < samplesPerPixel);
-    return &sampleArray2D[array2DOffset++][currentPixelSample * n];
+    Assert(currentPixelSampleIndex < samplesPerPixel);
+    return &sampleArray2D[array2DOffset++][currentPixelSampleIndex * n];
 }
 
 PixelSampler::PixelSampler(int64_t samplesPerPixel, int nSampledDimensions)
@@ -114,17 +114,17 @@ bool PixelSampler::SetSampleNumber(int64_t sampleNum) {
 }
 
 Float PixelSampler::Get1D() {
-    Assert(currentPixelSample < samplesPerPixel);
+    Assert(currentPixelSampleIndex < samplesPerPixel);
     if (current1DDimension < samples1D.size())
-        return samples1D[current1DDimension++][currentPixelSample];
+        return samples1D[current1DDimension++][currentPixelSampleIndex];
     else
         return rng.UniformFloat();
 }
 
 Point2f PixelSampler::Get2D() {
-    Assert(currentPixelSample < samplesPerPixel);
+    Assert(currentPixelSampleIndex < samplesPerPixel);
     if (current2DDimension < samples2D.size())
-        return samples2D[current2DDimension++][currentPixelSample];
+        return samples2D[current2DDimension++][currentPixelSampleIndex];
     else
         return Point2f(rng.UniformFloat(), rng.UniformFloat());
 }
@@ -138,18 +138,16 @@ void GlobalSampler::StartPixel(const Point2i &p) {
         arrayStartDim + sampleArray1D.size() + 2 * sampleArray2D.size();
 
     // Compute 1D array samples for _GlobalSampler_
-    int dim = arrayStartDim;
     for (size_t i = 0; i < samples1DArraySizes.size(); ++i) {
         int nSamples = samples1DArraySizes[i] * samplesPerPixel;
-        // Generate _nSamples_ 1D array samples
         for (int j = 0; j < nSamples; ++j) {
             int64_t index = GetIndexForSample(j);
-            sampleArray1D[i][j] = SampleDimension(index, dim);
+            sampleArray1D[i][j] = SampleDimension(index, arrayStartDim + i);
         }
-        ++dim;
     }
 
     // Compute 2D array samples for _GlobalSampler_
+    int dim = arrayStartDim + samples1DArraySizes.size();
     for (size_t i = 0; i < samples2DArraySizes.size(); ++i) {
         int nSamples = samples2DArraySizes[i] * samplesPerPixel;
         for (int j = 0; j < nSamples; ++j) {
@@ -164,7 +162,7 @@ void GlobalSampler::StartPixel(const Point2i &p) {
 
 bool GlobalSampler::StartNextSample() {
     dimension = 0;
-    intervalSampleIndex = GetIndexForSample(currentPixelSample + 1);
+    intervalSampleIndex = GetIndexForSample(currentPixelSampleIndex + 1);
     return Sampler::StartNextSample();
 }
 

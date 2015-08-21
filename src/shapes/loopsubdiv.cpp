@@ -48,7 +48,7 @@ struct SDVertex;
 // LoopSubdiv Local Structures
 struct SDVertex {
     // SDVertex Constructor
-    SDVertex(Point3f p = Point3f(0, 0, 0)) : p(p) {}
+    SDVertex(const Point3f &p = Point3f(0, 0, 0)) : p(p) {}
 
     // SDVertex Methods
     int valence();
@@ -146,7 +146,7 @@ inline Float loopGamma(int valence) {
 // LoopSubdiv Function Definitions
 std::vector<std::shared_ptr<Shape>> LoopSubdivide(
     const Transform *ObjectToWorld, const Transform *WorldToObject,
-    bool ReverseOrientation, int nLevels, int nIndices,
+    bool reverseOrientation, int nLevels, int nIndices,
     const int *vertexIndices, int nVertices, const Point3f *p) {
     std::vector<SDVertex *> vertices;
     std::vector<SDFace *> faces;
@@ -350,8 +350,8 @@ std::vector<std::shared_ptr<Shape>> LoopSubdivide(
         if (!vertex->boundary) {
             // Compute tangents of interior face
             for (int j = 0; j < valence; ++j) {
-                S += std::cos(2.f * Pi * j / valence) * Vector3f(pRing[j]);
-                T += std::sin(2.f * Pi * j / valence) * Vector3f(pRing[j]);
+                S += std::cos(2 * Pi * j / valence) * Vector3f(pRing[j]);
+                T += std::sin(2 * Pi * j / valence) * Vector3f(pRing[j]);
             }
         } else {
             // Compute tangents of boundary face
@@ -391,7 +391,7 @@ std::vector<std::shared_ptr<Shape>> LoopSubdivide(
             }
         }
         return CreateTriangleMesh(ObjectToWorld, WorldToObject,
-                                  ReverseOrientation, ntris, verts.get(),
+                                  reverseOrientation, ntris, verts.get(),
                                   totVerts, pLimit.get(), nullptr, &Ns[0],
                                   nullptr, nullptr);
     }

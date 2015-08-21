@@ -36,10 +36,12 @@
 #include "cameras/environment.h"
 #include "paramset.h"
 #include "sampler.h"
+#include "stats.h"
 
 // EnvironmentCamera Method Definitions
 Float EnvironmentCamera::GenerateRay(const CameraSample &sample,
                                      Ray *ray) const {
+    ProfilePhase prof(Prof::GenerateCameraRay);
     // Compute environment camera ray direction
     Float theta = Pi * sample.pFilm.y / film->fullResolution.y;
     Float phi = 2 * Pi * sample.pFilm.x / film->fullResolution.x;

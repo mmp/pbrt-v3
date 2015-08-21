@@ -65,7 +65,7 @@ class PlasticMaterial : public Material {
     // PlasticMaterial Private Data
     std::shared_ptr<Texture<Spectrum>> Kd, Ks;
     std::shared_ptr<Texture<Float>> roughness, bumpMap;
-    bool remapRoughness;
+    const bool remapRoughness;
 };
 
 PlasticMaterial *CreatePlasticMaterial(const TextureParams &mp);

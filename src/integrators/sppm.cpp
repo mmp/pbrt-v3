@@ -74,12 +74,12 @@ struct SPPMPixel {
         // VisiblePoint Public Methods
         VisiblePoint() {}
         VisiblePoint(const Point3f &p, const Vector3f &wo, const BSDF *bsdf,
-                     const Spectrum &alpha)
-            : p(p), wo(wo), bsdf(bsdf), alpha(alpha) {}
+                     const Spectrum &beta)
+            : p(p), wo(wo), bsdf(bsdf), beta(beta) {}
         Point3f p;
         Vector3f wo;
         const BSDF *bsdf = nullptr;
-        Spectrum alpha;
+        Spectrum beta;
     } vp;
     AtomicFloat Phi[Spectrum::nSamples];
     std::atomic<int> M;
@@ -159,7 +159,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     CameraSample cameraSample =
                         tileSampler->GetCameraSample(pPixel);
                     RayDifferential ray;
-                    Spectrum alpha =
+                    Spectrum beta =
                         camera->GenerateRayDifferential(cameraSample, &ray);
                     ray.ScaleDifferentials(invSqrtSPP);
 
@@ -179,7 +179,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                             // Accumulate light contributions for ray with no
                             // intersection
                             for (const auto &light : scene.lights)
-                                pixel.Ld += alpha * light->Le(ray);
+                                pixel.Ld += beta * light->Le(ray);
                             break;
                         }
                         // Process SPPM camera ray intersection
@@ -197,10 +197,10 @@ void SPPMIntegrator::Render(const Scene &scene) {
                         // intersection
                         Vector3f wo = -ray.d;
                         if (depth == 0 || specularBounce)
-                            pixel.Ld += alpha * isect.Le(wo);
+                            pixel.Ld += beta * isect.Le(wo);
                         pixel.Ld +=
-                            alpha * UniformSampleOneLight(isect, scene,
-                                                          *tileSampler, arena);
+                            beta * UniformSampleOneLight(isect, scene,
+                                                         *tileSampler, arena);
 
                         // Possibly create visible point and end camera path
                         bool isDiffuse = bsdf.NumComponents(BxDFType(
@@ -210,7 +210,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                             BSDF_GLOSSY | BSDF_REFLECTION |
                                             BSDF_TRANSMISSION)) > 0;
                         if (isDiffuse || (isGlossy && depth == maxDepth - 1)) {
-                            pixel.vp = {isect.p, wo, &bsdf, alpha};
+                            pixel.vp = {isect.p, wo, &bsdf, beta};
                             break;
                         }
 
@@ -224,12 +224,12 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                               &pdf, BSDF_ALL, &type);
                             if (pdf == 0. || f.IsBlack()) break;
                             specularBounce = (type & BSDF_SPECULAR) != 0;
-                            alpha *= f * AbsDot(wi, isect.shading.n) / pdf;
-                            if (alpha.y() < 0.25) {
+                            beta *= f * AbsDot(wi, isect.shading.n) / pdf;
+                            if (beta.y() < 0.25) {
                                 Float continueProb =
-                                    std::min((Float)1, alpha.y());
+                                    std::min((Float)1, beta.y());
                                 if (tileSampler->Get1D() > continueProb) break;
-                                alpha /= continueProb;
+                                beta /= continueProb;
                             }
                             ray = (RayDifferential)isect.SpawnRay(wi);
                         }
@@ -250,7 +250,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         Float maxRadius = 0.;
         for (int i = 0; i < nPixels; ++i) {
             const SPPMPixel &pixel = pixels[i];
-            if (pixel.vp.alpha.IsBlack()) continue;
+            if (pixel.vp.beta.IsBlack()) continue;
             Bounds3f vpBound = Expand(Bounds3f(pixel.vp.p), pixel.radius);
             gridBounds = Union(gridBounds, vpBound);
             maxRadius = std::max(maxRadius, pixel.radius);
@@ -271,7 +271,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
             ParallelFor([&](int pixelIndex) {
                 MemoryArena &arena = perThreadArenas[threadIndex];
                 SPPMPixel &pixel = pixels[pixelIndex];
-                if (!pixel.vp.alpha.IsBlack()) {
+                if (!pixel.vp.beta.IsBlack()) {
                     // Add pixel's visible point to applicable grid cells
                     Float radius = pixel.radius;
                     Point3i pMin, pMax;
@@ -333,7 +333,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                          camera->shutterOpen, camera->shutterClose);
                 haltonDim += 5;
 
-                // Generate _photonRay_ from light source and initialize _alpha_
+                // Generate _photonRay_ from light source and initialize _beta_
                 RayDifferential photonRay;
                 Normal3f Nl;
                 Float pdfPos, pdfDir;
@@ -428,13 +428,13 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 if (p.M > 0) {
                     // Update pixel photon count, search radius, and $\tau$ from
                     // photons
-                    Float gamma = 0.6666666666667f;
+                    Float gamma = (Float)2 / (Float)3;
                     Float Nnew = p.N + gamma * p.M;
                     Float Rnew = p.radius * std::sqrt(Nnew / (p.N + p.M));
-                    Spectrum Phi(0.);
+                    Spectrum Phi(0);
                     for (int j = 0; j < Spectrum::nSamples; ++j)
                         Phi[j] = p.Phi[j];
-                    p.tau = (p.tau + p.vp.alpha * Phi) * (Rnew * Rnew) /
+                    p.tau = (p.tau + p.vp.beta * Phi) * (Rnew * Rnew) /
                             (p.radius * p.radius);
                     p.N = Nnew;
                     p.radius = Rnew;
@@ -443,7 +443,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                         p.Phi[j] = (Float)0;
                 }
                 // Reset _VisiblePoint_ in pixel
-                p.vp.alpha = 0.;
+                p.vp.beta = 0.;
                 p.vp.bsdf = nullptr;
             }
         }

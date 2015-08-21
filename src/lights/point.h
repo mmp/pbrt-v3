@@ -49,11 +49,10 @@ class PointLight : public Light {
   public:
     // PointLight Public Methods
     PointLight(const Transform &LightToWorld,
-               const MediumInterface &mediumInterface,
-               const Spectrum &intensity)
-        : Light(LightFlags::DeltaPosition, LightToWorld, mediumInterface),
+               const MediumInterface &mediumInterface, const Spectrum &I)
+        : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
           pLight(LightToWorld(Point3f(0, 0, 0))),
-          intensity(intensity) {}
+          I(I) {}
     Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
                        Float *pdf, VisibilityTester *vis) const;
     Spectrum Power() const;
@@ -67,7 +66,7 @@ class PointLight : public Light {
   private:
     // PointLight Private Data
     const Point3f pLight;
-    const Spectrum intensity;
+    const Spectrum I;
 };
 
 std::shared_ptr<PointLight> CreatePointLight(const Transform &light2world,

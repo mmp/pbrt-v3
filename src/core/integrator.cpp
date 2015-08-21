@@ -138,7 +138,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
         if (!f.IsBlack()) {
             // Add light's contribution to reflected radiance
             if (handleMedia)
-                Li *= visibility.T(scene, sampler);
+                Li *= visibility.Tr(scene, sampler);
             else if (!visibility.Unoccluded(scene))
                 Li = Spectrum(0.f);
             if (!Li.IsBlack()) {
@@ -182,9 +182,9 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
             // Find intersection and compute transmittance
             SurfaceInteraction lightIsect;
             Ray ray = it.SpawnRay(wi);
-            Spectrum T(1.f);
+            Spectrum Tr(1.f);
             bool foundSurfaceInteraction =
-                handleMedia ? scene.IntersectT(ray, sampler, &lightIsect, &T)
+                handleMedia ? scene.IntersectTr(ray, sampler, &lightIsect, &Tr)
                             : scene.Intersect(ray, &lightIsect);
 
             // Add light contribution from material sampling
@@ -194,7 +194,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &shadingSample,
                     Li = lightIsect.Le(-wi);
             } else
                 Li = light.Le(ray);
-            if (!Li.IsBlack()) Ld += f * Li * T * weight / shadingPdf;
+            if (!Li.IsBlack()) Ld += f * Li * Tr * weight / shadingPdf;
         }
     }
     return Ld;
@@ -252,13 +252,12 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     Float rayWeight =
                         camera->GenerateRayDifferential(cameraSample, &ray);
                     ray.ScaleDifferentials(
-                        1.f / std::sqrt(tileSampler->samplesPerPixel));
+                        1 / std::sqrt(tileSampler->samplesPerPixel));
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    if (rayWeight > 0.f)
-                        L = Li(ray, scene, *tileSampler, arena);
+                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
@@ -305,9 +304,8 @@ Spectrum SamplerIntegrator::SpecularReflect(
     // Compute specular reflection direction _wi_ and BSDF value
     Vector3f wo = isect.wo, wi;
     Float pdf;
-    Spectrum f =
-        isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
-                             BxDFType(BSDF_REFLECTION | BSDF_SPECULAR));
+    BxDFType type = BxDFType(BSDF_REFLECTION | BSDF_SPECULAR);
+    Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf, type);
 
     // Return contribution of specular reflection
     const Normal3f &ns = isect.shading.n;
