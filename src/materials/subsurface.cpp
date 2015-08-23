@@ -47,12 +47,13 @@ void SubsurfaceMaterial::ComputeScatteringFunctions(
     bool allowMultipleLobes) const {
     // Perform bump mapping with _bumpMap_, if present
     if (bumpMap) Bump(bumpMap, si);
+
+    // Initialize BSDF for _SubsurfaceMaterial_
     Spectrum R = Kr->Evaluate(*si).Clamp();
     Spectrum T = Kt->Evaluate(*si).Clamp();
     Float urough = uRoughness->Evaluate(*si);
     Float vrough = vRoughness->Evaluate(*si);
-    Spectrum sig_a = scale * sigma_a->Evaluate(*si).Clamp();
-    Spectrum sig_s = scale * sigma_s->Evaluate(*si).Clamp();
+
     // Initialize _bsdf_ for smooth or rough dielectric
     si->bsdf = ARENA_ALLOC(arena, BSDF)(*si, eta);
 
@@ -89,6 +90,8 @@ void SubsurfaceMaterial::ComputeScatteringFunctions(
                     T, distrib, 1.f, eta, mode));
         }
     }
+    Spectrum sig_a = scale * sigma_a->Evaluate(*si).Clamp();
+    Spectrum sig_s = scale * sigma_s->Evaluate(*si).Clamp();
     si->bssrdf = ARENA_ALLOC(arena, TabulatedBSSRDF)(*si, this, mode, eta,
                                                      sig_a, sig_s, table);
 }

@@ -119,50 +119,54 @@ Float BeamDiffusionMS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
 }
 
 Float BeamDiffusionSS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
+    // Compute material parameters and minimum $t$ below the critical angle
     Float sig_t = sig_a + sig_s, rho = sig_s / sig_t;
-    // Find minimum $t$ below the critical angle
     Float tCrit = r * std::sqrt(eta * eta - 1);
     Float integral = 0.0f;
     const int nSamples = 100;
     for (int i = 0; i < nSamples; ++i) {
         // Evaluate single scattering integrand and add to _integral_
-        Float t = tCrit - std::log(1 - (i + .5f) / nSamples) / sig_t;
+        Float ti = tCrit - std::log(1 - (i + .5f) / nSamples) / sig_t;
 
-        // Determine length of connecting segment
-        Float d = std::sqrt(r * r + t * t);
-
-        // Determine angle cosine for single scattering contribution
-        Float cosTheta = t / d;
+        // Determine length $d$ of connecting segment and $\cos\theta_\roman{o}$
+        Float d = std::sqrt(r * r + ti * ti);
+        Float cosThetaO = ti / d;
 
         // Add contribution of single scattering at depth $t$
-        integral += PhaseHG(-cosTheta, g) * std::exp(-sig_t * d) * cosTheta /
-                    (d * d) * (1 - FrDielectric(-cosTheta, 1, eta));
+        integral += rho * std::exp(-sig_t * (d + tCrit)) / (d * d) *
+                    PhaseHG(cosThetaO, g) *
+                    (1 - FrDielectric(-cosThetaO, 1, eta)) *
+                    std::abs(cosThetaO);
     }
-    // Return result of single scattering integral
-    return integral * rho * std::exp(-tCrit * sig_t) / nSamples;
+    return integral / nSamples;
 }
 
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
-    // Choose radii of the diffusion profile disretization
+    // Choose radius values of the diffusion profile disretization
     t->radiusSamples[0] = 0;
     t->radiusSamples[1] = 2.5e-3f;
     for (int i = 2; i < t->nRadiusSamples; ++i)
         t->radiusSamples[i] = t->radiusSamples[i - 1] * 1.2f;
+
+    // Choose albedo values of the diffusion profile disretization
+    for (int i = 0; i < t->nRhoSamples; ++i)
+        t->rhoSamples[i] =
+            (1 - std::exp(-8 * i / (Float)(t->nRhoSamples - 1))) /
+            (1 - std::exp(-8));
     ParallelFor([&](int i) {
         // Compute the diffusion profile for the _i_-th albedo sample
-        Float rho = (1 - std::exp(-8 * i / (Float)(t->nRhoSamples - 1))) /
-                    (1 - std::exp(-8));
 
-        // Compute profile for chosen $\rho$
+        // Compute scattering profile for chosen albedo $\rho$
         t->profile[i * t->nRadiusSamples] = 0.0f;
-        for (int j = 0; j < t->nRadiusSamples; ++j)
+        for (int j = 1; j < t->nRadiusSamples; ++j) {
+            Float rho = t->rhoSamples[i], r = t->radiusSamples[j];
             t->profile[i * t->nRadiusSamples + j] =
-                2 * Pi * t->radiusSamples[j] *
-                (BeamDiffusionSS(rho, 1 - rho, g, eta, t->radiusSamples[j]) +
-                 BeamDiffusionMS(rho, 1 - rho, g, eta, t->radiusSamples[j]));
+                2 * Pi * r * (BeamDiffusionSS(rho, 1 - rho, g, eta, r) +
+                              BeamDiffusionMS(rho, 1 - rho, g, eta, r));
+        }
 
-        // Compute $\rho_{\roman{eff}}$ and importance sampling CDF
-        t->rhoSamples[i] = rho;
+        // Compute effective albedo $\rho_{\roman{eff}}$ and CDF for importance
+        // sampling
         t->rhoEff[i] =
             IntegrateCatmullRom(t->nRadiusSamples, t->radiusSamples.get(),
                                 &t->profile[i * t->nRadiusSamples],
@@ -182,10 +186,6 @@ void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &Kd,
 }
 
 // BSSRDF Method Definitions
-Spectrum SeparableBSSRDF::Sp(const SurfaceInteraction &pi) const {
-    return Sr(Distance(po.p, pi.p));
-}
-
 BSSRDFTable::BSSRDFTable(int nRhoSamples, int nRadiusSamples)
     : nRhoSamples(nRhoSamples),
       nRadiusSamples(nRadiusSamples),
@@ -196,7 +196,7 @@ BSSRDFTable::BSSRDFTable(int nRhoSamples, int nRadiusSamples)
       profileCDF(new Float[nRadiusSamples * nRhoSamples]) {}
 
 Spectrum TabulatedBSSRDF::Sr(Float r) const {
-    Spectrum fs(0.f);
+    Spectrum Sr(0.f);
     for (int ch = 0; ch < Spectrum::nSamples; ++ch) {
         // Convert $r$ into unitless optical radius $r_{\roman{optical}}$
         Float rOptical = r * sigma_t[ch];
@@ -210,25 +210,24 @@ Spectrum TabulatedBSSRDF::Sr(Float r) const {
                                rOptical, &radiusOffset, radiusWeights))
             continue;
 
-        // Set BSSRDF value _fs[ch]_ using tensor spline interpolation
-        Float lookup = 0;
+        // Set BSSRDF value _Sr[ch]_ using tensor spline interpolation
+        Float sr = 0;
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
                 Float weight = rhoWeights[i] * radiusWeights[j];
                 if (weight != 0)
-                    lookup +=
-                        weight *
-                        table.EvalProfile(rhoOffset + i, radiusOffset + j);
+                    sr += weight *
+                          table.EvalProfile(rhoOffset + i, radiusOffset + j);
             }
         }
 
         // Cancel marginal PDF factor from tabulated BSSRDF profile
-        if (rOptical != 0) lookup /= 2 * Pi * rOptical;
-        fs[ch] = lookup;
+        if (rOptical != 0) sr /= 2 * Pi * rOptical;
+        Sr[ch] = sr;
     }
     // Transform BSSRDF value into world space units
-    fs *= sigma_t * sigma_t;
-    return fs.Clamp();
+    Sr *= sigma_t * sigma_t;
+    return Sr.Clamp();
 }
 
 Spectrum SeparableBSSRDF::Sample_S(const Scene &scene, Float sample1,
@@ -362,18 +361,18 @@ Float TabulatedBSSRDF::Pdf_Sr(int ch, Float r) const {
         return 0.f;
 
     // Return BSSRDF profile density for channel _ch_
-    Float lookup = 0.f, rhoEff = 0;
+    Float sr = 0.f, rhoEff = 0;
     for (int i = 0; i < 4; ++i) {
         if (rhoWeights[i] == 0) continue;
         rhoEff += table.rhoEff[rhoOffset + i] * rhoWeights[i];
         for (int j = 0; j < 4; ++j) {
             if (radiusWeights[j] == 0) continue;
-            lookup += table.EvalProfile(rhoOffset + i, radiusOffset + j) *
-                      rhoWeights[i] * radiusWeights[j];
+            sr += table.EvalProfile(rhoOffset + i, radiusOffset + j) *
+                  rhoWeights[i] * radiusWeights[j];
         }
     }
 
     // Cancel marginal PDF factor from tabulated BSSRDF profile
-    if (rOptical != 0) lookup /= 2 * Pi * rOptical;
-    return std::max((Float)0, lookup * sigma_t[ch] * sigma_t[ch] / rhoEff);
+    if (rOptical != 0) sr /= 2 * Pi * rOptical;
+    return std::max((Float)0, sr * sigma_t[ch] * sigma_t[ch] / rhoEff);
 }

@@ -699,7 +699,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                     if (s == "true") bdata[j] = true;
                     else if (s == "false") bdata[j] = false;
                     else {
-                        Warning("Value \"%s\" unknown for boolean parameter \"%s\"."
+                        Warning("Value \"%s\" unknown for Boolean parameter \"%s\"."
                             "Using \"false\".", s.c_str(), cur_paramlist[i].name);
                         bdata[j] = false;
                     }

@@ -44,9 +44,11 @@
 #include "reflection.h"
 #include "stats.h"
 
+// BSSRDF Utility Declarations
+Float FresnelMoment1(Float invEta);
+Float FresnelMoment2(Float invEta);
+
 // BSSRDF Declarations
-Float FresnelMoment1(Float eta);
-Float FresnelMoment2(Float eta);
 class BSSRDF {
   public:
     // BSSRDF Public Methods
@@ -79,14 +81,16 @@ class SeparableBSSRDF : public BSSRDF {
           mode(mode) {}
     Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) {
         ProfilePhase pp(Prof::BSSRDFEvaluation);
-        Float Ft = (1 - FrDielectric(CosTheta(po.wo), 1.f, eta));
-        return Ft * Sp(pi) * Sw(wi);
+        Float Ft = FrDielectric(CosTheta(po.wo), 1, eta);
+        return (1 - Ft) * Sp(pi) * Sw(wi);
     }
     Spectrum Sw(const Vector3f &w) const {
         Float c = 1 - 2 * FresnelMoment1(1 / eta);
-        return InvPi * (1 - FrDielectric(CosTheta(w), 1.f, eta)) / c;
+        return (1 - FrDielectric(CosTheta(w), 1, eta)) / (c * Pi);
     }
-    Spectrum Sp(const SurfaceInteraction &si) const;
+    Spectrum Sp(const SurfaceInteraction &pi) const {
+        return Sr(Distance(po.p, pi.p));
+    }
     Spectrum Sample_S(const Scene &scene, Float sample1, const Point2f &sample2,
                       MemoryArena &arena, SurfaceInteraction *si,
                       Float *pdf) const;
@@ -102,8 +106,8 @@ class SeparableBSSRDF : public BSSRDF {
 
   private:
     // SeparableBSSRDF Private Data
-    Normal3f ns;
-    Vector3f ss, ts;
+    const Normal3f ns;
+    const Vector3f ss, ts;
     const Material *material;
     const TransportMode mode;
 };
@@ -117,7 +121,7 @@ class TabulatedBSSRDF : public SeparableBSSRDF {
         : SeparableBSSRDF(po, eta, material, mode), table(table) {
         sigma_t = sigma_a + sigma_s;
         for (int c = 0; c < Spectrum::nSamples; ++c)
-            rho[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0.f;
+            rho[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0;
     }
     Spectrum Sr(Float distance) const;
     Float Pdf_Sr(int ch, Float distance) const;

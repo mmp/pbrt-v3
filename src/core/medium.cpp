@@ -174,10 +174,6 @@ static MeasuredSS SubsurfaceParameterTable[] = {
      {0.031845, 0.031324, 0.030147}}};
 
 // Media Definitions
-Float HenyeyGreenstein::p(const Vector3f &wo, const Vector3f &wi) const {
-    return PhaseHG(-Dot(wo, wi), g);
-}
-
 bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
                                    Spectrum *sigma_prime_s) {
     for (MeasuredSS &mss : SubsurfaceParameterTable) {
@@ -194,16 +190,21 @@ Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
                                  const Point2f &sample) const {
     Float cosTheta;
     if (std::abs(g) < 1e-3)
-        cosTheta = 1.f - 2.f * sample.x;
+        cosTheta = 1 - 2 * sample.x;
     else {
-        Float sqrTerm = (1.f - g * g) / (1.f - g + 2.f * g * sample.x);
-        cosTheta = (1.f + g * g - sqrTerm * sqrTerm) / (2.f * g);
+        Float sqrTerm = (1 - g * g) / (1 - g + 2 * g * sample.x);
+        cosTheta = (1 + g * g - sqrTerm * sqrTerm) / (2 * g);
     }
     Float sinTheta =
-        std::sqrt(std::max((Float)0., (Float)1. - cosTheta * cosTheta));
+        std::sqrt(std::max((Float)0, (Float)1 - cosTheta * cosTheta));
     Float phi = 2 * Pi * sample.y;
     Vector3f v1, v2;
     CoordinateSystem(wo, &v1, &v2);
     *wi = SphericalDirection(sinTheta, cosTheta, phi, v1, v2, -wo);
-    return PhaseHG(cosTheta, g);
+    return PhaseHG(-cosTheta, g);
+}
+
+// HenyeyGreenstein Method Definitions
+Float HenyeyGreenstein::p(const Vector3f &wo, const Vector3f &wi) const {
+    return PhaseHG(Dot(wo, wi), g);
 }

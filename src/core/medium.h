@@ -53,26 +53,15 @@ class PhaseFunction {
                            const Point2f &sample) const = 0;
 };
 
-inline Float PhaseHG(Float cosTheta, Float g) {
-    Float denom = 1 + g * g - 2 * g * cosTheta;
-    return Inv4Pi * (1 - g * g) / (denom * std::sqrt(denom));
-}
-
-class HenyeyGreenstein : public PhaseFunction {
-  public:
-    // HenyeyGreenstein Public Methods
-    HenyeyGreenstein(Float g) : g(g) {}
-    Float p(const Vector3f &wo, const Vector3f &wi) const;
-    Float Sample_p(const Vector3f &wo, Vector3f *wi,
-                   const Point2f &sample) const;
-
-  private:
-    const Float g;
-};
-
 bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
                                    Spectrum *sigma_s);
 Vector3f SampleHG(const Vector3f &w, Float g, const Point2f &sample);
+
+// Media Inline Functions
+inline Float PhaseHG(Float cosTheta, Float g) {
+    Float denom = 1 + g * g + 2 * g * cosTheta;
+    return Inv4Pi * (1 - g * g) / (denom * std::sqrt(denom));
+}
 
 // Medium Declarations
 class Medium {
@@ -86,15 +75,28 @@ class Medium {
     virtual Float Pdf(const Ray &ray, const Interaction &it) const = 0;
 };
 
+// HenyeyGreenstein Declarations
+class HenyeyGreenstein : public PhaseFunction {
+  public:
+    // HenyeyGreenstein Public Methods
+    HenyeyGreenstein(Float g) : g(g) {}
+    Float p(const Vector3f &wo, const Vector3f &wi) const;
+    Float Sample_p(const Vector3f &wo, Vector3f *wi,
+                   const Point2f &sample) const;
+
+  private:
+    const Float g;
+};
+
 // MediumInterface Declarations
 struct MediumInterface {
-    const Medium *inside, *outside;
     MediumInterface() : inside(nullptr), outside(nullptr) {}
     // MediumInterface Public Methods
     MediumInterface(const Medium *medium) : inside(medium), outside(medium) {}
     MediumInterface(const Medium *inside, const Medium *outside)
         : inside(inside), outside(outside) {}
     bool IsMediumTransition() const { return inside != outside; }
+    const Medium *inside, *outside;
 };
 
 #endif  // PBRT_CORE_MEDIUM_H

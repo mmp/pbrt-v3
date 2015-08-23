@@ -97,6 +97,10 @@ struct Distribution1D {
         if (uRemapped) Assert(*uRemapped >= 0.f && *uRemapped <= 1.f);
         return offset;
     }
+    Float DiscretePDF(int index) const {
+        Assert(index >= 0 && index < Count());
+        return func[index] / (funcInt * Count());
+    }
 
     // Distribution1D Public Data
     std::vector<Float> func, cdf;

@@ -286,10 +286,10 @@ void SPPMIntegrator::Render(const Scene &scene) {
                                 int h = hash(Point3i(x, y, z), hashSize);
                                 SPPMPixelListNode *node =
                                     arena.Alloc<SPPMPixelListNode>();
+                                node->pixel = &pixel;
 
                                 // Atomically add _node_ to the start of
                                 // _grid[h]_'s linked list
-                                node->pixel = &pixel;
                                 node->next = grid[h];
                                 while (grid[h].compare_exchange_weak(
                                            node->next, node) == false)
@@ -340,7 +340,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 Spectrum Le = light->Sample_Le(lightSample0, lightSample1,
                                                lightSampleTime, &photonRay, &Nl,
                                                &pdfPos, &pdfDir);
-                if (pdfPos == 0.f || pdfDir == 0.f || Le.IsBlack()) return;
+                if (pdfPos == 0 || pdfDir == 0 || Le.IsBlack()) return;
                 Spectrum beta = (AbsDot(Nl, photonRay.d) * Le) /
                                 (lightPdf * pdfPos * pdfDir);
                 if (beta.IsBlack()) return;
@@ -431,7 +431,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     Float gamma = (Float)2 / (Float)3;
                     Float Nnew = p.N + gamma * p.M;
                     Float Rnew = p.radius * std::sqrt(Nnew / (p.N + p.M));
-                    Spectrum Phi(0);
+                    Spectrum Phi;
                     for (int j = 0; j < Spectrum::nSamples; ++j)
                         Phi[j] = p.Phi[j];
                     p.tau = (p.tau + p.vp.beta * Phi) * (Rnew * Rnew) /

@@ -80,7 +80,7 @@ static void BeckmannSample11(Float cosThetaI, Float U1, Float U2,
     int it = 0;
     while (++it < 10) {
         /* Bisection criterion -- the oddly-looking
-           boolean expression are intentional to check
+           Boolean expression are intentional to check
            for NaNs at little additional cost */
         if (!(b >= a && b <= c)) b = 0.5f * (a + c);
 

@@ -94,7 +94,7 @@ void MLTSampler::EnsureReady(int index) {
     if (largeStep) {
         Xi.value = rng.UniformFloat();
     } else {
-        int nSmall = currentIteration - Xi.lastModificationIteration;
+        int64_t nSmall = currentIteration - Xi.lastModificationIteration;
         // Apply _nSmall_ small step mutations
 
         // Sample the standard normal distribution $N(0, 1)$
@@ -110,9 +110,8 @@ void MLTSampler::EnsureReady(int index) {
 }
 
 void MLTSampler::Reject() {
-    for (auto &sample : X)
-        if (sample.lastModificationIteration == currentIteration)
-            sample.Restore();
+    for (auto &Xi : X)
+        if (Xi.lastModificationIteration == currentIteration) Xi.Restore();
     --currentIteration;
 }
 
@@ -170,9 +169,10 @@ void MLTIntegrator::Render(const Scene &scene) {
     std::vector<Float> bootstrapWeights(nBootstrapSamples, 0);
     {
         ProgressReporter progress(nBootstrap, "Generating bootstrap paths");
+        std::vector<MemoryArena> bootstrapThreadArenas(MaxThreadIndex());
         ParallelFor([&](int i) {
             // Generate _i_th bootstrap sample
-            MemoryArena arena;
+            MemoryArena &arena = bootstrapThreadArenas[threadIndex];
             for (int depth = 0; depth <= maxDepth; ++depth) {
                 int rngIndex = i * (maxDepth + 1) + depth;
                 MLTSampler sampler(mutationsPerPixel, rngIndex, sigma,
@@ -236,9 +236,8 @@ void MLTIntegrator::Render(const Scene &scene) {
                     LCurrent = LProposed;
                     sampler.Accept();
                     ++acceptedMutations;
-                } else {
+                } else
                     sampler.Reject();
-                }
                 ++totalMutations;
                 if (i % 100 == 0) progress.Update();
                 arena.Reset();
@@ -256,12 +255,12 @@ MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,
     int maxDepth = params.FindOneInt("maxdepth", 5);
     int nBootstrap = params.FindOneInt("bootstrapsamples", 100000);
     int64_t nChains = params.FindOneInt("chains", 1000);
-    int64_t mutationsPerPixel = params.FindOneInt("mutationsperpixel", 100);
+    int mutationsPerPixel = params.FindOneInt("mutationsperpixel", 100);
     Float largeStepProbability =
         params.FindOneFloat("largestepprobability", 0.3f);
     Float sigma = params.FindOneFloat("sigma", .01f);
     if (PbrtOptions.quickRender) {
-        mutationsPerPixel = std::max((int64_t)1, mutationsPerPixel / 16);
+        mutationsPerPixel = std::max(1, mutationsPerPixel / 16);
         nBootstrap = std::max(1, nBootstrap / 16);
     }
     return new MLTIntegrator(camera, maxDepth, nBootstrap, nChains,

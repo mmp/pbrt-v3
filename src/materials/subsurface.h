@@ -78,12 +78,12 @@ class SubsurfaceMaterial : public Material {
 
   private:
     // SubsurfaceMaterial Private Data
-    Float scale;
+    const Float scale;
     std::shared_ptr<Texture<Spectrum>> Kr, Kt, sigma_a, sigma_s;
     std::shared_ptr<Texture<Float>> uRoughness, vRoughness;
     std::shared_ptr<Texture<Float>> bumpMap;
-    Float eta;
-    bool remapRoughness;
+    const Float eta;
+    const bool remapRoughness;
     BSSRDFTable table;
 };
 

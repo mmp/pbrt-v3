@@ -43,7 +43,7 @@ Float GridDensityMedium::Density(const Point3f &p) const {
     // Compute voxel coordinates and offsets for _p_
     Point3f pSamples(p.x * nx - .5f, p.y * ny - .5f, p.z * nz - .5f);
     Point3i pi = (Point3i)Floor(pSamples);
-    Vector3f d = pSamples - Floor(pSamples);
+    Vector3f d = pSamples - (Point3f)pi;
 
     // Trilinearly interpolate density values to compute local density
     Float d00 = Lerp(d.x, D(pi), D(pi + Vector3i(1, 0, 0)));
@@ -63,7 +63,7 @@ Spectrum GridDensityMedium::Tr(const Ray &_ray, Sampler &sampler) const {
         Ray(_ray.o, Normalize(_ray.d), _ray.tMax * _ray.d.Length()));
     Float tMin, tMax;
     if (!dataBounds.IntersectP(ray, &tMin, &tMax)) return Spectrum(1.f);
-    tMin = std::max(tMin, (Float)0.f);
+    tMin = std::max(tMin, (Float)0);
     tMax = std::min(tMax, ray.tMax);
     if (tMin >= tMax) return Spectrum(1.f);
     Float tr = 1.f;
@@ -88,7 +88,7 @@ Spectrum GridDensityMedium::Sample(const Ray &_ray, Sampler &sampler,
         Ray(_ray.o, Normalize(_ray.d), _ray.tMax * _ray.d.Length()));
     Float tMin, tMax;
     if (!dataBounds.IntersectP(ray, &tMin, &tMax)) return Spectrum(1.f);
-    tMin = std::max(tMin, (Float)0.f);
+    tMin = std::max(tMin, (Float)0);
     tMax = std::min(tMax, ray.tMax);
     if (tMin >= tMax) return Spectrum(1.f);
 

@@ -82,9 +82,9 @@ class MLTSampler : public Sampler {
         }
 
         // PrimarySample Public Data
-        int lastModificationIteration = 0;
+        int64_t lastModificationIteration = 0;
         Float valueBackup = 0;
-        int modifyBackup = 0;
+        int64_t modifyBackup = 0;
     };
 
     // MLTSampler Private Methods
@@ -95,9 +95,9 @@ class MLTSampler : public Sampler {
     const Float sigma, largeStepProbability;
     const int streamCount;
     std::vector<PrimarySample> X;
-    int currentIteration = 0;
+    int64_t currentIteration = 0;
     bool largeStep = true;
-    int lastLargeStepIteration = 0;
+    int64_t lastLargeStepIteration = 0;
     int streamIndex, sampleIndex;
 };
 
@@ -106,7 +106,7 @@ class MLTIntegrator : public Integrator {
   public:
     // MLTIntegrator Public Methods
     MLTIntegrator(std::shared_ptr<const Camera> camera, int maxDepth,
-                  int nBootstrap, int nChains, int64_t mutationsPerPixel,
+                  int nBootstrap, int nChains, int mutationsPerPixel,
                   Float sigma, Float largeStepProbability)
         : camera(camera),
           maxDepth(maxDepth),
@@ -114,7 +114,7 @@ class MLTIntegrator : public Integrator {
           nChains(nChains),
           mutationsPerPixel(mutationsPerPixel),
           sigma(sigma),
-          largeStepProbability(largeStepProbability){};
+          largeStepProbability(largeStepProbability) {}
     void Render(const Scene &scene);
     Spectrum L(const Scene &scene, MemoryArena &arena,
                const std::unique_ptr<Distribution1D> &lightDistr,
@@ -123,11 +123,11 @@ class MLTIntegrator : public Integrator {
   private:
     // MLTIntegrator Private Data
     std::shared_ptr<const Camera> camera;
-    int maxDepth;
-    int nBootstrap;
-    int mutationsPerPixel;
-    Float sigma, largeStepProbability;
-    int nChains;
+    const int maxDepth;
+    const int nBootstrap;
+    const int mutationsPerPixel;
+    const Float sigma, largeStepProbability;
+    const int nChains;
 };
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,

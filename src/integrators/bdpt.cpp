@@ -53,8 +53,8 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
 Float CorrectShadingNormal(const SurfaceInteraction &isect, const Vector3f &wo,
                            const Vector3f &wi, TransportMode mode) {
     if (mode == TransportMode::Importance)
-        return std::abs((Dot(wo, isect.shading.n) * Dot(wi, isect.n)) /
-                        (Dot(wo, isect.n) * Dot(wi, isect.shading.n)));
+        return (AbsDot(wo, isect.shading.n) * AbsDot(wi, isect.n)) /
+               (AbsDot(wo, isect.n) * AbsDot(wi, isect.shading.n));
     else
         return 1;
 }
@@ -94,7 +94,7 @@ int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
     Float pdfPos, pdfDir;
     Spectrum Le = light->Sample_Le(sampler.Get2D(), sampler.Get2D(), time, &ray,
                                    &Nl, &pdfPos, &pdfDir);
-    if (pdfPos == 0.f || pdfDir == 0.f || Le.IsBlack()) return 0;
+    if (pdfPos == 0 || pdfDir == 0 || Le.IsBlack()) return 0;
 
     // Generate first vertex on light subpath and start random walk
     path[0] = Vertex::CreateLight(light.get(), ray, Nl, Le, pdfPos * lightPdf);
@@ -395,7 +395,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
 Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
                      Vertex *cameraVertices, int s, int t,
                      const Distribution1D &lightDistr, const Camera &camera,
-                     Sampler &sampler, Point2f *pFilm, Float *misWeightPtr) {
+                     Sampler &sampler, Point2f *pRaster, Float *misWeightPtr) {
     Spectrum L(0.f);
     // Ignore invalid connections related to infinite area lights
     if (t > 1 && s != 0 && cameraVertices[t - 1].type == VertexType::Light)
@@ -415,7 +415,7 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
             Vector3f wi;
             Float pdf;
             Spectrum Wi = camera.Sample_Wi(qs.GetInteraction(), sampler.Get2D(),
-                                           &wi, &pdf, pFilm, &vis);
+                                           &wi, &pdf, pRaster, &vis);
             if (pdf > 0 && !Wi.IsBlack()) {
                 // Initialize dynamically sampled vertex and _L_ for $t=1$ case
                 sampled = Vertex::CreateCamera(&camera, vis.P1(), Wi / pdf);

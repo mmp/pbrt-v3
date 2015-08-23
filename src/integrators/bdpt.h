@@ -74,6 +74,7 @@ struct EndpointInteraction : Interaction {
 };
 
 // BDPT Helper Definitions
+enum class VertexType { Camera, Light, Surface, Medium };
 struct Vertex;
 template <typename Type>
 class ScopedAssignment {
@@ -136,7 +137,6 @@ class BDPTIntegrator : public Integrator {
     const bool visualizeWeights;
 };
 
-enum class VertexType { Camera, Light, Surface, Medium };
 struct Vertex {
     // Vertex Public Data
     VertexType type;
@@ -154,7 +154,7 @@ struct Vertex {
         SurfaceInteraction si;
     };
     bool delta = false;
-    Float pdfFwd = 0.f, pdfRev = 0.f;
+    Float pdfFwd = 0, pdfRev = 0;
 
     // Vertex Public Methods
     Vertex() : ei() {}
@@ -167,9 +167,6 @@ struct Vertex {
     static inline Vertex CreateCamera(const Camera *camera,
                                       const Interaction &it,
                                       const Spectrum &beta);
-    static inline Vertex CreateEndpoint(VertexType type,
-                                        const EndpointInteraction &ei,
-                                        const Spectrum &beta);
     static inline Vertex CreateLight(const Light *light, const Ray &ray,
                                      const Normal3f &Nl, const Spectrum &Le,
                                      Float pdf);
@@ -191,7 +188,7 @@ struct Vertex {
             return si;
         default:
             return ei;
-        };
+        }
     }
     const Point3f &p() const { return GetInteraction().p; }
     Float time() const { return GetInteraction().time; }
@@ -227,7 +224,7 @@ struct Vertex {
             return si.bsdf->NumComponents(BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY |
                                                    BSDF_REFLECTION |
                                                    BSDF_TRANSMISSION)) > 0;
-        };
+        }
     }
     bool IsLight() const {
         return type == VertexType::Light ||
@@ -286,9 +283,10 @@ struct Vertex {
         // Return solid angle density if _next_ is an infinite area light
         if (next.IsInfiniteLight()) return pdf;
         Vector3f w = next.p() - p();
-        Float invL2 = 1 / w.LengthSquared();
-        if (next.IsOnSurface()) pdf *= AbsDot(next.ng(), w * std::sqrt(invL2));
-        return pdf * invL2;
+        Float invDist2 = 1 / w.LengthSquared();
+        if (next.IsOnSurface())
+            pdf *= AbsDot(next.ng(), w * std::sqrt(invDist2));
+        return pdf * invDist2;
     }
     Float Pdf(const Scene &scene, const Vertex *prev,
               const Vertex &next) const {
@@ -361,8 +359,7 @@ struct Vertex {
             // Compute the discrete probability of sampling _light_, _pdfChoice_
             for (size_t i = 0; i < scene.lights.size(); ++i) {
                 if (scene.lights[i].get() == light) {
-                    pdfChoice = lightDistr.func[i] /
-                                (lightDistr.funcInt * lightDistr.Count());
+                    pdfChoice = lightDistr.DiscretePDF(i);
                     break;
                 }
             }
@@ -384,7 +381,7 @@ extern int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
 Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
                      Vertex *cameraVertices, int s, int t,
                      const Distribution1D &lightDistr, const Camera &camera,
-                     Sampler &sampler, Point2f *pFilm,
+                     Sampler &sampler, Point2f *pRaster,
                      Float *misWeight = nullptr);
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
@@ -394,12 +391,6 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
 inline Vertex Vertex::CreateCamera(const Camera *camera, const Ray &ray,
                                    const Spectrum &beta) {
     return Vertex(VertexType::Camera, EndpointInteraction(camera, ray), beta);
-}
-
-inline Vertex Vertex::CreateEndpoint(VertexType type,
-                                     const EndpointInteraction &ei,
-                                     const Spectrum &beta) {
-    return Vertex(type, ei, beta);
 }
 
 inline Vertex Vertex::CreateCamera(const Camera *camera, const Interaction &it,
