@@ -40,28 +40,28 @@
 RandomSampler::RandomSampler(int ns, int seed) : Sampler(ns), rng(seed) {}
 
 Float RandomSampler::Get1D() {
-    Assert(currentPixelSample < samplesPerPixel);
+    Assert(currentPixelSampleIndex < samplesPerPixel);
     return rng.UniformFloat();
 }
 
 Point2f RandomSampler::Get2D() {
-    Assert(currentPixelSample < samplesPerPixel);
+    Assert(currentPixelSampleIndex < samplesPerPixel);
     return Point2f(rng.UniformFloat(), rng.UniformFloat());
 }
 
 std::unique_ptr<Sampler> RandomSampler::Clone(int seed) {
     RandomSampler *rs = new RandomSampler(*this);
-    rs->rng.Seed(seed);
+    rs->rng.SetSequence(seed);
     return std::unique_ptr<Sampler>(rs);
 }
 
 void RandomSampler::StartPixel(const Point2i &p) {
-    for (int i = 0; i < sampleArray1D.size(); ++i)
-        for (int j = 0; j < sampleArray1D[i].size(); ++j)
+    for (size_t i = 0; i < sampleArray1D.size(); ++i)
+        for (size_t j = 0; j < sampleArray1D[i].size(); ++j)
             sampleArray1D[i][j] = rng.UniformFloat();
 
-    for (int i = 0; i < sampleArray2D.size(); ++i)
-        for (int j = 0; j < sampleArray2D[i].size(); ++j)
+    for (size_t i = 0; i < sampleArray2D.size(); ++i)
+        for (size_t j = 0; j < sampleArray2D[i].size(); ++j)
             sampleArray2D[i][j] =
                 Point2f(rng.UniformFloat(), rng.UniformFloat());
     Sampler::StartPixel(p);

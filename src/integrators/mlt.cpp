@@ -46,232 +46,224 @@
 #include "sampling.h"
 #include "progressreporter.h"
 
-using std::cout;
-using std::endl;
-
 STAT_TIMER("Time/Rendering", renderingTime);
 STAT_PERCENT("Integrator/Acceptance rate", acceptedMutations, totalMutations);
 
-// MLTSampler Method Definitions
-MLTSampler::MLTSampler(int chainIndex, Float sigma, Float largeStepProb)
-    : Sampler(16),
-      rng(PCG32_DEFAULT_STATE, (uint32_t)chainIndex),
-      sigma(sigma),
-      largeStepProb(largeStepProb) {}
-Float MLTSampler::Get1D() { return GetSample(sampleIndex++); }
+// MLTSampler Constants
+static const int cameraStreamIndex = 0;
+static const int lightStreamIndex = 1;
+static const int connectionStreamIndex = 2;
+static const int nSampleStreams = 3;
 
-Point2f MLTSampler::Get2D() {
-    Float value1 = Get1D(), value2 = Get1D();
-    return Point2f(value1, value2);
+// MLTSampler Method Definitions
+Float MLTSampler::Get1D() {
+    int index = GetNextIndex();
+    EnsureReady(index);
+    return X[index].value;
 }
+
+Point2f MLTSampler::Get2D() { return Point2f(Get1D(), Get1D()); }
 
 std::unique_ptr<Sampler> MLTSampler::Clone(int seed) {
-    throw std::runtime_error("Unsupported operation");
+    Severe("MLTSampler::Clone() is not implemented");
+    return nullptr;
 }
 
-void MLTSampler::SetStream(int streamCount_, int streamIndex_) {
-    streamCount = streamCount_;
-    streamIndex = streamIndex_;
-    sampleIndex = 0;
-}
-
-void MLTSampler::Begin() {
-    largeStep = rng.UniformFloat() < largeStepProb;
-    iteration++;
+void MLTSampler::StartIteration() {
+    currentIteration++;
+    largeStep = rng.UniformFloat() < largeStepProbability;
 }
 
 void MLTSampler::Accept() {
-    if (largeStep) lastLargeStep = iteration;
+    if (largeStep) lastLargeStepIteration = currentIteration;
+}
+
+void MLTSampler::EnsureReady(int index) {
+    // Enlarge _MLTSampler::X_ if necessary and get current $\VEC{X}_i$
+    if (index >= X.size()) X.resize(index + 1);
+    PrimarySample &Xi = X[index];
+
+    // Reset $\VEC{X}_i$ if a large step took place in the meantime
+    if (Xi.lastModificationIteration < lastLargeStepIteration) {
+        Xi.value = rng.UniformFloat();
+        Xi.lastModificationIteration = lastLargeStepIteration;
+    }
+
+    // Apply remaining sequence of mutations to _sample_
+    Xi.Backup();
+    if (largeStep) {
+        Xi.value = rng.UniformFloat();
+    } else {
+        int nSmall = currentIteration - Xi.lastModificationIteration;
+        // Apply _nSmall_ small step mutations
+
+        // Sample the standard normal distribution $N(0, 1)$
+        Float normalSample = Sqrt2 * ErfInv(2 * rng.UniformFloat() - 1);
+
+        // Compute the effective standard deviation and apply perturbation to
+        // $\VEC{X}_i$
+        Float effSigma = sigma * std::sqrt((Float)nSmall);
+        Xi.value += normalSample * effSigma;
+        Xi.value -= std::floor(Xi.value);
+    }
+    Xi.lastModificationIteration = currentIteration;
 }
 
 void MLTSampler::Reject() {
-    for (auto &sample : samples) {
-        if (sample.modify == iteration) sample.Restore();
-    }
-    --iteration;
+    for (auto &sample : X)
+        if (sample.lastModificationIteration == currentIteration)
+            sample.Restore();
+    --currentIteration;
 }
 
-Float MLTSampler::NextNormalVariate() {
-    Float result = normalSample;
-
-    if (normalSample == Infinity) {
-        Float Z = std::sqrt(-2.f * std::log(1.f - rng.UniformFloat()));
-        Float phi = 2 * Pi * rng.UniformFloat();
-        result = Z * std::cos(phi);
-        normalSample = Z * std::sin(phi);
-    } else {
-        normalSample = Infinity;
-    }
-
-    return result;
-}
-
-Float MLTSampler::GetSample(int index) {
-    index = streamCount * index + streamIndex;
-
-    while (index >= samples.size()) samples.push_back(MLTSample());
-
-    MLTSample &sample = samples[index];
-
-    if (sample.modify < lastLargeStep) {
-        sample.value = rng.UniformFloat();
-        sample.modify = lastLargeStep;
-    }
-
-    sample.Backup();
-    if (largeStep) {
-        sample.value = rng.UniformFloat();
-    } else {
-        Float combinedSigma =
-            std::sqrt((Float)(iteration - sample.modify)) * sigma;
-        sample.value += NextNormalVariate() * combinedSigma;
-        sample.value -= std::floor(sample.value);
-    }
-
-    sample.modify = iteration;
-    return sample.value;
+void MLTSampler::StartStream(int index) {
+    Assert(index < streamCount);
+    streamIndex = index;
+    sampleIndex = 0;
 }
 
 // MLT Method Definitions
-Spectrum MLTIntegrator::EvaluateSample(const Scene &scene, MemoryArena &arena,
-                                       MLTSampler &sampler, int k,
-                                       Point2f *samplePos) {
-    sampler.SetStream(3, 0);
-
+Spectrum MLTIntegrator::L(const Scene &scene, MemoryArena &arena,
+                          const std::unique_ptr<Distribution1D> &lightDistr,
+                          MLTSampler &sampler, int depth, Point2f *pRaster) {
+    sampler.StartStream(cameraStreamIndex);
+    // Determine the number of available strategies and pick a specific one
     int s, t, nStrategies;
-
-    if (k == 0) {
+    if (depth == 0) {
+        nStrategies = 1;
         s = 0;
         t = 2;
-        nStrategies = 1;
     } else {
-        nStrategies = k + 2;
+        nStrategies = depth + 2;
         s = std::min((int)(sampler.Get1D() * nStrategies), nStrategies - 1);
         t = nStrategies - s;
     }
 
-    Vertex *cameraSubpath = (Vertex *)arena.Alloc<Vertex>(t);
-    Vertex *lightSubpath = (Vertex *)arena.Alloc<Vertex>(s);
-
-    Point2f filmSample = sampler.Get2D();
-    const Bounds2i sampleBounds = camera->film->GetSampleBounds();
-    *samplePos =
-        Point2f(sampleBounds.pMin.x +
-                    (sampleBounds.pMax.x - sampleBounds.pMin.x) * filmSample.x,
-                sampleBounds.pMin.y +
-                    (sampleBounds.pMax.y - sampleBounds.pMin.y) * filmSample.y);
-
-    if (GenerateCameraSubpath(scene, sampler, arena, t, *camera, *samplePos,
-                              cameraSubpath) != t)
+    // Generate a camera subpath with exactly _t_ vertices
+    Vertex *cameraVertices = arena.Alloc<Vertex>(t);
+    Bounds2f sampleBounds = (Bounds2f)camera->film->GetSampleBounds();
+    *pRaster = sampleBounds.Lerp(sampler.Get2D());
+    if (GenerateCameraSubpath(scene, sampler, arena, t, *camera, *pRaster,
+                              cameraVertices) != t)
         return Spectrum(0.f);
 
-    sampler.SetStream(3, 1);
-    if (GenerateLightSubpath(scene, sampler, arena, s,
-                             cameraSubpath[0].GetTime(), *lightDistr,
-                             lightSubpath) != s)
+    // Generate a light subpath with exactly _s_ vertices
+    sampler.StartStream(lightStreamIndex);
+    Vertex *lightVertices = arena.Alloc<Vertex>(s);
+    if (GenerateLightSubpath(scene, sampler, arena, s, cameraVertices[0].time(),
+                             *lightDistr, lightVertices) != s)
         return Spectrum(0.f);
 
-    sampler.SetStream(3, 2);
-    Float misWeight;
-    Spectrum weight =
-        ConnectBDPT(scene, lightSubpath, cameraSubpath, s, t, *lightDistr,
-                    *camera, sampler, samplePos, &misWeight);
-
-    arena.Reset();
-
-    return weight * misWeight * nStrategies;
+    // Execute connection strategy and return the radiance estimate
+    sampler.StartStream(connectionStreamIndex);
+    return ConnectBDPT(scene, lightVertices, cameraVertices, s, t, *lightDistr,
+                       *camera, sampler, pRaster) *
+           nStrategies;
 }
 
 void MLTIntegrator::Render(const Scene &scene) {
-    lightDistr =
-        std::unique_ptr<Distribution1D>(ComputeLightSamplingCDF(scene));
-
-    int bootstrapSamples = nBootstrap * (maxdepth + 1);
-    std::unique_ptr<Float[]> bootstrapWeights(new Float[bootstrapSamples]);
+    ProfilePhase p(Prof::IntegratorRender);
+    std::unique_ptr<Distribution1D> lightDistr =
+        ComputeLightPowerDistribution(scene);
+    // Generate bootstrap samples and compute normalization constant $b$
+    int nBootstrapSamples = nBootstrap * (maxDepth + 1);
+    std::vector<Float> bootstrapWeights(nBootstrapSamples, 0);
     {
         ProgressReporter progress(nBootstrap, "Generating bootstrap paths");
         ParallelFor([&](int i) {
+            // Generate _i_th bootstrap sample
             MemoryArena arena;
-            for (int k = 0; k <= maxdepth; ++k) {
-                uint32_t sampleIndex = i * (maxdepth + 1) + k;
-                MLTSampler sampler(sampleIndex, sigma, largeStepProb);
-                Point2f samplePos;
-                bootstrapWeights[sampleIndex] =
-                    EvaluateSample(scene, arena, sampler, k, &samplePos).y();
+            for (int depth = 0; depth <= maxDepth; ++depth) {
+                int rngIndex = i * (maxDepth + 1) + depth;
+                MLTSampler sampler(mutationsPerPixel, rngIndex, sigma,
+                                   largeStepProbability, nSampleStreams);
+                Point2f pRaster;
+                bootstrapWeights[rngIndex] =
+                    L(scene, arena, lightDistr, sampler, depth, &pRaster).y();
+                arena.Reset();
             }
             progress.Update();
-        }, nBootstrap);
+        }, nBootstrap, 4096);
         progress.Done();
     }
-    Distribution1D bootstrap(bootstrapWeights.get(), bootstrapSamples);
-    Float average = 0.f;
-    for (int i = 0; i < bootstrapSamples; ++i) average += bootstrapWeights[i];
-    average /= nBootstrap;
+    Distribution1D bootstrap(&bootstrapWeights[0], nBootstrapSamples);
+    Float b = bootstrap.funcInt * (maxDepth + 1);
 
-    int64_t nMutations =
-        mutationsPerPixel * (int64_t)camera->film->GetSampleBounds().Area();
-    int64_t mutationsPerChain = nMutations / nChains;
+    // Run _nChains_ Markov chains in parallel
     Film &film = *camera->film;
-
+    int64_t nTotalMutations =
+        (int64_t)mutationsPerPixel * (int64_t)film.GetSampleBounds().Area();
     {
         StatTimer timer(&renderingTime);
-        ProgressReporter progress(nMutations / 100, "Rendering");
-        ParallelFor([&](int taskNum) {
-            int64_t start = taskNum * mutationsPerChain;
-            int64_t end =
-                std::min((taskNum + 1) * mutationsPerChain, nMutations);
-            Assert(start < end);
+        ProgressReporter progress(nTotalMutations / 100, "Rendering");
+        ParallelFor([&](int i) {
+            int64_t nChainMutations =
+                std::min((i + 1) * nTotalMutations / nChains, nTotalMutations) -
+                i * nTotalMutations / nChains;
+            // Follow {i}th Markov chain for _nChainMutations_
             MemoryArena arena;
 
-            RNG rng;
-            rng.Advance(start);
-            Float pdf;
-            int chainIndex = bootstrap.SampleDiscrete(rng.UniformFloat(), &pdf);
+            // Select initial state from the set of bootstrap samples
+            RNG rng(i);
+            int bootstrapIndex = bootstrap.SampleDiscrete(rng.UniformFloat());
+            int depth = bootstrapIndex % (maxDepth + 1);
 
-            MLTSampler sampler(chainIndex, sigma, largeStepProb);
+            // Initialize local variables for selected state
+            MLTSampler sampler(mutationsPerPixel, bootstrapIndex, sigma,
+                               largeStepProbability, nSampleStreams);
+            Point2f pCurrent;
+            Spectrum LCurrent =
+                L(scene, arena, lightDistr, sampler, depth, &pCurrent);
 
-            Point2f currentPos, proposalPos;
-            Spectrum currentValue, proposalValue;
+            // Run the Markov chain for _nChainMutations_ steps
+            for (int64_t i = 0; i < nChainMutations; ++i) {
+                sampler.StartIteration();
+                Point2f pProposed;
+                Spectrum LProposed =
+                    L(scene, arena, lightDistr, sampler, depth, &pProposed);
+                // Compute acceptance probability for proposed sample
+                Float accept = std::min((Float)1, LProposed.y() / LCurrent.y());
 
-            uint32_t k = chainIndex % (maxdepth + 1);
-            currentValue =
-                EvaluateSample(scene, arena, sampler, k, &currentPos);
+                // Splat both current and proposed samples to _film_
+                if (accept > 0)
+                    film.AddSplat(pProposed,
+                                  LProposed * accept / LProposed.y());
+                film.AddSplat(pCurrent, LCurrent * (1 - accept) / LCurrent.y());
 
-            for (int64_t i = start; i != end; ++i) {
-                sampler.Begin();
-                proposalValue =
-                    EvaluateSample(scene, arena, sampler, k, &proposalPos);
-                Float accept = proposalValue.y() / currentValue.y();
+                // Accept or reject the proposal
                 if (rng.UniformFloat() < accept) {
-                    currentPos = proposalPos;
-                    currentValue = proposalValue;
+                    pCurrent = pProposed;
+                    LCurrent = LProposed;
                     sampler.Accept();
                     ++acceptedMutations;
                 } else {
                     sampler.Reject();
                 }
                 ++totalMutations;
-                film.Splat(currentPos, currentValue / currentValue.y());
                 if (i % 100 == 0) progress.Update();
+                arena.Reset();
             }
         }, nChains);
         progress.Done();
     }
 
-    film.WriteImage(average / mutationsPerPixel);
+    // Store final image computed with MLT
+    camera->film->WriteImage(b / mutationsPerPixel);
 }
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,
                                    std::shared_ptr<const Camera> camera) {
-    int maxdepth = params.FindOneInt("maxdepth", 5);
+    int maxDepth = params.FindOneInt("maxdepth", 5);
     int nBootstrap = params.FindOneInt("bootstrapsamples", 100000);
     int64_t nChains = params.FindOneInt("chains", 1000);
     int64_t mutationsPerPixel = params.FindOneInt("mutationsperpixel", 100);
     Float largeStepProbability =
         params.FindOneFloat("largestepprobability", 0.3f);
     Float sigma = params.FindOneFloat("sigma", .01f);
-    if (PbrtOptions.quickRender)
+    if (PbrtOptions.quickRender) {
         mutationsPerPixel = std::max((int64_t)1, mutationsPerPixel / 16);
-    return new MLTIntegrator(camera, maxdepth, nBootstrap, nChains,
+        nBootstrap = std::max(1, nBootstrap / 16);
+    }
+    return new MLTIntegrator(camera, maxDepth, nBootstrap, nChains,
                              mutationsPerPixel, sigma, largeStepProbability);
 }

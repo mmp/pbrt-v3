@@ -36,20 +36,22 @@
 #include "cameras/environment.h"
 #include "paramset.h"
 #include "sampler.h"
+#include "stats.h"
 
 // EnvironmentCamera Method Definitions
 Float EnvironmentCamera::GenerateRay(const CameraSample &sample,
                                      Ray *ray) const {
+    ProfilePhase prof(Prof::GenerateCameraRay);
     // Compute environment camera ray direction
     Float theta = Pi * sample.pFilm.y / film->fullResolution.y;
-    Float phi = 2.f * Pi * sample.pFilm.x / film->fullResolution.x;
+    Float phi = 2 * Pi * sample.pFilm.x / film->fullResolution.x;
     Vector3f dir(std::sin(theta) * std::cos(phi), std::cos(theta),
                  std::sin(theta) * std::sin(phi));
     *ray = Ray(Point3f(0, 0, 0), dir, Infinity,
                Lerp(sample.time, shutterOpen, shutterClose));
     ray->medium = medium;
     *ray = CameraToWorld(*ray);
-    return 1.f;
+    return 1;
 }
 
 EnvironmentCamera *CreateEnvironmentCamera(const ParamSet &params,
@@ -88,9 +90,8 @@ EnvironmentCamera *CreateEnvironmentCamera(const ParamSet &params,
             screen.pMax.x = sw[1];
             screen.pMin.y = sw[2];
             screen.pMax.y = sw[3];
-        } else {
+        } else
             Error("\"screenwindow\" should have four values");
-        }
     }
     (void)lensradius;     // don't need this
     (void)focaldistance;  // don't need this

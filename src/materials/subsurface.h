@@ -43,6 +43,7 @@
 #include "pbrt.h"
 #include "material.h"
 #include "reflection.h"
+#include "bssrdf.h"
 
 // SubsurfaceMaterial Declarations
 class SubsurfaceMaterial : public Material {
@@ -54,14 +55,20 @@ class SubsurfaceMaterial : public Material {
                        const std::shared_ptr<Texture<Spectrum>> &sigma_a,
                        const std::shared_ptr<Texture<Spectrum>> &sigma_s,
                        Float g, Float eta,
-                       const std::shared_ptr<Texture<Float>> &bumpMap)
+                       const std::shared_ptr<Texture<Float>> &uRoughness,
+                       const std::shared_ptr<Texture<Float>> &vRoughness,
+                       const std::shared_ptr<Texture<Float>> &bumpMap,
+                       bool remapRoughness)
         : scale(scale),
           Kr(Kr),
           Kt(Kt),
           sigma_a(sigma_a),
           sigma_s(sigma_s),
+          uRoughness(uRoughness),
+          vRoughness(vRoughness),
           bumpMap(bumpMap),
           eta(eta),
+          remapRoughness(remapRoughness),
           table(100, 64) {
         ComputeBeamDiffusionBSSRDF(g, eta, &table);
     }
@@ -73,8 +80,10 @@ class SubsurfaceMaterial : public Material {
     // SubsurfaceMaterial Private Data
     Float scale;
     std::shared_ptr<Texture<Spectrum>> Kr, Kt, sigma_a, sigma_s;
+    std::shared_ptr<Texture<Float>> uRoughness, vRoughness;
     std::shared_ptr<Texture<Float>> bumpMap;
     Float eta;
+    bool remapRoughness;
     BSSRDFTable table;
 };
 

@@ -41,6 +41,8 @@
 #include "imageio.h"
 #include "reflection.h"
 #include "stats.h"
+#include "lowdiscrepancy.h"
+
 STAT_PERCENT("Camera/Rays vignetted by lens system", vignettedRays, totalRays);
 
 // RealisticCamera Method Definitions
@@ -65,7 +67,7 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
         return;
     }
     for (int i = 0; i < (int)lensData.size(); i += 4) {
-        if (lensData[i] == 0.f) {
+        if (lensData[i] == 0) {
             if (apertureDiameter > lensData[i + 3]) {
                 Warning(
                     "Specified aperture diameter %f is greater than maximum "
@@ -88,38 +90,38 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
          FocusDistance(elementInterfaces.back().thickness));
 
     // Compute exit pupil bounds at sampled points on the film
-    Float filmDiagonal = film->diagonal;
     int nSamples = 64;
     exitPupilBounds.resize(nSamples);
     ParallelFor([&](int i) {
-        Float r = (Float)i / (Float)(nSamples - 1) * filmDiagonal / 2.f;
-        exitPupilBounds[i] = BoundExitPupil(Point2f(r, 0));
+        Float r0 = (Float)i / nSamples * film->diagonal / 2;
+        Float r1 = (Float)(i + 1) / nSamples * film->diagonal / 2;
+        exitPupilBounds[i] = BoundExitPupil(r0, r1);
     }, nSamples);
 }
 
-bool RealisticCamera::TraceLensesFromFilm(const Ray &ray, Ray *rOut) const {
+bool RealisticCamera::TraceLensesFromFilm(const Ray &rCamera, Ray *rOut) const {
     Float elementZ = 0;
-    // Transform _ray_ from camera to lens system space
+    // Transform _rCamera_ from camera to lens system space
     static const Transform CameraToLens = Scale(1, 1, -1);
-    Ray rLens = CameraToLens(ray);
+    Ray rLens = CameraToLens(rCamera);
     for (int i = elementInterfaces.size() - 1; i >= 0; --i) {
         const LensElementInterface &element = elementInterfaces[i];
-        bool isStop = (element.curvatureRadius == 0.f);
         // Update ray from film accounting for interaction with _element_
         elementZ -= element.thickness;
 
         // Compute intersection of ray with lens element
         Float t;
         Normal3f n;
+        bool isStop = (element.curvatureRadius == 0);
         if (isStop)
-            t = -(rLens.o.z - elementZ) / rLens.d.z;
+            t = (elementZ - rLens.o.z) / rLens.d.z;
         else {
             Float radius = element.curvatureRadius;
-            Float center = elementZ + element.curvatureRadius;
-            if (!IntersectSphericalElement(radius, center, rLens, &t, &n))
+            Float zCenter = elementZ + element.curvatureRadius;
+            if (!IntersectSphericalElement(radius, zCenter, rLens, &t, &n))
                 return false;
         }
-        Assert(t >= 0.f);
+        Assert(t >= 0);
 
         // Test intersection point against element aperture
         Point3f pHit = rLens(t);
@@ -130,16 +132,15 @@ bool RealisticCamera::TraceLensesFromFilm(const Ray &ray, Ray *rOut) const {
         // Update ray path for element interface interaction
         if (!isStop) {
             Vector3f w;
-            Float eta_i = element.eta;
-            Float eta_t = (i > 0 && elementInterfaces[i - 1].eta != 0.f)
-                              ? elementInterfaces[i - 1].eta
-                              : 1.f;
-            if (!Refract(Normalize(-rLens.d), n, eta_i / eta_t, &w))
-                return false;
+            Float etaI = element.eta;
+            Float etaT = (i > 0 && elementInterfaces[i - 1].eta != 0)
+                             ? elementInterfaces[i - 1].eta
+                             : 1;
+            if (!Refract(Normalize(-rLens.d), n, etaI / etaT, &w)) return false;
             rLens.d = w;
         }
     }
-    // Transform _ray_ from lens system space back to camera space
+    // Transform _rLens_ from lens system space back to camera space
     if (rOut != nullptr) {
         static const Transform LensToCamera = Scale(1, 1, -1);
         *rOut = LensToCamera(rLens);
@@ -147,20 +148,20 @@ bool RealisticCamera::TraceLensesFromFilm(const Ray &ray, Ray *rOut) const {
     return true;
 }
 
-bool RealisticCamera::IntersectSphericalElement(Float radius, Float center,
+bool RealisticCamera::IntersectSphericalElement(Float radius, Float zCenter,
                                                 const Ray &ray, Float *t,
                                                 Normal3f *n) {
     // Compute _t0_ and _t1_ for ray--element intersection
-    Point3f o = ray.o - Vector3f(0, 0, center);
+    Point3f o = ray.o - Vector3f(0, 0, zCenter);
     Float A = ray.d.x * ray.d.x + ray.d.y * ray.d.y + ray.d.z * ray.d.z;
-    Float B = 2.f * (ray.d.x * o.x + ray.d.y * o.y + ray.d.z * o.z);
+    Float B = 2 * (ray.d.x * o.x + ray.d.y * o.y + ray.d.z * o.z);
     Float C = o.x * o.x + o.y * o.y + o.z * o.z - radius * radius;
     Float t0, t1;
     if (!Quadratic(A, B, C, &t0, &t1)) return false;
 
-    // Select appropriate $t$ based on ray direction and element curvature
-    bool closerIsect = (ray.d.z > 0) ^ (radius < 0);
-    *t = closerIsect ? std::min(t0, t1) : std::max(t0, t1);
+    // Select intersection $t$ based on ray direction and element curvature
+    bool useCloserT = (ray.d.z > 0) ^ (radius < 0);
+    *t = useCloserT ? std::min(t0, t1) : std::max(t0, t1);
     if (*t < 0) return false;
 
     // Compute surface normal of element at ray intersection point
@@ -169,26 +170,27 @@ bool RealisticCamera::IntersectSphericalElement(Float radius, Float center,
     return true;
 }
 
-bool RealisticCamera::TraceLensesFromScene(const Ray &ray, Ray *rOut) const {
+bool RealisticCamera::TraceLensesFromScene(const Ray &rCamera,
+                                           Ray *rOut) const {
     Float elementZ = -LensFrontZ();
-    // Transform _ray_ from camera to lens system space
+    // Transform _rCamera_ from camera to lens system space
     static const Transform CameraToLens = Scale(1, 1, -1);
-    Ray rLens = CameraToLens(ray);
+    Ray rLens = CameraToLens(rCamera);
     for (size_t i = 0; i < elementInterfaces.size(); ++i) {
         const LensElementInterface &element = elementInterfaces[i];
-        bool isStop = (element.curvatureRadius == 0.f);
         // Compute intersection of ray with lens element
         Float t;
         Normal3f n;
+        bool isStop = (element.curvatureRadius == 0);
         if (isStop)
-            t = -(rLens.o.z - elementZ) / rLens.d.z;
+            t = (elementZ - rLens.o.z) / rLens.d.z;
         else {
             Float radius = element.curvatureRadius;
-            Float center = elementZ + element.curvatureRadius;
-            if (!IntersectSphericalElement(radius, center, rLens, &t, &n))
+            Float zCenter = elementZ + element.curvatureRadius;
+            if (!IntersectSphericalElement(radius, zCenter, rLens, &t, &n))
                 return false;
         }
-        Assert(t >= 0.f);
+        Assert(t >= 0);
 
         // Test intersection point against element aperture
         Point3f pHit = rLens(t);
@@ -199,19 +201,18 @@ bool RealisticCamera::TraceLensesFromScene(const Ray &ray, Ray *rOut) const {
         // Update ray path for from-scene element interface interaction
         if (!isStop) {
             Vector3f wt;
-            Float eta_i = (i == 0 || elementInterfaces[i - 1].eta == 0.f)
-                              ? 1.f
-                              : elementInterfaces[i - 1].eta;
-            Float eta_t = (elementInterfaces[i].eta != 0.f)
-                              ? elementInterfaces[i].eta
-                              : 1.f;
-            if (!Refract(Normalize(-rLens.d), n, eta_i / eta_t, &wt))
+            Float etaI = (i == 0 || elementInterfaces[i - 1].eta == 0)
+                             ? 1
+                             : elementInterfaces[i - 1].eta;
+            Float etaT =
+                (elementInterfaces[i].eta != 0) ? elementInterfaces[i].eta : 1;
+            if (!Refract(Normalize(-rLens.d), n, etaI / etaT, &wt))
                 return false;
             rLens.d = wt;
         }
         elementZ += element.thickness;
     }
-    // Transform _ray_ from lens system space back to camera space
+    // Transform _rLens_ from lens system space back to camera space
     if (rOut != nullptr) {
         static const Transform LensToCamera = Scale(1, 1, -1);
         *rOut = LensToCamera(rLens);
@@ -244,7 +245,7 @@ void RealisticCamera::DrawLensSystem() const {
                 Float t1 = theta;
                 printf("Circle[{%f, 0}, %f, {%f, %f}], ", z + r, -r, t0, t1);
             }
-            if (element.eta != 0.f && element.eta != 1) {
+            if (element.eta != 0 && element.eta != 1) {
                 // connect top/bottom to next element
                 Assert(i + 1 < elementInterfaces.size());
                 Float nextApertureRadius =
@@ -308,7 +309,7 @@ void RealisticCamera::DrawRayPathFromFilm(const Ray &r, bool arrow,
     for (int i = elementInterfaces.size() - 1; i >= 0; --i) {
         const LensElementInterface &element = elementInterfaces[i];
         elementZ -= element.thickness;
-        bool isStop = (element.curvatureRadius == 0.f);
+        bool isStop = (element.curvatureRadius == 0);
         // Compute intersection of ray with lens element
         Float t;
         Normal3f n;
@@ -316,11 +317,11 @@ void RealisticCamera::DrawRayPathFromFilm(const Ray &r, bool arrow,
             t = -(ray.o.z - elementZ) / ray.d.z;
         else {
             Float radius = element.curvatureRadius;
-            Float center = elementZ + element.curvatureRadius;
-            if (!IntersectSphericalElement(radius, center, ray, &t, &n))
+            Float zCenter = elementZ + element.curvatureRadius;
+            if (!IntersectSphericalElement(radius, zCenter, ray, &t, &n))
                 goto done;
         }
-        Assert(t >= 0.f);
+        Assert(t >= 0);
 
         printf("Line[{{%f, %f}, {%f, %f}}],", ray.o.z, ray.o.x, ray(t).z,
                ray(t).x);
@@ -335,11 +336,11 @@ void RealisticCamera::DrawRayPathFromFilm(const Ray &r, bool arrow,
         // Update ray path for element interface interaction
         if (!isStop) {
             Vector3f wt;
-            Float eta_i = element.eta;
-            Float eta_t = (i > 0 && elementInterfaces[i - 1].eta != 0.f)
-                              ? elementInterfaces[i - 1].eta
-                              : 1.f;
-            if (!Refract(Normalize(-ray.d), n, eta_i / eta_t, &wt)) goto done;
+            Float etaI = element.eta;
+            Float etaT = (i > 0 && elementInterfaces[i - 1].eta != 0)
+                             ? elementInterfaces[i - 1].eta
+                             : 1;
+            if (!Refract(Normalize(-ray.d), n, etaI / etaT, &wt)) goto done;
             ray.d = wt;
         }
     }
@@ -372,7 +373,7 @@ void RealisticCamera::DrawRayPathFromScene(const Ray &r, bool arrow,
     Ray ray = CameraToLens(r);
     for (size_t i = 0; i < elementInterfaces.size(); ++i) {
         const LensElementInterface &element = elementInterfaces[i];
-        bool isStop = (element.curvatureRadius == 0.f);
+        bool isStop = (element.curvatureRadius == 0);
         // Compute intersection of ray with lens element
         Float t;
         Normal3f n;
@@ -380,8 +381,9 @@ void RealisticCamera::DrawRayPathFromScene(const Ray &r, bool arrow,
             t = -(ray.o.z - elementZ) / ray.d.z;
         else {
             Float radius = element.curvatureRadius;
-            Float center = elementZ + element.curvatureRadius;
-            if (!IntersectSphericalElement(radius, center, ray, &t, &n)) return;
+            Float zCenter = elementZ + element.curvatureRadius;
+            if (!IntersectSphericalElement(radius, zCenter, ray, &t, &n))
+                return;
         }
         Assert(t >= 0.f);
 
@@ -398,13 +400,13 @@ void RealisticCamera::DrawRayPathFromScene(const Ray &r, bool arrow,
         // Update ray path for from-scene element interface interaction
         if (!isStop) {
             Vector3f wt;
-            Float eta_i = (i == 0 || elementInterfaces[i - 1].eta == 0.f)
-                              ? 1.f
-                              : elementInterfaces[i - 1].eta;
-            Float eta_t = (elementInterfaces[i].eta != 0.f)
-                              ? elementInterfaces[i].eta
-                              : 1.f;
-            if (!Refract(Normalize(-ray.d), n, eta_i / eta_t, &wt)) return;
+            Float etaI = (i == 0 || elementInterfaces[i - 1].eta == 0.f)
+                             ? 1.f
+                             : elementInterfaces[i - 1].eta;
+            Float etaT = (elementInterfaces[i].eta != 0.f)
+                             ? elementInterfaces[i].eta
+                             : 1.f;
+            if (!Refract(Normalize(-ray.d), n, etaI / etaT, &wt)) return;
             ray.d = wt;
         }
         elementZ += element.thickness;
@@ -423,49 +425,47 @@ void RealisticCamera::ComputeCardinalPoints(const Ray &rIn, const Ray &rOut,
                                             Float *pz, Float *fz) {
     Float tf = -rOut.o.x / rOut.d.x;
     *fz = -rOut(tf).z;
-    Float tP = (rIn.o.x - rOut.o.x) / rOut.d.x;
-    *pz = -rOut(tP).z;
+    Float tp = (rIn.o.x - rOut.o.x) / rOut.d.x;
+    *pz = -rOut(tp).z;
 }
 
-void RealisticCamera::ComputeThickLensApproximation(Float Pz[2],
+void RealisticCamera::ComputeThickLensApproximation(Float pz[2],
                                                     Float fz[2]) const {
     // Find height $x$ from optical axis for parallel rays
-    Bounds2f ep = BoundExitPupil(Point2f(0, 0));
-    Float x = 0.05f * ep.pMax[0];
+    Float x = .001 * film->diagonal;
 
     // Compute cardinal points for film side of lens system
-    Ray rScene, rFilm;
-    rScene = Ray(Point3f(x, 0, LensFrontZ() + 1.f), Vector3f(0, 0, -1));
+    Ray rScene(Point3f(x, 0, LensFrontZ() + 1), Vector3f(0, 0, -1));
+    Ray rFilm;
     bool ok = TraceLensesFromScene(rScene, &rFilm);
     if (!ok)
         Severe(
             "Unable to trace ray from scene to film for thick lens "
-            "approximation");
-    ComputeCardinalPoints(rScene, rFilm, &Pz[0], &fz[0]);
+            "approximation. Is aperture stop extremely small?");
+    ComputeCardinalPoints(rScene, rFilm, &pz[0], &fz[0]);
 
     // Compute cardinal points for scene side of lens system
-    rFilm = Ray(Point3f(x, 0, LensRearZ() - 1.f), Vector3f(0, 0, 1));
+    rFilm = Ray(Point3f(x, 0, LensRearZ() - 1), Vector3f(0, 0, 1));
     ok = TraceLensesFromFilm(rFilm, &rScene);
     if (!ok)
         Severe(
             "Unable to trace ray from film to scene for thick lens "
-            "approximation");
-    ComputeCardinalPoints(rFilm, rScene, &Pz[1], &fz[1]);
+            "approximation. Is aperture stop extremely small?");
+    ComputeCardinalPoints(rFilm, rScene, &pz[1], &fz[1]);
 }
 
 Float RealisticCamera::FocusThickLens(Float focusDistance) {
-    Float Pz[2], fz[2];
-    ComputeThickLensApproximation(Pz, fz);
-    Info("Cardinal points: P' = %f f' = %f, P = %f f = %f.\n", Pz[0], fz[0],
-         Pz[1], fz[1]);
-    Info("Effective focal length %f\n", fz[0] - Pz[0]);
+    Float pz[2], fz[2];
+    ComputeThickLensApproximation(pz, fz);
+    Info("Cardinal points: p' = %f f' = %f, p = %f f = %f.\n", pz[0], fz[0],
+         pz[1], fz[1]);
+    Info("Effective focal length %f\n", fz[0] - pz[0]);
     // Compute translation of lens, _delta_, to focus at _focusDistance_
-    Float fp = fz[0] - Pz[0];
-    Float zf = -1.f * focusDistance;
-    Float delta = 0.5f * (Pz[1] - zf -
-                          std::sqrt(Pz[1] - zf - Pz[0]) *
-                              std::sqrt(Pz[1] - zf - 4.f * fp - Pz[0]) +
-                          Pz[0]);
+    Float f = fz[0] - pz[0];
+    Float z = -focusDistance;
+    Float delta =
+        0.5f * (pz[1] - z + pz[0] -
+                std::sqrt((pz[1] - z - pz[0]) * (pz[1] - z - 4 * f - pz[0])));
     return elementInterfaces.back().thickness + delta;
 }
 
@@ -492,7 +492,7 @@ Float RealisticCamera::FocusBinarySearch(Float focusDistance) {
 
 Float RealisticCamera::FocusDistance(Float filmDistance) {
     // Find offset ray from film center through lens
-    Bounds2f bounds = BoundExitPupil(Point2f(0, 0));
+    Bounds2f bounds = BoundExitPupil(0, .001 * film->diagonal);
     Float lu = 0.1f * bounds.pMax[0];
     Ray ray;
     if (!TraceLensesFromFilm(Ray(Point3f(0, 0, LensRearZ() - filmDistance),
@@ -512,43 +512,42 @@ Float RealisticCamera::FocusDistance(Float filmDistance) {
     return zFocus;
 }
 
-Bounds2f RealisticCamera::BoundExitPupil(const Point2f &pFilm) const {
+Bounds2f RealisticCamera::BoundExitPupil(Float pFilmX0, Float pFilmX1) const {
     Bounds2f pupilBounds;
-    Float rearRadius = RearElementRadius();
-    // Sample a grid of points on the rear lens to find exit pupil
-    const int nSamples = 1024;
-    int numExitingRays = 0;
-    Point3f pFilm3(pFilm.x, pFilm.y, 0);
+    // Sample a collection of points on the rear lens to find exit pupil
+    const int nSamples = 1024 * 1024;
+    int nExitingRays = 0;
 
     // Compute bounding box of projection of rear element on sampling plane
-    Bounds2f planeBounds(Point2f(-1.2f * rearRadius, -1.2f * rearRadius),
-                         Point2f(1.2f * rearRadius, 1.2f * rearRadius));
-    for (int y = 0; y < nSamples; ++y) {
-        for (int x = 0; x < nSamples; ++x) {
-            // Find location of sample point on rear lens element
-            Point3f pRear(Lerp((x + 0.5f) / nSamples, planeBounds.pMin.x,
-                               planeBounds.pMax.x),
-                          Lerp((y + 0.5f) / nSamples, planeBounds.pMin.y,
-                               planeBounds.pMax.y),
-                          LensRearZ());
+    Float rearRadius = RearElementRadius();
+    Bounds2f projRearBounds(Point2f(-1.5f * rearRadius, -1.5f * rearRadius),
+                            Point2f(1.5f * rearRadius, 1.5f * rearRadius));
+    for (int i = 0; i < nSamples; ++i) {
+        // Find location of sample points on $x$ segment and rear lens element
+        Point3f pFilm(Lerp((i + 0.5f) / nSamples, pFilmX0, pFilmX1), 0, 0);
+        Float u[2] = {RadicalInverse(0, i), RadicalInverse(1, i)};
+        Point3f pRear(Lerp(u[0], projRearBounds.pMin.x, projRearBounds.pMax.x),
+                      Lerp(u[1], projRearBounds.pMin.y, projRearBounds.pMax.y),
+                      LensRearZ());
 
-            // Expand pupil bounds if ray makes it through the lens system
-            if (TraceLensesFromFilm(Ray(pFilm3, pRear - pFilm3), nullptr)) {
-                pupilBounds = Union(pupilBounds, Point2f(pRear.x, pRear.y));
-                ++numExitingRays;
-            }
+        // Expand pupil bounds if ray makes it through the lens system
+        if (Inside(Point2f(pRear.x, pRear.y), pupilBounds) ||
+            TraceLensesFromFilm(Ray(pFilm, pRear - pFilm), nullptr)) {
+            pupilBounds = Union(pupilBounds, Point2f(pRear.x, pRear.y));
+            ++nExitingRays;
         }
     }
 
     // Return entire element bounds if no rays made it through the lens system
-    if (numExitingRays == 0) {
-        Info("Unable to find exit pupil at (%f,%f) on film.", pFilm.x, pFilm.y);
-        return Bounds2f(Point2f(-rearRadius, -rearRadius),
-                        Point2f(rearRadius, rearRadius));
+    if (nExitingRays == 0) {
+        Info("Unable to find exit pupil in x = [%f,%f] on film.", pFilmX0,
+             pFilmX1);
+        return projRearBounds;
     }
 
     // Expand bounds to account for sample spacing
-    pupilBounds = Expand(pupilBounds, 2.f * rearRadius / nSamples);
+    pupilBounds = Expand(pupilBounds, 2 * projRearBounds.Diagonal().Length() /
+                                          std::sqrt(nSamples));
     return pupilBounds;
 }
 
@@ -593,27 +592,23 @@ void RealisticCamera::RenderExitPupil(Float sx, Float sy,
 }
 
 Point3f RealisticCamera::SampleExitPupil(const Point2f &pFilm,
-                                         const Point2f &lensSample) const {
+                                         const Point2f &lensSample,
+                                         Float *sampleBoundsArea) const {
     // Find exit pupil bound for sample distance from film center
-    Float filmDiagonal = film->diagonal;
     Float rFilm = std::sqrt(pFilm.x * pFilm.x + pFilm.y * pFilm.y);
-    Float r = rFilm / (filmDiagonal / 2.f);
-    int pupilIndex =
-        std::min((int)exitPupilBounds.size() - 1,
-                 (int)std::floor(r * (exitPupilBounds.size() - 1)));
-    Bounds2f pupilBounds = exitPupilBounds[pupilIndex];
-    if (pupilIndex + 1 < (int)exitPupilBounds.size())
-        pupilBounds = Union(pupilBounds, exitPupilBounds[pupilIndex + 1]);
+    int rIndex = rFilm / (film->diagonal / 2) * exitPupilBounds.size();
+    rIndex = std::min((int)exitPupilBounds.size() - 1, rIndex);
+    Bounds2f pupilBounds = exitPupilBounds[rIndex];
+    if (sampleBoundsArea) *sampleBoundsArea = pupilBounds.Area();
 
     // Generate sample point inside exit pupil bound
     Point2f pLens = pupilBounds.Lerp(lensSample);
 
-    // Rotate sample point by angle of _pFilm_ with $+x$ axis
-    Float sinTheta = (rFilm != 0.f) ? pFilm.y / rFilm : 0.f;
-    Float cosTheta = (rFilm != 0.f) ? pFilm.x / rFilm : 1.f;
-    Point2f pLensRot(cosTheta * pLens.x - sinTheta * pLens.y,
-                     sinTheta * pLens.x + cosTheta * pLens.y);
-    return Point3f(pLensRot.x, pLensRot.y, LensRearZ());
+    // Return sample point rotated by angle of _pFilm_ with $+x$ axis
+    Float sinTheta = (rFilm != 0) ? pFilm.y / rFilm : 0;
+    Float cosTheta = (rFilm != 0) ? pFilm.x / rFilm : 1;
+    return Point3f(cosTheta * pLens.x - sinTheta * pLens.y,
+                   sinTheta * pLens.x + cosTheta * pLens.y, LensRearZ());
 }
 
 void RealisticCamera::TestExitPupilBounds() const {
@@ -622,9 +617,9 @@ void RealisticCamera::TestExitPupilBounds() const {
     static RNG rng;
 
     Float u = rng.UniformFloat();
-    Point3f pFilm(u * filmDiagonal / 2.f, 0.f, 0.f);
+    Point3f pFilm(u * filmDiagonal / 2, 0, 0);
 
-    Float r = pFilm.x / (filmDiagonal / 2.f);
+    Float r = pFilm.x / (filmDiagonal / 2);
     int pupilIndex =
         std::min((int)exitPupilBounds.size() - 1,
                  (int)std::floor(r * (exitPupilBounds.size() - 1)));
@@ -663,66 +658,38 @@ void RealisticCamera::TestExitPupilBounds() const {
 }
 
 Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
+    ProfilePhase prof(Prof::GenerateCameraRay);
     ++totalRays;
-    // Generate initial ray, _rFilm_, pointing at rearmost lens element
+    // Find point on film, _pFilm_, corresponding to _sample.pFilm_
+    Point2f s(sample.pFilm.x / film->fullResolution.x,
+              sample.pFilm.y / film->fullResolution.y);
+    Point2f pFilm2 = film->GetPhysicalExtent().Lerp(s);
+    Point3f pFilm(-pFilm2.x, pFilm2.y, 0);
 
-    // Find point on film corresponding to _sample.pFilm_
-    Point2f filmSize = film->GetPhysicalSize();
-    Point2f s((sample.pFilm.x - film->fullResolution.x / 2.f) /
-                  film->fullResolution.x,
-              (sample.pFilm.y - film->fullResolution.y / 2.f) /
-                  film->fullResolution.y);
-    Point3f pFilm(-s.x * filmSize.x, s.y * filmSize.y, 0);
-    Point3f pRear = SampleExitPupil(Point2f(pFilm.x, pFilm.y), sample.pLens);
+    // Trace ray from _pFilm_ through lens system
+    Float exitPupilBoundsArea;
+    Point3f pRear = SampleExitPupil(Point2f(pFilm.x, pFilm.y), sample.pLens,
+                                    &exitPupilBoundsArea);
     Ray rFilm(pFilm, pRear - pFilm, Infinity,
               Lerp(sample.time, shutterOpen, shutterClose));
     if (!TraceLensesFromFilm(rFilm, ray)) {
         ++vignettedRays;
-        return 0.f;
+        return 0;
     }
+
+    // Finish initialization of _RealisticCamera_ ray
     *ray = CameraToWorld(*ray);
     ray->d = Normalize(ray->d);
     ray->medium = medium;
+
     // Return weighting for _RealisticCamera_ ray
-    Float costheta = Normalize(rFilm.d).z;
+    Float cosTheta = Normalize(rFilm.d).z;
+    Float cos4Theta = (cosTheta * cosTheta) * (cosTheta * cosTheta);
     if (simpleWeighting)
-        return (costheta * costheta) * (costheta * costheta);
-    else {
-        Float pdf = ExitPupilPdf(pFilm, pRear);
-        return ((costheta * costheta) * (costheta * costheta)) /
-               (LensRearZ() * LensRearZ() * pdf);
-    }
-}
-
-Float RealisticCamera::ExitPupilPdf(const Point3f &pFilm,
-                                    const Point3f &pExitPupil) const {
-    // Check to see if _pExitPupil_ is within the radius of the rear element
-    // if (pExitPupil.x * pExitPupil.x + pExitPupil.y * pExitPupil.y >
-    //    RearElementRadius() * RearElementRadius())
-    //    return 0.f;
-
-    // Find exit pupil bound for sample distance from film center
-    Float filmDiagonal = film->diagonal;
-    Float rFilm = std::sqrt(pFilm.x * pFilm.x + pFilm.y * pFilm.y);
-    Float r = rFilm / (filmDiagonal / 2.f);
-    int pupilIndex =
-        std::min((int)exitPupilBounds.size() - 1,
-                 (int)std::floor(r * (exitPupilBounds.size() - 1)));
-    Bounds2f pupilBounds = exitPupilBounds[pupilIndex];
-    if (pupilIndex + 1 < (int)exitPupilBounds.size())
-        pupilBounds = Union(pupilBounds, exitPupilBounds[pupilIndex + 1]);
-
-    // Rotate _pExitPupil_ by negative angle of _pFilm_ with $+x$ axis
-    Float sinTheta = (rFilm != 0.f) ? -pFilm.y / rFilm : 0.f;
-    Float cosTheta = (rFilm != 0.f) ? pFilm.x / rFilm : 1.f;
-    Point2f pRot(cosTheta * pExitPupil.x - sinTheta * pExitPupil.y,
-                 sinTheta * pExitPupil.x + cosTheta * pExitPupil.y);
-
-    // Return PDF based on whether lens point is inside lens sampling area
-    if (Inside(pRot, pupilBounds))
-        return 1.f / pupilBounds.Area();
+        return cos4Theta;
     else
-        return 0.f;
+        return (shutterClose - shutterOpen) *
+               (cos4Theta * exitPupilBoundsArea) / (LensRearZ() * LensRearZ());
 }
 
 RealisticCamera *CreateRealisticCamera(const ParamSet &params,

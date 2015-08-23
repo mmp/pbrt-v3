@@ -54,7 +54,7 @@ class PhaseFunction {
 };
 
 inline Float PhaseHG(Float cosTheta, Float g) {
-    Float denom = 1 + g * g + 2 * g * cosTheta;
+    Float denom = 1 + g * g - 2 * g * cosTheta;
     return Inv4Pi * (1 - g * g) / (denom * std::sqrt(denom));
 }
 
@@ -71,7 +71,7 @@ class HenyeyGreenstein : public PhaseFunction {
 };
 
 bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
-                                   Spectrum *sigma_prime_s);
+                                   Spectrum *sigma_s);
 Vector3f SampleHG(const Vector3f &w, Float g, const Point2f &sample);
 
 // Medium Declarations
@@ -79,7 +79,7 @@ class Medium {
   public:
     // Medium Interface
     virtual ~Medium() {}
-    virtual Spectrum T(const Ray &ray, Sampler &sampler) const = 0;
+    virtual Spectrum Tr(const Ray &ray, Sampler &sampler) const = 0;
     virtual Spectrum Sample(const Ray &ray, Sampler &sampler,
                             MemoryArena &arena,
                             MediumInteraction *mi) const = 0;

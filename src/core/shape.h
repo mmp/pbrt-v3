@@ -51,33 +51,31 @@ class Shape {
   public:
     // Shape Interface
     Shape(const Transform *ObjectToWorld, const Transform *WorldToObject,
-          bool ReverseOrientation);
+          bool reverseOrientation);
     virtual ~Shape();
     virtual Bounds3f ObjectBound() const = 0;
     virtual Bounds3f WorldBound() const;
     virtual bool Intersect(const Ray &ray, Float *tHit,
-                           SurfaceInteraction *isect) const = 0;
-    virtual bool IntersectP(const Ray &ray) const {
+                           SurfaceInteraction *isect,
+                           bool testAlphaTexture = true) const = 0;
+    virtual bool IntersectP(const Ray &ray,
+                            bool testAlphaTexture = true) const {
         Float tHit = ray.tMax;
         SurfaceInteraction isect;
-        return Intersect(ray, &tHit, &isect);
+        return Intersect(ray, &tHit, &isect, testAlphaTexture);
     }
     virtual Float Area() const = 0;
-    virtual bool Sample(const Point2f &sample, Interaction *it) const = 0;
-    virtual Float Pdf(const Interaction &it) const {
-        return (Float)1.f / Area();
-    }
-    virtual bool Sample(const Interaction &ref, const Point2f &sample,
-                        Interaction *it) const {
-        it->time = ref.time;
-        return Sample(sample, it);
+    virtual Interaction Sample(const Point2f &u) const = 0;
+    virtual Float Pdf(const Interaction &) const { return 1 / Area(); }
+    virtual Interaction Sample(const Interaction &ref, const Point2f &u) const {
+        return Sample(u);
     }
     virtual Float Pdf(const Interaction &ref, const Vector3f &wi) const;
 
     // Shape Public Data
     const Transform *ObjectToWorld, *WorldToObject;
-    const bool ReverseOrientation;
-    const bool TransformSwapsHandedness;
+    const bool reverseOrientation;
+    const bool transformSwapsHandedness;
 };
 
 #endif  // PBRT_CORE_SHAPE_H

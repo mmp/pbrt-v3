@@ -41,11 +41,11 @@ Shape::~Shape() {}
 
 STAT_COUNTER("Scene/Shapes created", nShapesCreated);
 Shape::Shape(const Transform *ObjectToWorld, const Transform *WorldToObject,
-             bool ReverseOrientation)
+             bool reverseOrientation)
     : ObjectToWorld(ObjectToWorld),
       WorldToObject(WorldToObject),
-      ReverseOrientation(ReverseOrientation),
-      TransformSwapsHandedness(ObjectToWorld->SwapsHandedness()) {
+      reverseOrientation(reverseOrientation),
+      transformSwapsHandedness(ObjectToWorld->SwapsHandedness()) {
     ++nShapesCreated;
 }
 
@@ -55,9 +55,8 @@ Float Shape::Pdf(const Interaction &ref, const Vector3f &wi) const {
     // Intersect sample ray with area light geometry
     SurfaceInteraction isectLight;
     Ray ray = ref.SpawnRay(wi);
-    ray.depth = -1;  // temporary hack to ignore alpha mask
-    Float thit;
-    if (!Intersect(ray, &thit, &isectLight)) return 0.f;
+    Float tHit;
+    if (!Intersect(ray, &tHit, &isectLight, false)) return 0;
 
     // Convert light sample weight to solid angle measure
     Float pdf = DistanceSquared(ref.p, isectLight.p) /

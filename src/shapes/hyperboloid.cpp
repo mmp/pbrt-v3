@@ -70,7 +70,8 @@ Bounds3f Hyperboloid::ObjectBound() const {
 }
 
 bool Hyperboloid::Intersect(const Ray &r, Float *tHit,
-                            SurfaceInteraction *isect) const {
+                            SurfaceInteraction *isect,
+                            bool testAlphaTexture) const {
     Float phi, v;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -93,7 +94,7 @@ bool Hyperboloid::Intersect(const Ray &r, Float *tHit,
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;
-    if (t0.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) {
         tShapeHit = t1;
         if (tShapeHit.UpperBound() > ray.tMax) return false;
     }
@@ -168,7 +169,7 @@ bool Hyperboloid::Intersect(const Ray &r, Float *tHit,
     return true;
 }
 
-bool Hyperboloid::IntersectP(const Ray &r) const {
+bool Hyperboloid::IntersectP(const Ray &r, bool testAlphaTexture) const {
     Float phi, v;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -191,7 +192,7 @@ bool Hyperboloid::IntersectP(const Ray &r) const {
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;
-    if (t0.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) {
         tShapeHit = t1;
         if (tShapeHit.UpperBound() > ray.tMax) return false;
     }
@@ -239,9 +240,9 @@ Float Hyperboloid::Area() const {
 
 #undef SQR
 #undef QUAD
-bool Hyperboloid::Sample(const Point2f &sample, Interaction *it) const {
+Interaction Hyperboloid::Sample(const Point2f &u) const {
     Severe("Hyperboloid::Sample not implemented.");
-    return false;
+    return Interaction();
 }
 
 std::shared_ptr<Shape> CreateHyperboloidShape(const Transform *o2w,

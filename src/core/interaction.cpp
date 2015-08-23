@@ -61,31 +61,31 @@ SurfaceInteraction::SurfaceInteraction(
 
     // Adjust normal based on orientation and handedness
     if (shape &&
-        (shape->ReverseOrientation ^ shape->TransformSwapsHandedness)) {
-        n *= -1.f;
-        shading.n *= -1.f;
+        (shape->reverseOrientation ^ shape->transformSwapsHandedness)) {
+        n *= -1;
+        shading.n *= -1;
     }
 }
 
-void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdu,
-                                            const Vector3f &dpdv,
-                                            const Normal3f &dndu,
-                                            const Normal3f &dndv,
+void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdus,
+                                            const Vector3f &dpdvs,
+                                            const Normal3f &dndus,
+                                            const Normal3f &dndvs,
                                             bool orientationIsAuthoritative) {
-    shading.n = Normalize((Normal3f)Cross(dpdu, dpdv));
-    if (shape && (shape->ReverseOrientation ^ shape->TransformSwapsHandedness))
+    // Compute _shading.n_ for _SurfaceInteraction_
+    shading.n = Normalize((Normal3f)Cross(dpdus, dpdvs));
+    if (shape && (shape->reverseOrientation ^ shape->transformSwapsHandedness))
         shading.n = -shading.n;
-    // Reorient geometric or shading normal, as appropriate
     if (orientationIsAuthoritative)
         n = Faceforward(n, shading.n);
     else
         shading.n = Faceforward(shading.n, n);
 
     // Initialize _shading_ partial derivative values
-    shading.dpdu = dpdu;
-    shading.dpdv = dpdv;
-    shading.dndu = dndu;
-    shading.dndv = dndv;
+    shading.dpdu = dpdus;
+    shading.dpdv = dpdvs;
+    shading.dndu = dndus;
+    shading.dndv = dndvs;
 }
 
 void SurfaceInteraction::ComputeScatteringFunctions(const RayDifferential &ray,
@@ -135,12 +135,12 @@ void SurfaceInteraction::ComputeDifferentials(
                          {dpdu[dim[1]], dpdv[dim[1]]}};
         Float Bx[2] = {px[dim[0]] - p[dim[0]], px[dim[1]] - p[dim[1]]};
         Float By[2] = {py[dim[0]] - p[dim[0]], py[dim[1]] - p[dim[1]]};
-        if (!SolveLinearSystem2x2(A, Bx, &dudx, &dvdx)) dudx = dvdx = 0.f;
-        if (!SolveLinearSystem2x2(A, By, &dudy, &dvdy)) dudy = dvdy = 0.f;
+        if (!SolveLinearSystem2x2(A, Bx, &dudx, &dvdx)) dudx = dvdx = 0;
+        if (!SolveLinearSystem2x2(A, By, &dudy, &dvdy)) dudy = dvdy = 0;
     } else {
     fail:
-        dudx = dvdx = 0.f;
-        dudy = dvdy = 0.f;
+        dudx = dvdx = 0;
+        dudy = dvdy = 0;
         dpdx = dpdy = Vector3f(0, 0, 0);
     }
 }

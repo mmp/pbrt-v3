@@ -48,7 +48,7 @@ class PathIntegrator : public SamplerIntegrator {
   public:
     // PathIntegrator Public Methods
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena) const;
+                Sampler &sampler, MemoryArena &arena, int depth) const;
     PathIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
                    std::shared_ptr<Sampler> sampler)
         : SamplerIntegrator(camera, sampler), maxDepth(maxDepth) {}

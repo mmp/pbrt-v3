@@ -51,13 +51,14 @@
 class GonioPhotometricLight : public Light {
   public:
     // GonioPhotometricLight Public Methods
-    Spectrum Sample_L(const Interaction &ref, const Point2f &sample,
-                      Vector3f *wi, Float *pdf, VisibilityTester *vis) const;
-    GonioPhotometricLight(const Transform &LightToWorld, const Medium *medium,
-                          const Spectrum &intensity, const std::string &texname)
-        : Light(LightFlags::DeltaPosition, LightToWorld, medium),
+    Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
+                       Float *pdf, VisibilityTester *vis) const;
+    GonioPhotometricLight(const Transform &LightToWorld,
+                          const MediumInterface &mediumInterface,
+                          const Spectrum &I, const std::string &texname)
+        : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
           pLight(LightToWorld(Point3f(0, 0, 0))),
-          intensity(intensity) {
+          I(I) {
         // Create _mipmap_ for _GonioPhotometricLight_
         Point2i resolution;
         std::unique_ptr<RGBSpectrum[]> texels = ReadImage(texname, &resolution);
@@ -75,16 +76,17 @@ class GonioPhotometricLight : public Light {
                    : Spectrum(mipmap->Lookup(st), SpectrumType::Illuminant);
     }
     Spectrum Power() const;
-    Spectrum Sample_L(const Point2f &sample1, const Point2f &sample2,
-                      Float time, Ray *ray, Normal3f *Ns, Float *pdfPos,
-                      Float *pdfDir) const;
-    Float Pdf(const Interaction &, const Vector3f &) const;
-    void Pdf(const Ray &, const Normal3f &, Float *pdfPos, Float *pdfDir) const;
+    Float Pdf_Li(const Interaction &, const Vector3f &) const;
+    Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
+                       Ray *ray, Normal3f *nLight, Float *pdfPos,
+                       Float *pdfDir) const;
+    void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
+                Float *pdfDir) const;
 
   private:
     // GonioPhotometricLight Private Data
     const Point3f pLight;
-    const Spectrum intensity;
+    const Spectrum I;
     std::unique_ptr<MIPMap<RGBSpectrum>> mipmap;
 };
 

@@ -37,15 +37,16 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "imageio.h"
+#include "reflection.h"
 
 // ProjectionLight Method Definitions
 ProjectionLight::ProjectionLight(const Transform &LightToWorld,
-                                 const Medium *medium,
-                                 const Spectrum &intensity,
-                                 const std::string &texname, Float fov)
-    : Light(LightFlags::DeltaPosition, LightToWorld, medium),
+                                 const MediumInterface &mediumInterface,
+                                 const Spectrum &I, const std::string &texname,
+                                 Float fov)
+    : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
       pLight(LightToWorld(Point3f(0, 0, 0))),
-      intensity(intensity) {
+      I(I) {
     // Create _ProjectionLight_ MIP map
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> texels = ReadImage(texname, &resolution);
@@ -54,8 +55,8 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
 
     // Initialize _ProjectionLight_ projection matrix
     Float aspect =
-        projectionMap ? (Float(resolution.x) / Float(resolution.y)) : 1.f;
-    if (aspect > 1.f)
+        projectionMap ? (Float(resolution.x) / Float(resolution.y)) : 1;
+    if (aspect > 1)
         screenBounds = Bounds2f(Point2f(-aspect, -1), Point2f(aspect, 1));
     else
         screenBounds =
@@ -70,19 +71,20 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
     cosTotalWidth = std::cos(std::atan(tanDiag));
 }
 
-Spectrum ProjectionLight::Sample_L(const Interaction &ref,
-                                   const Point2f &sample, Vector3f *wi,
-                                   Float *pdf, VisibilityTester *vis) const {
+Spectrum ProjectionLight::Sample_Li(const Interaction &ref, const Point2f &u,
+                                    Vector3f *wi, Float *pdf,
+                                    VisibilityTester *vis) const {
     *wi = Normalize(pLight - ref.p);
-    *pdf = 1.f;
-    *vis = VisibilityTester(ref, Interaction(pLight, ref.time, medium));
-    return intensity * Projection(-*wi) / DistanceSquared(pLight, ref.p);
+    *pdf = 1;
+    *vis =
+        VisibilityTester(ref, Interaction(pLight, ref.time, mediumInterface));
+    return I * Projection(-*wi) / DistanceSquared(pLight, ref.p);
 }
 
 Spectrum ProjectionLight::Projection(const Vector3f &w) const {
     Vector3f wl = WorldToLight(w);
     // Discard directions behind projection light
-    if (wl.z < hither) return 0.f;
+    if (wl.z < hither) return 0;
 
     // Project point onto projection plane and compute light
     Point3f p = lightProjection(Point3f(wl.x, wl.y, wl.z));
@@ -97,29 +99,30 @@ Spectrum ProjectionLight::Power() const {
                 ? Spectrum(projectionMap->Lookup(Point2f(.5f, .5f), .5f),
                            SpectrumType::Illuminant)
                 : Spectrum(1.f)) *
-           intensity * 2.f * Pi * (1.f - cosTotalWidth);
+           I * 2 * Pi * (1.f - cosTotalWidth);
 }
 
-Spectrum ProjectionLight::Sample_L(const Point2f &sample1,
-                                   const Point2f &sample2, Float time, Ray *ray,
-                                   Normal3f *Ns, Float *pdfPos,
-                                   Float *pdfDir) const {
-    Vector3f v = UniformSampleCone(sample1, cosTotalWidth);
-    *ray = Ray(pLight, LightToWorld(v), Infinity, time, 0, medium);
-    *Ns = (Normal3f)ray->d;  /// same here
-    *pdfPos = 1.f;
-    *pdfDir = UniformConePdf(cosTotalWidth);
-    return intensity * Projection(ray->d);
-}
-
-Float ProjectionLight::Pdf(const Interaction &, const Vector3f &) const {
+Float ProjectionLight::Pdf_Li(const Interaction &, const Vector3f &) const {
     return 0.f;
 }
 
-void ProjectionLight::Pdf(const Ray &, const Normal3f &, Float *pdfPos,
-                          Float *pdfDir) const {
-    *pdfPos = 0.f;
+Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
+                                    Float time, Ray *ray, Normal3f *nLight,
+                                    Float *pdfPos, Float *pdfDir) const {
+    Vector3f v = UniformSampleCone(u1, cosTotalWidth);
+    *ray = Ray(pLight, LightToWorld(v), Infinity, time, mediumInterface.inside);
+    *nLight = (Normal3f)ray->d;  /// same here
+    *pdfPos = 1.f;
     *pdfDir = UniformConePdf(cosTotalWidth);
+    return I * Projection(ray->d);
+}
+
+void ProjectionLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
+                             Float *pdfDir) const {
+    *pdfPos = 0.f;
+    *pdfDir = (CosTheta(WorldToLight(ray.d)) >= cosTotalWidth)
+                  ? UniformConePdf(cosTotalWidth)
+                  : 0;
 }
 
 std::shared_ptr<ProjectionLight> CreateProjectionLight(

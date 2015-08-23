@@ -42,27 +42,37 @@
 // integrators/sppm.h*
 #include "pbrt.h"
 #include "integrator.h"
+#include "camera.h"
+#include "film.h"
 
 // SPPM Declarations
-Integrator *CreateSPPMIntegrator(const ParamSet &params,
-                                 std::shared_ptr<const Camera> camera);
 class SPPMIntegrator : public Integrator {
   public:
     // SPPMIntegrator Public Methods
-    SPPMIntegrator(std::shared_ptr<const Camera> &cam, int ni, int ppi, int md,
-                   Float radius, bool direct, int wf, const Film *film);
+    SPPMIntegrator(std::shared_ptr<const Camera> &camera, int nIterations,
+                   int photonsPerIteration, int maxDepth,
+                   Float initialSearchRadius, int writeFrequency)
+        : camera(camera),
+          nIterations(nIterations),
+          photonsPerIteration(photonsPerIteration > 0
+                                  ? photonsPerIteration
+                                  : camera->film->croppedPixelBounds.Area()),
+          maxDepth(maxDepth),
+          initialSearchRadius(initialSearchRadius),
+          writeFrequency(writeFrequency) {}
     void Render(const Scene &scene);
 
   private:
     // SPPMIntegrator Private Data
     std::shared_ptr<const Camera> camera;
-    const int nIterations;
-    int photonsPerIteration;
-    const int maxDepth;
     const Float initialSearchRadius;
-    const bool directWithPhotons;
+    const int nIterations;
+    const int maxDepth;
+    const int photonsPerIteration;
     const int writeFrequency;
-    int baseGridRes;
 };
+
+Integrator *CreateSPPMIntegrator(const ParamSet &params,
+                                 std::shared_ptr<const Camera> camera);
 
 #endif  // PBRT_INTEGRATORS_SPPM_H

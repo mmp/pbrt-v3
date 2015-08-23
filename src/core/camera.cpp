@@ -34,7 +34,6 @@
 
 // core/camera.cpp*
 #include "camera.h"
-#include "film.h"
 #include "sampling.h"
 #include "sampler.h"
 
@@ -65,7 +64,7 @@ Float Camera::GenerateRayDifferential(const CameraSample &sample,
     sshift.pFilm.x++;
     Ray rx;
     Float wtx = GenerateRay(sshift, &rx);
-    if (wtx == 0.f) return 0.f;
+    if (wtx == 0) return 0;
     rd->rxOrigin = rx.o;
     rd->rxDirection = rx.d;
 
@@ -74,51 +73,25 @@ Float Camera::GenerateRayDifferential(const CameraSample &sample,
     sshift.pFilm.y++;
     Ray ry;
     Float wty = GenerateRay(sshift, &ry);
-    if (wty == 0.f) return 0.f;
+    if (wty == 0) return 0;
     rd->ryOrigin = ry.o;
     rd->ryDirection = ry.d;
     rd->hasDifferentials = true;
     return wt;
 }
 
-ProjectiveCamera::ProjectiveCamera(const AnimatedTransform &CameraToWorld,
-                                   const Transform &CameraToScreen,
-                                   const Bounds2f &screenWindow,
-                                   Float shutterOpen, Float shutterClose,
-                                   Float lensr, Float focald, Film *film,
-                                   const Medium *medium)
-    : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium),
-      CameraToScreen(CameraToScreen) {
-    // Initialize depth of field parameters
-    lensRadius = lensr;
-    focalDistance = focald;
-
-    // Compute projective camera transformations
-
-    // Compute projective camera screen transformations
-    ScreenToRaster =
-        Scale(film->fullResolution.x, film->fullResolution.y, 1.f) *
-        Scale(1.f / (screenWindow.pMax.x - screenWindow.pMin.x),
-              1.f / (screenWindow.pMin.y - screenWindow.pMax.y), 1.f) *
-        Translate(Vector3f(-screenWindow.pMin.x, -screenWindow.pMax.y, 0.f));
-    RasterToScreen = Inverse(ScreenToRaster);
-    RasterToCamera = Inverse(CameraToScreen) * RasterToScreen;
-}
-
-Spectrum Camera::We(const Interaction &it, const Vector3f &w,
-                    Point2f *raster) const {
-    Error("Camera::We() is not implemented!");
+Spectrum Camera::We(const Ray &ray, Point2f *raster) const {
+    Severe("Camera::We() is not implemented!");
     return Spectrum(0.f);
 }
 
-Float Camera::Pdf(const Interaction &it, const Vector3f &w) const {
-    Error("Camera::Pdf() is not implemented!");
-    return 0.f;
+void Camera::Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const {
+    Severe("Camera::Pdf_We() is not implemented!");
 }
 
-Spectrum Camera::Sample_We(const Interaction &ref, const Point2f &sample,
-                           Vector3f *wi, Float *pdf, Point2f *raster,
+Spectrum Camera::Sample_Wi(const Interaction &ref, const Point2f &u,
+                           Vector3f *wi, Float *pdf, Point2f *pRaster,
                            VisibilityTester *vis) const {
-    Error("Camera::Sample_We() is not implemented!");
+    Severe("Camera::Sample_Wi() is not implemented!");
     return Spectrum(0.f);
 }

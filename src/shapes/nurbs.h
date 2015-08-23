@@ -46,7 +46,7 @@
 
 std::vector<std::shared_ptr<Shape>> CreateNURBS(const Transform *o2w,
                                                 const Transform *w2o,
-                                                bool ReverseOrientation,
+                                                bool reverseOrientation,
                                                 const ParamSet &params);
 
 #endif  // PBRT_SHAPES_NURBS_H

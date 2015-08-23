@@ -39,11 +39,11 @@
 
 // Film Method Definitions
 Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
-           Filter *filter, Float diagonal, const std::string &filename,
-           Float scale, Float gamma)
+           std::unique_ptr<Filter> filt, Float diagonal,
+           const std::string &filename, Float scale, Float gamma)
     : fullResolution(resolution),
       diagonal(diagonal * .001),
-      filter(filter),
+      filter(std::move(filt)),
       filename(filename),
       scale(scale),
       gamma(gamma) {
@@ -61,9 +61,9 @@ Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
     int offset = 0;
     for (int y = 0; y < filterTableWidth; ++y) {
         for (int x = 0; x < filterTableWidth; ++x, ++offset) {
-            Point2f p(x + 0.5f, y + 0.5f);
-            p.x *= filter->radius.x / filterTableWidth;
-            p.y *= filter->radius.y / filterTableWidth;
+            Point2f p;
+            p.x = (x + 0.5f) * filter->radius.x / filterTableWidth;
+            p.y = (y + 0.5f) * filter->radius.y / filterTableWidth;
             filterTable[offset] = filter->Evaluate(p);
         }
     }
@@ -77,15 +77,15 @@ Bounds2i Film::GetSampleBounds() const {
     return (Bounds2i)floatBounds;
 }
 
-Point2f Film::GetPhysicalSize() const {
+Bounds2f Film::GetPhysicalExtent() const {
     Float aspect = (Float)fullResolution.y / (Float)fullResolution.x;
-    Float x = std::sqrt(diagonal * diagonal / (1.f + aspect * aspect));
+    Float x = std::sqrt(diagonal * diagonal / (1 + aspect * aspect));
     Float y = aspect * x;
-    return Point2f(x, y);
+    return Bounds2f(Point2f(-x / 2, -y / 2), Point2f(x / 2, y / 2));
 }
 
 std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
-    // Bound image pixels that samples in _SampleBounds_ contribute to
+    // Bound image pixels that samples in _sampleBounds_ contribute to
     Vector2f halfPixel = Vector2f(0.5f, 0.5f);
     Bounds2f floatBounds = (Bounds2f)sampleBounds;
     Point2i p0 = (Point2i)Ceil(floatBounds.pMin - halfPixel - filter->radius);
@@ -97,37 +97,17 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
 }
 
 void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
+    ProfilePhase p(Prof::MergeFilmTile);
     std::lock_guard<std::mutex> lock(mutex);
     for (Point2i pixel : tile->GetPixelBounds()) {
         // Merge _pixel_ into _Film::pixels_
-        const FilmTilePixel &unnormalizedPixel = tile->GetPixel(pixel);
+        const FilmTilePixel &tilePixel = tile->GetPixel(pixel);
         Pixel &mergePixel = GetPixel(pixel);
         Float xyz[3];
-        unnormalizedPixel.contribSum.ToXYZ(xyz);
+        tilePixel.contribSum.ToXYZ(xyz);
         for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
-        mergePixel.filterWeightSum += unnormalizedPixel.filterWeightSum;
+        mergePixel.filterWeightSum += tilePixel.filterWeightSum;
     }
-}
-
-void Film::Splat(const Point2f &pFilm, const Spectrum &L) {
-    if (L.HasNaNs()) {
-        Warning("Film ignoring splatted spectrum with NaN values");
-        return;
-    }
-    Point2i pi = (Point2i)Floor(pFilm);
-    if (!InsideExclusive(pi, croppedPixelBounds)) return;
-    Float xyz[3];
-    L.ToXYZ(xyz);
-    Pixel &pixel = GetPixel(pi);
-#if 0
-    // XXX rethink this -- it's killing performance for BDPT
-    std::lock_guard<std::mutex> lock(mutex);
-    for (int i = 0; i < 3; ++i)
-        pixel.splatXYZ[i] += xyz[i];
-#else
-    /// Workaround for now (?) using atomic FP adds
-    for (int i = 0; i < 3; ++i) AtomicAdd(&pixel.splatXYZ[i], xyz[i]);
-#endif
 }
 
 void Film::SetImage(const Spectrum *img) const {
@@ -135,14 +115,27 @@ void Film::SetImage(const Spectrum *img) const {
     for (int i = 0; i < nPixels; ++i) {
         Pixel &p = pixels[i];
         img[i].ToXYZ(p.xyz);
-        p.filterWeightSum = 1.f;
-        p.splatXYZ[0] = p.splatXYZ[1] = p.splatXYZ[2] = 0.f;
+        p.filterWeightSum = 1;
+        p.splatXYZ[0] = p.splatXYZ[1] = p.splatXYZ[2] = 0;
     }
+}
+
+void Film::AddSplat(const Point2f &p, const Spectrum &v) {
+    if (v.HasNaNs()) {
+        Warning("Film ignoring splatted spectrum with NaN values");
+        return;
+    }
+    ProfilePhase pp(Prof::SplatFilm);
+    if (!InsideExclusive((Point2i)p, croppedPixelBounds)) return;
+    Float xyz[3];
+    v.ToXYZ(xyz);
+    Pixel &pixel = GetPixel((Point2i)p);
+    for (int i = 0; i < 3; ++i) pixel.splatXYZ[i].Add(xyz[i]);
 }
 
 void Film::WriteImage(Float splatScale) {
     // Convert image to RGB and compute final pixel values
-    std::vector<Float> rgb(3 * croppedPixelBounds.Area());
+    std::unique_ptr<Float[]> rgb(new Float[3 * croppedPixelBounds.Area()]);
     int offset = 0;
     for (Point2i p : croppedPixelBounds) {
         // Convert pixel XYZ color to RGB
@@ -151,13 +144,13 @@ void Film::WriteImage(Float splatScale) {
 
         // Normalize pixel with weight sum
         Float filterWeightSum = pixel.filterWeightSum;
-        if (filterWeightSum != 0.f) {
-            Float invWt = (Float)1. / filterWeightSum;
-            rgb[3 * offset] = std::max((Float)0., rgb[3 * offset] * invWt);
+        if (filterWeightSum != 0) {
+            Float invWt = (Float)1 / filterWeightSum;
+            rgb[3 * offset] = std::max((Float)0, rgb[3 * offset] * invWt);
             rgb[3 * offset + 1] =
-                std::max((Float)0., rgb[3 * offset + 1] * invWt);
+                std::max((Float)0, rgb[3 * offset + 1] * invWt);
             rgb[3 * offset + 2] =
-                std::max((Float)0., rgb[3 * offset + 2] * invWt);
+                std::max((Float)0, rgb[3 * offset + 2] * invWt);
         }
 
         // Add splat value at pixel
@@ -180,7 +173,7 @@ void Film::WriteImage(Float splatScale) {
     ::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution, gamma);
 }
 
-Film *CreateFilm(const ParamSet &params, Filter *filter) {
+Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
     // Intentionally use FindOneString() rather than FindOneFilename() here
     // so that the rendered image is left in the working directory, rather
     // than the directory the scene file lives in.
@@ -214,6 +207,6 @@ Film *CreateFilm(const ParamSet &params, Filter *filter) {
     Float scale = params.FindOneFloat("scale", 1.);
     Float gamma = params.FindOneFloat("gamma", 2.2);
     Float diagonal = params.FindOneFloat("diagonal", 35.);
-    return new Film(Point2i(xres, yres), crop, filter, diagonal, filename,
-                    scale, gamma);
+    return new Film(Point2i(xres, yres), crop, std::move(filter), diagonal,
+                    filename, scale, gamma);
 }

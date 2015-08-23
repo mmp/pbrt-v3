@@ -69,14 +69,14 @@ void StratifiedSampler::StartPixel(const Point2i &p) {
 
 std::unique_ptr<Sampler> StratifiedSampler::Clone(int seed) {
     StratifiedSampler *ss = new StratifiedSampler(*this);
-    ss->rng.Seed(seed);
+    ss->rng.SetSequence(seed);
     return std::unique_ptr<Sampler>(ss);
 }
 
 StratifiedSampler *CreateStratifiedSampler(const ParamSet &params) {
     bool jitter = params.FindOneBool("jitter", true);
-    int xsamp = params.FindOneInt("xsamples", 2);
-    int ysamp = params.FindOneInt("ysamples", 2);
+    int xsamp = params.FindOneInt("xsamples", 4);
+    int ysamp = params.FindOneInt("ysamples", 4);
     int sd = params.FindOneInt("dimensions", 4);
     if (PbrtOptions.quickRender) xsamp = ysamp = 1;
     return new StratifiedSampler(xsamp, ysamp, sd, jitter);

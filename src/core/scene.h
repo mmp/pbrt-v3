@@ -58,8 +58,8 @@ class Scene {
     const Bounds3f &WorldBound() const { return worldBound; }
     bool Intersect(const Ray &ray, SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
-    bool IntersectT(const Ray &ray, Sampler &sampler, SurfaceInteraction *isect,
-                    Spectrum *transmittance) const;
+    bool IntersectTr(const Ray &ray, Sampler &sampler,
+                     SurfaceInteraction *isect, Spectrum *transmittance) const;
 
     // Scene Public Data
     std::vector<std::shared_ptr<Light>> lights;

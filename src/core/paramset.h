@@ -96,7 +96,7 @@ class ParamSet {
     std::string FindOneFilename(const std::string &,
                                 const std::string &d) const;
     std::string FindTexture(const std::string &) const;
-    const Float *FindFloat(const std::string &, int *nValues) const;
+    const Float *FindFloat(const std::string &, int *n) const;
     const int *FindInt(const std::string &, int *nValues) const;
     const bool *FindBool(const std::string &, int *nValues) const;
     const Point2f *FindPoint2f(const std::string &, int *nValues) const;

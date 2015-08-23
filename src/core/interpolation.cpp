@@ -37,7 +37,7 @@
 
 // Spline Interpolation Definitions
 Float CatmullRom(int size, const Float *nodes, const Float *values, Float x) {
-    if (!(x >= nodes[0] && x <= nodes[size - 1])) return 0.f;
+    if (!(x >= nodes[0] && x <= nodes[size - 1])) return 0;
     int idx = FindInterval(size, [&](int i) { return nodes[i] <= x; });
     Float x0 = nodes[idx], x1 = nodes[idx + 1];
     Float f0 = values[idx], f1 = values[idx + 1];
@@ -99,33 +99,6 @@ bool CatmullRomWeights(int size, const Float *nodes, Float x, int *offset,
         weights[3] = 0;
     }
     return true;
-}
-
-Float IntegrateCatmullRom(int size, const Float *nodes, const Float *values,
-                          Float *cdf) {
-    Float sum = 0.f;
-    cdf[0] = 0.f;
-    for (int idx = 0; idx < size - 1; ++idx) {
-        // Look up node positions and function values
-        Float x0 = nodes[idx], x1 = nodes[idx + 1], f0 = values[idx],
-              f1 = values[idx + 1], width = x1 - x0;
-
-        // Approximate derivatives using finite differences
-        Float d0, d1;
-        if (idx > 0)
-            d0 = width * (f1 - values[idx - 1]) / (x1 - nodes[idx - 1]);
-        else
-            d0 = f1 - f0;
-        if (idx + 2 < size)
-            d1 = width * (values[idx + 2] - f0) / (nodes[idx + 2] - x0);
-        else
-            d1 = f1 - f0;
-
-        // Keep a running sum and build a cumulative distribution function
-        sum += ((d0 - d1) * (1.f / 12.f) + (f0 + f1) * .5f) * width;
-        cdf[idx + 1] = sum;
-    }
-    return sum;
 }
 
 Float SampleCatmullRom(int size, const Float *nodes, const Float *values,
@@ -287,6 +260,33 @@ Float SampleCatmullRom2D(int size1, int size2, const Float *nodes1,
     return x0 + width * t;
 }
 
+Float IntegrateCatmullRom(int size, const Float *nodes, const Float *values,
+                          Float *cdf) {
+    Float sum = 0.f;
+    cdf[0] = 0.f;
+    for (int idx = 0; idx < size - 1; ++idx) {
+        // Look up node positions and function values
+        Float x0 = nodes[idx], x1 = nodes[idx + 1], f0 = values[idx],
+              f1 = values[idx + 1], width = x1 - x0;
+
+        // Approximate derivatives using finite differences
+        Float d0, d1;
+        if (idx > 0)
+            d0 = width * (f1 - values[idx - 1]) / (x1 - nodes[idx - 1]);
+        else
+            d0 = f1 - f0;
+        if (idx + 2 < size)
+            d1 = width * (values[idx + 2] - f0) / (nodes[idx + 2] - x0);
+        else
+            d1 = f1 - f0;
+
+        // Keep a running sum and build a cumulative distribution function
+        sum += ((d0 - d1) * (1.f / 12.f) + (f0 + f1) * .5f) * width;
+        cdf[idx + 1] = sum;
+    }
+    return sum;
+}
+
 Float InvertCatmullRom(int size, const Float *nodes, const Float *values,
                        Float y) {
     // Stop when _y_ is out of bounds
@@ -351,11 +351,11 @@ Float Fourier(const Float *a, int m, double cosPhi) {
     double value = 0.0;
     // Initialize cosine iterates
     double cosKMinusOnePhi = cosPhi;
-    double cosKPhi = 1.0;
+    double cosKPhi = 1;
     for (int k = 0; k < m; ++k) {
         // Add the current summand and update the cosine iterates
         value += a[k] * cosKPhi;
-        double cosKPlusOnePhi = 2.0 * cosPhi * cosKPhi - cosKMinusOnePhi;
+        double cosKPlusOnePhi = 2 * cosPhi * cosKPhi - cosKMinusOnePhi;
         cosKMinusOnePhi = cosKPhi;
         cosKPhi = cosKPlusOnePhi;
     }
@@ -366,9 +366,9 @@ Float SampleFourier(const Float *coeffs, const Float *recip, int nCoeffs,
                     Float sample, Float *pdf, Float *phi) {
     // Pick a side and declare bisection variables
     bool flip = false;
-    if (sample < .5f) {
+    if (sample < .5f)
         sample *= 2.f;
-    } else {
+    else {
         sample = 1.f - 2.f * (sample - .5f);
         flip = true;
     }
@@ -379,20 +379,19 @@ Float SampleFourier(const Float *coeffs, const Float *recip, int nCoeffs,
 
         // Initialize sine and cosine iterates
         double cosT = std::cos(t), sinT = std::sqrt(1 - cosT * cosT),
-               cosT_prev = cosT, cosT_cur = 1.0, sinT_prev = -sinT,
-               sinT_cur = 0.0;
+               cosTPrev = cosT, cosTCur = 1.0, sinTPrev = -sinT, sinTCur = 0.0;
 
         // Initialize _mono_ and _deriv_ with the first series term
         value = coeffs[0] * t;
         deriv = coeffs[0];
         for (int j = 1; j < nCoeffs; ++j) {
             // Compute next sine and cosine iterates
-            double sinT_next = 2.0 * cosT * sinT_cur - sinT_prev,
-                   cosT_next = 2.0 * cosT * cosT_cur - cosT_prev;
-            sinT_prev = sinT_cur;
-            sinT_cur = sinT_next;
-            cosT_prev = cosT_cur;
-            cosT_cur = cosT_next;
+            double sinT_next = 2 * cosT * sinTCur - sinTPrev,
+                   cosT_next = 2 * cosT * cosTCur - cosTPrev;
+            sinTPrev = sinTCur;
+            sinTCur = sinT_next;
+            cosTPrev = cosTCur;
+            cosTCur = cosT_next;
 
             // Add the next series term to _value_ and _deriv_
             double coeff = coeffs[j];
@@ -417,7 +416,7 @@ Float SampleFourier(const Float *coeffs, const Float *recip, int nCoeffs,
         if (!(t >= a && t <= b)) t = 0.5f * (a + b);
     }
     // Potentially flip _t_ and return the result
-    if (flip) t = 2.0 * Pi - t;
+    if (flip) t = 2 * Pi - t;
     *pdf = (Float)(Inv2Pi * deriv / coeffs[0]);
     *phi = (Float)t;
     return deriv;

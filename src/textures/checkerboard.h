@@ -48,38 +48,30 @@
 #include "parallel.h"
 #include "progressreporter.h"
 
+// AAMethod Declaration
+enum class AAMethod { None, ClosedForm };
+
 // CheckerboardTexture Declarations
 template <typename T>
 class Checkerboard2DTexture : public Texture<T> {
   public:
     // Checkerboard2DTexture Public Methods
-    Checkerboard2DTexture(TextureMapping2D *mapping,
+    Checkerboard2DTexture(std::unique_ptr<TextureMapping2D> mapping,
                           const std::shared_ptr<Texture<T>> &tex1,
                           const std::shared_ptr<Texture<T>> &tex2,
-                          const std::string &aa)
-        : mapping(mapping), tex1(tex1), tex2(tex2) {
-        // Select antialiasing method for _Checkerboard2DTexture_
-        if (aa == "none")
-            aaMethod = AAMethod::NONE;
-        else if (aa == "closedform")
-            aaMethod = AAMethod::CLOSEDFORM;
-        else {
-            Warning(
-                "Antialiasing mode \"%s\" not understood by "
-                "Checkerboard2DTexture; using \"closedform\"",
-                aa.c_str());
-            aaMethod = AAMethod::CLOSEDFORM;
-        }
-    }
-    ~Checkerboard2DTexture() { delete mapping; }
-    T Evaluate(const SurfaceInteraction &isect) const {
+                          AAMethod aaMethod)
+        : mapping(std::move(mapping)),
+          tex1(tex1),
+          tex2(tex2),
+          aaMethod(aaMethod) {}
+    T Evaluate(const SurfaceInteraction &si) const {
         Vector2f dstdx, dstdy;
-        Point2f st = mapping->Map(isect, &dstdx, &dstdy);
-        if (aaMethod == AAMethod::NONE) {
+        Point2f st = mapping->Map(si, &dstdx, &dstdy);
+        if (aaMethod == AAMethod::None) {
             // Point sample _Checkerboard2DTexture_
             if (((int)std::floor(st[0]) + (int)std::floor(st[1])) % 2 == 0)
-                return tex1->Evaluate(isect);
-            return tex2->Evaluate(isect);
+                return tex1->Evaluate(si);
+            return tex2->Evaluate(si);
         } else {
             // Compute closed-form box-filtered _Checkerboard2DTexture_ value
 
@@ -92,55 +84,55 @@ class Checkerboard2DTexture : public Texture<T> {
                 std::floor(t0) == std::floor(t1)) {
                 // Point sample _Checkerboard2DTexture_
                 if (((int)std::floor(st[0]) + (int)std::floor(st[1])) % 2 == 0)
-                    return tex1->Evaluate(isect);
-                return tex2->Evaluate(isect);
+                    return tex1->Evaluate(si);
+                return tex2->Evaluate(si);
             }
 
-// Apply box filter to checkerboard region
-#define BUMPINT(x)              \
-    ((int)std::floor((x) / 2) + \
-     2 * std::max((x) / 2 - (int)std::floor((x) / 2) - (Float)0.5, (Float)0.))
-            Float sint = (BUMPINT(s1) - BUMPINT(s0)) / (2.f * ds);
-            Float tint = (BUMPINT(t1) - BUMPINT(t0)) / (2.f * dt);
-            Float area2 = sint + tint - 2.f * sint * tint;
-            if (ds > 1.f || dt > 1.f) area2 = .5f;
-            return (1.f - area2) * tex1->Evaluate(isect) +
-                   area2 * tex2->Evaluate(isect);
+            // Apply box filter to checkerboard region
+            auto bumpInt = [](Float x) {
+                return (int)std::floor(x / 2) +
+                       2 * std::max(x / 2 - (int)std::floor(x / 2) - (Float)0.5,
+                                    (Float)0);
+            };
+            Float sint = (bumpInt(s1) - bumpInt(s0)) / (2 * ds);
+            Float tint = (bumpInt(t1) - bumpInt(t0)) / (2 * dt);
+            Float area2 = sint + tint - 2 * sint * tint;
+            if (ds > 1 || dt > 1) area2 = .5f;
+            return (1 - area2) * tex1->Evaluate(si) +
+                   area2 * tex2->Evaluate(si);
         }
     }
 
   private:
     // Checkerboard2DTexture Private Data
-    const TextureMapping2D *mapping;
+    std::unique_ptr<TextureMapping2D> mapping;
     const std::shared_ptr<Texture<T>> tex1, tex2;
-    enum class AAMethod { NONE, CLOSEDFORM };
-    AAMethod aaMethod;
+    const AAMethod aaMethod;
 };
 
 template <typename T>
 class Checkerboard3DTexture : public Texture<T> {
   public:
     // Checkerboard3DTexture Public Methods
-    Checkerboard3DTexture(TextureMapping3D *mapping,
+    Checkerboard3DTexture(std::unique_ptr<TextureMapping3D> mapping,
                           const std::shared_ptr<Texture<T>> &tex1,
                           const std::shared_ptr<Texture<T>> &tex2)
-        : mapping(mapping), tex1(tex1), tex2(tex2) {}
-    ~Checkerboard3DTexture() { delete mapping; }
-    T Evaluate(const SurfaceInteraction &isect) const {
+        : mapping(std::move(mapping)), tex1(tex1), tex2(tex2) {}
+    T Evaluate(const SurfaceInteraction &si) const {
         Vector3f dpdx, dpdy;
-        Point3f p = mapping->Map(isect, &dpdx, &dpdy);
+        Point3f p = mapping->Map(si, &dpdx, &dpdy);
         if (((int)std::floor(p.x) + (int)std::floor(p.y) +
              (int)std::floor(p.z)) %
                 2 ==
             0)
-            return tex1->Evaluate(isect);
+            return tex1->Evaluate(si);
         else
-            return tex2->Evaluate(isect);
+            return tex2->Evaluate(si);
     }
 
   private:
     // Checkerboard3DTexture Private Data
-    TextureMapping3D *mapping;
+    std::unique_ptr<TextureMapping3D> mapping;
     std::shared_ptr<Texture<T>> tex1, tex2;
 };
 

@@ -53,13 +53,16 @@ struct LinearBVHNode;
 // BVHAccel Declarations
 class BVHAccel : public Aggregate {
   public:
+    // BVHAccel Public Types
+    enum class SplitMethod { SAH, HLBVH, Middle, EqualCounts };
+
     // BVHAccel Public Methods
     BVHAccel(const std::vector<std::shared_ptr<Primitive>> &p,
              int maxPrimsInNode = 1,
-             const std::string &splitMethodName = "sah");
+             SplitMethod splitMethod = SplitMethod::SAH);
     Bounds3f WorldBound() const;
     ~BVHAccel();
-    bool Intersect(const Ray &ray, SurfaceInteraction *si) const;
+    bool Intersect(const Ray &ray, SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
 
   private:
@@ -77,18 +80,17 @@ class BVHAccel : public Aggregate {
         const std::vector<BVHPrimitiveInfo> &primitiveInfo,
         MortonPrimitive *mortonPrims, int nPrimitives, int *totalNodes,
         std::vector<std::shared_ptr<Primitive>> &orderedPrims,
-        std::atomic<int> *orderedPrimsOffset, int bit) const;
+        std::atomic<int> *orderedPrimsOffset, int bitIndex) const;
     BVHBuildNode *buildUpperSAH(MemoryArena &arena,
                                 std::vector<BVHBuildNode *> &treeletRoots,
                                 int start, int end, int *totalNodes) const;
-    int flattenBVHTree(BVHBuildNode *node, int *offset, int depth = 0);
+    int flattenBVHTree(BVHBuildNode *node, int *offset);
 
     // BVHAccel Private Data
     const int maxPrimsInNode;
-    enum class SplitMethod { Middle, EqualCounts, SAH, HLBVH };
-    SplitMethod splitMethod;
+    const SplitMethod splitMethod;
     std::vector<std::shared_ptr<Primitive>> primitives;
-    LinearBVHNode *nodes;
+    LinearBVHNode *nodes = nullptr;
 };
 
 std::shared_ptr<BVHAccel> CreateBVHAccelerator(

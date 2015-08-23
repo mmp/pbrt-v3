@@ -54,14 +54,15 @@ class DistantLight : public Light {
     void Preprocess(const Scene &scene) {
         scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
     }
-    Spectrum Sample_L(const Interaction &ref, const Point2f &sample,
-                      Vector3f *wi, Float *pdf, VisibilityTester *vis) const;
+    Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
+                       Float *pdf, VisibilityTester *vis) const;
     Spectrum Power() const;
-    Spectrum Sample_L(const Point2f &sample1, const Point2f &sample2,
-                      Float time, Ray *ray, Normal3f *Ns, Float *pdfPos,
-                      Float *pdfDir) const;
-    Float Pdf(const Interaction &, const Vector3f &) const;
-    void Pdf(const Ray &, const Normal3f &, Float *pdfPos, Float *pdfDir) const;
+    Float Pdf_Li(const Interaction &, const Vector3f &) const;
+    Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
+                       Ray *ray, Normal3f *nLight, Float *pdfPos,
+                       Float *pdfDir) const;
+    void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
+                Float *pdfDir) const;
 
   private:
     // DistantLight Private Data

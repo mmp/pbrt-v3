@@ -48,14 +48,15 @@ void GlassMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
     // Perform bump mapping with _bumpMap_, if present
     if (bumpMap) Bump(bumpMap, si);
     Float eta = index->Evaluate(*si);
-    si->bsdf = ARENA_ALLOC(arena, BSDF)(*si, eta);
-
-    Spectrum R = Kr->Evaluate(*si).Clamp();
-    Spectrum T = Kt->Evaluate(*si).Clamp();
-    if (R.IsBlack() && T.IsBlack()) return;
-
     Float urough = uRoughness->Evaluate(*si);
     Float vrough = vRoughness->Evaluate(*si);
+    Spectrum R = Kr->Evaluate(*si).Clamp();
+    Spectrum T = Kt->Evaluate(*si).Clamp();
+    // Initialize _bsdf_ for smooth or rough dielectric
+    si->bsdf = ARENA_ALLOC(arena, BSDF)(*si, eta);
+
+    if (R.IsBlack() && T.IsBlack()) return;
+
     bool isSpecular = urough == 0 && vrough == 0;
     if (isSpecular && allowMultipleLobes) {
         si->bsdf->Add(

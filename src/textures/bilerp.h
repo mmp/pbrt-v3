@@ -49,20 +49,19 @@ template <typename T>
 class BilerpTexture : public Texture<T> {
   public:
     // BilerpTexture Public Methods
-    BilerpTexture(TextureMapping2D *mapping, const T &v00, const T &v01,
-                  const T &v10, const T &v11)
-        : mapping(mapping), v00(v00), v01(v01), v10(v10), v11(v11) {}
-    ~BilerpTexture() { delete mapping; }
-    T Evaluate(const SurfaceInteraction &isect) const {
+    BilerpTexture(std::unique_ptr<TextureMapping2D> mapping, const T &v00,
+                  const T &v01, const T &v10, const T &v11)
+        : mapping(std::move(mapping)), v00(v00), v01(v01), v10(v10), v11(v11) {}
+    T Evaluate(const SurfaceInteraction &si) const {
         Vector2f dstdx, dstdy;
-        Point2f st = mapping->Map(isect, &dstdx, &dstdy);
+        Point2f st = mapping->Map(si, &dstdx, &dstdy);
         return (1 - st[0]) * (1 - st[1]) * v00 + (1 - st[0]) * (st[1]) * v01 +
                (st[0]) * (1 - st[1]) * v10 + (st[0]) * (st[1]) * v11;
     }
 
   private:
     // BilerpTexture Private Data
-    const TextureMapping2D *mapping;
+    std::unique_ptr<TextureMapping2D> mapping;
     const T v00, v01, v10, v11;
 };
 

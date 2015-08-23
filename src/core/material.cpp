@@ -49,7 +49,7 @@ void Material::Bump(const std::shared_ptr<Texture<Float>> &d,
 
     // Shift _siEval_ _du_ in the $u$ direction
     Float du = .5f * (std::abs(si->dudx) + std::abs(si->dudy));
-    if (du == 0.f) du = .01f;
+    if (du == 0) du = .01f;
     siEval.p = si->p + du * si->shading.dpdu;
     siEval.uv = si->uv + Vector2f(du, 0.f);
     siEval.n = Normalize((Normal3f)Cross(si->shading.dpdu, si->shading.dpdv) +
@@ -58,7 +58,7 @@ void Material::Bump(const std::shared_ptr<Texture<Float>> &d,
 
     // Shift _siEval_ _dv_ in the $v$ direction
     Float dv = .5f * (std::abs(si->dvdx) + std::abs(si->dvdy));
-    if (dv == 0.f) dv = .01f;
+    if (dv == 0) dv = .01f;
     siEval.p = si->p + dv * si->shading.dpdv;
     siEval.uv = si->uv + Vector2f(0.f, dv);
     siEval.n = Normalize((Normal3f)Cross(si->shading.dpdu, si->shading.dpdv) +

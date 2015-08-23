@@ -63,7 +63,7 @@ Float AverageSpectrumSamples(const Float *lambda, const Float *vals, int n,
     if (lambdaEnd <= lambda[0]) return vals[0];
     if (lambdaStart >= lambda[n - 1]) return vals[n - 1];
     if (n == 1) return vals[0];
-    Float sum = 0.f;
+    Float sum = 0;
     // Add contributions of constant segments before/after samples
     if (lambdaStart < lambda[0]) sum += vals[0] * (lambda[0] - lambdaStart);
     if (lambdaEnd > lambda[n - 1])
@@ -74,17 +74,17 @@ Float AverageSpectrumSamples(const Float *lambda, const Float *vals, int n,
     while (lambdaStart > lambda[i + 1]) ++i;
     Assert(i + 1 < n);
 
-// Loop over wavelength sample segments and add contributions
-#define INTERP(w, i)                                               \
-    Lerp(((w)-lambda[i]) / (lambda[(i) + 1] - lambda[i]), vals[i], \
-         vals[(i) + 1])
+    // Loop over wavelength sample segments and add contributions
+    auto interp = [lambda, vals](Float w, int i) {
+        return Lerp((w - lambda[i]) / (lambda[i + 1] - lambda[i]), vals[i],
+                    vals[i + 1]);
+    };
     for (; i + 1 < n && lambdaEnd >= lambda[i]; ++i) {
         Float segLambdaStart = std::max(lambdaStart, lambda[i]);
         Float segLambdaEnd = std::min(lambdaEnd, lambda[i + 1]);
-        sum += 0.5 * (INTERP(segLambdaStart, i) + INTERP(segLambdaEnd, i)) *
+        sum += 0.5 * (interp(segLambdaStart, i) + interp(segLambdaEnd, i)) *
                (segLambdaEnd - segLambdaStart);
     }
-#undef INTERP
     return sum / (lambdaEnd - lambdaStart);
 }
 
@@ -181,7 +181,6 @@ Float InterpolateSpectrumSamples(const Float *lambda, const Float *vals, int n,
     if (l <= lambda[0]) return vals[0];
     if (l >= lambda[n - 1]) return vals[n - 1];
     int offset = FindInterval(n, [&](int index) { return l >= lambda[index]; });
-    if (!(l >= lambda[offset] && l <= lambda[offset + 1])) Severe("NOE");
     Assert(l >= lambda[offset] && l <= lambda[offset + 1]);
     Float t = (l - lambda[offset]) / (lambda[offset + 1] - lambda[offset]);
     return Lerp(t, vals[offset], vals[offset + 1]);
@@ -945,12 +944,11 @@ void Blackbody(const Float *lambda, int n, Float T, Float *Le) {
     const Float h = 6.62606957e-34;
     const Float kb = 1.3806488e-23;
     for (int i = 0; i < n; ++i) {
-        // Compute emitted radiance for blackbody emitter at wavelength
-        // _lambda[i]_
+        // Compute emitted radiance for blackbody at wavelength _lambda[i]_
         Float l = lambda[i] * 1e-9;
         Float lambda5 = (l * l) * (l * l) * l;
-        Le[i] = (2. * h * c * c) /
-                (lambda5 * (std::exp((h * c) / (l * kb * T)) - 1.f));
+        Le[i] = (2 * h * c * c) /
+                (lambda5 * (std::exp((h * c) / (l * kb * T)) - 1));
         Assert(!std::isnan(Le[i]));
     }
 }

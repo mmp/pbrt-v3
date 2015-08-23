@@ -55,16 +55,16 @@ class PerspectiveCamera : public ProjectiveCamera {
     Float GenerateRay(const CameraSample &sample, Ray *) const;
     Float GenerateRayDifferential(const CameraSample &sample,
                                   RayDifferential *ray) const;
-    Spectrum We(const Interaction &it, const Vector3f &w,
-                Point2f *raster = nullptr) const;
-    Float Pdf(const Interaction &it, const Vector3f &w) const;
-    Spectrum Sample_We(const Interaction &ref, const Point2f &sample,
-                       Vector3f *wi, Float *pdf, Point2f *raster,
+    Spectrum We(const Ray &ray, Point2f *pRaster = nullptr) const;
+    void Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const;
+    Spectrum Sample_Wi(const Interaction &ref, const Point2f &sample,
+                       Vector3f *wi, Float *pdf, Point2f *pRaster,
                        VisibilityTester *vis) const;
 
   private:
     // PerspectiveCamera Private Data
     Vector3f dxCamera, dyCamera;
+    Float A;
 };
 
 PerspectiveCamera *CreatePerspectiveCamera(const ParamSet &params,

@@ -46,20 +46,19 @@
 class Paraboloid : public Shape {
   public:
     // Paraboloid Public Methods
-    Paraboloid(const Transform *o2w, const Transform *w2o, bool ro, Float rad,
-               Float z0, Float z1, Float tm);
+    Paraboloid(const Transform *o2w, const Transform *w2o,
+               bool reverseOrientation, Float radius, Float z0, Float z1,
+               Float phiMax);
     Bounds3f ObjectBound() const;
-    bool Intersect(const Ray &ray, Float *tHit,
-                   SurfaceInteraction *isect) const;
-    bool IntersectP(const Ray &ray) const;
+    bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
+                   bool testAlphaTexture) const;
+    bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
     Float Area() const;
-    bool Sample(const Point2f &sample, Interaction *it) const;
+    Interaction Sample(const Point2f &u) const;
 
   protected:
     // Paraboloid Private Data
-    Float radius;
-    Float zMin, zMax;
-    Float phiMax;
+    const Float radius, zMin, zMax, phiMax;
 };
 
 std::shared_ptr<Paraboloid> CreateParaboloidShape(const Transform *o2w,

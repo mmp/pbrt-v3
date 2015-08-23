@@ -46,17 +46,17 @@
 Float CatmullRom(int size, const Float *nodes, const Float *values, Float x);
 bool CatmullRomWeights(int size, const Float *nodes, Float x, int *offset,
                        Float *weights);
-Float IntegrateCatmullRom(int size, const Float *nodes, const Float *values,
-                          Float *cdf);
 Float SampleCatmullRom(int size, const Float *nodes, const Float *values,
                        const Float *cdf, Float sample, Float *fval = nullptr,
                        Float *pdf = nullptr);
-Float InvertCatmullRom(int size, const Float *nodes, const Float *values,
-                       Float y);
 Float SampleCatmullRom2D(int size1, int size2, const Float *nodes1,
                          const Float *nodes2, const Float *values,
                          const Float *cdf, Float alpha, Float sample,
                          Float *fval = nullptr, Float *pdf = nullptr);
+Float IntegrateCatmullRom(int size, const Float *nodes, const Float *values,
+                          Float *cdf);
+Float InvertCatmullRom(int size, const Float *nodes, const Float *values,
+                       Float y);
 
 // Fourier Interpolation Declarations
 Float Fourier(const Float *a, int m, double cosPhi);

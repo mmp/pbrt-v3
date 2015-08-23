@@ -62,10 +62,10 @@ class MemoryArena {
         for (auto &block : usedBlocks) FreeAligned(block.second);
         for (auto &block : availableBlocks) FreeAligned(block.second);
     }
-    void *Alloc(size_t numBytes) {
-        // Round up _numBytes_ to minimum machine alignment
-        numBytes = ((numBytes + 15) & (~15));
-        if (currentBlockPos + numBytes > currentAllocSize) {
+    void *Alloc(size_t nBytes) {
+        // Round up _nBytes_ to minimum machine alignment
+        nBytes = ((nBytes + 15) & (~15));
+        if (currentBlockPos + nBytes > currentAllocSize) {
             // Add current block to _usedBlocks_ list
             if (currentBlock) {
                 usedBlocks.push_back(
@@ -79,7 +79,7 @@ class MemoryArena {
             // Try to get memory block from _availableBlocks_
             for (auto iter = availableBlocks.begin();
                  iter != availableBlocks.end(); ++iter) {
-                if (iter->first >= numBytes) {
+                if (iter->first >= nBytes) {
                     currentAllocSize = iter->first;
                     currentBlock = iter->second;
                     availableBlocks.erase(iter);
@@ -87,13 +87,13 @@ class MemoryArena {
                 }
             }
             if (!currentBlock) {
-                currentAllocSize = std::max(numBytes, blockSize);
+                currentAllocSize = std::max(nBytes, blockSize);
                 currentBlock = AllocAligned<uint8_t>(currentAllocSize);
             }
             currentBlockPos = 0;
         }
         void *ret = currentBlock + currentBlockPos;
-        currentBlockPos += numBytes;
+        currentBlockPos += nBytes;
         return ret;
     }
     template <typename T>
@@ -128,10 +128,8 @@ template <typename T, int logBlockSize>
 class BlockedArray {
   public:
     // BlockedArray Public Methods
-    BlockedArray(int nu, int nv, const T *d = nullptr) {
-        uRes = nu;
-        vRes = nv;
-        uBlocks = RoundUp(uRes) >> logBlockSize;
+    BlockedArray(int uRes, int vRes, const T *d = nullptr)
+        : uRes(uRes), vRes(vRes), uBlocks(RoundUp(uRes) >> logBlockSize) {
         int nAlloc = RoundUp(uRes) * RoundUp(vRes);
         data = AllocAligned<T>(nAlloc);
         for (int i = 0; i < nAlloc; ++i) new (&data[i]) T();
@@ -173,7 +171,7 @@ class BlockedArray {
   private:
     // BlockedArray Private Data
     T *data;
-    int uRes, vRes, uBlocks;
+    const int uRes, vRes, uBlocks;
 };
 
 #endif  // PBRT_CORE_MEMORY_H

@@ -67,19 +67,19 @@ class Triangle : public Shape {
   public:
     // Triangle Public Methods
     Triangle(const Transform *ObjectToWorld, const Transform *WorldToObject,
-             bool ReverseOrientation, const std::shared_ptr<TriangleMesh> &mesh,
+             bool reverseOrientation, const std::shared_ptr<TriangleMesh> &mesh,
              int triNumber)
-        : Shape(ObjectToWorld, WorldToObject, ReverseOrientation), mesh(mesh) {
+        : Shape(ObjectToWorld, WorldToObject, reverseOrientation), mesh(mesh) {
         v = &mesh->vertexIndices[3 * triNumber];
         triMeshBytes += sizeof(*this);
     }
     Bounds3f ObjectBound() const;
     Bounds3f WorldBound() const;
-    bool Intersect(const Ray &ray, Float *tHit,
-                   SurfaceInteraction *isect) const;
-    bool IntersectP(const Ray &ray) const;
+    bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
+                   bool testAlphaTexture) const;
+    bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
     Float Area() const;
-    bool Sample(const Point2f &sample, Interaction *rp) const;
+    Interaction Sample(const Point2f &u) const;
 
   private:
     // Triangle Private Methods

@@ -45,11 +45,16 @@
 #include "interaction.h"
 
 // LightFlags Declarations
-enum class LightFlags { DeltaPosition, DeltaDirection, Area, Infinite };
+enum class LightFlags : int {
+    DeltaPosition = 1,
+    DeltaDirection = 2,
+    Area = 4,
+    Infinite = 8
+};
 
-inline bool IsDeltaLight(LightFlags flags) {
-    return flags == LightFlags::DeltaPosition ||
-           flags == LightFlags::DeltaDirection;
+inline bool IsDeltaLight(int flags) {
+    return flags & (int)LightFlags::DeltaPosition ||
+           flags & (int)LightFlags::DeltaDirection;
 }
 
 // Light Declarations
@@ -57,11 +62,11 @@ class Light {
   public:
     // Light Interface
     virtual ~Light();
-    Light(LightFlags flags, const Transform &LightToWorld, const Medium *medium,
-          int nSamples = 1)
+    Light(int flags, const Transform &LightToWorld,
+          const MediumInterface &mediumInterface, int nSamples = 1)
         : flags(flags),
           nSamples(std::max(1, nSamples)),
-          medium(medium),
+          mediumInterface(mediumInterface),
           LightToWorld(LightToWorld),
           WorldToLight(Inverse(LightToWorld)) {
         // Warn if light has transformation with non-uniform scale
@@ -73,23 +78,23 @@ class Light {
                 "Proceed at your own risk; your image may have errors or\n"
                 "the system may crash as a result of this.");
     }
-    virtual Spectrum Sample_L(const Interaction &ref, const Point2f &sample,
-                              Vector3f *wi, Float *pdf,
-                              VisibilityTester *vis) const = 0;
+    virtual Spectrum Sample_Li(const Interaction &ref, const Point2f &u,
+                               Vector3f *wi, Float *pdf,
+                               VisibilityTester *vis) const = 0;
     virtual Spectrum Power() const = 0;
     virtual void Preprocess(const Scene &scene) {}
     virtual Spectrum Le(const RayDifferential &r) const;
-    virtual Float Pdf(const Interaction &vis, const Vector3f &wi) const = 0;
-    virtual Spectrum Sample_L(const Point2f &sample1, const Point2f &sample2,
-                              Float time, Ray *ray, Normal3f *Ns, Float *pdfPos,
-                              Float *pdfDir) const = 0;
-    virtual void Pdf(const Ray &ray, const Normal3f &Ns, Float *pdfPos,
-                     Float *pdfDir) const = 0;
+    virtual Float Pdf_Li(const Interaction &ref, const Vector3f &wi) const = 0;
+    virtual Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
+                               Ray *ray, Normal3f *nLight, Float *pdfPos,
+                               Float *pdfDir) const = 0;
+    virtual void Pdf_Le(const Ray &ray, const Normal3f &nLight, Float *pdfPos,
+                        Float *pdfDir) const = 0;
 
     // Light Public Data
-    const LightFlags flags;
+    const int flags;
     const int nSamples;
-    const Medium *medium;
+    const MediumInterface mediumInterface;
 
   protected:
     // Light Protected Data
@@ -105,7 +110,7 @@ class VisibilityTester {
     const Interaction &P0() const { return p0; }
     const Interaction &P1() const { return p1; }
     bool Unoccluded(const Scene &scene) const;
-    Spectrum T(const Scene &scene, Sampler &sampler) const;
+    Spectrum Tr(const Scene &scene, Sampler &sampler) const;
 
   private:
     Interaction p0, p1;
@@ -114,8 +119,9 @@ class VisibilityTester {
 class AreaLight : public Light {
   public:
     // AreaLight Interface
-    AreaLight(const Transform &LightToWorld, const Medium *medium, int nSamples)
-        : Light(LightFlags::Area, LightToWorld, medium, nSamples) {}
+    AreaLight(const Transform &LightToWorld, const MediumInterface &medium,
+              int nSamples)
+        : Light((int)LightFlags::Area, LightToWorld, medium, nSamples) {}
     virtual Spectrum L(const Interaction &intr, const Vector3f &w) const = 0;
 };
 

@@ -49,7 +49,6 @@ class ProgressReporter {
   public:
     // ProgressReporter Public Methods
     ProgressReporter(int64_t totalWork, const std::string &title);
-    ~ProgressReporter();
     void Update(int64_t num = 1);
     Float ElapsedMS() const {
         std::chrono::system_clock::time_point now =
@@ -68,7 +67,8 @@ class ProgressReporter {
     int workDone, plussesPrinted, totalPlusses;
     std::chrono::system_clock::time_point startTime;
     FILE *outFile;
-    char *buf, *curSpace;
+    std::unique_ptr<char[]> buf;
+    char *curSpace;
     std::mutex mutex;
 };
 

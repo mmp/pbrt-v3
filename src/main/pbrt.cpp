@@ -44,8 +44,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> filenames;
     // Process command-line arguments
     for (int i = 1; i < argc; ++i) {
-        if (!strcmp(argv[i], "--ncores"))
-            options.nCores = atoi(argv[++i]);
+        if (!strcmp(argv[i], "--ncores") || !strcmp(argv[i], "--nthreads"))
+            options.nThreads = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--outfile"))
             options.imageFile = argv[++i];
         else if (!strcmp(argv[i], "--quick"))
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
             options.verbose = true;
         else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
             printf(
-                "usage: pbrt [--ncores n] [--outfile filename] [--quick] "
+                "usage: pbrt [--nthreads n] [--outfile filename] [--quick] "
                 "[--quiet] "
                 "[--verbose] [--help] <filename.pbrt> ...\n");
             return 0;

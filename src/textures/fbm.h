@@ -49,19 +49,19 @@ template <typename T>
 class FBmTexture : public Texture<T> {
   public:
     // FBmTexture Public Methods
-    ~FBmTexture() { delete mapping; }
-    FBmTexture(int octaves, Float omega, TextureMapping3D *mapping)
-        : omega(omega), octaves(octaves), mapping(mapping) {}
-    T Evaluate(const SurfaceInteraction &isect) const {
+    FBmTexture(std::unique_ptr<TextureMapping3D> mapping, int octaves,
+               Float omega)
+        : mapping(std::move(mapping)), omega(omega), octaves(octaves) {}
+    T Evaluate(const SurfaceInteraction &si) const {
         Vector3f dpdx, dpdy;
-        Point3f P = mapping->Map(isect, &dpdx, &dpdy);
+        Point3f P = mapping->Map(si, &dpdx, &dpdy);
         return FBm(P, dpdx, dpdy, omega, octaves);
     }
 
   private:
+    std::unique_ptr<TextureMapping3D> mapping;
     const Float omega;
     const int octaves;
-    const TextureMapping3D *mapping;
 };
 
 FBmTexture<Float> *CreateFBmFloatTexture(const Transform &tex2world,

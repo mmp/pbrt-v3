@@ -39,22 +39,20 @@
 
 // Paraboloid Method Definitions
 Paraboloid::Paraboloid(const Transform *o2w, const Transform *w2o, bool ro,
-                       Float rad, Float z0, Float z1, Float tm)
-    : Shape(o2w, w2o, ro) {
-    radius = rad;
-    zMin = std::min(z0, z1);
-    zMax = std::max(z0, z1);
-    phiMax = Radians(Clamp(tm, 0, 360));
-}
-
+                       Float radius, Float z0, Float z1, Float phiMax)
+    : Shape(o2w, w2o, ro),
+      radius(radius),
+      zMin(std::min(z0, z1)),
+      zMax(std::max(z0, z1)),
+      phiMax(Radians(Clamp(phiMax, 0, 360))) {}
 Bounds3f Paraboloid::ObjectBound() const {
     Point3f p1 = Point3f(-radius, -radius, zMin);
     Point3f p2 = Point3f(radius, radius, zMax);
     return Bounds3f(p1, p2);
 }
 
-bool Paraboloid::Intersect(const Ray &r, Float *tHit,
-                           SurfaceInteraction *isect) const {
+bool Paraboloid::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
+                           bool testAlphaTexture) const {
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -68,7 +66,7 @@ bool Paraboloid::Intersect(const Ray &r, Float *tHit,
     EFloat dx(ray.d.x, dErr.x), dy(ray.d.y, dErr.y), dz(ray.d.z, dErr.z);
     EFloat k = EFloat(zMax) / (EFloat(radius) * EFloat(radius));
     EFloat a = k * (dx * dx + dy * dy);
-    EFloat b = 2.f * k * (dx * ox + dy * oy) - dz;
+    EFloat b = 2 * k * (dx * ox + dy * oy) - dz;
     EFloat c = k * (ox * ox + oy * oy) - oz;
 
     // Solve quadratic equation for _t_ values
@@ -78,7 +76,7 @@ bool Paraboloid::Intersect(const Ray &r, Float *tHit,
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;
-    if (t0.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) {
         tShapeHit = t1;
         if (tShapeHit.UpperBound() > ray.tMax) return false;
     }
@@ -86,7 +84,7 @@ bool Paraboloid::Intersect(const Ray &r, Float *tHit,
     // Compute paraboloid inverse mapping
     pHit = ray((Float)tShapeHit);
     phi = std::atan2(pHit.y, pHit.x);
-    if (phi < 0.) phi += 2 * Pi;
+    if (phi < 0) phi += 2 * Pi;
 
     // Test paraboloid intersection against clipping parameters
     if (pHit.z < zMin || pHit.z > zMax || phi > phiMax) {
@@ -96,7 +94,7 @@ bool Paraboloid::Intersect(const Ray &r, Float *tHit,
         // Compute paraboloid inverse mapping
         pHit = ray((Float)tShapeHit);
         phi = std::atan2(pHit.y, pHit.x);
-        if (phi < 0.) phi += 2 * Pi;
+        if (phi < 0) phi += 2 * Pi;
         if (pHit.z < zMin || pHit.z > zMax || phi > phiMax) return false;
     }
 
@@ -116,7 +114,7 @@ bool Paraboloid::Intersect(const Ray &r, Float *tHit,
         Vector3f(-pHit.y / (2 * pHit.z), pHit.x / (2 * pHit.z), 0);
     Vector3f d2Pdvv = -(zMax - zMin) * (zMax - zMin) *
                       Vector3f(pHit.x / (4 * pHit.z * pHit.z),
-                               pHit.y / (4 * pHit.z * pHit.z), 0.);
+                               pHit.y / (4 * pHit.z * pHit.z), 0);
 
     // Compute coefficients for fundamental forms
     Float E = Dot(dpdu, dpdu);
@@ -151,7 +149,7 @@ bool Paraboloid::Intersect(const Ray &r, Float *tHit,
     return true;
 }
 
-bool Paraboloid::IntersectP(const Ray &r) const {
+bool Paraboloid::IntersectP(const Ray &r, bool testAlphaTexture) const {
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -165,7 +163,7 @@ bool Paraboloid::IntersectP(const Ray &r) const {
     EFloat dx(ray.d.x, dErr.x), dy(ray.d.y, dErr.y), dz(ray.d.z, dErr.z);
     EFloat k = EFloat(zMax) / (EFloat(radius) * EFloat(radius));
     EFloat a = k * (dx * dx + dy * dy);
-    EFloat b = 2.f * k * (dx * ox + dy * oy) - dz;
+    EFloat b = 2 * k * (dx * ox + dy * oy) - dz;
     EFloat c = k * (ox * ox + oy * oy) - oz;
 
     // Solve quadratic equation for _t_ values
@@ -175,7 +173,7 @@ bool Paraboloid::IntersectP(const Ray &r) const {
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;
-    if (t0.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) {
         tShapeHit = t1;
         if (tShapeHit.UpperBound() > ray.tMax) return false;
     }
@@ -183,7 +181,7 @@ bool Paraboloid::IntersectP(const Ray &r) const {
     // Compute paraboloid inverse mapping
     pHit = ray((Float)tShapeHit);
     phi = std::atan2(pHit.y, pHit.x);
-    if (phi < 0.) phi += 2 * Pi;
+    if (phi < 0) phi += 2 * Pi;
 
     // Test paraboloid intersection against clipping parameters
     if (pHit.z < zMin || pHit.z > zMax || phi > phiMax) {
@@ -193,7 +191,7 @@ bool Paraboloid::IntersectP(const Ray &r) const {
         // Compute paraboloid inverse mapping
         pHit = ray((Float)tShapeHit);
         phi = std::atan2(pHit.y, pHit.x);
-        if (phi < 0.) phi += 2 * Pi;
+        if (phi < 0) phi += 2 * Pi;
         if (pHit.z < zMin || pHit.z > zMax || phi > phiMax) return false;
     }
     return true;
@@ -206,9 +204,9 @@ Float Paraboloid::Area() const {
            (std::pow(k * zMax + 1, 1.5f) - std::pow(k * zMin + 1, 1.5f));
 }
 
-bool Paraboloid::Sample(const Point2f &sample, Interaction *it) const {
+Interaction Paraboloid::Sample(const Point2f &u) const {
     Severe("Paraboloid::Sample not implemented.");
-    return false;
+    return Interaction();
 }
 
 std::shared_ptr<Paraboloid> CreateParaboloidShape(const Transform *o2w,

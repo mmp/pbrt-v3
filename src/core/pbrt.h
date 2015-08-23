@@ -57,14 +57,14 @@
 
 // Global Include Files
 #include <type_traits>
+#include <algorithm>
+#include <cinttypes>
 #include <cmath>
-#include <string>
-#include <vector>
 #include <iostream>
 #include <limits>
 #include <memory>
-#include <cinttypes>
-#include <algorithm>
+#include <string>
+#include <vector>
 #include "error.h"
 #if !defined(PBRT_IS_OSX) && !defined(PBRT_IS_OPENBSD)
 #include <malloc.h>  // for _alloca, memalign
@@ -89,10 +89,8 @@
 
 // Global Macros
 #define ALLOCA(TYPE, COUNT) (TYPE *) alloca((COUNT) * sizeof(TYPE))
-#ifdef PBRT_IS_MSVC
-#define THREAD_LOCAL thread_local
-#else
-#define THREAD_LOCAL __thread
+#ifndef PBRT_IS_MSVC
+#define thread_local __thread
 #endif
 
 // Global Forward Declarations
@@ -145,7 +143,8 @@ class Medium;
 class MediumInteraction;
 struct MediumInterface;
 class BSSRDF;
-struct BSSRDFSample;
+class SeparableBSSRDF;
+class TabulatedBSSRDF;
 struct BSSRDFTable;
 class Light;
 class VisibilityTester;
@@ -167,15 +166,9 @@ class ParamSet;
 template <typename T>
 struct ParamSetItem;
 struct Options {
-    Options() {
-        nCores = 0;
-        quickRender = quiet = openWindow = verbose = false;
-        imageFile = "";
-    }
-    int nCores;
-    bool quickRender;
-    bool quiet, verbose;
-    bool openWindow;
+    int nThreads = 0;
+    bool quickRender = false;
+    bool quiet = false, verbose = false;
     std::string imageFile;
 };
 
@@ -197,15 +190,13 @@ static constexpr Float MachineEpsilon =
     std::numeric_limits<Float>::epsilon() * 0.5;
 #endif
 const Float ShadowEpsilon = 0.0001f;
-#ifdef M_PI
-#undef M_PI
-#endif
 static const Float Pi = 3.14159265358979323846;
 static const Float InvPi = 0.31830988618379067154;
 static const Float Inv2Pi = 0.15915494309189533577;
 static const Float Inv4Pi = 0.07957747154594766788;
 static const Float PiOver2 = 1.57079632679489661923;
-static const Float PiOver4 = 0.785398163397448309616;
+static const Float PiOver4 = 0.78539816339744830961;
+static const Float Sqrt2 = 1.41421356237309504880;
 #if defined(PBRT_IS_MSVC)
 #define alloca _alloca
 #endif
@@ -245,7 +236,7 @@ inline float NextFloatUp(float v) {
 
     // Advance _v_ to next higher float
     uint32_t ui = FloatToBits(v);
-    if (v >= 0.)
+    if (v >= 0)
         ++ui;
     else
         --ui;
@@ -257,7 +248,7 @@ inline float NextFloatDown(float v) {
     if (std::isinf(v) && v < 0.) return v;
     if (v == 0.f) v = -0.f;
     uint32_t ui = FloatToBits(v);
-    if (v > 0.)
+    if (v > 0)
         --ui;
     else
         ++ui;
@@ -286,63 +277,8 @@ inline double NextFloatDown(double v, int delta = 1) {
     return BitsToFloat(ui);
 }
 
-inline Float gamma(int n) {
+inline constexpr Float gamma(int n) {
     return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
-}
-
-inline bool AtomicCompareAndExchange(volatile int32_t *v, int32_t newValue,
-                                     int32_t oldValue) {
-#if defined(PBRT_IS_MSVC)
-    return _InterlockedCompareExchange(reinterpret_cast<volatile long *>(v),
-                                       newValue, oldValue) == oldValue;
-#else
-    return __sync_bool_compare_and_swap(v, oldValue, newValue);
-#endif
-}
-
-inline bool AtomicCompareAndExchange(volatile int64_t *v, int64_t newValue,
-                                     int64_t oldValue) {
-#if defined(PBRT_IS_MSVC)
-    return _InterlockedCompareExchange64(
-               reinterpret_cast<volatile __int64 *>(v), newValue, oldValue) ==
-           oldValue;
-#else
-    return __sync_bool_compare_and_swap(v, oldValue, newValue);
-#endif
-}
-
-inline float AtomicAdd(volatile float *dst, float delta) {
-    union bits {
-        float f;
-        int32_t i;
-    };
-    bits oldVal, newVal;
-    do {
-#if defined(__i386__) || defined(__amd64__)
-        __asm__ __volatile__("pause\n");
-#endif
-        oldVal.f = *dst;
-        newVal.f = oldVal.f + delta;
-    } while (
-        !AtomicCompareAndExchange((volatile int32_t *)dst, newVal.i, oldVal.i));
-    return newVal.f;
-}
-
-inline double AtomicAdd(volatile double *dst, double delta) {
-    union bits {
-        double f;
-        int64_t i;
-    };
-    bits oldVal, newVal;
-    do {
-#if defined(__i386__) || defined(__amd64__)
-        __asm__ __volatile__("pause\n");
-#endif
-        oldVal.f = *dst;
-        newVal.f = oldVal.f + delta;
-    } while (
-        !AtomicCompareAndExchange((volatile int64_t *)dst, newVal.i, oldVal.i));
-    return newVal.f;
 }
 
 template <typename T, typename U, typename V>
@@ -366,9 +302,9 @@ inline Float Mod(Float a, Float b) {
     return std::fmod(a, b);
 }
 
-inline Float Radians(Float deg) { return (Pi / (Float)180) * deg; }
+inline Float Radians(Float deg) { return (Pi / 180) * deg; }
 
-inline Float Degrees(Float rad) { return ((Float)180 / Pi) * rad; }
+inline Float Degrees(Float rad) { return (180 / Pi) * rad; }
 
 inline Float Log2(Float x) {
     const Float invLog2 = 1.442695040888963387004650940071;
@@ -411,19 +347,18 @@ inline int64_t RoundUpPow2(int64_t v) {
     return v + 1;
 }
 
-#if defined(PBRT_IS_MSVC)
 inline int CountTrailingZeros(uint32_t v) {
+#if defined(PBRT_IS_MSVC)
     unsigned long index;
     if (_BitScanForward(&index, v))
         return index;
     else
         return 32;
+#else
+    return __builtin_ctz(v);
+#endif
 }
 
-#else
-inline int CountTrailingZeros(uint32_t v) { return __builtin_ctz(v); }
-
-#endif
 template <typename Predicate>
 int FindInterval(int size, const Predicate &pred) {
     int first = 0, len = size;
@@ -433,9 +368,8 @@ int FindInterval(int size, const Predicate &pred) {
         if (pred(middle)) {
             first = middle + 1;
             len -= half + 1;
-        } else {
+        } else
             len = half;
-        }
     }
     return Clamp(first - 1, 0, size - 2);
 }
@@ -451,8 +385,8 @@ inline Float Lerp(Float t, Float v1, Float v2) { return (1 - t) * v1 + t * v2; }
 
 inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {
     // Find quadratic discriminant
-    double discrim = (double)b * (double)b - 4. * (double)a * (double)c;
-    if (discrim < 0.) return false;
+    double discrim = (double)b * (double)b - 4 * (double)a * (double)c;
+    if (discrim < 0) return false;
     double rootDiscrim = std::sqrt(discrim);
 
     // Compute quadratic _t_ values
@@ -465,6 +399,59 @@ inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {
     *t1 = c / q;
     if (*t0 > *t1) std::swap(*t0, *t1);
     return true;
+}
+
+inline Float ErfInv(Float x) {
+    Float w, p;
+    x = Clamp(x, Float(-.99999), Float(.99999));
+    w = -std::log((1.0 - x) * (1.0 + x));
+    if (w < 5.000000) {
+        w = w - 2.500000;
+        p = 2.81022636e-08;
+        p = 3.43273939e-07 + p * w;
+        p = -3.5233877e-06 + p * w;
+        p = -4.39150654e-06 + p * w;
+        p = 0.00021858087 + p * w;
+        p = -0.00125372503 + p * w;
+        p = -0.00417768164 + p * w;
+        p = 0.246640727 + p * w;
+        p = 1.50140941 + p * w;
+    } else {
+        w = std::sqrt(w) - 3.000000;
+        p = -0.000200214257;
+        p = 0.000100950558 + p * w;
+        p = 0.00134934322 + p * w;
+        p = -0.00367342844 + p * w;
+        p = 0.00573950773 + p * w;
+        p = -0.0076224613 + p * w;
+        p = 0.00943887047 + p * w;
+        p = 1.00167406 + p * w;
+        p = 2.83297682 + p * w;
+    }
+    return p * x;
+}
+
+inline Float Erf(Float x) {
+    // constants
+    Float a1 = 0.254829592;
+    Float a2 = -0.284496736;
+    Float a3 = 1.421413741;
+    Float a4 = -1.453152027;
+    Float a5 = 1.061405429;
+    Float p = 0.3275911;
+
+    // Save the sign of x
+    int sign = 1;
+    if (x < 0) sign = -1;
+    x = fabs(x);
+
+    // A&S formula 7.1.26
+    Float t = 1.0 / (1.0 + p * x);
+    Float y =
+        1.0 -
+        (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * exp(-x * x);
+
+    return sign * y;
 }
 
 #endif  // PBRT_CORE_PBRT_H

@@ -49,23 +49,20 @@ template <typename T>
 class WrinkledTexture : public Texture<T> {
   public:
     // WrinkledTexture Public Methods
-    ~WrinkledTexture() { delete mapping; }
-    WrinkledTexture(int oct, Float roughness, TextureMapping3D *map) {
-        omega = roughness;
-        octaves = oct;
-        mapping = map;
-    }
-    T Evaluate(const SurfaceInteraction &isect) const {
+    WrinkledTexture(std::unique_ptr<TextureMapping3D> mapping, int octaves,
+                    Float omega)
+        : mapping(std::move(mapping)), octaves(octaves), omega(omega) {}
+    T Evaluate(const SurfaceInteraction &si) const {
         Vector3f dpdx, dpdy;
-        Point3f p = mapping->Map(isect, &dpdx, &dpdy);
+        Point3f p = mapping->Map(si, &dpdx, &dpdy);
         return Turbulence(p, dpdx, dpdy, omega, octaves);
     }
 
   private:
     // WrinkledTexture Private Data
+    std::unique_ptr<TextureMapping3D> mapping;
     int octaves;
     Float omega;
-    TextureMapping3D *mapping;
 };
 
 WrinkledTexture<Float> *CreateWrinkledFloatTexture(const Transform &tex2world,

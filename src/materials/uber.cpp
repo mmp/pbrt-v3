@@ -66,7 +66,7 @@ void UberMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
 
     Spectrum ks = op * Ks->Evaluate(*si).Clamp();
     if (!ks.IsBlack()) {
-        Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(e, 1.f);
+        Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f, e);
         Float roughu, roughv;
         if (roughnessu)
             roughu = roughnessu->Evaluate(*si);
@@ -89,14 +89,14 @@ void UberMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
 
     Spectrum kr = op * Kr->Evaluate(*si).Clamp();
     if (!kr.IsBlack()) {
-        Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(e, 1.f);
+        Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f, e);
         si->bsdf->Add(ARENA_ALLOC(arena, SpecularReflection)(kr, fresnel));
     }
 
     Spectrum kt = op * Kt->Evaluate(*si).Clamp();
     if (!kt.IsBlack())
         si->bsdf->Add(
-            ARENA_ALLOC(arena, SpecularTransmission)(kt, e, 1.f, mode));
+            ARENA_ALLOC(arena, SpecularTransmission)(kt, 1.f, e, mode));
 }
 
 UberMaterial *CreateUberMaterial(const TextureParams &mp) {

@@ -49,8 +49,8 @@ class Filter {
     // Filter Interface
     virtual ~Filter();
     Filter(const Vector2f &radius)
-        : radius(radius), invRadius(Vector2f(1.f / radius.x, 1.f / radius.y)) {}
-    virtual Float Evaluate(const Point2f &pt) const = 0;
+        : radius(radius), invRadius(Vector2f(1 / radius.x, 1 / radius.y)) {}
+    virtual Float Evaluate(const Point2f &p) const = 0;
 
     // Filter Public Data
     const Vector2f radius, invRadius;

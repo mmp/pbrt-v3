@@ -39,59 +39,53 @@
 
 // DiffuseAreaLight Method Definitions
 DiffuseAreaLight::DiffuseAreaLight(const Transform &LightToWorld,
-                                   const Medium *medium, const Spectrum &Lemit,
-                                   int nSamples,
+                                   const MediumInterface &mediumInterface,
+                                   const Spectrum &Lemit, int nSamples,
                                    const std::shared_ptr<Shape> &shape)
-    : AreaLight(LightToWorld, medium, nSamples), Lemit(Lemit), shape(shape) {
-    area = shape->Area();
-}
-
+    : AreaLight(LightToWorld, mediumInterface, nSamples),
+      Lemit(Lemit),
+      shape(shape),
+      area(shape->Area()) {}
 Spectrum DiffuseAreaLight::Power() const { return Lemit * area * Pi; }
 
-Spectrum DiffuseAreaLight::Sample_L(const Interaction &ref,
-                                    const Point2f &sample, Vector3f *wi,
-                                    Float *pdf, VisibilityTester *vis) const {
-    Interaction p1;
-    if (!shape->Sample(ref, sample, &p1) || ((ref.p - p1.p).Length() == 0.f)) {
-        *pdf = 0.f;
-        return Spectrum(0.f);
-    }
-    p1.mediumInterface = MediumInterface(medium);
-    *vis = VisibilityTester(ref, p1);
-    *wi = Normalize(p1.p - ref.p);
+Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
+                                     Vector3f *wi, Float *pdf,
+                                     VisibilityTester *vis) const {
+    Interaction pShape = shape->Sample(ref, u);
+    pShape.mediumInterface = mediumInterface;
+    *vis = VisibilityTester(ref, pShape);
+    *wi = Normalize(pShape.p - ref.p);
     *pdf = shape->Pdf(ref, *wi);
-    return L(p1, -*wi);
+    return L(pShape, -*wi);
 }
 
-Float DiffuseAreaLight::Pdf(const Interaction &ref, const Vector3f &wi) const {
+Float DiffuseAreaLight::Pdf_Li(const Interaction &ref,
+                               const Vector3f &wi) const {
     return shape->Pdf(ref, wi);
 }
 
-Spectrum DiffuseAreaLight::Sample_L(const Point2f &sample1,
-                                    const Point2f &sample2, Float time,
-                                    Ray *ray, Normal3f *nLight, Float *pdfPos,
-                                    Float *pdfDir) const {
-    Interaction it;
-    if (!shape->Sample(sample1, &it)) {
-        *pdfPos = *pdfDir = 0.f;
-        return Spectrum(0.f);
-    }
-    Vector3f w = CosineSampleHemisphere(sample2);
-    *pdfPos = shape->Pdf(it);
+Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
+                                     Float time, Ray *ray, Normal3f *nL,
+                                     Float *pdfPos, Float *pdfDir) const {
+    // Sample a point on the area light's _Shape_, _pShape_
+    Interaction pShape = shape->Sample(u1);
+    pShape.mediumInterface = mediumInterface;
+    *pdfPos = shape->Pdf(pShape);
+    *nL = pShape.n;
+
+    // Sample a cosine-weighted outgoing direction _w_ for area light
+    Vector3f w = CosineSampleHemisphere(u2);
     *pdfDir = CosineHemispherePdf(w.z);
-    Vector3f v1, v2, n(it.n);
-    CoordinateSystem(Vector3f(n), &v1, &v2);
+    Vector3f v1, v2, n(pShape.n);
+    CoordinateSystem(n, &v1, &v2);
     w = w.x * v1 + w.y * v2 + w.z * n;
-    *ray = it.SpawnRay(w);
-    *nLight = it.n;
-    it.mediumInterface = MediumInterface(medium);
-    return L(it, w);
+    *ray = pShape.SpawnRay(w);
+    return L(pShape, w);
 }
 
-void DiffuseAreaLight::Pdf(const Ray &ray, const Normal3f &n, Float *pdfPos,
-                           Float *pdfDir) const {
-    Interaction it(ray.o, n, Vector3f(), Vector3f(), ray.time,
-                   MediumInterface(medium));
+void DiffuseAreaLight::Pdf_Le(const Ray &ray, const Normal3f &n, Float *pdfPos,
+                              Float *pdfDir) const {
+    Interaction it(ray.o, n, Vector3f(), Vector3f(), ray.time, mediumInterface);
     *pdfPos = shape->Pdf(it);
     *pdfDir = CosineHemispherePdf(Dot(n, ray.d));
 }

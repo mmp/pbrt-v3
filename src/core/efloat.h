@@ -156,7 +156,7 @@ class EFloat {
     float err;
 #ifndef NDEBUG
     long double ld;
-#endif  // DEBUG
+#endif  // NDEBUG
     friend inline EFloat sqrt(EFloat fe);
     friend inline EFloat abs(EFloat fe);
     friend inline bool Quadratic(EFloat A, EFloat B, EFloat C, EFloat *t0,

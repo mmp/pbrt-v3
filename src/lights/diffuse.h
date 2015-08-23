@@ -48,26 +48,27 @@
 class DiffuseAreaLight : public AreaLight {
   public:
     // DiffuseAreaLight Public Methods
-    DiffuseAreaLight(const Transform &LightToWorld, const Medium *medium,
-                     const Spectrum &Le, int nSamples,
-                     const std::shared_ptr<Shape> &shape);
+    DiffuseAreaLight(const Transform &LightToWorld,
+                     const MediumInterface &mediumInterface, const Spectrum &Le,
+                     int nSamples, const std::shared_ptr<Shape> &shape);
     Spectrum L(const Interaction &intr, const Vector3f &w) const {
         return Dot(intr.n, w) > 0.f ? Lemit : Spectrum(0.f);
     }
     Spectrum Power() const;
-    Spectrum Sample_L(const Interaction &ref, const Point2f &sample,
-                      Vector3f *wo, Float *pdf, VisibilityTester *vis) const;
-    Spectrum Sample_L(const Point2f &sample1, const Point2f &sample2,
-                      Float time, Ray *ray, Normal3f *nLight, Float *pdfPos,
-                      Float *pdfDir) const;
-    Float Pdf(const Interaction &, const Vector3f &) const;
-    void Pdf(const Ray &, const Normal3f &, Float *pdfPos, Float *pdfDir) const;
+    Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wo,
+                       Float *pdf, VisibilityTester *vis) const;
+    Float Pdf_Li(const Interaction &, const Vector3f &) const;
+    Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
+                       Ray *ray, Normal3f *nLight, Float *pdfPos,
+                       Float *pdfDir) const;
+    void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
+                Float *pdfDir) const;
 
   protected:
     // DiffuseAreaLight Protected Data
     const Spectrum Lemit;
     std::shared_ptr<Shape> shape;
-    Float area;
+    const Float area;
 };
 
 std::shared_ptr<AreaLight> CreateDiffuseAreaLight(

@@ -44,27 +44,28 @@
 #include "geometry.h"
 #include "spectrum.h"
 #include "filter.h"
+#include "stats.h"
 
 // FilmTilePixel Declarations
 struct FilmTilePixel {
-    FilmTilePixel() : contribSum(0.), filterWeightSum(0) {}
-    Spectrum contribSum;
-    Float filterWeightSum;
+    Spectrum contribSum = 0.f;
+    Float filterWeightSum = 0.f;
 };
 
 // Film Declarations
 class Film {
   public:
     // Film Public Methods
-    Film(const Point2i &resolution, const Bounds2f &cropWindow, Filter *filter,
-         Float diagonal, const std::string &filename, Float scale, Float gamma);
+    Film(const Point2i &resolution, const Bounds2f &cropWindow,
+         std::unique_ptr<Filter> filter, Float diagonal,
+         const std::string &filename, Float scale, Float gamma);
     Bounds2i GetSampleBounds() const;
-    Point2f GetPhysicalSize() const;
+    Bounds2f GetPhysicalExtent() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
     void MergeFilmTile(std::unique_ptr<FilmTile> tile);
-    void Splat(const Point2f &pFilm, const Spectrum &L);
     void SetImage(const Spectrum *img) const;
-    void WriteImage(Float splatScale = 1.f);
+    void AddSplat(const Point2f &p, const Spectrum &v);
+    void WriteImage(Float splatScale = 1);
     void Clear();
 
     // Film Public Data
@@ -77,13 +78,9 @@ class Film {
   private:
     // Film Private Data
     struct Pixel {
-        Pixel() {
-            for (int i = 0; i < 3; ++i) xyz[i] = splatXYZ[i] = 0.f;
-            filterWeightSum = 0.f;
-        }
-        Float xyz[3];
-        Float filterWeightSum;
-        Float splatXYZ[3];
+        Float xyz[3] = {0, 0, 0};
+        Float filterWeightSum = 0;
+        AtomicFloat splatXYZ[3];
         Float pad;
     };
     std::unique_ptr<Pixel[]> pixels;
@@ -109,13 +106,13 @@ class FilmTile {
              const Float *filterTable, int filterTableSize)
         : pixelBounds(pixelBounds),
           filterRadius(filterRadius),
-          invFilterRadius(1.f / filterRadius.x, 1.f / filterRadius.y),
+          invFilterRadius(1 / filterRadius.x, 1 / filterRadius.y),
           filterTable(filterTable),
           filterTableSize(filterTableSize) {
-        pixels = std::vector<FilmTilePixel>(pixelBounds.Area());
+        pixels = std::vector<FilmTilePixel>(std::max(0, pixelBounds.Area()));
     }
     void AddSample(const Point2f &pFilm, const Spectrum &L,
-                   Float sampleWeight) {
+                   Float sampleWeight = 1.) {
         // Compute sample's raster bounds
         Point2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
         Point2i p0 = (Point2i)Ceil(pFilmDiscrete - filterRadius);
@@ -175,8 +172,9 @@ class FilmTile {
     const Float *filterTable;
     const int filterTableSize;
     std::vector<FilmTilePixel> pixels;
+    friend class Film;
 };
 
-Film *CreateFilm(const ParamSet &params, Filter *filter);
+Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter);
 
 #endif  // PBRT_CORE_FILM_H

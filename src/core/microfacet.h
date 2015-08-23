@@ -48,18 +48,17 @@ class MicrofacetDistribution {
   public:
     // MicrofacetDistribution Public Methods
     virtual ~MicrofacetDistribution() {}
-    virtual Float D(const Vector3f &w) const = 0;
+    virtual Float D(const Vector3f &wh) const = 0;
     virtual Float Lambda(const Vector3f &w) const = 0;
     Float G1(const Vector3f &w) const {
         //    if (Dot(w, wh) * CosTheta(w) < 0.) return 0.;
-        return 1.f / (1.f + Lambda(w));
+        return 1 / (1 + Lambda(w));
     }
     Float G(const Vector3f &wo, const Vector3f &wi) const {
-        return 1.f / (1.f + Lambda(wo) + Lambda(wi));
+        return 1 / (1 + Lambda(wo) + Lambda(wi));
     }
-    Float Pdf(const Vector3f &wo, const Vector3f &wi, const Vector3f &wh) const;
-    virtual Vector3f Sample_wh(const Vector3f &wo,
-                               const Point2f &sample) const = 0;
+    virtual Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const = 0;
+    Float Pdf(const Vector3f &wo, const Vector3f &wh) const;
 
   protected:
     // MicrofacetDistribution Protected Methods
@@ -82,7 +81,7 @@ class BeckmannDistribution : public MicrofacetDistribution {
     BeckmannDistribution(Float alphax, Float alphay, bool samplevis = true)
         : MicrofacetDistribution(samplevis), alphax(alphax), alphay(alphay) {}
     Float D(const Vector3f &wh) const;
-    Vector3f Sample_wh(const Vector3f &wo, const Point2f &sample) const;
+    Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const;
 
   private:
     // BeckmannDistribution Private Methods
@@ -100,7 +99,7 @@ class TrowbridgeReitzDistribution : public MicrofacetDistribution {
                                 bool samplevis = true)
         : MicrofacetDistribution(samplevis), alphax(alphax), alphay(alphay) {}
     Float D(const Vector3f &wh) const;
-    Vector3f Sample_wh(const Vector3f &wo, const Point2f &sample) const;
+    Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const;
 
   private:
     // TrowbridgeReitzDistribution Private Methods

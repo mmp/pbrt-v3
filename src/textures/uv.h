@@ -48,18 +48,18 @@
 class UVTexture : public Texture<Spectrum> {
   public:
     // UVTexture Public Methods
-    UVTexture(TextureMapping2D *mapping) : mapping(mapping) {}
-    ~UVTexture() { delete mapping; }
-    Spectrum Evaluate(const SurfaceInteraction &isect) const {
+    UVTexture(std::unique_ptr<TextureMapping2D> mapping)
+        : mapping(std::move(mapping)) {}
+    Spectrum Evaluate(const SurfaceInteraction &si) const {
         Vector2f dstdx, dstdy;
-        Point2f st = mapping->Map(isect, &dstdx, &dstdy);
+        Point2f st = mapping->Map(si, &dstdx, &dstdy);
         Float rgb[3] = {st[0] - std::floor(st[0]), st[1] - std::floor(st[1]),
-                        0.f};
+                        0};
         return Spectrum::FromRGB(rgb);
     }
 
   private:
-    const TextureMapping2D *mapping;
+    std::unique_ptr<TextureMapping2D> mapping;
 };
 
 Texture<Float> *CreateUVFloatTexture(const Transform &tex2world,

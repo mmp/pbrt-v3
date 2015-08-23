@@ -43,8 +43,8 @@ Bounds3f Disk::ObjectBound() const {
                     Point3f(radius, radius, height));
 }
 
-bool Disk::Intersect(const Ray &r, Float *tHit,
-                     SurfaceInteraction *isect) const {
+bool Disk::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
+                     bool testAlphaTexture) const {
     // Transform _Ray_ to object space
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
@@ -61,9 +61,6 @@ bool Disk::Intersect(const Ray &r, Float *tHit,
     Float dist2 = pHit.x * pHit.x + pHit.y * pHit.y;
     if (dist2 > radius * radius || dist2 < innerRadius * innerRadius)
         return false;
-
-    // Refine disk intersection point
-    pHit.z = height;
 
     // Test disk $\phi$ value against $\phimax$
     Float phi = std::atan2(pHit.y, pHit.x);
@@ -75,13 +72,16 @@ bool Disk::Intersect(const Ray &r, Float *tHit,
     Float rHit = std::sqrt(dist2);
     Float oneMinusV = ((rHit - innerRadius) / (radius - innerRadius));
     Float v = 1 - oneMinusV;
-    Vector3f dpdu(-phiMax * pHit.y, phiMax * pHit.x, 0.);
+    Vector3f dpdu(-phiMax * pHit.y, phiMax * pHit.x, 0);
     Vector3f dpdv =
         Vector3f(pHit.x, pHit.y, 0.) * (innerRadius - radius) / rHit;
     Normal3f dndu(0, 0, 0), dndv(0, 0, 0);
 
+    // Refine disk intersection point
+    pHit.z = height;
+
     // Compute error bounds for disk intersection
-    Vector3f pError(0., 0., 0.);
+    Vector3f pError(0, 0, 0);
 
     // Initialize _SurfaceInteraction_ from parametric information
     *isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v),
@@ -93,7 +93,7 @@ bool Disk::Intersect(const Ray &r, Float *tHit,
     return true;
 }
 
-bool Disk::IntersectP(const Ray &r) const {
+bool Disk::IntersectP(const Ray &r, bool testAlphaTexture) const {
     // Transform _Ray_ to object space
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
@@ -110,9 +110,6 @@ bool Disk::IntersectP(const Ray &r) const {
     Float dist2 = pHit.x * pHit.x + pHit.y * pHit.y;
     if (dist2 > radius * radius || dist2 < innerRadius * innerRadius)
         return false;
-
-    // Refine disk intersection point
-    pHit.z = height;
 
     // Test disk $\phi$ value against $\phimax$
     Float phi = std::atan2(pHit.y, pHit.x);
@@ -125,14 +122,15 @@ Float Disk::Area() const {
     return phiMax * 0.5 * (radius * radius - innerRadius * innerRadius);
 }
 
-bool Disk::Sample(const Point2f &sample, Interaction *it) const {
-    Point2f pd = ConcentricSampleDisk(sample);
+Interaction Disk::Sample(const Point2f &u) const {
+    Interaction it;
+    Point2f pd = ConcentricSampleDisk(u);
     Point3f pObj(pd.x * radius, pd.y * radius, height);
-    it->n = Normalize((*ObjectToWorld)(Normal3f(0, 0, 1)));
-    if (ReverseOrientation) it->n *= -1.f;
-    Vector3f pObjError(0.f, 0.f, MachineEpsilon * height);
-    it->p = (*ObjectToWorld)(pObj, pObjError, &it->pError);
-    return true;
+    it.n = Normalize((*ObjectToWorld)(Normal3f(0, 0, 1)));
+    if (reverseOrientation) it.n *= -1.f;
+    Vector3f pObjError(0, 0, 0);
+    it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+    return it;
 }
 
 std::shared_ptr<Disk> CreateDiskShape(const Transform *o2w,

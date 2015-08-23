@@ -64,25 +64,26 @@ class RealisticCamera : public Camera {
     };
 
     // RealisticCamera Private Data
-    bool simpleWeighting;
+    const bool simpleWeighting;
     std::vector<LensElementInterface> elementInterfaces;
     std::vector<Bounds2f> exitPupilBounds;
 
     // RealisticCamera Private Methods
     Float LensRearZ() const { return elementInterfaces.back().thickness; }
     Float LensFrontZ() const {
-        Float zsum = 0.f;
-        for (auto element : elementInterfaces) zsum += element.thickness;
-        return zsum;
+        Float zSum = 0;
+        for (const LensElementInterface &element : elementInterfaces)
+            zSum += element.thickness;
+        return zSum;
     }
     Float RearElementRadius() const {
         return elementInterfaces.back().apertureRadius;
     }
     bool TraceLensesFromFilm(const Ray &ray, Ray *rOut) const;
-    static bool IntersectSphericalElement(Float radius, Float center,
+    static bool IntersectSphericalElement(Float radius, Float zCenter,
                                           const Ray &ray, Float *t,
                                           Normal3f *n);
-    bool TraceLensesFromScene(const Ray &ray, Ray *rOut) const;
+    bool TraceLensesFromScene(const Ray &rCamera, Ray *rOut) const;
     void DrawLensSystem() const;
     void DrawRayPathFromFilm(const Ray &r, bool arrow,
                              bool toOpticalIntercept) const;
@@ -90,16 +91,15 @@ class RealisticCamera : public Camera {
                               bool toOpticalIntercept) const;
     static void ComputeCardinalPoints(const Ray &rIn, const Ray &rOut, Float *p,
                                       Float *f);
-    void ComputeThickLensApproximation(Float P[2], Float f[2]) const;
+    void ComputeThickLensApproximation(Float pz[2], Float f[2]) const;
     Float FocusThickLens(Float focusDistance);
     Float FocusBinarySearch(Float focusDistance);
     Float FocusDistance(Float filmDist);
-    Bounds2f BoundExitPupil(const Point2f &pFilm) const;
+    Bounds2f BoundExitPupil(Float pFilmX0, Float pFilmX1) const;
     void RenderExitPupil(Float sx, Float sy, const char *filename) const;
-    Point3f SampleExitPupil(const Point2f &pFilm,
-                            const Point2f &lensSample) const;
+    Point3f SampleExitPupil(const Point2f &pFilm, const Point2f &lensSample,
+                            Float *sampleBoundsArea) const;
     void TestExitPupilBounds() const;
-    Float ExitPupilPdf(const Point3f &pFilm, const Point3f &pExitPupil) const;
 };
 
 RealisticCamera *CreateRealisticCamera(const ParamSet &params,

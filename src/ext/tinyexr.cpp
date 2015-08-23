@@ -1,10 +1,6 @@
 #include "stdafx.h"
 
 // ext/tinyexr.cpp*
-#if defined(__GNUG__) || defined(__CLANG__)
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#endif
-
 /*
 Copyright (c) 2014, Syoyo Fujita
 All rights reserved.
@@ -4148,7 +4144,7 @@ void *tdefl_write_image_to_png_file_in_memory(const void *pImage, int w, int h,
 #include <stdio.h>
 #include <sys/stat.h>
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW64__)
 static FILE *mz_fopen(const char *pFilename, const char *pMode) {
     FILE *pFile = NULL;
     fopen_s(&pFile, pFilename, pMode);
@@ -6996,6 +6992,1444 @@ void DecompressZip(unsigned char *dst, unsigned long &uncompressedSize,
     }
 }
 
+//
+// PIZ compress/uncompress, based on OpenEXR's ImfPizCompressor.cpp
+//
+// -----------------------------------------------------------------
+// Copyright (c) 2004, Industrial Light & Magic, a division of Lucas
+// Digital Ltd. LLC)
+// (3 clause BSD license)
+//
+
+struct PIZChannelData {
+    unsigned short *start;
+    unsigned short *end;
+    int nx;
+    int ny;
+    int ys;
+    int size;
+};
+
+//-----------------------------------------------------------------------------
+//
+//  16-bit Haar Wavelet encoding and decoding
+//
+//  The source code in this file is derived from the encoding
+//  and decoding routines written by Christian Rouet for his
+//  PIZ image file format.
+//
+//-----------------------------------------------------------------------------
+
+//
+// Wavelet basis functions without modulo arithmetic; they produce
+// the best compression ratios when the wavelet-transformed data are
+// Huffman-encoded, but the wavelet transform works only for 14-bit
+// data (untransformed data values must be less than (1 << 14)).
+//
+
+inline void wenc14(unsigned short a, unsigned short b, unsigned short &l,
+                   unsigned short &h) {
+    short as = a;
+    short bs = b;
+
+    short ms = (as + bs) >> 1;
+    short ds = as - bs;
+
+    l = ms;
+    h = ds;
+}
+
+inline void wdec14(unsigned short l, unsigned short h, unsigned short &a,
+                   unsigned short &b) {
+    short ls = l;
+    short hs = h;
+
+    int hi = hs;
+    int ai = ls + (hi & 1) + (hi >> 1);
+
+    short as = ai;
+    short bs = ai - hi;
+
+    a = as;
+    b = bs;
+}
+
+//
+// Wavelet basis functions with modulo arithmetic; they work with full
+// 16-bit data, but Huffman-encoding the wavelet-transformed data doesn't
+// compress the data quite as well.
+//
+
+const int NBITS = 16;
+const int A_OFFSET = 1 << (NBITS - 1);
+const int M_OFFSET = 1 << (NBITS - 1);
+const int MOD_MASK = (1 << NBITS) - 1;
+
+inline void wenc16(unsigned short a, unsigned short b, unsigned short &l,
+                   unsigned short &h) {
+    int ao = (a + A_OFFSET) & MOD_MASK;
+    int m = ((ao + b) >> 1);
+    int d = ao - b;
+
+    if (d < 0) m = (m + M_OFFSET) & MOD_MASK;
+
+    d &= MOD_MASK;
+
+    l = m;
+    h = d;
+}
+
+inline void wdec16(unsigned short l, unsigned short h, unsigned short &a,
+                   unsigned short &b) {
+    int m = l;
+    int d = h;
+    int bb = (m - (d >> 1)) & MOD_MASK;
+    int aa = (d + bb - A_OFFSET) & MOD_MASK;
+    b = bb;
+    a = aa;
+}
+
+//
+// 2D Wavelet encoding:
+//
+
+void wav2Encode(unsigned short *in,  // io: values are transformed in place
+                int nx,              // i : x size
+                int ox,              // i : x offset
+                int ny,              // i : y size
+                int oy,              // i : y offset
+                unsigned short mx)   // i : maximum in[x][y] value
+{
+    bool w14 = (mx < (1 << 14));
+    int n = (nx > ny) ? ny : nx;
+    int p = 1;   // == 1 <<  level
+    int p2 = 2;  // == 1 << (level+1)
+
+    //
+    // Hierachical loop on smaller dimension n
+    //
+
+    while (p2 <= n) {
+        unsigned short *py = in;
+        unsigned short *ey = in + oy * (ny - p2);
+        int oy1 = oy * p;
+        int oy2 = oy * p2;
+        int ox1 = ox * p;
+        int ox2 = ox * p2;
+        unsigned short i00, i01, i10, i11;
+
+        //
+        // Y loop
+        //
+
+        for (; py <= ey; py += oy2) {
+            unsigned short *px = py;
+            unsigned short *ex = py + ox * (nx - p2);
+
+            //
+            // X loop
+            //
+
+            for (; px <= ex; px += ox2) {
+                unsigned short *p01 = px + ox1;
+                unsigned short *p10 = px + oy1;
+                unsigned short *p11 = p10 + ox1;
+
+                //
+                // 2D wavelet encoding
+                //
+
+                if (w14) {
+                    wenc14(*px, *p01, i00, i01);
+                    wenc14(*p10, *p11, i10, i11);
+                    wenc14(i00, i10, *px, *p10);
+                    wenc14(i01, i11, *p01, *p11);
+                } else {
+                    wenc16(*px, *p01, i00, i01);
+                    wenc16(*p10, *p11, i10, i11);
+                    wenc16(i00, i10, *px, *p10);
+                    wenc16(i01, i11, *p01, *p11);
+                }
+            }
+
+            //
+            // Encode (1D) odd column (still in Y loop)
+            //
+
+            if (nx & p) {
+                unsigned short *p10 = px + oy1;
+
+                if (w14)
+                    wenc14(*px, *p10, i00, *p10);
+                else
+                    wenc16(*px, *p10, i00, *p10);
+
+                *px = i00;
+            }
+        }
+
+        //
+        // Encode (1D) odd line (must loop in X)
+        //
+
+        if (ny & p) {
+            unsigned short *px = py;
+            unsigned short *ex = py + ox * (nx - p2);
+
+            for (; px <= ex; px += ox2) {
+                unsigned short *p01 = px + ox1;
+
+                if (w14)
+                    wenc14(*px, *p01, i00, *p01);
+                else
+                    wenc16(*px, *p01, i00, *p01);
+
+                *px = i00;
+            }
+        }
+
+        //
+        // Next level
+        //
+
+        p = p2;
+        p2 <<= 1;
+    }
+}
+
+//
+// 2D Wavelet decoding:
+//
+
+void wav2Decode(unsigned short *in,  // io: values are transformed in place
+                int nx,              // i : x size
+                int ox,              // i : x offset
+                int ny,              // i : y size
+                int oy,              // i : y offset
+                unsigned short mx)   // i : maximum in[x][y] value
+{
+    bool w14 = (mx < (1 << 14));
+    int n = (nx > ny) ? ny : nx;
+    int p = 1;
+    int p2;
+
+    //
+    // Search max level
+    //
+
+    while (p <= n) p <<= 1;
+
+    p >>= 1;
+    p2 = p;
+    p >>= 1;
+
+    //
+    // Hierarchical loop on smaller dimension n
+    //
+
+    while (p >= 1) {
+        unsigned short *py = in;
+        unsigned short *ey = in + oy * (ny - p2);
+        int oy1 = oy * p;
+        int oy2 = oy * p2;
+        int ox1 = ox * p;
+        int ox2 = ox * p2;
+        unsigned short i00, i01, i10, i11;
+
+        //
+        // Y loop
+        //
+
+        for (; py <= ey; py += oy2) {
+            unsigned short *px = py;
+            unsigned short *ex = py + ox * (nx - p2);
+
+            //
+            // X loop
+            //
+
+            for (; px <= ex; px += ox2) {
+                unsigned short *p01 = px + ox1;
+                unsigned short *p10 = px + oy1;
+                unsigned short *p11 = p10 + ox1;
+
+                //
+                // 2D wavelet decoding
+                //
+
+                if (w14) {
+                    wdec14(*px, *p10, i00, i10);
+                    wdec14(*p01, *p11, i01, i11);
+                    wdec14(i00, i01, *px, *p01);
+                    wdec14(i10, i11, *p10, *p11);
+                } else {
+                    wdec16(*px, *p10, i00, i10);
+                    wdec16(*p01, *p11, i01, i11);
+                    wdec16(i00, i01, *px, *p01);
+                    wdec16(i10, i11, *p10, *p11);
+                }
+            }
+
+            //
+            // Decode (1D) odd column (still in Y loop)
+            //
+
+            if (nx & p) {
+                unsigned short *p10 = px + oy1;
+
+                if (w14)
+                    wdec14(*px, *p10, i00, *p10);
+                else
+                    wdec16(*px, *p10, i00, *p10);
+
+                *px = i00;
+            }
+        }
+
+        //
+        // Decode (1D) odd line (must loop in X)
+        //
+
+        if (ny & p) {
+            unsigned short *px = py;
+            unsigned short *ex = py + ox * (nx - p2);
+
+            for (; px <= ex; px += ox2) {
+                unsigned short *p01 = px + ox1;
+
+                if (w14)
+                    wdec14(*px, *p01, i00, *p01);
+                else
+                    wdec16(*px, *p01, i00, *p01);
+
+                *px = i00;
+            }
+        }
+
+        //
+        // Next level
+        //
+
+        p2 = p;
+        p >>= 1;
+    }
+}
+
+//-----------------------------------------------------------------------------
+//
+//	16-bit Huffman compression and decompression.
+//
+//	The source code in this file is derived from the 8-bit
+//	Huffman compression and decompression routines written
+//	by Christian Rouet for his PIZ image file format.
+//
+//-----------------------------------------------------------------------------
+
+// Adds some modification for tinyexr.
+
+const int HUF_ENCBITS = 16;  // literal (value) bit length
+const int HUF_DECBITS = 14;  // decoding bit size (>= 8)
+
+const int HUF_ENCSIZE = (1 << HUF_ENCBITS) + 1;  // encoding table size
+const int HUF_DECSIZE = 1 << HUF_DECBITS;        // decoding table size
+const int HUF_DECMASK = HUF_DECSIZE - 1;
+
+struct HufDec {  // short code		long code
+    //-------------------------------
+    int len : 8;   // code length		0
+    int lit : 24;  // lit			p size
+    int *p;        // 0			lits
+};
+
+inline long long hufLength(long long code) { return code & 63; }
+
+inline long long hufCode(long long code) { return code >> 6; }
+
+inline void outputBits(int nBits, long long bits, long long &c, int &lc,
+                       char *&out) {
+    c <<= nBits;
+    lc += nBits;
+
+    c |= bits;
+
+    while (lc >= 8) *out++ = (c >> (lc -= 8));
+}
+
+inline long long getBits(int nBits, long long &c, int &lc, const char *&in) {
+    while (lc < nBits) {
+        c = (c << 8) | *(unsigned char *)(in++);
+        lc += 8;
+    }
+
+    lc -= nBits;
+    return (c >> lc) & ((1 << nBits) - 1);
+}
+
+//
+// ENCODING TABLE BUILDING & (UN)PACKING
+//
+
+//
+// Build a "canonical" Huffman code table:
+//	- for each (uncompressed) symbol, hcode contains the length
+//	  of the corresponding code (in the compressed data)
+//	- canonical codes are computed and stored in hcode
+//	- the rules for constructing canonical codes are as follows:
+//	  * shorter codes (if filled with zeroes to the right)
+//	    have a numerically higher value than longer codes
+//	  * for codes with the same length, numerical values
+//	    increase with numerical symbol values
+//	- because the canonical code table can be constructed from
+//	  symbol lengths alone, the code table can be transmitted
+//	  without sending the actual code values
+//	- see http://www.compressconsult.com/huffman/
+//
+
+void hufCanonicalCodeTable(long long hcode[HUF_ENCSIZE]) {
+    long long n[59];
+
+    //
+    // For each i from 0 through 58, count the
+    // number of different codes of length i, and
+    // store the count in n[i].
+    //
+
+    for (int i = 0; i <= 58; ++i) n[i] = 0;
+
+    for (int i = 0; i < HUF_ENCSIZE; ++i) n[hcode[i]] += 1;
+
+    //
+    // For each i from 58 through 1, compute the
+    // numerically lowest code with length i, and
+    // store that code in n[i].
+    //
+
+    long long c = 0;
+
+    for (int i = 58; i > 0; --i) {
+        long long nc = ((c + n[i]) >> 1);
+        n[i] = c;
+        c = nc;
+    }
+
+    //
+    // hcode[i] contains the length, l, of the
+    // code for symbol i.  Assign the next available
+    // code of length l to the symbol and store both
+    // l and the code in hcode[i].
+    //
+
+    for (int i = 0; i < HUF_ENCSIZE; ++i) {
+        int l = hcode[i];
+
+        if (l > 0) hcode[i] = l | (n[l]++ << 6);
+    }
+}
+
+//
+// Compute Huffman codes (based on frq input) and store them in frq:
+//	- code structure is : [63:lsb - 6:msb] | [5-0: bit length];
+//	- max code length is 58 bits;
+//	- codes outside the range [im-iM] have a null length (unused values);
+//	- original frequencies are destroyed;
+//	- encoding tables are used by hufEncode() and hufBuildDecTable();
+//
+
+struct FHeapCompare {
+    bool operator()(long long *a, long long *b) { return *a > *b; }
+};
+
+void hufBuildEncTable(
+    long long *frq,  // io: input frequencies [HUF_ENCSIZE], output table
+    int *im,         //  o: min frq index
+    int *iM)         //  o: max frq index
+{
+    //
+    // This function assumes that when it is called, array frq
+    // indicates the frequency of all possible symbols in the data
+    // that are to be Huffman-encoded.  (frq[i] contains the number
+    // of occurrences of symbol i in the data.)
+    //
+    // The loop below does three things:
+    //
+    // 1) Finds the minimum and maximum indices that point
+    //    to non-zero entries in frq:
+    //
+    //     frq[im] != 0, and frq[i] == 0 for all i < im
+    //     frq[iM] != 0, and frq[i] == 0 for all i > iM
+    //
+    // 2) Fills array fHeap with pointers to all non-zero
+    //    entries in frq.
+    //
+    // 3) Initializes array hlink such that hlink[i] == i
+    //    for all array entries.
+    //
+
+    int hlink[HUF_ENCSIZE];
+    long long *fHeap[HUF_ENCSIZE];
+
+    *im = 0;
+
+    while (!frq[*im]) (*im)++;
+
+    int nf = 0;
+
+    for (int i = *im; i < HUF_ENCSIZE; i++) {
+        hlink[i] = i;
+
+        if (frq[i]) {
+            fHeap[nf] = &frq[i];
+            nf++;
+            *iM = i;
+        }
+    }
+
+    //
+    // Add a pseudo-symbol, with a frequency count of 1, to frq;
+    // adjust the fHeap and hlink array accordingly.  Function
+    // hufEncode() uses the pseudo-symbol for run-length encoding.
+    //
+
+    (*iM)++;
+    frq[*iM] = 1;
+    fHeap[nf] = &frq[*iM];
+    nf++;
+
+    //
+    // Build an array, scode, such that scode[i] contains the number
+    // of bits assigned to symbol i.  Conceptually this is done by
+    // constructing a tree whose leaves are the symbols with non-zero
+    // frequency:
+    //
+    //     Make a heap that contains all symbols with a non-zero frequency,
+    //     with the least frequent symbol on top.
+    //
+    //     Repeat until only one symbol is left on the heap:
+    //
+    //         Take the two least frequent symbols off the top of the heap.
+    //         Create a new node that has first two nodes as children, and
+    //         whose frequency is the sum of the frequencies of the first
+    //         two nodes.  Put the new node back into the heap.
+    //
+    // The last node left on the heap is the root of the tree.  For each
+    // leaf node, the distance between the root and the leaf is the length
+    // of the code for the corresponding symbol.
+    //
+    // The loop below doesn't actually build the tree; instead we compute
+    // the distances of the leaves from the root on the fly.  When a new
+    // node is added to the heap, then that node's descendants are linked
+    // into a single linear list that starts at the new node, and the code
+    // lengths of the descendants (that is, their distance from the root
+    // of the tree) are incremented by one.
+    //
+
+    std::make_heap(&fHeap[0], &fHeap[nf], FHeapCompare());
+
+    long long scode[HUF_ENCSIZE];
+    memset(scode, 0, sizeof(long long) * HUF_ENCSIZE);
+
+    while (nf > 1) {
+        //
+        // Find the indices, mm and m, of the two smallest non-zero frq
+        // values in fHeap, add the smallest frq to the second-smallest
+        // frq, and remove the smallest frq value from fHeap.
+        //
+
+        int mm = fHeap[0] - frq;
+        std::pop_heap(&fHeap[0], &fHeap[nf], FHeapCompare());
+        --nf;
+
+        int m = fHeap[0] - frq;
+        std::pop_heap(&fHeap[0], &fHeap[nf], FHeapCompare());
+
+        frq[m] += frq[mm];
+        std::push_heap(&fHeap[0], &fHeap[nf], FHeapCompare());
+
+        //
+        // The entries in scode are linked into lists with the
+        // entries in hlink serving as "next" pointers and with
+        // the end of a list marked by hlink[j] == j.
+        //
+        // Traverse the lists that start at scode[m] and scode[mm].
+        // For each element visited, increment the length of the
+        // corresponding code by one bit. (If we visit scode[j]
+        // during the traversal, then the code for symbol j becomes
+        // one bit longer.)
+        //
+        // Merge the lists that start at scode[m] and scode[mm]
+        // into a single list that starts at scode[m].
+        //
+
+        //
+        // Add a bit to all codes in the first list.
+        //
+
+        for (int j = m; true; j = hlink[j]) {
+            scode[j]++;
+
+            assert(scode[j] <= 58);
+
+            if (hlink[j] == j) {
+                //
+                // Merge the two lists.
+                //
+
+                hlink[j] = mm;
+                break;
+            }
+        }
+
+        //
+        // Add a bit to all codes in the second list
+        //
+
+        for (int j = mm; true; j = hlink[j]) {
+            scode[j]++;
+
+            assert(scode[j] <= 58);
+
+            if (hlink[j] == j) break;
+        }
+    }
+
+    //
+    // Build a canonical Huffman code table, replacing the code
+    // lengths in scode with (code, code length) pairs.  Copy the
+    // code table from scode into frq.
+    //
+
+    hufCanonicalCodeTable(scode);
+    memcpy(frq, scode, sizeof(long long) * HUF_ENCSIZE);
+}
+
+//
+// Pack an encoding table:
+//	- only code lengths, not actual codes, are stored
+//	- runs of zeroes are compressed as follows:
+//
+//	  unpacked		packed
+//	  --------------------------------
+//	  1 zero		0	(6 bits)
+//	  2 zeroes		59
+//	  3 zeroes		60
+//	  4 zeroes		61
+//	  5 zeroes		62
+//	  n zeroes (6 or more)	63 n-6	(6 + 8 bits)
+//
+
+const int SHORT_ZEROCODE_RUN = 59;
+const int LONG_ZEROCODE_RUN = 63;
+const int SHORTEST_LONG_RUN = 2 + LONG_ZEROCODE_RUN - SHORT_ZEROCODE_RUN;
+const int LONGEST_LONG_RUN = 255 + SHORTEST_LONG_RUN;
+
+void hufPackEncTable(
+    const long long *hcode,  // i : encoding table [HUF_ENCSIZE]
+    int im,                  // i : min hcode index
+    int iM,                  // i : max hcode index
+    char **pcode)            //  o: ptr to packed table (updated)
+{
+    char *p = *pcode;
+    long long c = 0;
+    int lc = 0;
+
+    for (; im <= iM; im++) {
+        int l = hufLength(hcode[im]);
+
+        if (l == 0) {
+            int zerun = 1;
+
+            while ((im < iM) && (zerun < LONGEST_LONG_RUN)) {
+                if (hufLength(hcode[im + 1]) > 0) break;
+                im++;
+                zerun++;
+            }
+
+            if (zerun >= 2) {
+                if (zerun >= SHORTEST_LONG_RUN) {
+                    outputBits(6, LONG_ZEROCODE_RUN, c, lc, p);
+                    outputBits(8, zerun - SHORTEST_LONG_RUN, c, lc, p);
+                } else {
+                    outputBits(6, SHORT_ZEROCODE_RUN + zerun - 2, c, lc, p);
+                }
+                continue;
+            }
+        }
+
+        outputBits(6, l, c, lc, p);
+    }
+
+    if (lc > 0) *p++ = (unsigned char)(c << (8 - lc));
+
+    *pcode = p;
+}
+
+//
+// Unpack an encoding table packed by hufPackEncTable():
+//
+
+bool hufUnpackEncTable(const char **pcode,  // io: ptr to packed table (updated)
+                       int ni,              // i : input size (in bytes)
+                       int im,              // i : min hcode index
+                       int iM,              // i : max hcode index
+                       long long *hcode)    //  o: encoding table [HUF_ENCSIZE]
+{
+    memset(hcode, 0, sizeof(long long) * HUF_ENCSIZE);
+
+    const char *p = *pcode;
+    long long c = 0;
+    int lc = 0;
+
+    for (; im <= iM; im++) {
+        if (p - *pcode > ni) {
+            return false;
+        }
+
+        long long l = hcode[im] = getBits(6, c, lc, p);  // code length
+
+        if (l == (long long)LONG_ZEROCODE_RUN) {
+            if (p - *pcode > ni) {
+                return false;
+            }
+
+            int zerun = getBits(8, c, lc, p) + SHORTEST_LONG_RUN;
+
+            if (im + zerun > iM + 1) {
+                return false;
+            }
+
+            while (zerun--) hcode[im++] = 0;
+
+            im--;
+        } else if (l >= (long long)SHORT_ZEROCODE_RUN) {
+            int zerun = l - SHORT_ZEROCODE_RUN + 2;
+
+            if (im + zerun > iM + 1) {
+                return false;
+            }
+
+            while (zerun--) hcode[im++] = 0;
+
+            im--;
+        }
+    }
+
+    *pcode = const_cast<char *>(p);
+
+    hufCanonicalCodeTable(hcode);
+
+    return true;
+}
+
+//
+// DECODING TABLE BUILDING
+//
+
+//
+// Clear a newly allocated decoding table so that it contains only zeroes.
+//
+
+void hufClearDecTable(HufDec *hdecod)  // io: (allocated by caller)
+                                       //     decoding table [HUF_DECSIZE]
+{
+    for (int i = 0; i < HUF_DECSIZE; i++) {
+        hdecod[i].len = 0;
+        hdecod[i].lit = 0;
+        hdecod[i].p = NULL;
+    }
+    // memset(hdecod, 0, sizeof(HufDec) * HUF_DECSIZE);
+}
+
+//
+// Build a decoding hash table based on the encoding table hcode:
+//	- short codes (<= HUF_DECBITS) are resolved with a single table access;
+//	- long code entry allocations are not optimized, because long codes are
+//	  unfrequent;
+//	- decoding tables are used by hufDecode();
+//
+
+bool hufBuildDecTable(const long long *hcode,  // i : encoding table
+                      int im,                  // i : min index in hcode
+                      int iM,                  // i : max index in hcode
+                      HufDec *hdecod)          //  o: (allocated by caller)
+//     decoding table [HUF_DECSIZE]
+{
+    //
+    // Init hashtable & loop on all codes.
+    // Assumes that hufClearDecTable(hdecod) has already been called.
+    //
+
+    for (; im <= iM; im++) {
+        long long c = hufCode(hcode[im]);
+        int l = hufLength(hcode[im]);
+
+        if (c >> l) {
+            //
+            // Error: c is supposed to be an l-bit code,
+            // but c contains a value that is greater
+            // than the largest l-bit number.
+            //
+
+            // invalidTableEntry();
+            return false;
+        }
+
+        if (l > HUF_DECBITS) {
+            //
+            // Long code: add a secondary entry
+            //
+
+            HufDec *pl = hdecod + (c >> (l - HUF_DECBITS));
+
+            if (pl->len) {
+                //
+                // Error: a short code has already
+                // been stored in table entry *pl.
+                //
+
+                // invalidTableEntry();
+                return false;
+            }
+
+            pl->lit++;
+
+            if (pl->p) {
+                int *p = pl->p;
+                pl->p = new int[pl->lit];
+
+                for (int i = 0; i < pl->lit - 1; ++i) pl->p[i] = p[i];
+
+                delete[] p;
+            } else {
+                pl->p = new int[1];
+            }
+
+            pl->p[pl->lit - 1] = im;
+        } else if (l) {
+            //
+            // Short code: init all primary entries
+            //
+
+            HufDec *pl = hdecod + (c << (HUF_DECBITS - l));
+
+            for (long long i = 1 << (HUF_DECBITS - l); i > 0; i--, pl++) {
+                if (pl->len || pl->p) {
+                    //
+                    // Error: a short code or a long code has
+                    // already been stored in table entry *pl.
+                    //
+
+                    // invalidTableEntry();
+                    return false;
+                }
+
+                pl->len = l;
+                pl->lit = im;
+            }
+        }
+    }
+
+    return true;
+}
+
+//
+// Free the long code entries of a decoding table built by hufBuildDecTable()
+//
+
+void hufFreeDecTable(HufDec *hdecod)  // io: Decoding table
+{
+    for (int i = 0; i < HUF_DECSIZE; i++) {
+        if (hdecod[i].p) {
+            delete[] hdecod[i].p;
+            hdecod[i].p = 0;
+        }
+    }
+}
+
+//
+// ENCODING
+//
+
+inline void outputCode(long long code, long long &c, int &lc, char *&out) {
+    outputBits(hufLength(code), hufCode(code), c, lc, out);
+}
+
+inline void sendCode(long long sCode, int runCount, long long runCode,
+                     long long &c, int &lc, char *&out) {
+    //
+    // Output a run of runCount instances of the symbol sCount.
+    // Output the symbols explicitly, or if that is shorter, output
+    // the sCode symbol once followed by a runCode symbol and runCount
+    // expressed as an 8-bit number.
+    //
+
+    if (hufLength(sCode) + hufLength(runCode) + 8 <
+        hufLength(sCode) * runCount) {
+        outputCode(sCode, c, lc, out);
+        outputCode(runCode, c, lc, out);
+        outputBits(8, runCount, c, lc, out);
+    } else {
+        while (runCount-- >= 0) outputCode(sCode, c, lc, out);
+    }
+}
+
+//
+// Encode (compress) ni values based on the Huffman encoding table hcode:
+//
+
+int hufEncode                   // return: output size (in bits)
+    (const long long *hcode,    // i : encoding table
+     const unsigned short *in,  // i : uncompressed input buffer
+     const int ni,              // i : input buffer size (in bytes)
+     int rlc,                   // i : rl code
+     char *out)                 //  o: compressed output buffer
+{
+    char *outStart = out;
+    long long c = 0;  // bits not yet written to out
+    int lc = 0;       // number of valid bits in c (LSB)
+    int s = in[0];
+    int cs = 0;
+
+    //
+    // Loop on input values
+    //
+
+    for (int i = 1; i < ni; i++) {
+        //
+        // Count same values or send code
+        //
+
+        if (s == in[i] && cs < 255) {
+            cs++;
+        } else {
+            sendCode(hcode[s], cs, hcode[rlc], c, lc, out);
+            cs = 0;
+        }
+
+        s = in[i];
+    }
+
+    //
+    // Send remaining code
+    //
+
+    sendCode(hcode[s], cs, hcode[rlc], c, lc, out);
+
+    if (lc) *out = (c << (8 - lc)) & 0xff;
+
+    return (out - outStart) * 8 + lc;
+}
+
+//
+// DECODING
+//
+
+//
+// In order to force the compiler to inline them,
+// getChar() and getCode() are implemented as macros
+// instead of "inline" functions.
+//
+
+#define getChar(c, lc, in)                       \
+    {                                            \
+        c = (c << 8) | *(unsigned char *)(in++); \
+        lc += 8;                                 \
+    }
+
+#define getCode(po, rlc, c, lc, in, out, oe) \
+    {                                        \
+        if (po == rlc) {                     \
+            if (lc < 8) getChar(c, lc, in);  \
+                                             \
+            lc -= 8;                         \
+                                             \
+            unsigned char cs = (c >> lc);    \
+                                             \
+            if (out + cs > oe) return false; \
+                                             \
+            unsigned short s = out[-1];      \
+                                             \
+            while (cs-- > 0) *out++ = s;     \
+        } else if (out < oe) {               \
+            *out++ = po;                     \
+        } else {                             \
+            return false;                    \
+        }                                    \
+    }
+
+//
+// Decode (uncompress) ni bits based on encoding & decoding tables:
+//
+
+bool hufDecode(const long long *hcode,  // i : encoding table
+               const HufDec *hdecod,    // i : decoding table
+               const char *in,          // i : compressed input buffer
+               int ni,                  // i : input size (in bits)
+               int rlc,                 // i : run-length code
+               int no,                  // i : expected output size (in bytes)
+               unsigned short *out)     //  o: uncompressed output buffer
+{
+    long long c = 0;
+    int lc = 0;
+    unsigned short *outb = out;
+    unsigned short *oe = out + no;
+    const char *ie = in + (ni + 7) / 8;  // input byte size
+
+    //
+    // Loop on input bytes
+    //
+
+    while (in < ie) {
+        getChar(c, lc, in);
+
+        //
+        // Access decoding table
+        //
+
+        while (lc >= HUF_DECBITS) {
+            const HufDec pl = hdecod[(c >> (lc - HUF_DECBITS)) & HUF_DECMASK];
+
+            if (pl.len) {
+                //
+                // Get short code
+                //
+
+                lc -= pl.len;
+                getCode(pl.lit, rlc, c, lc, in, out, oe);
+            } else {
+                if (!pl.p) {
+                    return false;
+                }
+                // invalidCode(); // wrong code
+
+                //
+                // Search long code
+                //
+
+                int j;
+
+                for (j = 0; j < pl.lit; j++) {
+                    int l = hufLength(hcode[pl.p[j]]);
+
+                    while (lc < l && in < ie)  // get more bits
+                        getChar(c, lc, in);
+
+                    if (lc >= l) {
+                        if (hufCode(hcode[pl.p[j]]) ==
+                            ((c >> (lc - l)) & (((long long)(1) << l) - 1))) {
+                            //
+                            // Found : get long code
+                            //
+
+                            lc -= l;
+                            getCode(pl.p[j], rlc, c, lc, in, out, oe);
+                            break;
+                        }
+                    }
+                }
+
+                if (j == pl.lit) {
+                    return false;
+                    // invalidCode(); // Not found
+                }
+            }
+        }
+    }
+
+    //
+    // Get remaining (short) codes
+    //
+
+    int i = (8 - ni) & 7;
+    c >>= i;
+    lc -= i;
+
+    while (lc > 0) {
+        const HufDec pl = hdecod[(c << (HUF_DECBITS - lc)) & HUF_DECMASK];
+
+        if (pl.len) {
+            lc -= pl.len;
+            getCode(pl.lit, rlc, c, lc, in, out, oe);
+        } else {
+            return false;
+            // invalidCode(); // wrong (long) code
+        }
+    }
+
+    if (out - outb != no) {
+        return false;
+    }
+    // notEnoughData ();
+
+    return true;
+}
+
+void countFrequencies(long long freq[HUF_ENCSIZE],
+                      const unsigned short data[/*n*/], int n) {
+    for (int i = 0; i < HUF_ENCSIZE; ++i) freq[i] = 0;
+
+    for (int i = 0; i < n; ++i) ++freq[data[i]];
+}
+
+void writeUInt(char buf[4], unsigned int i) {
+    unsigned char *b = (unsigned char *)buf;
+
+    b[0] = i;
+    b[1] = i >> 8;
+    b[2] = i >> 16;
+    b[3] = i >> 24;
+}
+
+unsigned int readUInt(const char buf[4]) {
+    const unsigned char *b = (const unsigned char *)buf;
+
+    return (b[0] & 0x000000ff) | ((b[1] << 8) & 0x0000ff00) |
+           ((b[2] << 16) & 0x00ff0000) | ((b[3] << 24) & 0xff000000);
+}
+
+//
+// EXTERNAL INTERFACE
+//
+
+int hufCompress(const unsigned short raw[], int nRaw, char compressed[]) {
+    if (nRaw == 0) return 0;
+
+    long long freq[HUF_ENCSIZE];
+
+    countFrequencies(freq, raw, nRaw);
+
+    int im = 0;
+    int iM = 0;
+    hufBuildEncTable(freq, &im, &iM);
+
+    char *tableStart = compressed + 20;
+    char *tableEnd = tableStart;
+    hufPackEncTable(freq, im, iM, &tableEnd);
+    int tableLength = tableEnd - tableStart;
+
+    char *dataStart = tableEnd;
+    int nBits = hufEncode(freq, raw, nRaw, iM, dataStart);
+    int dataLength = (nBits + 7) / 8;
+
+    writeUInt(compressed, im);
+    writeUInt(compressed + 4, iM);
+    writeUInt(compressed + 8, tableLength);
+    writeUInt(compressed + 12, nBits);
+    writeUInt(compressed + 16, 0);  // room for future extensions
+
+    return dataStart + dataLength - compressed;
+}
+
+bool hufUncompress(const char compressed[], int nCompressed,
+                   unsigned short raw[], int nRaw) {
+    if (nCompressed == 0) {
+        if (nRaw != 0) return false;
+
+        return false;
+    }
+
+    int im = readUInt(compressed);
+    int iM = readUInt(compressed + 4);
+    // int tableLength = readUInt (compressed + 8);
+    int nBits = readUInt(compressed + 12);
+
+    if (im < 0 || im >= HUF_ENCSIZE || iM < 0 || iM >= HUF_ENCSIZE)
+        return false;
+
+    const char *ptr = compressed + 20;
+
+    //
+    // Fast decoder needs at least 2x64-bits of compressed data, and
+    // needs to be run-able on this platform. Otherwise, fall back
+    // to the original decoder
+    //
+
+    // if (FastHufDecoder::enabled() && nBits > 128)
+    //{
+    //    FastHufDecoder fhd (ptr, nCompressed - (ptr - compressed), im, iM,
+    //    iM);
+    //    fhd.decode ((unsigned char*)ptr, nBits, raw, nRaw);
+    //}
+    // else
+    {
+        std::vector<long long> freq(HUF_ENCSIZE);
+        std::vector<HufDec> hdec(HUF_DECSIZE);
+
+        hufClearDecTable(&hdec.at(0));
+
+        hufUnpackEncTable(&ptr, nCompressed - (ptr - compressed), im, iM,
+                          &freq.at(0));
+
+        {
+            if (nBits > 8 * (nCompressed - (ptr - compressed))) {
+                return false;
+            }
+
+            hufBuildDecTable(&freq.at(0), im, iM, &hdec.at(0));
+            hufDecode(&freq.at(0), &hdec.at(0), ptr, nBits, iM, nRaw, raw);
+        }
+        // catch (...)
+        //{
+        //    hufFreeDecTable (hdec);
+        //    throw;
+        //}
+
+        hufFreeDecTable(&hdec.at(0));
+    }
+
+    return true;
+}
+
+//
+// Functions to compress the range of values in the pixel data
+//
+
+const int USHORT_RANGE = (1 << 16);
+const int BITMAP_SIZE = (USHORT_RANGE >> 3);
+
+void bitmapFromData(const unsigned short data[/*nData*/], int nData,
+                    unsigned char bitmap[BITMAP_SIZE],
+                    unsigned short &minNonZero, unsigned short &maxNonZero) {
+    for (int i = 0; i < BITMAP_SIZE; ++i) bitmap[i] = 0;
+
+    for (int i = 0; i < nData; ++i)
+        bitmap[data[i] >> 3] |= (1 << (data[i] & 7));
+
+    bitmap[0] &= ~1;  // zero is not explicitly stored in
+                      // the bitmap; we assume that the
+                      // data always contain zeroes
+    minNonZero = BITMAP_SIZE - 1;
+    maxNonZero = 0;
+
+    for (int i = 0; i < BITMAP_SIZE; ++i) {
+        if (bitmap[i]) {
+            if (minNonZero > i) minNonZero = i;
+            if (maxNonZero < i) maxNonZero = i;
+        }
+    }
+}
+
+unsigned short forwardLutFromBitmap(const unsigned char bitmap[BITMAP_SIZE],
+                                    unsigned short lut[USHORT_RANGE]) {
+    int k = 0;
+
+    for (int i = 0; i < USHORT_RANGE; ++i) {
+        if ((i == 0) || (bitmap[i >> 3] & (1 << (i & 7))))
+            lut[i] = k++;
+        else
+            lut[i] = 0;
+    }
+
+    return k - 1;  // maximum value stored in lut[],
+}  // i.e. number of ones in bitmap minus 1
+
+unsigned short reverseLutFromBitmap(const unsigned char bitmap[BITMAP_SIZE],
+                                    unsigned short lut[USHORT_RANGE]) {
+    int k = 0;
+
+    for (int i = 0; i < USHORT_RANGE; ++i) {
+        if ((i == 0) || (bitmap[i >> 3] & (1 << (i & 7)))) lut[k++] = i;
+    }
+
+    int n = k - 1;
+
+    while (k < USHORT_RANGE) lut[k++] = 0;
+
+    return n;  // maximum k where lut[k] is non-zero,
+}  // i.e. number of ones in bitmap minus 1
+
+void applyLut(const unsigned short lut[USHORT_RANGE],
+              unsigned short data[/*nData*/], int nData) {
+    for (int i = 0; i < nData; ++i) data[i] = lut[data[i]];
+}
+
+bool CompressPiz(unsigned char *outPtr, unsigned int &outSize) {
+    unsigned char bitmap[BITMAP_SIZE];
+    unsigned short minNonZero;
+    unsigned short maxNonZero;
+
+    if (IsBigEndian()) {
+        // @todo { PIZ compression on BigEndian architecture. }
+        assert(0);
+        return false;
+    }
+
+    std::vector<unsigned short> tmpBuffer;
+    int nData = tmpBuffer.size();
+
+    bitmapFromData(&tmpBuffer.at(0), nData, bitmap, minNonZero, maxNonZero);
+
+    unsigned short lut[USHORT_RANGE];
+    unsigned short maxValue = forwardLutFromBitmap(bitmap, lut);
+    applyLut(lut, &tmpBuffer.at(0), nData);
+
+    //
+    // Store range compression info in _outBuffer
+    //
+
+    char *buf = reinterpret_cast<char *>(outPtr);
+
+    memcpy(buf, &minNonZero, sizeof(unsigned short));
+    buf += sizeof(unsigned short);
+    memcpy(buf, &maxNonZero, sizeof(unsigned short));
+    buf += sizeof(unsigned short);
+
+    if (minNonZero <= maxNonZero) {
+        memcpy(buf, (char *)&bitmap[0] + minNonZero,
+               maxNonZero - minNonZero + 1);
+        buf += maxNonZero - minNonZero + 1;
+    }
+
+#if 0
+    //
+    // Apply wavelet encoding
+    //
+
+    for (int i = 0; i < channels; ++i)
+    {
+      ChannelData &cd = _channelData[i];
+
+      for (int j = 0; j < cd.size; ++j)
+      {
+          wav2Encode (cd.start + j,
+              cd.nx, cd.size,
+              cd.ny, cd.nx * cd.size,
+              maxValue);
+      }
+    }
+
+    //
+    // Apply Huffman encoding; append the result to _outBuffer
+    //
+
+    char *lengthPtr = buf;
+    int zero = 0;
+    memcpy(buf, &zero, sizeof(int)); buf += sizeof(int);
+
+    int length = hufCompress (_tmpBuffer, tmpBufferEnd - _tmpBuffer, buf);
+    memcpy(lengthPtr, tmpBuffer, length);
+    //Xdr::write <CharPtrIO> (lengthPtr, length);
+
+    outPtr = _outBuffer;
+    return buf - _outBuffer + length;
+#endif
+    assert(0);
+
+    return true;
+}
+
+bool DecompressPiz(unsigned char *outPtr, unsigned int &outSize,
+                   const unsigned char *inPtr, size_t tmpBufSize,
+                   const std::vector<ChannelInfo> &channelInfo, int dataWidth,
+                   int numLines) {
+    unsigned char bitmap[BITMAP_SIZE];
+    unsigned short minNonZero;
+    unsigned short maxNonZero;
+
+    if (IsBigEndian()) {
+        // @todo { PIZ compression on BigEndian architecture. }
+        assert(0);
+        return false;
+    }
+
+    memset(bitmap, 0, BITMAP_SIZE);
+
+    const unsigned char *ptr = inPtr;
+    minNonZero = *(reinterpret_cast<const unsigned short *>(ptr));
+    maxNonZero = *(reinterpret_cast<const unsigned short *>(ptr + 2));
+    ptr += 4;
+
+    if (maxNonZero >= BITMAP_SIZE) {
+        return false;
+    }
+
+    if (minNonZero <= maxNonZero) {
+        memcpy((char *)&bitmap[0] + minNonZero, ptr,
+               maxNonZero - minNonZero + 1);
+        ptr += maxNonZero - minNonZero + 1;
+    }
+
+    unsigned short lut[USHORT_RANGE];
+    memset(lut, 0, sizeof(unsigned short) * USHORT_RANGE);
+    unsigned short maxValue = reverseLutFromBitmap(bitmap, lut);
+
+    //
+    // Huffman decoding
+    //
+
+    int length;
+
+    length = *(reinterpret_cast<const int *>(ptr));
+    ptr += sizeof(int);
+
+    std::vector<unsigned short> tmpBuffer(tmpBufSize);
+    hufUncompress(reinterpret_cast<const char *>(ptr), length, &tmpBuffer.at(0),
+                  tmpBufSize);
+
+    //
+    // Wavelet decoding
+    //
+
+    std::vector<PIZChannelData> channelData(channelInfo.size());
+
+    unsigned short *tmpBufferEnd = &tmpBuffer.at(0);
+
+    for (int i = 0; i < channelInfo.size(); ++i) {
+        const ChannelInfo &chan = channelInfo[i];
+
+        int pixelSize = sizeof(int);  // UINT and FLOAT
+        if (chan.pixelType == TINYEXR_PIXELTYPE_HALF) {
+            pixelSize = sizeof(short);
+        }
+
+        channelData[i].start = tmpBufferEnd;
+        channelData[i].end = channelData[i].start;
+        channelData[i].nx = dataWidth;
+        channelData[i].ny = numLines;
+        // channelData[i].ys = 1;
+        channelData[i].size = pixelSize / sizeof(short);
+
+        tmpBufferEnd +=
+            channelData[i].nx * channelData[i].ny * channelData[i].size;
+    }
+
+    for (int i = 0; i < channelData.size(); ++i) {
+        PIZChannelData &cd = channelData[i];
+
+        for (int j = 0; j < cd.size; ++j) {
+            wav2Decode(cd.start + j, cd.nx, cd.size, cd.ny, cd.nx * cd.size,
+                       maxValue);
+        }
+    }
+
+    //
+    // Expand the pixel data to their original range
+    //
+
+    applyLut(lut, &tmpBuffer.at(0), tmpBufSize);
+
+    // @todo { Xdr }
+
+    for (int y = 0; y < numLines; y++) {
+        for (int i = 0; i < channelData.size(); ++i) {
+            PIZChannelData &cd = channelData[i];
+
+            // if (modp (y, cd.ys) != 0)
+            //    continue;
+
+            int n = cd.nx * cd.size;
+            memcpy(outPtr, cd.end, n * sizeof(unsigned short));
+            outPtr += n * sizeof(unsigned short);
+            cd.end += n;
+        }
+    }
+
+    return true;
+}
+
+//
+// -----------------------------------------------------------------
+//
+
 }  // namespace
 
 int LoadEXR(float **out_rgba, int *width, int *height, const char *filename,
@@ -7008,9 +8442,27 @@ int LoadEXR(float **out_rgba, int *width, int *height, const char *filename,
     }
 
     EXRImage exrImage;
-    int ret = LoadMultiChannelEXRFromFile(&exrImage, filename, err);
-    if (ret != 0) {
-        return ret;
+    InitEXRImage(&exrImage);
+
+    {
+        int ret = ParseMultiChannelEXRHeaderFromFile(&exrImage, filename, err);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+
+    // Read HALF channel as FLOAT.
+    for (int i = 0; i < exrImage.num_channels; i++) {
+        if (exrImage.pixel_types[i] == TINYEXR_PIXELTYPE_HALF) {
+            exrImage.requested_pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT;
+        }
+    }
+
+    {
+        int ret = LoadMultiChannelEXRFromFile(&exrImage, filename, err);
+        if (ret != 0) {
+            return ret;
+        }
     }
 
     // RGBA
@@ -7130,7 +8582,8 @@ int ParseEXRHeaderFromMemory(int *width, int *height,
     int dy = -1;
     int dw = -1;
     int dh = -1;
-    int numScanlineBlocks = 1;  // 16 for ZIP compression.
+    int numScanlineBlocks =
+        1;  // 16 for ZIP compression. 32 for PIZ compression
     int compressionType = -1;
     int numChannels = -1;
     std::vector<ChannelInfo> channels;
@@ -7149,7 +8602,15 @@ int ParseEXRHeaderFromMemory(int *width, int *height,
 
         if (attrName.compare("compression") == 0) {
             // must be 0:No compression, 1: RLE or 3: ZIP
-            if (data[0] != 0 && data[0] != 1 && data[0] != 3) {
+            //      if (data[0] != 0 && data[0] != 1 && data[0] != 3) {
+
+            //	mwkm
+            //	0 : NO_COMPRESSION
+            //	1 : RLE
+            //	2 : ZIPS (Single scanline)
+            //	3 : ZIP (16-line block)
+            //	4 : PIZ (32-line block)
+            if (data[0] > 4) {
                 // if (err) {
                 //  (*err) = "Unsupported compression type.";
                 //}
@@ -7234,6 +8695,7 @@ int LoadEXRFromMemory(float *out_rgba, const unsigned char *memory,
     }
 
     EXRImage exrImage;
+    InitEXRImage(&exrImage);
     int ret = LoadMultiChannelEXRFromMemory(&exrImage, memory, err);
     if (ret != 0) {
         return ret;
@@ -7407,8 +8869,13 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
         }
 
         if (attrName.compare("compression") == 0) {
-            // must be 0:No compression, 1: RLE or 3: ZIP
-            if (data[0] != 0 && data[0] != 1 && data[0] != 3) {
+            //	mwkm
+            //	0 : NO_COMPRESSION
+            //	1 : RLE
+            //	2 : ZIPS (Single scanline)
+            //	3 : ZIP (16-line block)
+            //	4 : PIZ (32-line block)
+            if (data[0] != 0 && data[0] != 2 && data[0] != 3 && data[0] != 4) {
                 if (err) {
                     (*err) = "Unsupported compression type.";
                 }
@@ -7419,6 +8886,8 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
 
             if (compressionType == 3) {  // ZIP
                 numScanlineBlocks = 16;
+            } else if (compressionType == 4) {  // PIZ
+                numScanlineBlocks = 32;
             }
 
         } else if (attrName.compare("channels") == 0) {
@@ -7479,12 +8948,6 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
     int dataWidth = dw - dx + 1;
     int dataHeight = dh - dy + 1;
 
-    std::vector<float> image(dataWidth * dataHeight * 4);  // 4 = RGBA
-    // Set default alpha value to 1.0
-    for (size_t i = 0; i < dataWidth * dataHeight; i++) {
-        image[4 * i + 3] = 1.0f;
-    }
-
     // Read offset tables.
     int numBlocks = dataHeight / numScanlineBlocks;
     if (numBlocks * numScanlineBlocks < dataHeight) {
@@ -7503,7 +8966,10 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
         offsets[y] = offset;
     }
 
-    if (compressionType != 0 && compressionType != 3) {
+    //	mwkm
+    //	Supported : 0, 2(ZIPS), 3(ZIP), 4(PIZ)
+    if (compressionType != 0 && compressionType != 2 && compressionType != 3 &&
+        compressionType != 4) {
         if (err) {
             (*err) = "Unsupported format.";
         }
@@ -7512,11 +8978,6 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
 
     exrImage->images = reinterpret_cast<unsigned char **>(
         (float **)malloc(sizeof(float *) * numChannels));
-    for (int c = 0; c < numChannels; c++) {
-        exrImage->images[c] = reinterpret_cast<unsigned char *>((float *)malloc(
-            sizeof(float) * dataWidth *
-            dataHeight));  // enough to store float and uint pixel image
-    }
 
     std::vector<size_t> channelOffsetList(numChannels);
     int pixelDataSize = 0;
@@ -7526,12 +8987,29 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
         if (channels[c].pixelType == TINYEXR_PIXELTYPE_HALF) {
             pixelDataSize += sizeof(unsigned short);
             channelOffset += sizeof(unsigned short);
+            // Alloc internal image for half type.
+            if (exrImage->requested_pixel_types[c] == TINYEXR_PIXELTYPE_HALF) {
+                exrImage->images[c] =
+                    reinterpret_cast<unsigned char *>((unsigned short *)malloc(
+                        sizeof(unsigned short) * dataWidth * dataHeight));
+            } else if (exrImage->requested_pixel_types[c] ==
+                       TINYEXR_PIXELTYPE_FLOAT) {
+                exrImage->images[c] = reinterpret_cast<unsigned char *>(
+                    (float *)malloc(sizeof(float) * dataWidth * dataHeight));
+            } else {
+                assert(0);
+            }
         } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_FLOAT) {
             pixelDataSize += sizeof(float);
             channelOffset += sizeof(float);
+            exrImage->images[c] = reinterpret_cast<unsigned char *>(
+                (float *)malloc(sizeof(float) * dataWidth * dataHeight));
         } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_UINT) {
             pixelDataSize += sizeof(unsigned int);
             channelOffset += sizeof(unsigned int);
+            exrImage->images[c] =
+                reinterpret_cast<unsigned char *>((unsigned int *)malloc(
+                    sizeof(unsigned int) * dataWidth * dataHeight));
         } else {
             assert(0);
         }
@@ -7559,7 +9037,136 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
 
         int numLines = endLineNo - lineNo;
 
-        if (compressionType == 3) {  // ZIP
+        if (compressionType == 4) {  // PIZ
+            // Allocate original data size.
+            std::vector<unsigned char> outBuf(dataWidth * numLines *
+                                              pixelDataSize);
+            unsigned int dstLen;
+            size_t tmpBufLen = dataWidth * numLines * pixelDataSize;
+
+            DecompressPiz(reinterpret_cast<unsigned char *>(&outBuf.at(0)),
+                          dstLen, dataPtr + 8, tmpBufLen, channels, dataWidth,
+                          numLines);
+
+            bool isBigEndian = IsBigEndian();
+
+            // For ZIP_COMPRESSION:
+            //   pixel sample data for channel 0 for scanline 0
+            //   pixel sample data for channel 1 for scanline 0
+            //   pixel sample data for channel ... for scanline 0
+            //   pixel sample data for channel n for scanline 0
+            //   pixel sample data for channel 0 for scanline 1
+            //   pixel sample data for channel 1 for scanline 1
+            //   pixel sample data for channel ... for scanline 1
+            //   pixel sample data for channel n for scanline 1
+            //   ...
+            for (int c = 0; c < numChannels; c++) {
+                if (channels[c].pixelType == TINYEXR_PIXELTYPE_HALF) {
+                    for (int v = 0; v < numLines; v++) {
+                        const unsigned short *linePtr =
+                            reinterpret_cast<unsigned short *>(
+                                &outBuf.at(v * pixelDataSize * dataWidth +
+                                           channelOffsetList[c] * dataWidth));
+                        for (int u = 0; u < dataWidth; u++) {
+                            FP16 hf;
+
+                            hf.u = linePtr[u];
+
+                            if (isBigEndian) {
+                                swap2(
+                                    reinterpret_cast<unsigned short *>(&hf.u));
+                            }
+
+                            if (exrImage->requested_pixel_types[c] ==
+                                TINYEXR_PIXELTYPE_HALF) {
+                                unsigned short *image =
+                                    reinterpret_cast<unsigned short **>(
+                                        exrImage->images)[c];
+                                if (lineOrder == 0) {
+                                    image += (lineNo + v) * dataWidth + u;
+                                } else {
+                                    image += (dataHeight - 1 - (lineNo + v)) *
+                                                 dataWidth +
+                                             u;
+                                }
+                                *image = hf.u;
+                            } else {  // HALF -> FLOAT
+                                FP32 f32 = half_to_float(hf);
+                                float *image = reinterpret_cast<float **>(
+                                    exrImage->images)[c];
+                                if (lineOrder == 0) {
+                                    image += (lineNo + v) * dataWidth + u;
+                                } else {
+                                    image += (dataHeight - 1 - (lineNo + v)) *
+                                                 dataWidth +
+                                             u;
+                                }
+                                *image = f32.f;
+                            }
+                        }
+                    }
+                } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_UINT) {
+                    assert(exrImage->requested_pixel_types[c] ==
+                           TINYEXR_PIXELTYPE_UINT);
+
+                    for (int v = 0; v < numLines; v++) {
+                        const unsigned int *linePtr =
+                            reinterpret_cast<unsigned int *>(
+                                &outBuf.at(v * pixelDataSize * dataWidth +
+                                           channelOffsetList[c] * dataWidth));
+                        for (int u = 0; u < dataWidth; u++) {
+                            unsigned int val = linePtr[u];
+
+                            if (isBigEndian) {
+                                swap4(&val);
+                            }
+
+                            unsigned int *image =
+                                reinterpret_cast<unsigned int **>(
+                                    exrImage->images)[c];
+                            if (lineOrder == 0) {
+                                image += (lineNo + v) * dataWidth + u;
+                            } else {
+                                image += (dataHeight - 1 - (lineNo + v)) *
+                                             dataWidth +
+                                         u;
+                            }
+                            *image = val;
+                        }
+                    }
+                } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_FLOAT) {
+                    assert(exrImage->requested_pixel_types[c] ==
+                           TINYEXR_PIXELTYPE_FLOAT);
+                    for (int v = 0; v < numLines; v++) {
+                        const float *linePtr = reinterpret_cast<float *>(
+                            &outBuf.at(v * pixelDataSize * dataWidth +
+                                       channelOffsetList[c] * dataWidth));
+                        for (int u = 0; u < dataWidth; u++) {
+                            float val = linePtr[u];
+
+                            if (isBigEndian) {
+                                swap4(reinterpret_cast<unsigned int *>(&val));
+                            }
+
+                            float *image =
+                                reinterpret_cast<float **>(exrImage->images)[c];
+                            if (lineOrder == 0) {
+                                image += (lineNo + v) * dataWidth + u;
+                            } else {
+                                image += (dataHeight - 1 - (lineNo + v)) *
+                                             dataWidth +
+                                         u;
+                            }
+                            *image = val;
+                        }
+                    }
+                } else {
+                    assert(0);
+                }
+            }
+
+            //	mwkm, ZIPS or ZIP both good to go
+        } else if (compressionType == 2 || compressionType == 3) {  // ZIP
 
             // Allocate original data size.
             std::vector<unsigned char> outBuf(dataWidth * numLines *
@@ -7598,21 +9205,38 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
                                     reinterpret_cast<unsigned short *>(&hf.u));
                             }
 
-                            FP32 f32 = half_to_float(hf);
-
-                            float *image =
-                                reinterpret_cast<float **>(exrImage->images)[c];
-                            if (lineOrder == 0) {
-                                image += (lineNo + v) * dataWidth + u;
-                            } else {
-                                image += (dataHeight - 1 - (lineNo + v)) *
-                                             dataWidth +
-                                         u;
+                            if (exrImage->requested_pixel_types[c] ==
+                                TINYEXR_PIXELTYPE_HALF) {
+                                unsigned short *image =
+                                    reinterpret_cast<unsigned short **>(
+                                        exrImage->images)[c];
+                                if (lineOrder == 0) {
+                                    image += (lineNo + v) * dataWidth + u;
+                                } else {
+                                    image += (dataHeight - 1 - (lineNo + v)) *
+                                                 dataWidth +
+                                             u;
+                                }
+                                *image = hf.u;
+                            } else {  // HALF -> FLOAT
+                                FP32 f32 = half_to_float(hf);
+                                float *image = reinterpret_cast<float **>(
+                                    exrImage->images)[c];
+                                if (lineOrder == 0) {
+                                    image += (lineNo + v) * dataWidth + u;
+                                } else {
+                                    image += (dataHeight - 1 - (lineNo + v)) *
+                                                 dataWidth +
+                                             u;
+                                }
+                                *image = f32.f;
                             }
-                            *image = f32.f;
                         }
                     }
                 } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_UINT) {
+                    assert(exrImage->requested_pixel_types[c] ==
+                           TINYEXR_PIXELTYPE_UINT);
+
                     for (int v = 0; v < numLines; v++) {
                         const unsigned int *linePtr =
                             reinterpret_cast<unsigned int *>(
@@ -7639,6 +9263,8 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
                         }
                     }
                 } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_FLOAT) {
+                    assert(exrImage->requested_pixel_types[c] ==
+                           TINYEXR_PIXELTYPE_FLOAT);
                     for (int v = 0; v < numLines; v++) {
                         const float *linePtr = reinterpret_cast<float *>(
                             &outBuf.at(v * pixelDataSize * dataWidth +
@@ -7672,39 +9298,98 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
             bool isBigEndian = IsBigEndian();
 
             for (int c = 0; c < numChannels; c++) {
-                float *outLine =
-                    reinterpret_cast<float **>(exrImage->images)[c];
-                if (lineOrder == 0) {
-                    outLine += y * dataWidth;
-                } else {
-                    outLine += (dataHeight - 1 - y) * dataWidth;
-                }
-
                 if (channels[c].pixelType == TINYEXR_PIXELTYPE_HALF) {
                     const unsigned short *linePtr =
                         reinterpret_cast<const unsigned short *>(
                             dataPtr + 8 +
                             c * dataWidth * sizeof(unsigned short));
 
-                    for (int u = 0; u < dataWidth; u++) {
-                        FP16 hf;
-
-                        hf.u = linePtr[u];
-
-                        if (isBigEndian) {
-                            swap2(reinterpret_cast<unsigned short *>(&hf.u));
+                    if (exrImage->requested_pixel_types[c] ==
+                        TINYEXR_PIXELTYPE_HALF) {
+                        unsigned short *outLine =
+                            reinterpret_cast<unsigned short *>(
+                                exrImage->images[c]);
+                        if (lineOrder == 0) {
+                            outLine += y * dataWidth;
+                        } else {
+                            outLine += (dataHeight - 1 - y) * dataWidth;
                         }
 
-                        FP32 f32 = half_to_float(hf);
+                        for (int u = 0; u < dataWidth; u++) {
+                            FP16 hf;
 
-                        outLine[u] = f32.f;
+                            hf.u = linePtr[u];
+
+                            if (isBigEndian) {
+                                swap2(
+                                    reinterpret_cast<unsigned short *>(&hf.u));
+                            }
+
+                            outLine[u] = hf.u;
+                        }
+                    } else if (exrImage->requested_pixel_types[c] ==
+                               TINYEXR_PIXELTYPE_FLOAT) {
+                        float *outLine =
+                            reinterpret_cast<float *>(exrImage->images[c]);
+                        if (lineOrder == 0) {
+                            outLine += y * dataWidth;
+                        } else {
+                            outLine += (dataHeight - 1 - y) * dataWidth;
+                        }
+
+                        for (int u = 0; u < dataWidth; u++) {
+                            FP16 hf;
+
+                            hf.u = linePtr[u];
+
+                            if (isBigEndian) {
+                                swap2(
+                                    reinterpret_cast<unsigned short *>(&hf.u));
+                            }
+
+                            FP32 f32 = half_to_float(hf);
+
+                            outLine[u] = f32.f;
+                        }
+                    } else {
+                        assert(0);
                     }
                 } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_FLOAT) {
                     const float *linePtr = reinterpret_cast<const float *>(
                         dataPtr + 8 + c * dataWidth * sizeof(float));
 
+                    float *outLine =
+                        reinterpret_cast<float *>(exrImage->images[c]);
+                    if (lineOrder == 0) {
+                        outLine += y * dataWidth;
+                    } else {
+                        outLine += (dataHeight - 1 - y) * dataWidth;
+                    }
+
                     for (int u = 0; u < dataWidth; u++) {
                         float val = linePtr[u];
+
+                        if (isBigEndian) {
+                            swap4(reinterpret_cast<unsigned int *>(&val));
+                        }
+
+                        outLine[u] = val;
+                    }
+                } else if (channels[c].pixelType == TINYEXR_PIXELTYPE_UINT) {
+                    const unsigned int *linePtr =
+                        reinterpret_cast<const unsigned int *>(
+                            dataPtr + 8 + c * dataWidth * sizeof(unsigned int));
+
+                    unsigned int *outLine =
+                        reinterpret_cast<unsigned int *>(exrImage->images[c]);
+                    if (lineOrder == 0) {
+                        outLine += y * dataWidth;
+                    } else {
+                        outLine += (dataHeight - 1 - y) * dataWidth;
+                    }
+
+                    for (int u = 0; u < dataWidth; u++) {
+                        unsigned int val = linePtr[u];
 
                         if (isBigEndian) {
                             swap4(reinterpret_cast<unsigned int *>(&val));
@@ -7732,9 +9417,10 @@ int LoadMultiChannelEXRFromMemory(EXRImage *exrImage,
         exrImage->width = dataWidth;
         exrImage->height = dataHeight;
 
+        // Fill with requested_pixel_types.
         exrImage->pixel_types = (int *)malloc(sizeof(int *) * numChannels);
         for (int c = 0; c < numChannels; c++) {
-            exrImage->pixel_types[c] = channels[c].pixelType;
+            exrImage->pixel_types[c] = exrImage->requested_pixel_types[c];
         }
     }
 
@@ -7938,7 +9624,8 @@ size_t SaveMultiChannelEXRToMemory(const EXRImage *exrImage,
         memory.insert(memory.end(), marker, marker + 4);
     }
 
-    int numScanlineBlocks = 16;  // 16 for ZIP compression.
+    int numScanlineBlocks =
+        16;  // 1 for no compress & ZIPS, 16 for ZIP compression.
 
     // Write attributes.
     {
@@ -7948,7 +9635,7 @@ size_t SaveMultiChannelEXRToMemory(const EXRImage *exrImage,
         for (int c = 0; c < exrImage->num_channels; c++) {
             ChannelInfo info;
             info.pLinear = 0;
-            info.pixelType = exrImage->pixel_types[c];
+            info.pixelType = exrImage->requested_pixel_types[c];
             info.xSampling = 1;
             info.ySampling = 1;
             info.name = std::string(exrImage->channel_names[c]);
@@ -8052,13 +9739,15 @@ size_t SaveMultiChannelEXRToMemory(const EXRImage *exrImage,
     size_t channelOffset = 0;
     for (int c = 0; c < exrImage->num_channels; c++) {
         channelOffsetList[c] = channelOffset;
-        if (exrImage->pixel_types[c] == TINYEXR_PIXELTYPE_HALF) {
+        if (exrImage->requested_pixel_types[c] == TINYEXR_PIXELTYPE_HALF) {
             pixelDataSize += sizeof(unsigned short);
             channelOffset += sizeof(unsigned short);
-        } else if (exrImage->pixel_types[c] == TINYEXR_PIXELTYPE_FLOAT) {
+        } else if (exrImage->requested_pixel_types[c] ==
+                   TINYEXR_PIXELTYPE_FLOAT) {
             pixelDataSize += sizeof(float);
             channelOffset += sizeof(float);
-        } else if (exrImage->pixel_types[c] == TINYEXR_PIXELTYPE_UINT) {
+        } else if (exrImage->requested_pixel_types[c] ==
+                   TINYEXR_PIXELTYPE_UINT) {
             pixelDataSize += sizeof(unsigned int);
             channelOffset += sizeof(unsigned int);
         } else {
@@ -8078,50 +9767,102 @@ size_t SaveMultiChannelEXRToMemory(const EXRImage *exrImage,
 
         for (int c = 0; c < exrImage->num_channels; c++) {
             if (exrImage->pixel_types[c] == TINYEXR_PIXELTYPE_HALF) {
-                for (int y = 0; y < h; y++) {
-                    for (int x = 0; x < exrImage->width; x++) {
-                        FP32 f32;
-                        f32.f = reinterpret_cast<float **>(
-                            exrImage
-                                ->images)[c][(y + startY) * exrImage->width +
-                                             x];
+                if (exrImage->requested_pixel_types[c] ==
+                    TINYEXR_PIXELTYPE_FLOAT) {
+                    for (int y = 0; y < h; y++) {
+                        for (int x = 0; x < exrImage->width; x++) {
+                            FP16 h16;
+                            h16.u = reinterpret_cast<unsigned short **>(
+                                exrImage->images)[c][(y + startY) *
+                                                         exrImage->width +
+                                                     x];
 
-                        FP16 h16;
-                        h16 = float_to_half_full(f32);
+                            FP32 f32 = half_to_float(h16);
 
-                        if (isBigEndian) {
-                            swap2(reinterpret_cast<unsigned short *>(&h16.u));
-                        }
+                            if (isBigEndian) {
+                                swap4(reinterpret_cast<unsigned int *>(&f32.f));
+                            }
 
-                        // Assume increasing Y
-                        unsigned short *linePtr =
-                            reinterpret_cast<unsigned short *>(&buf.at(
+                            // Assume increasing Y
+                            float *linePtr = reinterpret_cast<float *>(&buf.at(
                                 pixelDataSize * y * exrImage->width +
                                 channelOffsetList[c] * exrImage->width));
-                        linePtr[x] = h16.u;
+                            linePtr[x] = f32.f;
+                        }
                     }
+                } else if (exrImage->requested_pixel_types[c] ==
+                           TINYEXR_PIXELTYPE_HALF) {
+                    for (int y = 0; y < h; y++) {
+                        for (int x = 0; x < exrImage->width; x++) {
+                            unsigned short val =
+                                reinterpret_cast<unsigned short **>(
+                                    exrImage->images)[c][(y + startY) *
+                                                             exrImage->width +
+                                                         x];
+
+                            if (isBigEndian) {
+                                swap2(&val);
+                            }
+
+                            // Assume increasing Y
+                            unsigned short *linePtr =
+                                reinterpret_cast<unsigned short *>(&buf.at(
+                                    pixelDataSize * y * exrImage->width +
+                                    channelOffsetList[c] * exrImage->width));
+                            linePtr[x] = val;
+                        }
+                    }
+                } else {
+                    assert(0);
                 }
 
             } else if (exrImage->pixel_types[c] == TINYEXR_PIXELTYPE_FLOAT) {
-                for (int y = 0; y < h; y++) {
-                    for (int x = 0; x < exrImage->width; x++) {
-                        float val = reinterpret_cast<float **>(
-                            exrImage
-                                ->images)[c][(y + startY) * exrImage->width +
-                                             x];
+                if (exrImage->requested_pixel_types[c] ==
+                    TINYEXR_PIXELTYPE_HALF) {
+                    for (int y = 0; y < h; y++) {
+                        for (int x = 0; x < exrImage->width; x++) {
+                            FP32 f32;
+                            f32.f = reinterpret_cast<float **>(exrImage->images)
+                                [c][(y + startY) * exrImage->width + x];
 
-                        if (isBigEndian) {
-                            swap4(reinterpret_cast<unsigned int *>(&val));
-                        }
+                            FP16 h16;
+                            h16 = float_to_half_full(f32);
 
-                        // Assume increasing Y
-                        float *linePtr = reinterpret_cast<float *>(
-                            &buf.at(pixelDataSize * y * exrImage->width +
+                            if (isBigEndian) {
+                                swap2(
+                                    reinterpret_cast<unsigned short *>(&h16.u));
+                            }
+
+                            // Assume increasing Y
+                            unsigned short *linePtr =
+                                reinterpret_cast<unsigned short *>(&buf.at(
+                                    pixelDataSize * y * exrImage->width +
                                     channelOffsetList[c] * exrImage->width));
-                        linePtr[x] = val;
+                            linePtr[x] = h16.u;
+                        }
                     }
-                }
+                } else if (exrImage->requested_pixel_types[c] ==
+                           TINYEXR_PIXELTYPE_FLOAT) {
+                    for (int y = 0; y < h; y++) {
+                        for (int x = 0; x < exrImage->width; x++) {
+                            float val =
+                                reinterpret_cast<float **>(exrImage->images)
+                                    [c][(y + startY) * exrImage->width + x];
 
+                            if (isBigEndian) {
+                                swap4(reinterpret_cast<unsigned int *>(&val));
+                            }
+
+                            // Assume increasing Y
+                            float *linePtr = reinterpret_cast<float *>(&buf.at(
+                                pixelDataSize * y * exrImage->width +
+                                channelOffsetList[c] * exrImage->width));
+                            linePtr[x] = val;
+                        }
+                    }
+                } else {
+                    assert(0);
+                }
             } else if (exrImage->pixel_types[c] == TINYEXR_PIXELTYPE_UINT) {
                 for (int y = 0; y < h; y++) {
                     for (int x = 0; x < exrImage->width; x++) {
@@ -8228,11 +9969,10 @@ int SaveMultiChannelEXRToFile(const EXRImage *exrImage, const char *filename,
     unsigned char *mem = NULL;
     size_t mem_size = SaveMultiChannelEXRToMemory(exrImage, &mem, err);
 
-    if (mem_size > 0) {
+    if ((mem_size > 0) && mem) {
         fwrite(mem, 1, mem_size, fp);
-
-        free(mem);
     }
+    free(mem);
 
     fclose(fp);
 
@@ -8261,13 +10001,21 @@ int LoadDeepEXR(DeepImage *deepImage, const char *filename, const char **err) {
     filesize = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
+    if (filesize == 0) {
+        fclose(fp);
+        if (err) {
+            (*err) = "File size is zero.";
+        }
+        return -1;
+    }
+
     std::vector<char> buf(filesize);  // @todo { use mmap }
     {
         size_t ret;
         ret = fread(&buf[0], 1, filesize, fp);
         assert(ret == filesize);
-        fclose(fp);
     }
+    fclose(fp);
 
     const char *head = &buf[0];
     const char *marker = &buf[0];
@@ -8821,6 +10569,250 @@ int SaveDeepEXR(const DeepImage *deepImage, const char *filename,
 
   } // y
 #endif
+    fclose(fp);
+
+    return 0;  // OK
+}
+
+void InitEXRImage(EXRImage *exrImage) {
+    if (exrImage == NULL) {
+        return;
+    }
+
+    exrImage->num_channels = 0;
+    exrImage->channel_names = NULL;
+    exrImage->images = NULL;
+    exrImage->pixel_types = NULL;
+    exrImage->requested_pixel_types = NULL;
+}
+
+int FreeEXRImage(EXRImage *exrImage) {
+    if (exrImage == NULL) {
+        return -1;  // Err
+    }
+
+    for (int i = 0; i < exrImage->num_channels; i++) {
+        if (exrImage->channel_names && exrImage->channel_names[i]) {
+            free((char *)exrImage->channel_names[i]);  // remove const
+        }
+
+        if (exrImage->images && exrImage->images[i]) {
+            free(exrImage->images[i]);
+        }
+    }
+
+    if (exrImage->channel_names) {
+        free(exrImage->channel_names);
+    }
+
+    if (exrImage->images) {
+        free(exrImage->images);
+    }
+
+    if (exrImage->pixel_types) {
+        free(exrImage->pixel_types);
+    }
+
+    if (exrImage->requested_pixel_types) {
+        free(exrImage->requested_pixel_types);
+    }
+
+    return 0;
+}
+
+int ParseMultiChannelEXRHeaderFromFile(EXRImage *exrImage, const char *filename,
+                                       const char **err) {
+    if (exrImage == NULL) {
+        if (err) {
+            (*err) = "Invalid argument.";
+        }
+        return -1;
+    }
+
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) {
+        if (err) {
+            (*err) = "Cannot read file.";
+        }
+        return -1;
+    }
+
+    size_t filesize;
+    // Compute size
+    fseek(fp, 0, SEEK_END);
+    filesize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    std::vector<unsigned char> buf(filesize);  // @todo { use mmap }
+    {
+        size_t ret;
+        ret = fread(&buf[0], 1, filesize, fp);
+        assert(ret == filesize);
+        fclose(fp);
+    }
+
+    return ParseMultiChannelEXRHeaderFromMemory(exrImage, &buf.at(0), err);
+}
+
+int ParseMultiChannelEXRHeaderFromMemory(EXRImage *exrImage,
+                                         const unsigned char *memory,
+                                         const char **err) {
+    if (exrImage == NULL || memory == NULL) {
+        if (err) {
+            (*err) = "Invalid argument.";
+        }
+        return -1;
+    }
+
+    const char *buf = reinterpret_cast<const char *>(memory);
+
+    const char *head = &buf[0];
+    const char *marker = &buf[0];
+
+    // Header check.
+    {
+        const char header[] = {0x76, 0x2f, 0x31, 0x01};
+
+        if (memcmp(marker, header, 4) != 0) {
+            if (err) {
+                (*err) = "Header mismatch.";
+            }
+            return -3;
+        }
+        marker += 4;
+    }
+
+    // Version, scanline.
+    {
+        // must be [2, 0, 0, 0]
+        if (marker[0] != 2 || marker[1] != 0 || marker[2] != 0 ||
+            marker[3] != 0) {
+            if (err) {
+                (*err) = "Unsupported version or scanline.";
+            }
+            return -4;
+        }
+
+        marker += 4;
+    }
+
+    int dx = -1;
+    int dy = -1;
+    int dw = -1;
+    int dh = -1;
+    int compressionType = -1;
+    int numChannels = -1;
+    unsigned char lineOrder = 0;  // 0 -> increasing y; 1 -> decreasing
+    std::vector<ChannelInfo> channels;
+
+    // Read attributes
+    for (;;) {
+        std::string attrName;
+        std::string attrType;
+        std::vector<unsigned char> data;
+        const char *marker_next =
+            ReadAttribute(attrName, attrType, data, marker);
+        if (marker_next == NULL) {
+            marker++;  // skip '\0'
+            break;
+        }
+
+        if (attrName.compare("compression") == 0) {
+            // must be 0:No compression, 1: RLE, 2: ZIPs, 3: ZIP or 4: PIZ
+            if (data[0] > 4) {
+                if (err) {
+                    (*err) = "Unsupported compression type.";
+                }
+                return -5;
+            }
+
+            compressionType = data[0];
+
+        } else if (attrName.compare("channels") == 0) {
+            // name: zero-terminated string, from 1 to 255 bytes long
+            // pixel type: int, possible values are: UINT = 0 HALF = 1 FLOAT = 2
+            // pLinear: unsigned char, possible values are 0 and 1
+            // reserved: three chars, should be zero
+            // xSampling: int
+            // ySampling: int
+
+            ReadChannelInfo(channels, data);
+
+            numChannels = channels.size();
+
+            if (numChannels < 1) {
+                if (err) {
+                    (*err) = "Invalid channels format.";
+                }
+                return -6;
+            }
+
+        } else if (attrName.compare("dataWindow") == 0) {
+            memcpy(&dx, &data.at(0), sizeof(int));
+            memcpy(&dy, &data.at(4), sizeof(int));
+            memcpy(&dw, &data.at(8), sizeof(int));
+            memcpy(&dh, &data.at(12), sizeof(int));
+            if (IsBigEndian()) {
+                swap4(reinterpret_cast<unsigned int *>(&dx));
+                swap4(reinterpret_cast<unsigned int *>(&dy));
+                swap4(reinterpret_cast<unsigned int *>(&dw));
+                swap4(reinterpret_cast<unsigned int *>(&dh));
+            }
+        } else if (attrName.compare("displayWindow") == 0) {
+            int x, y, w, h;
+            memcpy(&x, &data.at(0), sizeof(int));
+            memcpy(&y, &data.at(4), sizeof(int));
+            memcpy(&w, &data.at(8), sizeof(int));
+            memcpy(&h, &data.at(12), sizeof(int));
+            if (IsBigEndian()) {
+                swap4(reinterpret_cast<unsigned int *>(&x));
+                swap4(reinterpret_cast<unsigned int *>(&y));
+                swap4(reinterpret_cast<unsigned int *>(&w));
+                swap4(reinterpret_cast<unsigned int *>(&h));
+            }
+        } else if (attrName.compare("lineOrder") == 0) {
+            memcpy(&lineOrder, &data.at(0), sizeof(lineOrder));
+        }
+
+        marker = marker_next;
+    }
+
+    assert(dx >= 0);
+    assert(dy >= 0);
+    assert(dw >= 0);
+    assert(dh >= 0);
+    assert(numChannels >= 1);
+
+    int dataWidth = dw - dx + 1;
+    int dataHeight = dh - dy + 1;
+
+    {
+        exrImage->channel_names =
+            (const char **)malloc(sizeof(const char *) * numChannels);
+        for (int c = 0; c < numChannels; c++) {
+#ifdef _WIN32
+            exrImage->channel_names[c] = _strdup(channels[c].name.c_str());
+#else
+            exrImage->channel_names[c] = strdup(channels[c].name.c_str());
+#endif
+        }
+        exrImage->num_channels = numChannels;
+
+        exrImage->width = dataWidth;
+        exrImage->height = dataHeight;
+
+        exrImage->pixel_types = (int *)malloc(sizeof(int) * numChannels);
+        for (int c = 0; c < numChannels; c++) {
+            exrImage->pixel_types[c] = channels[c].pixelType;
+        }
+
+        // Initially fill with values of `pixel-types`
+        exrImage->requested_pixel_types =
+            (int *)malloc(sizeof(int) * numChannels);
+        for (int c = 0; c < numChannels; c++) {
+            exrImage->requested_pixel_types[c] = channels[c].pixelType;
+        }
+    }
 
     return 0;  // OK
 }

@@ -39,19 +39,19 @@
 
 // Sampling Function Definitions
 void StratifiedSample1D(Float *samp, int nSamples, RNG &rng, bool jitter) {
-    Float invNSamples = (Float)1. / nSamples;
+    Float invNSamples = (Float)1 / nSamples;
     for (int i = 0; i < nSamples; ++i) {
-        Float delta = jitter ? rng.UniformFloat() : (Float)0.5;
-        *samp++ = std::min((i + delta) * invNSamples, OneMinusEpsilon);
+        Float delta = jitter ? rng.UniformFloat() : 0.5f;
+        samp[i] = std::min((i + delta) * invNSamples, OneMinusEpsilon);
     }
 }
 
 void StratifiedSample2D(Point2f *samp, int nx, int ny, RNG &rng, bool jitter) {
-    Float dx = (Float)1. / nx, dy = (Float)1. / ny;
+    Float dx = (Float)1 / nx, dy = (Float)1 / ny;
     for (int y = 0; y < ny; ++y)
         for (int x = 0; x < nx; ++x) {
-            Float jx = jitter ? rng.UniformFloat() : (Float)0.5;
-            Float jy = jitter ? rng.UniformFloat() : (Float)0.5;
+            Float jx = jitter ? rng.UniformFloat() : 0.5f;
+            Float jy = jitter ? rng.UniformFloat() : 0.5f;
             samp->x = std::min((x + jx) * dx, OneMinusEpsilon);
             samp->y = std::min((y + jy) * dy, OneMinusEpsilon);
             ++samp;
@@ -70,7 +70,7 @@ void LatinHypercube(Float *samples, int nSamples, int nDim, RNG &rng) {
     // Permute LHS samples in each dimension
     for (int i = 0; i < nDim; ++i) {
         for (int j = 0; j < nSamples; ++j) {
-            int other = j + (rng.UniformUInt32() % (nSamples - j));
+            int other = j + rng.UniformUInt32(nSamples - j);
             std::swap(samples[nDim * j + i], samples[nDim * other + i]);
         }
     }
@@ -81,13 +81,13 @@ Point2f RejectionSampleDisk(RNG &rng) {
     do {
         p.x = 1 - 2 * rng.UniformFloat();
         p.y = 1 - 2 * rng.UniformFloat();
-    } while (p.x * p.x + p.y * p.y > 1.f);
+    } while (p.x * p.x + p.y * p.y > 1);
     return p;
 }
 
 Vector3f UniformSampleHemisphere(const Point2f &u) {
     Float z = u[0];
-    Float r = std::sqrt(std::max((Float)0., (Float)1. - z * z));
+    Float r = std::sqrt(std::max((Float)0, (Float)1. - z * z));
     Float phi = 2 * Pi * u[1];
     return Vector3f(r * std::cos(phi), r * std::sin(phi), z);
 }
@@ -95,9 +95,9 @@ Vector3f UniformSampleHemisphere(const Point2f &u) {
 Float UniformHemispherePdf() { return Inv2Pi; }
 
 Vector3f UniformSampleSphere(const Point2f &u) {
-    Float z = 1.f - 2.f * u[0];
-    Float r = std::sqrt(std::max((Float)0., (Float)1. - z * z));
-    Float phi = 2.f * Pi * u[1];
+    Float z = 1 - 2 * u[0];
+    Float r = std::sqrt(std::max((Float)0, (Float)1 - z * z));
+    Float phi = 2 * Pi * u[1];
     return Vector3f(r * std::cos(phi), r * std::sin(phi), z);
 }
 
@@ -111,10 +111,10 @@ Point2f UniformSampleDisk(const Point2f &u) {
 
 Point2f ConcentricSampleDisk(const Point2f &u) {
     // Map uniform random numbers to $[-1,1]^2$
-    Point2f uOffset = 2.f * u - Vector2f(1.f, 1.f);
+    Point2f uOffset = 2.f * u - Vector2f(1, 1);
 
     // Handle degeneracy at the origin
-    if (uOffset.x == 0.f && uOffset.y == 0.f) return Point2f(0.f, 0.f);
+    if (uOffset.x == 0 && uOffset.y == 0) return Point2f(0, 0);
 
     // Apply concentric mapping to point
     Float theta, r;
@@ -128,9 +128,31 @@ Point2f ConcentricSampleDisk(const Point2f &u) {
     return r * Point2f(std::cos(theta), std::sin(theta));
 }
 
+Float UniformConePdf(Float cosThetaMax) {
+    return 1 / (2 * Pi * (1 - cosThetaMax));
+}
+
+Vector3f UniformSampleCone(const Point2f &u, Float cosThetaMax) {
+    Float cosTheta = ((Float)1 - u[0]) + u[0] * cosThetaMax;
+    Float sinTheta = std::sqrt((Float)1 - cosTheta * cosTheta);
+    Float phi = u[1] * 2 * Pi;
+    return Vector3f(std::cos(phi) * sinTheta, std::sin(phi) * sinTheta,
+                    cosTheta);
+}
+
+Vector3f UniformSampleCone(const Point2f &u, Float cosThetaMax,
+                           const Vector3f &x, const Vector3f &y,
+                           const Vector3f &z) {
+    Float cosTheta = Lerp(u[0], cosThetaMax, 1.f);
+    Float sinTheta = std::sqrt((Float)1. - cosTheta * cosTheta);
+    Float phi = u[1] * 2 * Pi;
+    return std::cos(phi) * sinTheta * x + std::sin(phi) * sinTheta * y +
+           cosTheta * z;
+}
+
 Point2f UniformSampleTriangle(const Point2f &u) {
     Float su0 = std::sqrt(u[0]);
-    return Point2f(1.f - su0, u[1] * su0);
+    return Point2f(1 - su0, u[1] * su0);
 }
 
 Distribution2D::Distribution2D(const Float *func, int nu, int nv) {
@@ -145,26 +167,4 @@ Distribution2D::Distribution2D(const Float *func, int nu, int nv) {
     for (int v = 0; v < nv; ++v)
         marginalFunc.push_back(pConditionalV[v]->funcInt);
     pMarginal.reset(new Distribution1D(&marginalFunc[0], nv));
-}
-
-Float UniformConePdf(Float cosThetaMax) {
-    return 1.f / (2.f * Pi * (1.f - cosThetaMax));
-}
-
-Vector3f UniformSampleCone(const Point2f &u, Float costhetamax) {
-    Float costheta = ((Float)1. - u[0]) + u[0] * costhetamax;
-    Float sintheta = std::sqrt((Float)1. - costheta * costheta);
-    Float phi = u[1] * 2 * Pi;
-    return Vector3f(std::cos(phi) * sintheta, std::sin(phi) * sintheta,
-                    costheta);
-}
-
-Vector3f UniformSampleCone(const Point2f &u, Float costhetamax,
-                           const Vector3f &x, const Vector3f &y,
-                           const Vector3f &z) {
-    Float costheta = Lerp(u[0], costhetamax, 1.f);
-    Float sintheta = std::sqrt((Float)1. - costheta * costheta);
-    Float phi = u[1] * 2 * Pi;
-    return std::cos(phi) * sintheta * x + std::sin(phi) * sintheta * y +
-           costheta * z;
 }

@@ -5,6 +5,7 @@
 #include "pbrt.h"
 #include "rng.h"
 #include "efloat.h"
+#include "parallel.h"
 
 static float GetFloat(RNG &rng) {
   float f;
@@ -92,8 +93,8 @@ TEST(FloatingPoint, DoubleBits) {
 }
 
 TEST(FloatingPoint, EFloat) {
-  static RNG rng(10);
   for (int trial = 0; trial < 1000; ++trial) {
+    RNG rng(trial);
     EFloat ef = -10000 + 20000 * rng.UniformFloat();
     long double ld = (float)ef;
 
@@ -159,4 +160,16 @@ TEST(FloatingPoint, EFloat) {
         break;
     }
   }
+}
+
+TEST(FloatingPoint, AtomicFloat) {
+  AtomicFloat af(0);
+  Float f = 0.;
+  EXPECT_EQ(f, af);
+  af.Add(1.0251);
+  f += 1.0251;
+  EXPECT_EQ(f, af);
+  af.Add(2.);
+  f += 2.;
+  EXPECT_EQ(f, af);
 }

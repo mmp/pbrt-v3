@@ -36,16 +36,9 @@
 #include "integrators/directlighting.h"
 #include "interaction.h"
 #include "paramset.h"
+#include "stats.h"
 
 // DirectLightingIntegrator Method Definitions
-DirectLightingIntegrator::DirectLightingIntegrator(
-    LightStrategy st, int md, std::shared_ptr<const Camera> camera,
-    std::shared_ptr<Sampler> sampler)
-    : SamplerIntegrator(camera, sampler) {
-    maxDepth = md;
-    strategy = st;
-}
-
 void DirectLightingIntegrator::Preprocess(const Scene &scene,
                                           Sampler &sampler) {
     if (strategy == LightStrategy::UniformSampleAll) {
@@ -55,7 +48,7 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
                 int nSamples = sampler.RoundCount(light->nSamples);
                 sampler.Request2DArray(nSamples);
                 sampler.Request2DArray(nSamples);
-                numLightSamples.push_back(nSamples);
+                if (i == 0) nLightSamples.push_back(nSamples);
             }
         }
     }
@@ -63,7 +56,8 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
 
 Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
                                       const Scene &scene, Sampler &sampler,
-                                      MemoryArena &arena) const {
+                                      MemoryArena &arena, int depth) const {
+    ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;
@@ -77,21 +71,19 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
     Vector3f wo = isect.wo;
     // Compute emitted light if ray hit an area light source
     L += isect.Le(wo);
-
-    // Compute direct lighting for _DirectLightingIntegrator_ integrator
     if (scene.lights.size() > 0) {
-        // Apply direct lighting strategy
+        // Compute direct lighting for _DirectLightingIntegrator_ integrator
         if (strategy == LightStrategy::UniformSampleAll)
-            L += UniformSampleAllLights(isect, scene, sampler, numLightSamples,
-                                        arena, false);
+            L += UniformSampleAllLights(isect, scene, sampler, nLightSamples,
+                                        arena);
         else
-            L += UniformSampleOneLight(isect, scene, sampler, arena, false);
+            L += UniformSampleOneLight(isect, scene, sampler, arena);
     }
-    if (ray.depth + 1 < maxDepth) {
+    if (depth + 1 < maxDepth) {
         Vector3f wi;
         // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, isect, scene, sampler, arena);
-        L += SpecularTransmit(ray, isect, scene, sampler, arena);
+        L += SpecularReflect(ray, isect, scene, sampler, arena, depth);
+        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth);
     }
     return L;
 }

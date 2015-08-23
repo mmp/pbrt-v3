@@ -47,9 +47,9 @@ class Sphere : public Shape {
   public:
     // Sphere Public Methods
     Sphere(const Transform *ObjectToWorld, const Transform *WorldToObject,
-           bool ReverseOrientation, Float radius, Float zMin, Float zMax,
+           bool reverseOrientation, Float radius, Float zMin, Float zMax,
            Float phiMax)
-        : Shape(ObjectToWorld, WorldToObject, ReverseOrientation),
+        : Shape(ObjectToWorld, WorldToObject, reverseOrientation),
           radius(radius),
           zMin(Clamp(std::min(zMin, zMax), -radius, radius)),
           zMax(Clamp(std::max(zMin, zMax), -radius, radius)),
@@ -57,13 +57,12 @@ class Sphere : public Shape {
           thetaMax(std::acos(Clamp(zMax / radius, -1, 1))),
           phiMax(Radians(Clamp(phiMax, 0, 360))) {}
     Bounds3f ObjectBound() const;
-    bool Intersect(const Ray &ray, Float *tHit,
-                   SurfaceInteraction *isect) const;
-    bool IntersectP(const Ray &ray) const;
+    bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
+                   bool testAlphaTexture) const;
+    bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
     Float Area() const;
-    bool Sample(const Point2f &sample, Interaction *rp) const;
-    bool Sample(const Interaction &ref, const Point2f &sample,
-                Interaction *it) const;
+    Interaction Sample(const Point2f &u) const;
+    Interaction Sample(const Interaction &ref, const Point2f &u) const;
     Float Pdf(const Interaction &ref, const Vector3f &wi) const;
 
   private:

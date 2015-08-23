@@ -1,0 +1,18 @@
+// C4D-DialogResource
+
+DIALOGSTRINGS DLG_PBRT
+{
+    IDS_PBRT 	"Export to PBRT";
+    IDS_PBRT_EXE "Renderer";
+    IDS_PBRT_MODE "Mode";
+    IDS_PBRT_MODE_EXPORT "Export";
+    IDS_PBRT_MODE_EXPORT_AND_RENDER "Export and Render";
+    IDS_PBRT_MODE_RENDER "Render";
+    IDS_PBRT_SAMPLES "Samples";
+    IDS_PBRT_INTENSITY "Light Intensity";
+    IDS_PBRT_LOGLEVEL "Logging Level";
+    IDS_PBRT_LOGLEVEL_DEBUG "Debug";
+    IDS_PBRT_LOGLEVEL_INFO "Info";
+    IDS_PBRT_LOGLEVEL_WARNING "Warning";
+    IDS_PBRT_LOGLEVEL_ERROR "Error";
+}

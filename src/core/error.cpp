@@ -43,7 +43,6 @@
 #define PBRT_ERROR_IGNORE 0
 #define PBRT_ERROR_CONTINUE 1
 #define PBRT_ERROR_ABORT 2
-
 const char *findWordEnd(const char *buf) {
     while (*buf != '\0' && !isspace(*buf)) ++buf;
     return buf;

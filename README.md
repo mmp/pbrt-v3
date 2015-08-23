@@ -1,6 +1,8 @@
 pbrt, Version 3
 ===============
 
+[![Build Status](https://travis-ci.org/mmp/pbrt-v3.svg?branch=master)](https://travis-ci.org/mmp/pbrt-v3)
+
 This repository holds the current snapshot of the source code to the new
 version of pbrt that will be described in the forthcoming third edition of
 *Physically Based Rendering: From Theory to Implementation*.  As before,
@@ -65,7 +67,7 @@ come once everything is finalized.)
     run ‘main.py’ to launch the visual layer editor.
 * Improved microfacet models: specular transmission through microfacets,
   and Heitz's improved importance sampling.
-* No external dependencies: thanks to 
+* No external dependencies: thanks to
 [Syoyo Fujita's tinyexr](https://github.com/syoyo/tinyexr),
 [Sean Barrett's stb_image_write.h](https://github.com/nothings/stb),
 [Diego Nehab's rply](http://www.impa.br/~diego/software/rply),
@@ -86,7 +88,7 @@ page](http://www.cmake.org/download/).
 
 * For command-line builds on Linux and OS X, once you have cmake installed,
 create a new directory for the build, change to that directory, and run
-`cmake <path to pbrt-v3>`. A Makefile will be created in that 
+`cmake <path to pbrt-v3>`. A Makefile will be created in that
 current directory.  Run `make -j4`, and pbrt and some additional tools will
 be built.
 * To make an XCode project file on OS X, run `cmake -G Xcode <path to
@@ -138,7 +140,7 @@ copy of the book to folks who make significant contributions.
 
 * Finding bugs: though we've tried to test thoroughly,
 there are certainly bugs in the code, and we'd like to find them before
-they are published in the book! The 
+they are published in the book! The
 [pbrt-v3 issue tracker](https://github.com/mmp/pbrt-v3/issues) is the best
 place to report anything suspicious you find.  Useful things to do include:
   * Running various scenes through the renderer and checking the results.
@@ -152,7 +154,7 @@ targets don't currently work.
 * Images and figures: we'd like to refresh many of the figures in the book,
 but probably won't have time to get to all of them. If you can spend some
 time on making a nice scene or two that we can use for figures, that'd be a
-huge help. Specific areas of interest include: 
+huge help. Specific areas of interest include:
   * Subsurface scattering: a human face, biological objects, ...
   * Showing off complex light transport using bidirectional path
   tracing.
@@ -160,8 +162,6 @@ huge help. Specific areas of interest include:
   killeroo in Chapters 8 and 9...
   * Showing the capabilities of the new curves primitive: hair, fur, fields
   of grass, ...
-  * It would be nice to have [MirageYM's 3D
-  Models](https://github.com/MirageYM/3DModels) available in pbrt's scene
-  format.
-  
+  * It would be great to have the [Digital
+  Emily](http://gl.ict.usc.edu/Research/DigitalEmily2) model available in pbrt.
 

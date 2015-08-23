@@ -65,7 +65,7 @@
 
 #include "sobolmatrices.h"
 
-const uint32_t SobolMatrices32[kNumSobolDimensions * kSobolMatrixSize] = {
+const uint32_t SobolMatrices32[NumSobolDimensions * SobolMatrixSize] = {
     0x0,        0x0,        0x0,        0x0,        0x0,        0x0,
     0x0,        0x0,        0x0,        0x0,        0x0,        0x0,
     0x0,        0x0,        0x0,        0x0,        0x0,        0x0,
@@ -8943,7 +8943,7 @@ const uint32_t SobolMatrices32[kNumSobolDimensions * kSobolMatrixSize] = {
     0xb0000000, 0xa0000000, 0x40000000, 0x80000000,
 };
 
-const uint64_t SobolMatrices64[kNumSobolDimensions * kSobolMatrixSize] = {
+const uint64_t SobolMatrices64[NumSobolDimensions * SobolMatrixSize] = {
     0x1,
     0x2,
     0x4,
@@ -62194,7 +62194,7 @@ const uint64_t SobolMatrices64[kNumSobolDimensions * kSobolMatrixSize] = {
     0x8000000000000,
 };
 
-const uint64_t VdCSobolMatrices[][kSobolMatrixSize] = {
+const uint64_t VdCSobolMatrices[][SobolMatrixSize] = {
     {// m = 1
      0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL,
      0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL, 0x1ULL,
@@ -62320,7 +62320,7 @@ const uint64_t VdCSobolMatrices[][kSobolMatrixSize] = {
     {// m = 25
      0x1400140ULL, 0x1e001e0ULL}};
 
-const uint64_t VdCSobolMatricesInv[][kSobolMatrixSize] = {
+const uint64_t VdCSobolMatricesInv[][SobolMatrixSize] = {
     {// m = 1
      0x2ULL, 0x3ULL},
     {// m = 2

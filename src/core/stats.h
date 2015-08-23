@@ -50,15 +50,16 @@ class StatsAccumulator;
 class StatRegisterer {
   public:
     // StatRegisterer Public Methods
-    StatRegisterer(void (*func)(StatsAccumulator &)) {
-        if (!funcs) funcs = new std::vector<void (*)(StatsAccumulator &)>;
+    StatRegisterer(std::function<void(StatsAccumulator &)> func) {
+        if (!funcs)
+            funcs = new std::vector<std::function<void(StatsAccumulator &)>>;
         funcs->push_back(func);
     }
     static void CallCallbacks(StatsAccumulator &accum);
 
   private:
     // StatRegisterer Private Data
-    static std::vector<void (*)(StatsAccumulator &)> *funcs;
+    static std::vector<std::function<void(StatsAccumulator &)>> *funcs;
 };
 
 void PrintStats(FILE *dest);
@@ -134,16 +135,81 @@ class StatsAccumulator {
     std::map<std::string, int64_t> timers;
 };
 
+enum class Prof {
+    IntegratorRender,
+    SamplerIntegratorLi,
+    DirectLighting,
+    AccelIntersect,
+    AccelIntersectP,
+    TriIntersect,
+    // Remainder of _Prof_ _enum_ entries
+    TriIntersectP,
+    ComputeScatteringFuncs,
+    GenerateCameraRay,
+    BSDFEvaluation,
+    BSSRDFEvaluation,
+    MergeFilmTile,
+    SplatFilm,
+    StartPixel,
+    TexFiltTrilerp,
+    TexFiltEWA,
+    NumProfEvents
+};
+
+static const char *ProfNames[] = {
+    "Integrator::Render()",
+    "SamplerIntegrator::Li()",
+    "Direct lighting",
+    "Accelerator::Intersect()",
+    "Accelerator::IntersectP()",
+    "Triangle::Intersect()",
+    "Triangle::IntersectP()",
+    "Material::ComputeScatteringFunctions()",
+    "Camera::GenerateRay[Differential]()",
+    "BSDF::f()",
+    "BSSRDF::f()",
+    "Film::MergeTile()",
+    "Film::AddSplat()",
+    "Sampler::StartPixelSample()",
+    "MIPMap::Lookup() (trilinear)",
+    "MIPMap::Lookup() (EWA)",
+};
+
+extern thread_local uint32_t profilerState;
+inline uint32_t CurrentProfilerState() { return profilerState; }
+class ProfilePhase {
+  public:
+    // ProfilePhase Public Methods
+    ProfilePhase(Prof p) {
+        categoryBit = (1 << (int)p);
+        reset = (profilerState & categoryBit) == 0;
+        profilerState |= categoryBit;
+    }
+    ~ProfilePhase() {
+        if (reset) profilerState &= ~categoryBit;
+    }
+    ProfilePhase(const ProfilePhase &) = delete;
+    ProfilePhase &operator=(const ProfilePhase &) = delete;
+
+  private:
+    // ProfilePhase Private Data
+    bool reset;
+    uint32_t categoryBit;
+};
+
+void InitProfiler();
+void ReportProfilerResults(FILE *dest);
+
 // Statistics Macros
 #define STAT_COUNTER(title, var)                           \
-    static THREAD_LOCAL int64_t var;                       \
+    static thread_local int64_t var;                       \
     static void STATS_FUNC##var(StatsAccumulator &accum) { \
         accum.ReportCounter(title, var);                   \
         var = 0;                                           \
     }                                                      \
     static StatRegisterer STATS_REG##var(STATS_FUNC##var)
 #define STAT_MEMORY_COUNTER(title, var)                    \
-    static THREAD_LOCAL int64_t var;                       \
+    static thread_local int64_t var;                       \
     static void STATS_FUNC##var(StatsAccumulator &accum) { \
         accum.ReportMemoryCounter(title, var);             \
         var = 0;                                           \
@@ -151,11 +217,11 @@ class StatsAccumulator {
     static StatRegisterer STATS_REG##var(STATS_FUNC##var)
 
 #define STAT_INT_DISTRIBUTION(title, var)                                  \
-    static THREAD_LOCAL int64_t var##sum;                                  \
-    static THREAD_LOCAL int64_t var##count;                                \
-    static THREAD_LOCAL int64_t var##min =                                 \
+    static thread_local int64_t var##sum;                                  \
+    static thread_local int64_t var##count;                                \
+    static thread_local int64_t var##min =                                 \
         std::numeric_limits<int64_t>::max();                               \
-    static THREAD_LOCAL int64_t var##max =                                 \
+    static thread_local int64_t var##max =                                 \
         std::numeric_limits<int64_t>::lowest();                            \
     static void STATS_FUNC##var(StatsAccumulator &accum) {                 \
         accum.ReportIntDistribution(title, var##sum, var##count, var##min, \
@@ -168,10 +234,10 @@ class StatsAccumulator {
     static StatRegisterer STATS_REG##var(STATS_FUNC##var)
 
 #define STAT_FLOAT_DISTRIBUTION(title, var)                                   \
-    static THREAD_LOCAL double var##sum;                                      \
-    static THREAD_LOCAL int64_t var##count;                                   \
-    static THREAD_LOCAL double var##min = std::numeric_limits<double>::max(); \
-    static THREAD_LOCAL double var##max =                                     \
+    static thread_local double var##sum;                                      \
+    static thread_local int64_t var##count;                                   \
+    static thread_local double var##min = std::numeric_limits<double>::max(); \
+    static thread_local double var##max =                                     \
         std::numeric_limits<double>::lowest();                                \
     static void STATS_FUNC##var(StatsAccumulator &accum) {                    \
         accum.ReportFloatDistribution(title, var##sum, var##count, var##min,  \
@@ -192,7 +258,7 @@ class StatsAccumulator {
     } while (0)
 
 #define STAT_PERCENT(title, numVar, denomVar)                 \
-    static THREAD_LOCAL int64_t numVar, denomVar;             \
+    static thread_local int64_t numVar, denomVar;             \
     static void STATS_FUNC##numVar(StatsAccumulator &accum) { \
         accum.ReportPercentage(title, numVar, denomVar);      \
         numVar = denomVar = 0;                                \
@@ -200,7 +266,7 @@ class StatsAccumulator {
     static StatRegisterer STATS_REG##numVar(STATS_FUNC##numVar)
 
 #define STAT_RATIO(title, numVar, denomVar)                   \
-    static THREAD_LOCAL int64_t numVar, denomVar;             \
+    static thread_local int64_t numVar, denomVar;             \
     static void STATS_FUNC##numVar(StatsAccumulator &accum) { \
         accum.ReportRatio(title, numVar, denomVar);           \
         numVar = denomVar = 0;                                \
@@ -226,7 +292,7 @@ class StatTimer {
 };
 
 #define STAT_TIMER(title, var)                             \
-    static THREAD_LOCAL uint64_t var;                      \
+    static thread_local uint64_t var;                      \
     static void STATS_FUNC##var(StatsAccumulator &accum) { \
         accum.ReportTimer(title, var);                     \
         var = 0;                                           \

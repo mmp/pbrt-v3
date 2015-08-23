@@ -56,6 +56,7 @@ void PlasticMaterial::ComputeScatteringFunctions(
     Spectrum ks = Ks->Evaluate(*si).Clamp();
     if (!ks.IsBlack()) {
         Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
+        // Create microfacet distribution _distrib_ for plastic material
         Float rough = roughness->Evaluate(*si);
         if (remapRoughness)
             rough = TrowbridgeReitzDistribution::RoughnessToAlpha(rough);
