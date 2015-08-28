@@ -107,11 +107,11 @@ inline bool Refract(const Vector3f &wi, const Normal3f &n, Float eta,
 }
 
 inline bool SameHemisphere(const Vector3f &w, const Vector3f &wp) {
-    return w.z * wp.z > 0.f;
+    return w.z * wp.z > 0;
 }
 
 inline bool SameHemisphere(const Vector3f &w, const Normal3f &wp) {
-    return w.z * wp.z > 0.f;
+    return w.z * wp.z > 0;
 }
 
 // BSDF Declarations
@@ -178,7 +178,7 @@ class BSDF {
     Spectrum rho(const Vector3f &wo, int nSamples, const Point2f *samples,
                  BxDFType flags = BSDF_ALL) const;
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
-                      Float *pdf, BxDFType flags = BSDF_ALL,
+                      Float *pdf, BxDFType type = BSDF_ALL,
                       BxDFType *sampledType = nullptr) const;
     Float Pdf(const Vector3f &wo, const Vector3f &wi,
               BxDFType flags = BSDF_ALL) const;
@@ -288,7 +288,7 @@ class SpecularReflection : public BxDF {
     }
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
                       Float *pdf, BxDFType *sampledType) const;
-    Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0.f; }
+    Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0; }
 
   private:
     // SpecularReflection Private Data
@@ -312,7 +312,7 @@ class SpecularTransmission : public BxDF {
     }
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
                       Float *pdf, BxDFType *sampledType) const;
-    Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0.f; }
+    Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0; }
 
   private:
     // SpecularTransmission Private Data

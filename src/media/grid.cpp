@@ -56,36 +56,33 @@ Float GridDensityMedium::Density(const Point3f &p) const {
 }
 
 Spectrum GridDensityMedium::Tr(const Ray &_ray, Sampler &sampler) const {
-    // Transform the ray into local coordinates and determine overlap interval
-    // [_tMin, tMax_]
-    const Bounds3f dataBounds(Point3f(0.f, 0.f, 0.f), Point3f(1.f, 1.f, 1.f));
-    Ray ray = WorldToMedium(
-        Ray(_ray.o, Normalize(_ray.d), _ray.tMax * _ray.d.Length()));
+    // Transform the ray into local coordinates and find interval [_tMin, tMax_]
+    const Bounds3f dataBounds(Point3f(0, 0, 0), Point3f(1, 1, 1));
+    Ray ray(_ray.o, Normalize(_ray.d), _ray.tMax * _ray.d.Length());
+    ray = WorldToMedium(ray);
     Float tMin, tMax;
     if (!dataBounds.IntersectP(ray, &tMin, &tMax)) return Spectrum(1.f);
     tMin = std::max(tMin, (Float)0);
     tMax = std::min(tMax, ray.tMax);
     if (tMin >= tMax) return Spectrum(1.f);
-    Float tr = 1.f;
+    Float Tr = 1.f;
     // Perform ratio tracking to estimate the transmittance value
     Float t = tMin;
     while (true) {
         t -= std::log(1 - sampler.Get1D()) * invMaxDensity;
         if (t >= tMax) break;
-        Float density = Density(ray(t));
-        tr *= 1.f - std::max((Float)0, sigma_t * density * invMaxDensity);
+        Tr *= 1 - std::max((Float)0, sigma_t * Density(ray(t)) * invMaxDensity);
     }
-    return Spectrum(tr);
+    return Spectrum(Tr);
 }
 
 Spectrum GridDensityMedium::Sample(const Ray &_ray, Sampler &sampler,
                                    MemoryArena &arena,
                                    MediumInteraction *mi) const {
-    // Transform the ray into local coordinates and determine overlap interval
-    // [_tMin, tMax_]
-    const Bounds3f dataBounds(Point3f(0.f, 0.f, 0.f), Point3f(1.f, 1.f, 1.f));
-    Ray ray = WorldToMedium(
-        Ray(_ray.o, Normalize(_ray.d), _ray.tMax * _ray.d.Length()));
+    // Transform the ray into local coordinates and find interval [_tMin, tMax_]
+    const Bounds3f dataBounds(Point3f(0, 0, 0), Point3f(1, 1, 1));
+    Ray ray(_ray.o, Normalize(_ray.d), _ray.tMax * _ray.d.Length());
+    ray = WorldToMedium(ray);
     Float tMin, tMax;
     if (!dataBounds.IntersectP(ray, &tMin, &tMax)) return Spectrum(1.f);
     tMin = std::max(tMin, (Float)0);
@@ -97,15 +94,14 @@ Spectrum GridDensityMedium::Sample(const Ray &_ray, Sampler &sampler,
     while (true) {
         t -= std::log(1 - sampler.Get1D()) * invMaxDensity;
         if (t >= tMax) break;
-        Float density = Density(ray(t));
-        if (density * invMaxDensity * sigma_t > sampler.Get1D()) {
+        if (Density(ray(t)) * invMaxDensity * sigma_t > sampler.Get1D()) {
             // Populate _mi_ with medium interaction information and return
             PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
             *mi = MediumInteraction(_ray(t), -_ray.d, _ray.time, this, phase);
             return sigma_s / sigma_t;
         }
     }
-    return Spectrum(1.0f);
+    return Spectrum(1.);
 }
 
 Float GridDensityMedium::Pdf(const Ray &ray, const Interaction &it) const {

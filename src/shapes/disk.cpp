@@ -123,13 +123,12 @@ Float Disk::Area() const {
 }
 
 Interaction Disk::Sample(const Point2f &u) const {
-    Interaction it;
     Point2f pd = ConcentricSampleDisk(u);
     Point3f pObj(pd.x * radius, pd.y * radius, height);
+    Interaction it;
     it.n = Normalize((*ObjectToWorld)(Normal3f(0, 0, 1)));
-    if (reverseOrientation) it.n *= -1.f;
-    Vector3f pObjError(0, 0, 0);
-    it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+    if (reverseOrientation) it.n *= -1;
+    it.p = (*ObjectToWorld)(pObj, Vector3f(0, 0, 0), &it.pError);
     return it;
 }
 

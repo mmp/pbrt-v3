@@ -142,13 +142,13 @@ Float BeamDiffusionSS(Float sig_s, Float sig_a, Float g, Float eta, Float r) {
 }
 
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
-    // Choose radius values of the diffusion profile disretization
+    // Choose radius values of the diffusion profile discretization
     t->radiusSamples[0] = 0;
     t->radiusSamples[1] = 2.5e-3f;
     for (int i = 2; i < t->nRadiusSamples; ++i)
         t->radiusSamples[i] = t->radiusSamples[i - 1] * 1.2f;
 
-    // Choose albedo values of the diffusion profile disretization
+    // Choose albedo values of the diffusion profile discretization
     for (int i = 0; i < t->nRhoSamples; ++i)
         t->rhoSamples[i] =
             (1 - std::exp(-8 * i / (Float)(t->nRhoSamples - 1))) /
@@ -174,14 +174,14 @@ void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
     }, t->nRhoSamples);
 }
 
-void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &Kd,
-                           const Spectrum &sigma_t, Spectrum *sigma_a,
+void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &rhoEff,
+                           const Spectrum &mfp, Spectrum *sigma_a,
                            Spectrum *sigma_s) {
     for (int c = 0; c < Spectrum::nSamples; ++c) {
         Float rho = InvertCatmullRom(table.nRhoSamples, table.rhoSamples.get(),
-                                     table.rhoEff.get(), Kd[c]);
-        (*sigma_s)[c] = rho * sigma_t[c];
-        (*sigma_a)[c] = (1 - rho) * sigma_t[c];
+                                     table.rhoEff.get(), rhoEff[c]);
+        (*sigma_s)[c] = rho / mfp[c];
+        (*sigma_a)[c] = (1 - rho) / mfp[c];
     }
 }
 

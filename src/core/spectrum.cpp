@@ -180,7 +180,7 @@ Float InterpolateSpectrumSamples(const Float *lambda, const Float *vals, int n,
     for (int i = 0; i < n - 1; ++i) Assert(lambda[i + 1] > lambda[i]);
     if (l <= lambda[0]) return vals[0];
     if (l >= lambda[n - 1]) return vals[n - 1];
-    int offset = FindInterval(n, [&](int index) { return l >= lambda[index]; });
+    int offset = FindInterval(n, [&](int index) { return lambda[index] <= l; });
     Assert(l >= lambda[offset] && l <= lambda[offset + 1]);
     Float t = (l - lambda[offset]) / (lambda[offset + 1] - lambda[offset]);
     return Lerp(t, vals[offset], vals[offset + 1]);

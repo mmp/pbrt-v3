@@ -60,16 +60,15 @@ class GridDensityMedium : public Medium {
           density(new Float[nx * ny * nz]) {
         memcpy((Float *)density.get(), d, sizeof(Float) * nx * ny * nz);
         // Precompute values for Monte Carlo sampling of _GridDensityMedium_
-        Spectrum extinction = sigma_s + sigma_a;
-        if (Spectrum(extinction[0]) != extinction)
+        sigma_t = (sigma_a + sigma_s)[0];
+        if (Spectrum(sigma_t) != sigma_a + sigma_s)
             Error(
-                "The heterogeneous medium requires a spectrally uniform "
-                "extinction coefficient!");
-        sigma_t = extinction[0];
-        Float maxDensity = 0.f;
+                "GridDensityMedium requires a spectrally uniform extinction "
+                "coefficient!");
+        Float maxDensity = 0;
         for (int i = 0; i < nx * ny * nz; ++i)
             maxDensity = std::max(maxDensity, density[i]);
-        invMaxDensity = 1.f / (maxDensity * sigma_t);
+        invMaxDensity = 1 / (maxDensity * sigma_t);
     }
 
     Float Density(const Point3f &p) const;

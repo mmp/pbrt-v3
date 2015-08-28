@@ -186,7 +186,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
 
                         // Compute BSDF at SPPM camera ray intersection
                         isect.ComputeScatteringFunctions(ray, arena, true);
-                        if (isect.bsdf == nullptr) {
+                        if (!isect.bsdf) {
                             ray = isect.SpawnRay(ray.d);
                             --depth;
                             continue;
@@ -199,8 +199,8 @@ void SPPMIntegrator::Render(const Scene &scene) {
                         if (depth == 0 || specularBounce)
                             pixel.Ld += beta * isect.Le(wo);
                         pixel.Ld +=
-                            beta * UniformSampleOneLight(isect, scene,
-                                                         *tileSampler, arena);
+                            beta * UniformSampleOneLight(isect, scene, arena,
+                                                         *tileSampler);
 
                         // Possibly create visible point and end camera path
                         bool isDiffuse = bsdf.NumComponents(BxDFType(
@@ -322,13 +322,11 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 const std::shared_ptr<Light> &light = scene.lights[lightNum];
 
                 // Compute sample values for photon ray leaving light source
-                Point2f lightSample0(
-                    RadicalInverse(haltonDim, haltonIndex),
-                    RadicalInverse(haltonDim + 1, haltonIndex));
-                Point2f lightSample1(
-                    RadicalInverse(haltonDim + 2, haltonIndex),
-                    RadicalInverse(haltonDim + 3, haltonIndex));
-                Float lightSampleTime =
+                Point2f uLight0(RadicalInverse(haltonDim, haltonIndex),
+                                RadicalInverse(haltonDim + 1, haltonIndex));
+                Point2f uLight1(RadicalInverse(haltonDim + 2, haltonIndex),
+                                RadicalInverse(haltonDim + 3, haltonIndex));
+                Float uLightTime =
                     Lerp(RadicalInverse(haltonDim + 4, haltonIndex),
                          camera->shutterOpen, camera->shutterClose);
                 haltonDim += 5;
@@ -337,9 +335,9 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 RayDifferential photonRay;
                 Normal3f Nl;
                 Float pdfPos, pdfDir;
-                Spectrum Le = light->Sample_Le(lightSample0, lightSample1,
-                                               lightSampleTime, &photonRay, &Nl,
-                                               &pdfPos, &pdfDir);
+                Spectrum Le =
+                    light->Sample_Le(uLight0, uLight1, uLightTime, &photonRay,
+                                     &Nl, &pdfPos, &pdfDir);
                 if (pdfPos == 0 || pdfDir == 0 || Le.IsBlack()) return;
                 Spectrum beta = (AbsDot(Nl, photonRay.d) * Le) /
                                 (lightPdf * pdfPos * pdfDir);
@@ -383,7 +381,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     // Compute BSDF at photon intersection point
                     isect.ComputeScatteringFunctions(photonRay, arena, true,
                                                      TransportMode::Importance);
-                    if (isect.bsdf == nullptr) {
+                    if (!isect.bsdf) {
                         --depth;
                         photonRay = isect.SpawnRay(photonRay.d);
                         continue;

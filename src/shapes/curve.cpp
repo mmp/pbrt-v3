@@ -331,7 +331,7 @@ std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,
 
     int sd = params.FindOneFloat("splitdepth", 2);
 
-    if (type == CurveType::Ribbon && n == nullptr) {
+    if (type == CurveType::Ribbon && !n) {
         Error(
             "Must provide normals \"N\" at curve endpoints with ribbon "
             "curves.");

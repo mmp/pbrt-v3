@@ -101,107 +101,107 @@ bool CatmullRomWeights(int size, const Float *nodes, Float x, int *offset,
     return true;
 }
 
-Float SampleCatmullRom(int size, const Float *nodes, const Float *values,
-                       const Float *cdf, Float sample, Float *fval,
-                       Float *pdf) {
-    // Map _sample_ to a spline interval by inverting _cdf_
-    Float maximum = cdf[size - 1];
-    sample *= maximum;
-    int idx = FindInterval(size, [&](int i) { return cdf[i] <= sample; });
+Float SampleCatmullRom(int n, const Float *x, const Float *values,
+                       const Float *F, Float u, Float *fval, Float *pdf) {
+    // Map _u_ to a spline interval by inverting _F_
+    Float maximum = F[n - 1];
+    u *= maximum;
+    int i = FindInterval(n, [&](int i) { return F[i] <= u; });
 
-    // Look up node positions and function values
-    Float x0 = nodes[idx], x1 = nodes[idx + 1], f0 = values[idx],
-          f1 = values[idx + 1], width = x1 - x0;
+    // Look up $x_i$ and function values of spline segment _i_
+    Float x0 = x[i], x1 = x[i + 1];
+    Float f0 = values[i], f1 = values[i + 1];
+    Float width = x1 - x0;
 
     // Approximate derivatives using finite differences
     Float d0, d1;
-    if (idx > 0)
-        d0 = width * (f1 - values[idx - 1]) / (x1 - nodes[idx - 1]);
+    if (i > 0)
+        d0 = width * (f1 - values[i - 1]) / (x1 - x[i - 1]);
     else
         d0 = f1 - f0;
-    if (idx + 2 < size)
-        d1 = width * (values[idx + 2] - f0) / (nodes[idx + 2] - x0);
+    if (i + 2 < n)
+        d1 = width * (values[i + 2] - f0) / (x[i + 2] - x0);
     else
         d1 = f1 - f0;
 
-    // Re-scale _sample_
-    sample = (sample - cdf[idx]) / width;
+    // Re-scale _u_ for continous spline sampling step
+    u = (u - F[i]) / width;
 
     // Invert definite integral over spline segment and return solution
 
     // Set initial guess for $t$ by importance sampling a linear interpolant
     Float t;
     if (f0 != f1)
-        t = (f0 - std::sqrt(
-                      std::max((Float).0f, f0 * f0 + 2 * sample * (f1 - f0)))) /
+        t = (f0 - std::sqrt(std::max((Float)0, f0 * f0 + 2 * u * (f1 - f0)))) /
             (f0 - f1);
     else
-        t = sample / f0;
-    Float a = 0.f, b = 1.f, value, deriv;
+        t = u / f0;
+    Float a = 0, b = 1, Fhat, fhat;
     while (true) {
         // Fall back to a bisection step when _t_ is out of bounds
         if (!(t >= a && t <= b)) t = 0.5f * (a + b);
 
         // Evaluate target function and its derivative in Horner form
-        value = t * (f0 +
-                     t * (.5f * d0 +
-                          t * ((1.f / 3.f) * (-2.f * d0 - d1) + f1 - f0 +
-                               t * (.25f * (d0 + d1) + .5f * (f0 - f1))))) -
-                sample;
-        deriv = f0 +
-                t * (d0 +
-                     t * (-2.f * d0 - d1 + 3.f * (f1 - f0) +
-                          t * (d0 + d1 + 2.f * (f0 - f1))));
+        Fhat = t * (f0 +
+                    t * (.5f * d0 +
+                         t * ((1.f / 3.f) * (-2 * d0 - d1) + f1 - f0 +
+                              t * (.25f * (d0 + d1) + .5f * (f0 - f1)))));
+        fhat = f0 +
+               t * (d0 +
+                    t * (-2 * d0 - d1 + 3 * (f1 - f0) +
+                         t * (d0 + d1 + 2 * (f0 - f1))));
 
         // Stop the iteration if converged
-        if (std::abs(value) < 1e-6f || b - a < 1e-6f) break;
+        if (std::abs(Fhat - u) < 1e-6f || b - a < 1e-6f) break;
 
-        // Update bisection bounds
-        if (value > 0)
-            b = t;
-        else
+        // Update bisection bounds using updated _t_
+        if (Fhat - u < 0)
             a = t;
+        else
+            b = t;
 
         // Perform a Newton step
-        t -= value / deriv;
+        t -= (Fhat - u) / fhat;
     }
 
     // Return the sample position and function value
-    if (fval) *fval = deriv;
-    if (pdf) *pdf = deriv / maximum;
+    if (fval) *fval = fhat;
+    if (pdf) *pdf = fhat / maximum;
     return x0 + width * t;
 }
 
 Float SampleCatmullRom2D(int size1, int size2, const Float *nodes1,
                          const Float *nodes2, const Float *values,
-                         const Float *cdf, Float alpha, Float sample,
-                         Float *fval, Float *pdf) {
+                         const Float *cdf, Float alpha, Float u, Float *fval,
+                         Float *pdf) {
     // Determine offset and coefficients for the _alpha_ parameter
     int offset;
     Float weights[4];
-    if (!CatmullRomWeights(size1, nodes1, alpha, &offset, weights)) return 0.f;
+    if (!CatmullRomWeights(size1, nodes1, alpha, &offset, weights)) return 0;
 
     // Define a lambda function to interpolate table entries
     auto interpolate = [&](const Float *array, int idx) {
-        Float value = 0.0f;
+        Float value = 0;
         for (int i = 0; i < 4; ++i)
-            if (weights[i] != 0.f)
+            if (weights[i] != 0)
                 value += array[(offset + i) * size2 + idx] * weights[i];
         return value;
     };
 
-    // Map _sample_ to a spline interval by inverting the interpolated _cdf_
+    // Map _u_ to a spline interval by inverting the interpolated _cdf_
     Float maximum = interpolate(cdf, size2 - 1);
-    sample *= maximum;
-    int idx = FindInterval(
-        size2, [&](int i) { return interpolate(cdf, i) <= sample; });
+    u *= maximum;
+    int idx =
+        FindInterval(size2, [&](int i) { return interpolate(cdf, i) <= u; });
 
     // Look up node positions and interpolated function values
-    Float f0 = interpolate(values, idx), f1 = interpolate(values, idx + 1),
-          x0 = nodes2[idx], x1 = nodes2[idx + 1], width = x1 - x0, d0, d1;
+    Float f0 = interpolate(values, idx), f1 = interpolate(values, idx + 1);
+    Float x0 = nodes2[idx], x1 = nodes2[idx + 1];
+    Float width = x1 - x0;
+    Float d0, d1;
 
-    // Re-scale _sample_ using the interpolated _cdf_
-    sample = (sample - interpolate(cdf, idx)) / width;
+    // Re-scale _u_ using the interpolated _cdf_
+    u = (u - interpolate(cdf, idx)) / width;
 
     // Approximate derivatives using finite differences of the interpolant
     if (idx > 0)
@@ -220,102 +220,101 @@ Float SampleCatmullRom2D(int size1, int size2, const Float *nodes1,
     // Set initial guess for $t$ by importance sampling a linear interpolant
     Float t;
     if (f0 != f1)
-        t = (f0 - std::sqrt(
-                      std::max((Float).0f, f0 * f0 + 2 * sample * (f1 - f0)))) /
+        t = (f0 - std::sqrt(std::max((Float)0, f0 * f0 + 2 * u * (f1 - f0)))) /
             (f0 - f1);
     else
-        t = sample / f0;
-    Float a = 0.f, b = 1.f, value, deriv;
+        t = u / f0;
+    Float a = 0, b = 1, Fhat, fhat;
     while (true) {
         // Fall back to a bisection step when _t_ is out of bounds
         if (!(t >= a && t <= b)) t = 0.5f * (a + b);
 
         // Evaluate target function and its derivative in Horner form
-        value = t * (f0 +
-                     t * (.5f * d0 +
-                          t * ((1.f / 3.f) * (-2.f * d0 - d1) + f1 - f0 +
-                               t * (.25f * (d0 + d1) + .5f * (f0 - f1))))) -
-                sample;
-        deriv = f0 +
-                t * (d0 +
-                     t * (-2.f * d0 - d1 + 3.f * (f1 - f0) +
-                          t * (d0 + d1 + 2.f * (f0 - f1))));
+        Fhat = t * (f0 +
+                    t * (.5f * d0 +
+                         t * ((1.f / 3.f) * (-2 * d0 - d1) + f1 - f0 +
+                              t * (.25f * (d0 + d1) + .5f * (f0 - f1)))));
+        fhat = f0 +
+               t * (d0 +
+                    t * (-2 * d0 - d1 + 3 * (f1 - f0) +
+                         t * (d0 + d1 + 2 * (f0 - f1))));
 
         // Stop the iteration if converged
-        if (std::abs(value) < 1e-6f || b - a < 1e-6f) break;
+        if (std::abs(Fhat - u) < 1e-6f || b - a < 1e-6f) break;
 
-        // Update bisection bounds
-        if (value > 0)
-            b = t;
-        else
+        // Update bisection bounds using updated _t_
+        if (Fhat - u < 0)
             a = t;
+        else
+            b = t;
 
         // Perform a Newton step
-        t -= value / deriv;
+        t -= (Fhat - u) / fhat;
     }
 
     // Return the sample position and function value
-    if (fval) *fval = deriv;
-    if (pdf) *pdf = deriv / maximum;
+    if (fval) *fval = fhat;
+    if (pdf) *pdf = fhat / maximum;
     return x0 + width * t;
 }
 
-Float IntegrateCatmullRom(int size, const Float *nodes, const Float *values,
+Float IntegrateCatmullRom(int n, const Float *x, const Float *values,
                           Float *cdf) {
     Float sum = 0.f;
     cdf[0] = 0.f;
-    for (int idx = 0; idx < size - 1; ++idx) {
-        // Look up node positions and function values
-        Float x0 = nodes[idx], x1 = nodes[idx + 1], f0 = values[idx],
-              f1 = values[idx + 1], width = x1 - x0;
+    for (int i = 0; i < n - 1; ++i) {
+        // Look up $x_i$ and function values of spline segment _i_
+        Float x0 = x[i], x1 = x[i + 1];
+        Float f0 = values[i], f1 = values[i + 1];
+        Float width = x1 - x0;
 
         // Approximate derivatives using finite differences
         Float d0, d1;
-        if (idx > 0)
-            d0 = width * (f1 - values[idx - 1]) / (x1 - nodes[idx - 1]);
+        if (i > 0)
+            d0 = width * (f1 - values[i - 1]) / (x1 - x[i - 1]);
         else
             d0 = f1 - f0;
-        if (idx + 2 < size)
-            d1 = width * (values[idx + 2] - f0) / (nodes[idx + 2] - x0);
+        if (i + 2 < n)
+            d1 = width * (values[i + 2] - f0) / (x[i + 2] - x0);
         else
             d1 = f1 - f0;
 
         // Keep a running sum and build a cumulative distribution function
         sum += ((d0 - d1) * (1.f / 12.f) + (f0 + f1) * .5f) * width;
-        cdf[idx + 1] = sum;
+        cdf[i + 1] = sum;
     }
     return sum;
 }
 
-Float InvertCatmullRom(int size, const Float *nodes, const Float *values,
-                       Float y) {
-    // Stop when _y_ is out of bounds
-    if (!(y > values[0]))
-        return nodes[0];
-    else if (!(y < values[size - 1]))
-        return nodes[size - 1];
+Float InvertCatmullRom(int n, const Float *x, const Float *values, Float u) {
+    // Stop when _u_ is out of bounds
+    if (!(u > values[0]))
+        return x[0];
+    else if (!(u < values[n - 1]))
+        return x[n - 1];
 
     // Map _y_ to a spline interval by inverting _values_
-    int idx = FindInterval(size, [&](int i) { return values[i] <= y; });
+    int i = FindInterval(n, [&](int i) { return values[i] <= u; });
 
-    // Look up node positions and function values
-    Float x0 = nodes[idx], x1 = nodes[idx + 1], f0 = values[idx],
-          f1 = values[idx + 1], width = x1 - x0;
+    // Look up $x_i$ and function values of spline segment _i_
+    Float x0 = x[i], x1 = x[i + 1];
+    Float f0 = values[i], f1 = values[i + 1];
+    Float width = x1 - x0;
 
     // Approximate derivatives using finite differences
     Float d0, d1;
-    if (idx > 0)
-        d0 = width * (f1 - values[idx - 1]) / (x1 - nodes[idx - 1]);
+    if (i > 0)
+        d0 = width * (f1 - values[i - 1]) / (x1 - x[i - 1]);
     else
         d0 = f1 - f0;
-    if (idx + 2 < size)
-        d1 = width * (values[idx + 2] - f0) / (nodes[idx + 2] - x0);
+    if (i + 2 < n)
+        d1 = width * (values[i + 2] - f0) / (x[i + 2] - x0);
     else
         d1 = f1 - f0;
 
     // Invert the spline interpolant using Newton-Bisection
-    Float a = 0.f, b = 1.f, t = .5f;
-    Float value, deriv;
+    Float a = 0, b = 1, t = .5f;
+    Float Fhat, fhat;
     while (true) {
         // Fall back to a bisection step when _t_ is out of bounds
         if (!(t >= a && t <= b)) t = 0.5f * (a + b);
@@ -323,25 +322,25 @@ Float InvertCatmullRom(int size, const Float *nodes, const Float *values,
         // Compute powers of _t_
         Float t2 = t * t, t3 = t2 * t;
 
-        // Set _value_ using Equation (\ref{eq:cubicspline-as-basisfunctions})
-        value = (2 * t3 - 3 * t2 + 1) * f0 + (-2 * t3 + 3 * t2) * f1 +
-                (t3 - 2 * t2 + t) * d0 + (t3 - t2) * d1;
+        // Set _F_ using Equation (\ref{eq:cubicspline-as-basisfunctions})
+        Fhat = (2 * t3 - 3 * t2 + 1) * f0 + (-2 * t3 + 3 * t2) * f1 +
+               (t3 - 2 * t2 + t) * d0 + (t3 - t2) * d1;
 
-        // Set _deriv_ using Equation (\ref{eq:cubicspline-derivative})
-        deriv = (6 * t2 - 6 * t) * f0 + (-6 * t2 + 6 * t) * f1 +
-                (3 * t2 - 4 * t + 1) * d0 + (3 * t2 - 2 * t) * d1;
-        value -= y;
+        // Set _f_ using Equation (\ref{eq:cubicspline-derivative})
+        fhat = (6 * t2 - 6 * t) * f0 + (-6 * t2 + 6 * t) * f1 +
+               (3 * t2 - 4 * t + 1) * d0 + (3 * t2 - 2 * t) * d1;
+
         // Stop the iteration if converged
-        if (std::abs(value) < 1e-6f || b - a < 1e-6f) break;
+        if (std::abs(Fhat - u) < 1e-6f || b - a < 1e-6f) break;
 
-        // Update bisection bounds
-        if (value > 0)
-            b = t;
-        else
+        // Update bisection bounds using updated _t_
+        if (Fhat - u < 0)
             a = t;
+        else
+            b = t;
 
         // Perform a Newton step
-        t -= value / deriv;
+        t -= (Fhat - u) / fhat;
     }
     return x0 + t * width;
 }
@@ -362,62 +361,61 @@ Float Fourier(const Float *a, int m, double cosPhi) {
     return value;
 }
 
-Float SampleFourier(const Float *coeffs, const Float *recip, int nCoeffs,
-                    Float sample, Float *pdf, Float *phi) {
+Float SampleFourier(const Float *ak, const Float *recip, int m, Float u,
+                    Float *pdf, Float *phiPtr) {
     // Pick a side and declare bisection variables
-    bool flip = false;
-    if (sample < .5f)
-        sample *= 2.f;
-    else {
-        sample = 1.f - 2.f * (sample - .5f);
-        flip = true;
-    }
-    double a = 0.0, b = Pi, t = 0.5 * Pi;
-    double value, deriv;
+    bool flip = (u >= 0.5);
+    if (flip)
+        u = 1 - 2 * (u - .5f);
+    else
+        u *= 2;
+    double a = 0, b = Pi, phi = 0.5 * Pi;
+    double F, f;
     while (true) {
-        // Evaluate $F(t)$ and its derivative
+        // Evaluate $F(\phi)$ and its derivative $f(\phi)$
 
         // Initialize sine and cosine iterates
-        double cosT = std::cos(t), sinT = std::sqrt(1 - cosT * cosT),
-               cosTPrev = cosT, cosTCur = 1.0, sinTPrev = -sinT, sinTCur = 0.0;
+        double cosPhi = std::cos(phi);
+        double sinPhi = std::sqrt(1 - cosPhi * cosPhi);
+        double cosPhiPrev = cosPhi, cosPhiCur = 1;
+        double sinPhiPrev = -sinPhi, sinPhiCur = 0;
 
-        // Initialize _mono_ and _deriv_ with the first series term
-        value = coeffs[0] * t;
-        deriv = coeffs[0];
-        for (int j = 1; j < nCoeffs; ++j) {
+        // Initialize _F_ and _f_ with the first series term
+        F = ak[0] * phi;
+        f = ak[0];
+        for (int j = 1; j < m; ++j) {
             // Compute next sine and cosine iterates
-            double sinT_next = 2 * cosT * sinTCur - sinTPrev,
-                   cosT_next = 2 * cosT * cosTCur - cosTPrev;
-            sinTPrev = sinTCur;
-            sinTCur = sinT_next;
-            cosTPrev = cosTCur;
-            cosTCur = cosT_next;
+            double sinPhiNext = 2 * cosPhi * sinPhiCur - sinPhiPrev;
+            double cosPhiNext = 2 * cosPhi * cosPhiCur - cosPhiPrev;
+            sinPhiPrev = sinPhiCur;
+            sinPhiCur = sinPhiNext;
+            cosPhiPrev = cosPhiCur;
+            cosPhiCur = cosPhiNext;
 
-            // Add the next series term to _value_ and _deriv_
-            double coeff = coeffs[j];
-            value += coeff * recip[j] * sinT_next;
-            deriv += coeff * cosT_next;
+            // Add the next series term to _F_ and _f_
+            F += ak[j] * recip[j] * sinPhiNext;
+            f += ak[j] * cosPhiNext;
         }
-        value -= coeffs[0] * Pi * sample;
+        F -= u * ak[0] * Pi;
 
-        // Update bisection bounds
-        if (value > 0)
-            b = t;
+        // Update bisection bounds using updated $\phi$
+        if (F > 0)
+            b = phi;
         else
-            a = t;
+            a = phi;
 
-        // Stop the iteration if converged
-        if (std::abs(value) < 1e-6f || b - a < 1e-6f) break;
+        // Stop the Fourier bisection iteration if converged
+        if (std::abs(F) < 1e-6f || b - a < 1e-6f) break;
 
-        // Perform a Newton step
-        t -= value / deriv;
+        // Perform a Newton step given $f(\phi)$ and $F(\phi)$
+        phi -= F / f;
 
-        // Fall back to a bisection step when _t_ is out of bounds
-        if (!(t >= a && t <= b)) t = 0.5f * (a + b);
+        // Fall back to a bisection step when $\phi$ is out of bounds
+        if (!(phi >= a && phi <= b)) phi = 0.5f * (a + b);
     }
-    // Potentially flip _t_ and return the result
-    if (flip) t = 2 * Pi - t;
-    *pdf = (Float)(Inv2Pi * deriv / coeffs[0]);
-    *phi = (Float)t;
-    return deriv;
+    // Potentially flip $\phi$ and return the result
+    if (flip) phi = 2 * Pi - phi;
+    *pdf = (Float)(Inv2Pi * f / ak[0]);
+    *phiPtr = (Float)phi;
+    return f;
 }

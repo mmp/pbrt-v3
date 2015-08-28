@@ -42,13 +42,15 @@
 void DirectLightingIntegrator::Preprocess(const Scene &scene,
                                           Sampler &sampler) {
     if (strategy == LightStrategy::UniformSampleAll) {
+        // Compute number of samples to use for each light
+        for (const auto &light : scene.lights)
+            nLightSamples.push_back(sampler.RoundCount(light->nSamples));
+
         // Request samples for sampling all lights
         for (int i = 0; i < maxDepth; ++i) {
-            for (const auto &light : scene.lights) {
-                int nSamples = sampler.RoundCount(light->nSamples);
-                sampler.Request2DArray(nSamples);
-                sampler.Request2DArray(nSamples);
-                if (i == 0) nLightSamples.push_back(nSamples);
+            for (size_t j = 0; j < scene.lights.size(); ++j) {
+                sampler.Request2DArray(nLightSamples[j]);
+                sampler.Request2DArray(nLightSamples[j]);
             }
         }
     }
@@ -74,10 +76,10 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
     if (scene.lights.size() > 0) {
         // Compute direct lighting for _DirectLightingIntegrator_ integrator
         if (strategy == LightStrategy::UniformSampleAll)
-            L += UniformSampleAllLights(isect, scene, sampler, nLightSamples,
-                                        arena);
+            L += UniformSampleAllLights(isect, scene, arena, sampler,
+                                        nLightSamples);
         else
-            L += UniformSampleOneLight(isect, scene, sampler, arena);
+            L += UniformSampleOneLight(isect, scene, arena, sampler);
     }
     if (depth + 1 < maxDepth) {
         Vector3f wi;

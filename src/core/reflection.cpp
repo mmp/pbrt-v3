@@ -259,7 +259,7 @@ Spectrum KajiyaKay::f(const Vector3f &wo, const Vector3f &wi) const {
 
 Spectrum FourierBSDF::f(const Vector3f &wo, const Vector3f &wi) const {
     // Find the zenith angle cosines and azimuth difference angle
-    Float cosThetaI = CosTheta(-wi), cosThetaO = CosTheta(wo);
+    Float muI = CosTheta(-wi), muO = CosTheta(wo);
     Float cosPhi = CosDPhi(-wi, wo);
 
     // Compute Fourier coefficients $a_k$ for $(\mui, \muo)$
@@ -267,8 +267,8 @@ Spectrum FourierBSDF::f(const Vector3f &wo, const Vector3f &wi) const {
     // Determine offsets and weights for $\mui$ and $\muo$
     int offsetI, offsetO;
     Float weightsI[4], weightsO[4];
-    if (!bsdfTable.GetWeightsAndOffset(cosThetaI, &offsetI, weightsI) ||
-        !bsdfTable.GetWeightsAndOffset(cosThetaO, &offsetO, weightsO))
+    if (!bsdfTable.GetWeightsAndOffset(muI, &offsetI, weightsI) ||
+        !bsdfTable.GetWeightsAndOffset(muO, &offsetO, weightsO))
         return Spectrum(0.f);
 
     // Allocate storage to accumulate _ak_ coefficients
@@ -294,11 +294,11 @@ Spectrum FourierBSDF::f(const Vector3f &wo, const Vector3f &wi) const {
 
     // Evaluate Fourier expansion for angle $\phi$
     Float Y = std::max((Float)0, Fourier(ak, mMax, cosPhi));
-    Float scale = cosThetaI != 0 ? (1 / std::abs(cosThetaI)) : (Float)0;
+    Float scale = muI != 0 ? (1 / std::abs(muI)) : (Float)0;
 
     // Update _scale_ to account for adjoint light transport
-    if (mode == TransportMode::Radiance && cosThetaI * cosThetaO > 0) {
-        float eta = cosThetaI > 0 ? 1 / bsdfTable.eta : bsdfTable.eta;
+    if (mode == TransportMode::Radiance && muI * muO > 0) {
+        float eta = muI > 0 ? 1 / bsdfTable.eta : bsdfTable.eta;
         scale *= eta * eta;
     }
     if (bsdfTable.nChannels == 1)
@@ -322,42 +322,44 @@ Spectrum BxDF::Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                         Float *pdf, BxDFType *sampledType) const {
     // Cosine-sample the hemisphere, flipping the direction if necessary
     *wi = CosineSampleHemisphere(u);
-    if (wo.z < 0.) wi->z *= -1.f;
+    if (wo.z < 0) wi->z *= -1;
     *pdf = Pdf(wo, *wi);
     return f(wo, *wi);
 }
 
 Float BxDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
-    return SameHemisphere(wo, wi) ? AbsCosTheta(wi) * InvPi : 0.f;
+    return SameHemisphere(wo, wi) ? AbsCosTheta(wi) * InvPi : 0;
 }
 
 Spectrum LambertianTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
                                           const Point2f &u, Float *pdf,
                                           BxDFType *sampledType) const {
     *wi = CosineSampleHemisphere(u);
-    if (wo.z > 0.f) wi->z *= -1.f;
+    if (wo.z > 0) wi->z *= -1;
     *pdf = Pdf(wo, *wi);
     return f(wo, *wi);
 }
 
 Float LambertianTransmission::Pdf(const Vector3f &wo,
                                   const Vector3f &wi) const {
-    return !SameHemisphere(wo, wi) ? AbsCosTheta(wi) * InvPi : 0.f;
+    return !SameHemisphere(wo, wi) ? AbsCosTheta(wi) * InvPi : 0;
 }
 
 Spectrum MicrofacetReflection::Sample_f(const Vector3f &wo, Vector3f *wi,
                                         const Point2f &u, Float *pdf,
                                         BxDFType *sampledType) const {
+    // Sample microfacet orientation $\wh$ and reflected direction $\wi$
     Vector3f wh = distribution->Sample_wh(wo, u);
     *wi = Reflect(wo, wh);
     if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
+
     // Compute PDF of _wi_ for microfacet reflection
     *pdf = distribution->Pdf(wo, wh) / (4 * Dot(wo, wh));
     return f(wo, *wi);
 }
 
 Float MicrofacetReflection::Pdf(const Vector3f &wo, const Vector3f &wi) const {
-    if (!SameHemisphere(wo, wi)) return 0.f;
+    if (!SameHemisphere(wo, wi)) return 0;
     Vector3f wh = Normalize(wo + wi);
     return distribution->Pdf(wo, wh) / (4 * Dot(wo, wh));
 }
@@ -374,7 +376,7 @@ Spectrum MicrofacetTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
 
 Float MicrofacetTransmission::Pdf(const Vector3f &wo,
                                   const Vector3f &wi) const {
-    if (SameHemisphere(wo, wi)) return 0.f;
+    if (SameHemisphere(wo, wi)) return 0;
     // Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
     Float eta = CosTheta(wo) > 0 ? (etaB / etaA) : (etaA / etaB);
     Vector3f wh = Normalize(wo + wi * eta);
@@ -394,9 +396,10 @@ Spectrum FresnelBlend::Sample_f(const Vector3f &wo, Vector3f *wi,
         u[0] = 2 * u[0];
         // Cosine-sample the hemisphere, flipping the direction if necessary
         *wi = CosineSampleHemisphere(u);
-        if (wo.z < 0.) wi->z *= -1.f;
+        if (wo.z < 0) wi->z *= -1;
     } else {
         u[0] = 2 * (u[0] - .5f);
+        // Sample microfacet orientation $\wh$ and reflected direction $\wi$
         Vector3f wh = distribution->Sample_wh(wo, u);
         *wi = Reflect(wo, wh);
         if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
@@ -406,7 +409,7 @@ Spectrum FresnelBlend::Sample_f(const Vector3f &wo, Vector3f *wi,
 }
 
 Float FresnelBlend::Pdf(const Vector3f &wo, const Vector3f &wi) const {
-    if (!SameHemisphere(wo, wi)) return 0.f;
+    if (!SameHemisphere(wo, wi)) return 0;
     Vector3f wh = Normalize(wo + wi);
     Float pdf_wh = distribution->Pdf(wo, wh);
     return .5f * (AbsCosTheta(wi) * InvPi + pdf_wh / (4 * Dot(wo, wh)));
@@ -452,19 +455,19 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
                                const Point2f &u, Float *pdf,
                                BxDFType *sampledType) const {
     // Sample zenith angle component for _FourierBSDF_
-    Float cosThetaO = CosTheta(wo);
+    Float muO = CosTheta(wo);
     Float pdfMu;
-    Float cosThetaI = SampleCatmullRom2D(
-        bsdfTable.nMu, bsdfTable.nMu, bsdfTable.mu, bsdfTable.mu, bsdfTable.avg,
-        bsdfTable.cdf, cosThetaO, u[1], nullptr, &pdfMu);
+    Float muI = SampleCatmullRom2D(bsdfTable.nMu, bsdfTable.nMu, bsdfTable.mu,
+                                   bsdfTable.mu, bsdfTable.avg, bsdfTable.cdf,
+                                   muO, u[1], nullptr, &pdfMu);
 
     // Compute Fourier coefficients $a_k$ for $(\mui, \muo)$
 
     // Determine offsets and weights for $\mui$ and $\muo$
     int offsetI, offsetO;
     Float weightsI[4], weightsO[4];
-    if (!bsdfTable.GetWeightsAndOffset(cosThetaI, &offsetI, weightsI) ||
-        !bsdfTable.GetWeightsAndOffset(cosThetaO, &offsetO, weightsO))
+    if (!bsdfTable.GetWeightsAndOffset(muI, &offsetI, weightsI) ||
+        !bsdfTable.GetWeightsAndOffset(muO, &offsetO, weightsO))
         return Spectrum(0.f);
 
     // Allocate storage to accumulate _ak_ coefficients
@@ -494,21 +497,20 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
     *pdf = std::max((Float)0, pdfPhi * pdfMu);
 
     // Compute the scattered direction for _FourierBSDF_
-    Float sin2ThetaI = 1 - cosThetaI * cosThetaI;
+    Float sin2ThetaI = 1 - muI * muI;
     Float norm = std::sqrt(sin2ThetaI / Sin2Theta(wo));
-    Float sinPhiD = std::sin(phi), cosPhiD = std::cos(phi);
-    *wi = -Vector3f(norm * (cosPhiD * wo.x - sinPhiD * wo.y),
-                    norm * (sinPhiD * wo.x + cosPhiD * wo.y), cosThetaI);
+    Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
+    *wi = -Vector3f(norm * (cosPhi * wo.x - sinPhi * wo.y),
+                    norm * (sinPhi * wo.x + cosPhi * wo.y), muI);
 
     // Evaluate remaining Fourier expansions for angle $\phi$
-    Float scale = cosThetaI != 0 ? (1 / std::abs(cosThetaI)) : (Float)0;
-    if (mode == TransportMode::Radiance && cosThetaI * cosThetaO > 0) {
-        float eta = cosThetaI > 0 ? 1 / bsdfTable.eta : bsdfTable.eta;
+    Float scale = muI != 0 ? (1 / std::abs(muI)) : (Float)0;
+    if (mode == TransportMode::Radiance && muI * muO > 0) {
+        float eta = muI > 0 ? 1 / bsdfTable.eta : bsdfTable.eta;
         scale *= eta * eta;
     }
 
     if (bsdfTable.nChannels == 1) return Spectrum(Y * scale);
-    Float cosPhi = std::cos(phi);
     Float R = Fourier(ak + 1 * bsdfTable.mMax, mMax, cosPhi);
     Float B = Fourier(ak + 2 * bsdfTable.mMax, mMax, cosPhi);
     Float G = 1.39829f * Y - 0.100913f * B - 0.297375f * R;
@@ -518,15 +520,15 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
 
 Float FourierBSDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     // Find the zenith angle cosines and azimuth difference angle
-    Float cosThetaI = CosTheta(-wi), cosThetaO = CosTheta(wo);
+    Float muI = CosTheta(-wi), muO = CosTheta(wo);
     Float cosPhi = CosDPhi(-wi, wo);
 
     // Compute luminance Fourier coefficients $a_k$ for $(\mui, \muo)$
     int offsetI, offsetO;
     Float weightsI[4], weightsO[4];
-    if (!bsdfTable.GetWeightsAndOffset(cosThetaI, &offsetI, weightsI) ||
-        !bsdfTable.GetWeightsAndOffset(cosThetaO, &offsetO, weightsO))
-        return 0.f;
+    if (!bsdfTable.GetWeightsAndOffset(muI, &offsetI, weightsI) ||
+        !bsdfTable.GetWeightsAndOffset(muO, &offsetO, weightsO))
+        return 0;
     Float *ak = ALLOCA(Float, bsdfTable.mMax * bsdfTable.nChannels);
     memset(ak, 0, bsdfTable.mMax * bsdfTable.nChannels * sizeof(Float));
     int mMax = 0;
@@ -545,15 +547,16 @@ Float FourierBSDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     }
 
     // Evaluate probability of sampling _wi_
-    Float total = 0;
-    for (int i = 0; i < 4; ++i)
-        if (weightsO[i] != 0)
-            total +=
-                weightsO[i] *
-                bsdfTable
-                    .cdf[(offsetO + i) * bsdfTable.nMu + bsdfTable.nMu - 1];
-    Float value = std::max((Float)0, Fourier(ak, mMax, cosPhi));
-    return total > 0 ? (value / (2 * Pi * total)) : 0;
+    Float rho = 0;
+    for (int o = 0; o < 4; ++o) {
+        if (weightsO[o] == 0) continue;
+        rho +=
+            weightsO[o] *
+            bsdfTable.cdf[(offsetO + o) * bsdfTable.nMu + bsdfTable.nMu - 1] *
+            (2 * Pi);
+    }
+    Float Y = Fourier(ak, mMax, cosPhi);
+    return (rho > 0 && Y > 0) ? (Y / rho) : 0;
 }
 
 Spectrum BxDF::rho(const Vector3f &w, int nSamples, const Point2f *u) const {
@@ -561,11 +564,11 @@ Spectrum BxDF::rho(const Vector3f &w, int nSamples, const Point2f *u) const {
     for (int i = 0; i < nSamples; ++i) {
         // Estimate one term of $\rho_\roman{hd}$
         Vector3f wi;
-        Float pdf = 0.f;
+        Float pdf = 0;
         Spectrum f = Sample_f(w, &wi, u[i], &pdf);
-        if (pdf > 0.f) r += f * AbsCosTheta(wi) / pdf;
+        if (pdf > 0) r += f * AbsCosTheta(wi) / pdf;
     }
-    return r / Float(nSamples);
+    return r / nSamples;
 }
 
 Spectrum BxDF::rho(int nSamples, const Point2f *u1, const Point2f *u2) const {
@@ -615,8 +618,8 @@ Spectrum BSDF::rho(const Vector3f &wo, int nSamples, const Point2f *samples,
     return ret;
 }
 
-Spectrum BSDF::Sample_f(const Vector3f &woW, Vector3f *wiW, const Point2f &u,
-                        Float *pdf, BxDFType type,
+Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
+                        const Point2f &u, Float *pdf, BxDFType type,
                         BxDFType *sampledType) const {
     ProfilePhase pp(Prof::BSDFEvaluation);
     // Choose which _BxDF_ to sample
@@ -639,10 +642,11 @@ Spectrum BSDF::Sample_f(const Vector3f &woW, Vector3f *wiW, const Point2f &u,
         }
     Assert(bxdf);
 
-    // Sample chosen _BxDF_
+    // Remap _BxDF_ sample _u_ to $[0,1)^2$
     Point2f uRemapped(u[0] * matchingComps - comp, u[1]);
-    Vector3f wo = WorldToLocal(woW);
-    Vector3f wi;
+
+    // Sample chosen _BxDF_
+    Vector3f wi, wo = WorldToLocal(woWorld);
     *pdf = 0;
     if (sampledType) *sampledType = bxdf->type;
     Spectrum f = bxdf->Sample_f(wo, &wi, uRemapped, pdf, sampledType);
@@ -650,7 +654,7 @@ Spectrum BSDF::Sample_f(const Vector3f &woW, Vector3f *wiW, const Point2f &u,
         if (sampledType) *sampledType = BxDFType(0);
         return 0;
     }
-    *wiW = LocalToWorld(wi);
+    *wiWorld = LocalToWorld(wi);
 
     // Compute overall PDF with all matching _BxDF_s
     if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1)
@@ -661,7 +665,7 @@ Spectrum BSDF::Sample_f(const Vector3f &woW, Vector3f *wiW, const Point2f &u,
 
     // Compute value of BSDF for sampled direction
     if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
-        bool reflect = Dot(*wiW, ng) * Dot(woW, ng) > 0;
+        bool reflect = Dot(*wiWorld, ng) * Dot(woWorld, ng) > 0;
         f = 0.;
         for (int i = 0; i < nBxDFs; ++i)
             if (bxdfs[i]->MatchesFlags(type) &&
@@ -672,10 +676,10 @@ Spectrum BSDF::Sample_f(const Vector3f &woW, Vector3f *wiW, const Point2f &u,
     return f;
 }
 
-Float BSDF::Pdf(const Vector3f &woW, const Vector3f &wiW,
+Float BSDF::Pdf(const Vector3f &woWorld, const Vector3f &wiWorld,
                 BxDFType flags) const {
     if (nBxDFs == 0.f) return 0.f;
-    Vector3f wo = WorldToLocal(woW), wi = WorldToLocal(wiW);
+    Vector3f wo = WorldToLocal(woWorld), wi = WorldToLocal(wiWorld);
     Float pdf = 0.f;
     int matchingComps = 0;
     for (int i = 0; i < nBxDFs; ++i)

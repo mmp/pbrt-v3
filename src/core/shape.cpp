@@ -53,9 +53,12 @@ Bounds3f Shape::WorldBound() const { return (*ObjectToWorld)(ObjectBound()); }
 
 Float Shape::Pdf(const Interaction &ref, const Vector3f &wi) const {
     // Intersect sample ray with area light geometry
-    SurfaceInteraction isectLight;
     Ray ray = ref.SpawnRay(wi);
     Float tHit;
+    SurfaceInteraction isectLight;
+    // Ignore any alpha textures used for trimming the shape when performing
+    // this intersection. Hack for the "San Miguel" scene, where this is used
+    // to make an invisible area light.
     if (!Intersect(ray, &tHit, &isectLight, false)) return 0;
 
     // Convert light sample weight to solid angle measure

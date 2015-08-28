@@ -49,7 +49,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     RayDifferential ray(r);
     bool specularBounce = false;
     for (int bounces = 0;; ++bounces) {
-        // Store intersection into _isect_
+        // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
 
@@ -62,14 +62,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         if (mi.IsValid()) {
             // Handle medium scattering case
             Vector3f wo = -ray.d, wi;
-            L += beta * UniformSampleOneLight(mi, scene, sampler, arena, true);
+            L += beta * UniformSampleOneLight(mi, scene, arena, sampler, true);
             Point2f phaseSample = sampler.Get2D();
             mi.phase->Sample_p(wo, &wi, phaseSample);
             ray = mi.SpawnRay(wi);
         } else {
             // Handle surface scattering case
 
-            // Possibly add emitted light and terminate
+            // Possibly add emitted light at intersection
             if (bounces == 0 || specularBounce) {
                 // Add emitted light at path vertex or from the environment
                 if (foundIntersection)
@@ -78,6 +78,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                     for (const auto &light : scene.lights)
                         L += beta * light->Le(ray);
             }
+
+            // Terminate path if ray escaped or _maxDepth_ was reached
             if (!foundIntersection || bounces >= maxDepth) break;
 
             // Compute scattering functions and skip over medium boundaries
@@ -91,7 +93,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             // Sample illumination from lights to find attenuated path
             // contribution
             L += beta *
-                 UniformSampleOneLight(isect, scene, sampler, arena, true);
+                 UniformSampleOneLight(isect, scene, arena, sampler, true);
 
             // Sample BSDF to get new path direction
             Vector3f wo = -ray.d, wi;
@@ -120,7 +122,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 // Account for the attenuated direct subsurface scattering
                 // component
                 L += beta *
-                     UniformSampleOneLight(pi, scene, sampler, arena, true);
+                     UniformSampleOneLight(pi, scene, arena, sampler, true);
 
                 // Account for the indirect subsurface scattering component
                 Spectrum f = pi.bsdf->Sample_f(pi.wo, &wi, sampler.Get2D(),
@@ -135,7 +137,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             }
         }
 
-        // Possibly terminate the path
+        // Possibly terminate the path with Russian roulette
         if (bounces > 3) {
             Float continueProbability = std::min((Float).5, beta.y());
             if (sampler.Get1D() > continueProbability) break;

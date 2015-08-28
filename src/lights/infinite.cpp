@@ -92,16 +92,16 @@ Spectrum InfiniteAreaLight::Le(const RayDifferential &ray) const {
     return Spectrum(Lmap->Lookup(st), SpectrumType::Illuminant);
 }
 
-Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref,
-                                      const Point2f &lightSample, Vector3f *wi,
-                                      Float *pdf, VisibilityTester *vis) const {
+Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
+                                      Vector3f *wi, Float *pdf,
+                                      VisibilityTester *vis) const {
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
-    Point2f uv = distribution->SampleContinuous(lightSample, &mapPdf);
+    Point2f uv = distribution->SampleContinuous(u, &mapPdf);
     if (mapPdf == 0) return Spectrum(0.f);
 
     // Convert infinite light sample point to direction
-    Float theta = uv[1] * Pi, phi = uv[0] * 2.f * Pi;
+    Float theta = uv[1] * Pi, phi = uv[0] * 2 * Pi;
     Float cosTheta = std::cos(theta), sinTheta = std::sin(theta);
     Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
     *wi =
@@ -130,11 +130,11 @@ Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                       Float time, Ray *ray, Normal3f *nLight,
                                       Float *pdfPos, Float *pdfDir) const {
     // Compute direction for infinite light sample ray
-    Point2f lightSample = u1;
+    Point2f u = u1;
 
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
-    Point2f uv = distribution->SampleContinuous(lightSample, &mapPdf);
+    Point2f uv = distribution->SampleContinuous(u, &mapPdf);
     if (mapPdf == 0) return Spectrum(0.f);
     Float theta = uv[1] * Pi, phi = uv[0] * 2.f * Pi;
     Float cosTheta = std::cos(theta), sinTheta = std::sin(theta);

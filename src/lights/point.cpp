@@ -52,7 +52,7 @@ Spectrum PointLight::Sample_Li(const Interaction &ref, const Point2f &u,
 Spectrum PointLight::Power() const { return 4 * Pi * I; }
 
 Float PointLight::Pdf_Li(const Interaction &, const Vector3f &) const {
-    return 0.;
+    return 0;
 }
 
 Spectrum PointLight::Sample_Le(const Point2f &u1, const Point2f &u2, Float time,

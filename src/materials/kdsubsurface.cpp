@@ -91,7 +91,7 @@ void KdSubsurfaceMaterial::ComputeScatteringFunctions(
     Spectrum mfree = scale * mfp->Evaluate(*si).Clamp();
     Spectrum kd = Kd->Evaluate(*si).Clamp();
     Spectrum sig_a, sig_s;
-    SubsurfaceFromDiffuse(table, kd, Spectrum(1.f) / mfree, &sig_a, &sig_s);
+    SubsurfaceFromDiffuse(table, kd, mfree, &sig_a, &sig_s);
     si->bssrdf = ARENA_ALLOC(arena, TabulatedBSSRDF)(*si, this, mode, eta,
                                                      sig_a, sig_s, table);
 }

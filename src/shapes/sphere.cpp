@@ -213,10 +213,10 @@ bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
 Float Sphere::Area() const { return phiMax * radius * (zMax - zMin); }
 
 Interaction Sphere::Sample(const Point2f &u) const {
-    Interaction it;
     Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(u);
+    Interaction it;
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
-    if (reverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1;
     // Reproject _pObj_ to sphere surface and compute _pObjError_
     pObj *= radius / Distance(pObj, Point3f(0, 0, 0));
     Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
@@ -242,7 +242,7 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
     Float sinThetaMax2 = radius * radius / DistanceSquared(ref.p, pCenter);
     Float cosThetaMax = std::sqrt(std::max((Float)0, 1 - sinThetaMax2));
     Float cosTheta = (1 - u[0]) + u[0] * cosThetaMax;
-    Float sinTheta = std::sqrt(1 - cosTheta * cosTheta);
+    Float sinTheta = std::sqrt(std::max((Float)0, 1 - cosTheta * cosTheta));
     Float phi = u[1] * 2 * Pi;
 
     // Compute angle $\alpha$ from center of sphere to sampled point on surface
@@ -266,7 +266,7 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
     Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
     it.n = (*ObjectToWorld)(Normal3f(nObj));
-    if (reverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1;
     return it;
 }
 

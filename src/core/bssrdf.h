@@ -168,8 +168,8 @@ class SeparableBSSRDFAdapter : public BxDF {
 Float BeamDiffusionSS(Float sig_s, Float sig_a, Float g, Float eta, Float r);
 Float BeamDiffusionMS(Float sig_s, Float sig_a, Float g, Float eta, Float r);
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t);
-void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &Kd,
-                           const Spectrum &sigma_t, Spectrum *sigma_a,
+void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &rhoEff,
+                           const Spectrum &mfp, Spectrum *sigma_a,
                            Spectrum *sigma_s);
 
 #endif  // PBRT_CORE_BSSRDF_H

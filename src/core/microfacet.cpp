@@ -213,7 +213,7 @@ Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,
         if (!SameHemisphere(wo, wh)) wh = -wh;
         return wh;
     } else {
-        // Sample visible area of normals with Beckmann distribution
+        // Sample visible area of normals for Beckmann distribution
         Vector3f wh;
         bool flip = wo.z < 0;
         wh = BeckmannSample(flip ? -wo : wo, alphax, alphay, u[0], u[1]);

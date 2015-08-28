@@ -53,14 +53,13 @@ Float SampleCatmullRom2D(int size1, int size2, const Float *nodes1,
                          const Float *nodes2, const Float *values,
                          const Float *cdf, Float alpha, Float sample,
                          Float *fval = nullptr, Float *pdf = nullptr);
-Float IntegrateCatmullRom(int size, const Float *nodes, const Float *values,
+Float IntegrateCatmullRom(int n, const Float *nodes, const Float *values,
                           Float *cdf);
-Float InvertCatmullRom(int size, const Float *nodes, const Float *values,
-                       Float y);
+Float InvertCatmullRom(int n, const Float *x, const Float *values, Float u);
 
 // Fourier Interpolation Declarations
 Float Fourier(const Float *a, int m, double cosPhi);
-Float SampleFourier(const Float *coeffs, const Float *recip, int nCoeffs,
-                    Float sample, Float *pdf, Float *phi);
+Float SampleFourier(const Float *ak, const Float *recip, int m, Float u,
+                    Float *pdf, Float *phiPtr);
 
 #endif  // PBRT_CORE_INTERPOLATION_H

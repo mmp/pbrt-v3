@@ -47,6 +47,9 @@
   Wenzel Jakob, Eugene D'Eon, Otto Jakob and Steve Marschner
   Transactions on Graphics (Proceedings of SIGGRAPH 2014)
 
+  A standalone Python plugin for generating such data files is available
+  on GitHub: https://github.com/wjakob/layerlab
+
   This format specifies an isotropic BSDF expressed in a Spline x Fourier
   directional basis. It begins with a header of the following type:
 
@@ -79,10 +82,10 @@
      float unused[2];           // Unused fields to pad the header to 64 bytes
  };
 
-  Due to space constraints, two features are not currently implemented texturing
- and
-  harmonic extrapolation, though it would be straightforward to port them from
- Mitsuba.
+  Due to space constraints, two features are not currently implemented in PBRT,
+  namely texturing and harmonic extrapolation (though it would be
+ straightforward
+  to port them from Mitsuba.)
 */
 
 inline bool IsBigEndian() {

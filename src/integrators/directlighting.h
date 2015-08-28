@@ -44,8 +44,10 @@
 #include "integrator.h"
 #include "scene.h"
 
-// DirectLightingIntegrator Declarations
+// LightStrategy Declarations
 enum class LightStrategy { UniformSampleAll, UniformSampleOne };
+
+// DirectLightingIntegrator Declarations
 class DirectLightingIntegrator : public SamplerIntegrator {
   public:
     // DirectLightingIntegrator Public Methods

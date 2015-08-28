@@ -679,12 +679,12 @@ Float Triangle::Area() const {
 }
 
 Interaction Triangle::Sample(const Point2f &u) const {
-    Interaction it;
     Point2f b = UniformSampleTriangle(u);
     // Get triangle vertices in _p0_, _p1_, and _p2_
     const Point3f &p0 = mesh->p[v[0]];
     const Point3f &p1 = mesh->p[v[1]];
     const Point3f &p2 = mesh->p[v[2]];
+    Interaction it;
     it.p = b[0] * p0 + b[1] * p1 + (1 - b[0] - b[1]) * p2;
     // Compute surface normal for sampled point on triangle
     if (mesh->n)
@@ -692,7 +692,7 @@ Interaction Triangle::Sample(const Point2f &u) const {
                          (1 - b[0] - b[1]) * mesh->n[v[2]]);
     else
         it.n = Normalize(Normal3f(Cross(p1 - p0, p2 - p0)));
-    if (reverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1;
 
     // Compute error bounds for sampled point on triangle
     Point3f pAbsSum =

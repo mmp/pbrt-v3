@@ -46,13 +46,12 @@ Spectrum HomogeneousMedium::Tr(const Ray &ray, Sampler &sampler) const {
 Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
                                    MemoryArena &arena,
                                    MediumInteraction *mi) const {
-    Point2f sample = sampler.Get2D();
+    Point2f u = sampler.Get2D();
     // Sample a channel and distance along the ray
     int channel =
-        std::min((int)(sample.x * Spectrum::nSamples), Spectrum::nSamples - 1);
-    Float t =
-        std::min(-std::log(1 - sample.y) / (sigma_t[channel] * ray.d.Length()),
-                 ray.tMax);
+        std::min((int)(u[0] * Spectrum::nSamples), Spectrum::nSamples - 1);
+    Float t = std::min(
+        -std::log(1 - u[1]) / (sigma_t[channel] * ray.d.Length()), ray.tMax);
     bool sampledMedium = t < ray.tMax;
     if (sampledMedium) {
         PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
@@ -60,21 +59,19 @@ Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
     }
 
     // Compute the transmittance and sampling density
-    Spectrum transmittance =
-        Exp(-sigma_t * std::min(t, MaxFloat) * ray.d.Length());
-    Spectrum density =
-        (sampledMedium ? sigma_t : Spectrum(1.f)) * transmittance;
+    Spectrum Tr = Exp(-sigma_t * std::min(t, MaxFloat) * ray.d.Length());
+    Spectrum density = (sampledMedium ? sigma_t : Spectrum(1.f)) * Tr;
     Float pdf = 0.f;
     for (int i = 0; i < Spectrum::nSamples; ++i) pdf += density[i];
-    pdf *= 1.f / (Float)Spectrum::nSamples;
-    return transmittance * (sampledMedium ? sigma_s : Spectrum(1.f)) / pdf;
+    pdf *= 1 / (Float)Spectrum::nSamples;
+    return Tr * (sampledMedium ? sigma_s : Spectrum(1.f)) / pdf;
 }
 
 Float HomogeneousMedium::Pdf(const Ray &ray, const Interaction &it) const {
-    Spectrum density = (it.IsMediumInteraction() ? (sigma_t * ray.d.Length())
-                                                 : Spectrum(1.0)) *
-                       Exp(-sigma_t * (it.p - ray.o).Length());
-    Float pdf = 0.f;
+    Spectrum density =
+        Exp(-sigma_t * (it.p - ray.o).Length()) *
+        (it.IsMediumInteraction() ? (sigma_t * ray.d.Length()) : Spectrum(1.0));
+    Float pdf = 0;
     for (int i = 0; i < Spectrum::nSamples; ++i) pdf += density[i];
     return pdf / Spectrum::nSamples;
 }

@@ -937,7 +937,7 @@ void pbrtLightSource(const std::string &name, const ParamSet &params) {
     WARN_IF_ANIMATED_TRANSFORM("LightSource");
     MediumInterface mi = graphicsState.CreateMediumInterface();
     std::shared_ptr<Light> lt = MakeLight(name, params, curTransform[0], mi);
-    if (lt == nullptr)
+    if (!lt)
         Error("LightSource: light type \"%s\" unknown.", name.c_str());
     else
         renderOptions->lights.push_back(lt);

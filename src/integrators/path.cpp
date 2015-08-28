@@ -51,11 +51,11 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     for (int bounces = 0;; ++bounces) {
         // Find next path vertex and accumulate contribution
 
-        // Store intersection into _isect_
+        // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
 
-        // Possibly add emitted light and terminate
+        // Possibly add emitted light at intersection
         if (bounces == 0 || specularBounce) {
             // Add emitted light at path vertex or from the environment
             if (foundIntersection)
@@ -64,6 +64,8 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 for (const auto &light : scene.lights)
                     L += beta * light->Le(ray);
         }
+
+        // Terminate path if ray escaped or _maxDepth_ was reached
         if (!foundIntersection || bounces >= maxDepth) break;
 
         // Compute scattering functions and skip over medium boundaries
@@ -75,7 +77,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         }
 
         // Sample illumination from lights to find path contribution
-        L += beta * UniformSampleOneLight(isect, scene, sampler, arena);
+        L += beta * UniformSampleOneLight(isect, scene, arena, sampler);
 
         // Sample BSDF to get new path direction
         Vector3f wo = -ray.d, wi;
@@ -102,7 +104,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             beta *= S / pdf;
 
             // Account for the direct subsurface scattering component
-            L += beta * UniformSampleOneLight(pi, scene, sampler, arena);
+            L += beta * UniformSampleOneLight(pi, scene, arena, sampler);
 
             // Account for the indirect subsurface scattering component
             Spectrum f = pi.bsdf->Sample_f(pi.wo, &wi, sampler.Get2D(), &pdf,
@@ -116,7 +118,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             ray = pi.SpawnRay(wi);
         }
 
-        // Possibly terminate the path
+        // Possibly terminate the path with Russian roulette
         if (bounces > 3) {
             Float continueProbability = std::min((Float).5, beta.y());
             if (sampler.Get1D() > continueProbability) break;

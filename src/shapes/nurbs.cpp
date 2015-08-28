@@ -158,7 +158,7 @@ std::vector<std::shared_ptr<Shape>> CreateNURBS(const Transform *o2w,
     }
     int nuknots, nvknots;
     const Float *uknots = params.FindFloat("uknots", &nuknots);
-    if (uknots == nullptr) {
+    if (!uknots) {
         Error("Must provide u knot vector \"uknots\" with NURBS shape.");
         return std::vector<std::shared_ptr<Shape>>();
     }
@@ -187,7 +187,7 @@ std::vector<std::shared_ptr<Shape>> CreateNURBS(const Transform *o2w,
     }
 
     const Float *vknots = params.FindFloat("vknots", &nvknots);
-    if (vknots == nullptr) {
+    if (!vknots) {
         Error("Must provide v knot vector \"vknots\" with NURBS shape.");
         return std::vector<std::shared_ptr<Shape>>();
     }

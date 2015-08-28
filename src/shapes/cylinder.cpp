@@ -200,12 +200,12 @@ bool Cylinder::IntersectP(const Ray &r, bool testAlphaTexture) const {
 Float Cylinder::Area() const { return (zMax - zMin) * radius * phiMax; }
 
 Interaction Cylinder::Sample(const Point2f &u) const {
-    Interaction it;
     Float z = Lerp(u[0], zMin, zMax);
     Float t = u[1] * phiMax;
     Point3f pObj = Point3f(radius * std::cos(t), radius * std::sin(t), z);
+    Interaction it;
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, 0)));
-    if (reverseOrientation) it.n *= -1.f;
+    if (reverseOrientation) it.n *= -1;
     // Reproject _pObj_ to cylinder surface and compute _pObjError_
     Float hitRad = std::sqrt(pObj.x * pObj.x + pObj.y * pObj.y);
     pObj.x *= radius / hitRad;
