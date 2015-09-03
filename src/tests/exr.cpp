@@ -127,7 +127,7 @@ int float_to_half(float f) {
 }
 
 static void CompareImages(const EXRImage &a, const EXRImage &b,
-                          bool halfQuantize) {
+                          bool isHalf) {
    EXPECT_EQ(a.num_channels, b.num_channels);
    EXPECT_EQ(a.width, b.width);
    EXPECT_EQ(a.height, b.height);
@@ -138,17 +138,16 @@ static void CompareImages(const EXRImage &a, const EXRImage &b,
    }
    for (int i = 0; i < a.width * a.height; ++i) {
      for (int c = 0; c < a.num_channels; ++c) {
-       float ap = ((float *)a.images[c])[i];
-       float bp = ((float *)b.images[c])[i];
-       if (std::isnan(ap) && std::isnan(bp))
-         continue;
-       if (halfQuantize) {
-         int ha = float_to_half(ap);
-         int hb = float_to_half(bp);
-         EXPECT_EQ(ha, hb) <<  "offset " << i << ", channel " << c <<
+       if (isHalf) {
+         uint16_t ap = ((uint16_t *)a.images[c])[i];
+         uint16_t bp = ((uint16_t *)b.images[c])[i];
+         EXPECT_EQ(ap, bp) <<  "offset " << i << ", channel " << c <<
              ", fa " << ap << ", fb " << bp;
-       }
-       else {
+       } else {
+         float ap = ((float *)a.images[c])[i];
+         float bp = ((float *)b.images[c])[i];
+         if (std::isnan(ap) && std::isnan(bp))
+           continue;
          EXPECT_EQ(ap, bp) << "offset " << i << ", channel " << c;
        }
      }
@@ -174,8 +173,10 @@ TEST(EXR, BasicRoundTrip) {
    image.channel_names = channels;
    unsigned char *images[] = { (unsigned char *)buf };
    image.images = images;
-   int pixel_types[] = { TINYEXR_PIXELTYPE_HALF };
+   int pixel_types[] = { TINYEXR_PIXELTYPE_FLOAT };
    image.pixel_types = pixel_types;
+   int requested_pixel_types[] = { TINYEXR_PIXELTYPE_HALF };
+   image.requested_pixel_types = requested_pixel_types;
    image.width = width;
    image.height = height;
 
@@ -183,6 +184,7 @@ TEST(EXR, BasicRoundTrip) {
    EXPECT_EQ(0, SaveMultiChannelEXRToFile(&image, "test.exr", &err)) << err;
 
    EXRImage readImage;
+   readImage.requested_pixel_types = pixel_types;
    EXPECT_EQ(0, LoadMultiChannelEXRFromFile(&readImage, "test.exr", &err))
        << err;
 
@@ -194,9 +196,9 @@ TEST(EXR, Randoms) {
    int height = 1024;
 
    RNG rng;
-   float *buf = new float[4 * width * height];
+   uint16_t *buf = new uint16_t[4 * width * height];
    for (int i = 0; i < 4 * width * height; ++i) {
-     buf[i] = -20 + 20. * rng.UniformFloat();
+     buf[i] = float_to_half(-20 + 20. * rng.UniformFloat());
    }
 
    EXRImage image;
@@ -211,6 +213,7 @@ TEST(EXR, Randoms) {
    int pixel_types[] = { TINYEXR_PIXELTYPE_HALF, TINYEXR_PIXELTYPE_HALF,
                          TINYEXR_PIXELTYPE_HALF, TINYEXR_PIXELTYPE_HALF };
    image.pixel_types = pixel_types;
+   image.requested_pixel_types = pixel_types;
    image.width = width;
    image.height = height;
 
@@ -218,6 +221,7 @@ TEST(EXR, Randoms) {
    EXPECT_EQ(0, SaveMultiChannelEXRToFile(&image, "test.exr", &err)) << err;
 
    EXRImage readImage;
+   readImage.requested_pixel_types = pixel_types;
    EXPECT_EQ(0, LoadMultiChannelEXRFromFile(&readImage, "test.exr", &err))
        << err;
 
