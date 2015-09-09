@@ -44,10 +44,16 @@
 #include "geometry.h"
 
 // ImageIO Declarations
+inline bool HasExtension(const std::string &value, const std::string &ending) {
+    if (ending.size() > value.size()) return false;
+    return std::equal(
+        ending.rbegin(), ending.rend(), value.rbegin(),
+        [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+}
+
 std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
                                          Point2i *resolution);
 void WriteImage(const std::string &name, const Float *rgb,
-                const Bounds2i &outputBounds, const Point2i &totalResolution,
-                Float gamma);
+                const Bounds2i &outputBounds, const Point2i &totalResolution);
 
 #endif  // PBRT_CORE_IMAGEIO_H

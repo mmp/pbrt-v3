@@ -137,7 +137,7 @@ class SurfaceInteraction : public Interaction {
     Vector3f dpdu, dpdv;
     Normal3f dndu, dndv;
     const Shape *shape = nullptr;
-    struct /* Frame */ {
+    struct {
         Normal3f n;
         Vector3f dpdu, dpdv;
         Normal3f dndu, dndv;

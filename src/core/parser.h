@@ -43,4 +43,4 @@
 #include "pbrt.h"
 bool ParseFile(const std::string &filename);
 
-#endif  // PBRT_CORE_PARSER_H
+#endif // PBRT_CORE_PARSER_H

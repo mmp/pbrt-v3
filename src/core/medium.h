@@ -71,7 +71,6 @@ class Medium {
     virtual Spectrum Sample(const Ray &ray, Sampler &sampler,
                             MemoryArena &arena,
                             MediumInteraction *mi) const = 0;
-    virtual Float Pdf(const Ray &ray, const Interaction &it) const = 0;
 };
 
 // HenyeyGreenstein Declarations

@@ -121,5 +121,5 @@ static bool ReadEXR(const char *name, float **rgba, int *width, int *height)
 
 static void WriteEXR(const char *name, float *pixels, int xRes, int yRes) {
   WriteImage(name, pixels, Bounds2i(Point2i(0, 0), Point2i(xRes, yRes)),
-                                    Point2i(xRes, yRes), 1.);
+                                    Point2i(xRes, yRes));
 }

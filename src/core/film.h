@@ -58,7 +58,7 @@ class Film {
     // Film Public Methods
     Film(const Point2i &resolution, const Bounds2f &cropWindow,
          std::unique_ptr<Filter> filter, Float diagonal,
-         const std::string &filename, Float scale, Float gamma);
+         const std::string &filename, Float scale);
     Bounds2i GetSampleBounds() const;
     Bounds2f GetPhysicalExtent() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
@@ -87,7 +87,7 @@ class Film {
     static constexpr int filterTableWidth = 16;
     Float filterTable[filterTableWidth * filterTableWidth];
     std::mutex mutex;
-    const Float scale, gamma;
+    const Float scale;
 
     // Film Private Methods
     Pixel &GetPixel(const Point2i &p) {

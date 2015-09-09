@@ -281,6 +281,16 @@ inline constexpr Float gamma(int n) {
     return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 }
 
+inline Float GammaCorrect(Float value) {
+    if (value <= 0.0031308f) return 12.92f * value;
+    return 1.055f * std::pow(value, (Float)(1.f / 2.4f)) - 0.055f;
+}
+
+inline Float InverseGammaCorrect(Float value) {
+    if (value <= 0.04045f) return value * 1.f / 12.92f;
+    return std::pow((value + 0.055f) * 1.f / 1.055f, (Float)2.4f);
+}
+
 template <typename T, typename U, typename V>
 inline T Clamp(T val, U low, V high) {
     if (val < low)

@@ -587,7 +587,7 @@ void RealisticCamera::RenderExitPupil(Float sx, Float sy,
 
     WriteImage(filename, image,
                Bounds2i(Point2i(0, 0), Point2i(nSamples, nSamples)),
-               Point2i(nSamples, nSamples), 1.f);
+               Point2i(nSamples, nSamples));
     delete[] image;
 }
 

@@ -496,8 +496,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 }
                 Point2i res(pixelBounds.pMax.x - pixelBounds.pMin.x,
                             pixelBounds.pMax.y - pixelBounds.pMin.y);
-                WriteImage("sppm_radius.png", rimg.get(), pixelBounds, res,
-                           2.2f);
+                WriteImage("sppm_radius.png", rimg.get(), pixelBounds, res);
             }
         }
     }

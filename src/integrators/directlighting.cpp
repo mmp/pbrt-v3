@@ -70,6 +70,8 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
 
     // Compute scattering functions for surface interaction
     isect.ComputeScatteringFunctions(ray, arena);
+    if (!isect.bsdf)
+        return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
     Vector3f wo = isect.wo;
     // Compute emitted light if ray hit an area light source
     L += isect.Le(wo);

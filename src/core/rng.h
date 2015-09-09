@@ -63,11 +63,11 @@ class RNG {
     RNG(uint64_t sequenceIndex) { SetSequence(sequenceIndex); }
     void SetSequence(uint64_t sequenceIndex);
     uint32_t UniformUInt32();
-    uint32_t UniformUInt32(uint32_t bound) {
-        uint32_t threshold = (~bound + 1u) % bound;
+    uint32_t UniformUInt32(uint32_t b) {
+        uint32_t threshold = (~b + 1u) % b;
         while (true) {
             uint32_t r = UniformUInt32();
-            if (r >= threshold) return r % bound;
+            if (r >= threshold) return r % b;
         }
     }
     Float UniformFloat() {

@@ -40,13 +40,12 @@
 // Film Method Definitions
 Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
            std::unique_ptr<Filter> filt, Float diagonal,
-           const std::string &filename, Float scale, Float gamma)
+           const std::string &filename, Float scale)
     : fullResolution(resolution),
       diagonal(diagonal * .001),
       filter(std::move(filt)),
       filename(filename),
-      scale(scale),
-      gamma(gamma) {
+      scale(scale) {
     // Compute film image bounds
     croppedPixelBounds =
         Bounds2i(Point2i(std::ceil(fullResolution.x * cropWindow.pMin.x),
@@ -170,7 +169,7 @@ void Film::WriteImage(Float splatScale) {
     }
 
     // Write RGB image
-    ::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution, gamma);
+    ::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution);
 }
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
@@ -205,8 +204,8 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
         Error("%d values supplied for \"cropwindow\". Expected 4.", cwi);
 
     Float scale = params.FindOneFloat("scale", 1.);
-    Float gamma = params.FindOneFloat("gamma", 2.2);
     Float diagonal = params.FindOneFloat("diagonal", 35.);
+
     return new Film(Point2i(xres, yres), crop, std::move(filter), diagonal,
-                    filename, scale, gamma);
+                    filename, scale);
 }

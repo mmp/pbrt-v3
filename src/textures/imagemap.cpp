@@ -41,7 +41,7 @@ template <typename Tmemory, typename Treturn>
 ImageTexture<Tmemory, Treturn>::ImageTexture(
     std::unique_ptr<TextureMapping2D> mapping, const std::string &filename,
     bool doTrilinear, Float maxAniso, ImageWrap wrapMode, Float scale,
-    Float gamma)
+    bool gamma)
     : mapping(std::move(mapping)) {
     mipmap =
         GetTexture(filename, doTrilinear, maxAniso, wrapMode, scale, gamma);
@@ -50,7 +50,7 @@ ImageTexture<Tmemory, Treturn>::ImageTexture(
 template <typename Tmemory, typename Treturn>
 MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
     const std::string &filename, bool doTrilinear, Float maxAniso,
-    ImageWrap wrap, Float scale, Float gamma) {
+    ImageWrap wrap, Float scale, bool gamma) {
     // Return _MIPMap_ from texture cache if present
     TexInfo texInfo(filename, doTrilinear, maxAniso, wrap, scale, gamma);
     if (textures.find(texInfo) != textures.end())
@@ -70,7 +70,7 @@ MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
                                      doTrilinear, maxAniso, wrap);
     } else {
         // Create one-valued _MIPMap_
-        Tmemory oneVal = std::pow(scale, gamma);
+        Tmemory oneVal = scale;
         mipmap = new MIPMap<Tmemory>(Point2i(1, 1), &oneVal);
     }
     textures[texInfo].reset(mipmap);
@@ -115,9 +115,10 @@ ImageTexture<Float, Float> *CreateImageFloatTexture(const Transform &tex2world,
     else if (wrap == "clamp")
         wrapMode = ImageWrap::Clamp;
     Float scale = tp.FindFloat("scale", 1.f);
-    Float gamma = tp.FindFloat("gamma", 1.f);
-    return new ImageTexture<Float, Float>(std::move(map),
-                                          tp.FindFilename("filename"), trilerp,
+    std::string filename = tp.FindFilename("filename");
+    bool gamma = tp.FindBool("gamma", HasExtension(filename, ".tga") ||
+                                          HasExtension(filename, ".png"));
+    return new ImageTexture<Float, Float>(std::move(map), filename, trilerp,
                                           maxAniso, wrapMode, scale, gamma);
 }
 
@@ -156,8 +157,9 @@ ImageTexture<RGBSpectrum, Spectrum> *CreateImageSpectrumTexture(
     else if (wrap == "clamp")
         wrapMode = ImageWrap::Clamp;
     Float scale = tp.FindFloat("scale", 1.f);
-    Float gamma = tp.FindFloat("gamma", 1.f);
+    std::string filename = tp.FindFilename("filename");
+    bool gamma = tp.FindBool("gamma", HasExtension(filename, ".tga") ||
+                                          HasExtension(filename, ".png"));
     return new ImageTexture<RGBSpectrum, Spectrum>(
-        std::move(map), tp.FindFilename("filename"), trilerp, maxAniso,
-        wrapMode, scale, gamma);
+        std::move(map), filename, trilerp, maxAniso, wrapMode, scale, gamma);
 }

@@ -182,7 +182,6 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
         // Intersect ray with curve segment
 
         // Test ray against segment endpoint boundaries
-        Vector2f segmentDirection = Point2f(cp[3]) - Point2f(cp[0]);
 
         // Test sample point against tangent perpendicular at curve start
         Float edge =
@@ -190,12 +189,11 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
         if (edge < 0) return false;
 
         // Test sample point against tangent perpendicular at curve end
-        // TODO: update to match the starting test.
-        Vector2f endTangent = Point2f(cp[2]) - Point2f(cp[3]);
-        if (Dot(segmentDirection, endTangent) < 0) endTangent = -endTangent;
-        if (Dot(endTangent, Vector2f(cp[3])) < 0) return false;
+        edge = (cp[2].y - cp[3].y) * -cp[3].y + cp[3].x * (cp[3].x - cp[2].x);
+        if (edge < 0) return false;
 
         // Compute line $w$ that gives minimum distance to sample point
+        Vector2f segmentDirection = Point2f(cp[3]) - Point2f(cp[0]);
         Float denom = segmentDirection.LengthSquared();
         if (denom == 0) return false;
         Float w = Dot(-Vector2f(cp[0]), segmentDirection) / denom;
@@ -211,7 +209,7 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
             Float sin1 =
                 std::sin(u * common->normalAngle) * common->invSinNormalAngle;
             nHit = sin0 * common->n[0] + sin1 * common->n[1];
-            hitWidth *= AbsDot(nHit, -ray.d / rayLength);
+            hitWidth *= AbsDot(nHit, ray.d) / rayLength;
         }
 
         // Test intersection point against curve width

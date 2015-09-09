@@ -380,7 +380,7 @@ BVHBuildNode *BVHAccel::HLBVHBuild(
     // Compute Morton indices of primitives
     std::vector<MortonPrimitive> mortonPrims(primitiveInfo.size());
     ParallelFor([&](int i) {
-        // Initialize _mortionPrims[i]_ for _i_th primitive
+        // Initialize _mortonPrims[i]_ for _i_th primitive
         constexpr int mortonBits = 10;
         constexpr int mortonScale = 1 << mortonBits;
         mortonPrims[i].primitiveIndex = primitiveInfo[i].primitiveNumber;

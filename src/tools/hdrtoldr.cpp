@@ -16,13 +16,12 @@ static void usage() {
   fprintf( stderr, "Supported options:\n");
   fprintf( stderr, "\t-scale scale\n" );
   fprintf( stderr, "\t-repeatpix [count]\n" );
-  fprintf( stderr, "\t-gamma gamma\n" );
   exit(1);
 }
 
 int main(int argc, char *argv[])
 {
-    float scale = 1.f, gamma = 2.2f;
+    float scale = 1.f;
     int repeat = 1;
     float rp = 1;
 
@@ -38,7 +37,6 @@ int main(int argc, char *argv[])
       if (false) { }
       ARG("repeatpix", rp)
       ARG("scale", scale)
-      ARG("gamma", gamma)
       else
           usage();
       ++argNum;
@@ -73,8 +71,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < res.x * res.y; ++i)
         image[i] *= scale;
 
-    WriteImage(outFile, (float *)image.get(), Bounds2i(Point2i(0, 0), res), res,
-               1. / gamma);
+    WriteImage(outFile, (float *)image.get(), Bounds2i(Point2i(0, 0), res), res);
 
     return 0;
 }

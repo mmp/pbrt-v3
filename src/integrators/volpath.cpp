@@ -60,14 +60,13 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Handle an interaction with a medium or a surface
         if (mi.IsValid()) {
-            // Handle medium scattering case
-            Vector3f wo = -ray.d, wi;
+            // Handle scattering at point in medium for volumetric path tracer
             L += beta * UniformSampleOneLight(mi, scene, arena, sampler, true);
-            Point2f phaseSample = sampler.Get2D();
-            mi.phase->Sample_p(wo, &wi, phaseSample);
+            Vector3f wo = -ray.d, wi;
+            mi.phase->Sample_p(wo, &wi, sampler.Get2D());
             ray = mi.SpawnRay(wi);
         } else {
-            // Handle surface scattering case
+            // Handle scattering at point on surface for volumetric path tracer
 
             // Possibly add emitted light at intersection
             if (bounces == 0 || specularBounce) {
@@ -127,7 +126,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 // Account for the indirect subsurface scattering component
                 Spectrum f = pi.bsdf->Sample_f(pi.wo, &wi, sampler.Get2D(),
                                                &pdf, BSDF_ALL, &flags);
-                if (f.IsBlack() || pdf == 0.f) break;
+                if (f.IsBlack() || pdf == 0) break;
                 beta *= f * AbsDot(wi, pi.shading.n) / pdf;
 #ifndef NDEBUG
                 Assert(std::isinf(beta.y()) == false);

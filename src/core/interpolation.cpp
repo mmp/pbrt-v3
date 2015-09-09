@@ -260,8 +260,8 @@ Float SampleCatmullRom2D(int size1, int size2, const Float *nodes1,
 
 Float IntegrateCatmullRom(int n, const Float *x, const Float *values,
                           Float *cdf) {
-    Float sum = 0.f;
-    cdf[0] = 0.f;
+    Float sum = 0;
+    cdf[0] = 0;
     for (int i = 0; i < n - 1; ++i) {
         // Look up $x_i$ and function values of spline segment _i_
         Float x0 = x[i], x1 = x[i + 1];
@@ -293,7 +293,7 @@ Float InvertCatmullRom(int n, const Float *x, const Float *values, Float u) {
     else if (!(u < values[n - 1]))
         return x[n - 1];
 
-    // Map _y_ to a spline interval by inverting _values_
+    // Map _u_ to a spline interval by inverting _values_
     int i = FindInterval(n, [&](int i) { return values[i] <= u; });
 
     // Look up $x_i$ and function values of spline segment _i_
@@ -322,11 +322,11 @@ Float InvertCatmullRom(int n, const Float *x, const Float *values, Float u) {
         // Compute powers of _t_
         Float t2 = t * t, t3 = t2 * t;
 
-        // Set _F_ using Equation (\ref{eq:cubicspline-as-basisfunctions})
+        // Set _Fhat_ using Equation (\ref{eq:cubicspline-as-basisfunctions})
         Fhat = (2 * t3 - 3 * t2 + 1) * f0 + (-2 * t3 + 3 * t2) * f1 +
                (t3 - 2 * t2 + t) * d0 + (t3 - t2) * d1;
 
-        // Set _f_ using Equation (\ref{eq:cubicspline-derivative})
+        // Set _fhat_ using Equation (\ref{eq:cubicspline-derivative})
         fhat = (6 * t2 - 6 * t) * f0 + (-6 * t2 + 6 * t) * f1 +
                (3 * t2 - 4 * t + 1) * d0 + (3 * t2 - 2 * t) * d1;
 

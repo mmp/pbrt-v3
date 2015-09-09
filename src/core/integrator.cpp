@@ -122,9 +122,9 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
         } else {
             // Evaluate phase function for light sampling strategy
             const MediumInteraction &mi = (const MediumInteraction &)it;
-            Float phaseValue = mi.phase->p(mi.wo, wi);
-            shadingPdf = phaseValue;
-            f = Spectrum(phaseValue);
+            Float p = mi.phase->p(mi.wo, wi);
+            f = Spectrum(p);
+            shadingPdf = p;
         }
         if (!f.IsBlack()) {
             // Compute effect of visibility for light source sample
@@ -160,8 +160,9 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
         } else {
             // Sample scattered direction for medium interactions
             const MediumInteraction &mi = (const MediumInteraction &)it;
-            shadingPdf = mi.phase->Sample_p(mi.wo, &wi, uShading);
-            f = Spectrum(shadingPdf);
+            Float p = mi.phase->Sample_p(mi.wo, &wi, uShading);
+            f = Spectrum(p);
+            shadingPdf = p;
         }
         if (!f.IsBlack() && shadingPdf > 0) {
             // Account for light contributions along sampled direction _wi_
@@ -195,7 +196,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
 
 std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
     const Scene &scene) {
-    Assert(scene.lights.size() > 0);
+    if (scene.lights.size() == 0) return nullptr;
     std::vector<Float> lightPower;
     for (const auto &light : scene.lights)
         lightPower.push_back(light->Power().y());
@@ -207,7 +208,7 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
 void SamplerIntegrator::Render(const Scene &scene) {
     ProfilePhase p(Prof::IntegratorRender);
     Preprocess(scene, *sampler);
-    // Run parallel tasks to render the image
+    // Render image tiles in parallel
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();

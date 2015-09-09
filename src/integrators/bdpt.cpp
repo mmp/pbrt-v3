@@ -306,7 +306,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
                     film->fullResolution,
                     Bounds2f(Point2f(0, 0), Point2f(1, 1)),
                     std::unique_ptr<Filter>(CreateBoxFilter(ParamSet())),
-                    film->diagonal * 1000, filename, 1.f, 2.2f));
+                    film->diagonal * 1000, filename, 1.f));
             }
         }
     }
@@ -450,9 +450,10 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
     } else {
         // Handle all other bidirectional connection cases
         const Vertex &qs = lightVertices[s - 1], &pt = cameraVertices[t - 1];
-        if (qs.IsConnectible() && pt.IsConnectible())
-            L = qs.beta * qs.f(pt) * G(scene, sampler, qs, pt) * pt.f(qs) *
-                pt.beta;
+        if (qs.IsConnectible() && pt.IsConnectible()) {
+            L = qs.beta * qs.f(pt) * pt.f(qs) * pt.beta;
+            if (!L.IsBlack()) L *= G(scene, sampler, qs, pt);
+        }
     }
 
     // Compute MIS weight for connection strategy

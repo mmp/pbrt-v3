@@ -80,7 +80,6 @@ class GridDensityMedium : public Medium {
     Spectrum Tr(const Ray &ray, Sampler &sampler) const;
     Spectrum Sample(const Ray &ray, Sampler &sampler, MemoryArena &arena,
                     MediumInteraction *mi) const;
-    Float Pdf(const Ray &ray, const Interaction &it) const;
 
   private:
     // GridDensityMedium Private Data

@@ -109,7 +109,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             // Account for the indirect subsurface scattering component
             Spectrum f = pi.bsdf->Sample_f(pi.wo, &wi, sampler.Get2D(), &pdf,
                                            BSDF_ALL, &flags);
-            if (f.IsBlack() || pdf == 0.f) break;
+            if (f.IsBlack() || pdf == 0) break;
             beta *= f * AbsDot(wi, pi.shading.n) / pdf;
 #ifndef NDEBUG
             Assert(std::isinf(beta.y()) == false);
