@@ -47,7 +47,7 @@
 #include "spectrum.h"
 
 // Reflection Declarations
-Float FrDielectric(Float cosi, Float etai, Float etat);
+Float FrDielectric(Float cosThetaI, Float etaI, Float etaT);
 Spectrum FrConductor(Float cosThetaI, const Spectrum &etaI,
                      const Spectrum &etaT, const Spectrum &k);
 
