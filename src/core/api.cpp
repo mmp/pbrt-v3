@@ -914,8 +914,8 @@ void pbrtMaterial(const std::string &name, const ParamSet &params) {
 void pbrtMakeNamedMaterial(const std::string &name, const ParamSet &params) {
     VERIFY_WORLD("MakeNamedMaterial");
     // error checking, warning if replace, what to use for transform?
-    TextureParams mp(params, graphicsState.materialParams,
-                     graphicsState.floatTextures,
+    ParamSet emptyParams;
+    TextureParams mp(params, emptyParams, graphicsState.floatTextures,
                      graphicsState.spectrumTextures);
     std::string matName = mp.FindString("type");
     WARN_IF_ANIMATED_TRANSFORM("MakeNamedMaterial");
