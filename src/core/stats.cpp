@@ -46,7 +46,9 @@
 std::vector<std::function<void(StatsAccumulator &)>> *StatRegisterer::funcs;
 static StatsAccumulator statsAccumulator;
 static std::unique_ptr<std::atomic<uint64_t>[]> profileSamples;
+#ifndef PBRT_IS_WINDOWS
 static void ReportProfileSample(int, siginfo_t *, void *);
+#endif  // !PBRT_IS_WINDOWS
 
 // Statistics Definitions
 void ReportThreadStats() {
@@ -187,6 +189,7 @@ void InitProfiler() {
 #endif
 }
 
+#ifndef PBRT_IS_WINDOWS
 static void ReportProfileSample(int, siginfo_t *, void *) {
 #if 0
     // Print stack trace if context is unknown
@@ -207,6 +210,7 @@ static void ReportProfileSample(int, siginfo_t *, void *) {
     if (profileSamples) profileSamples[profilerState]++;
 }
 
+#endif  // !PBRT_IS_WINDOWS
 void ReportProfilerResults(FILE *dest) {
 #ifndef PBRT_IS_WINDOWS
     fprintf(dest, "  Profile\n");
