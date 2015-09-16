@@ -46,7 +46,7 @@
 
 // ProgressReporter Method Definitions
 ProgressReporter::ProgressReporter(int64_t totalWork, const std::string &title)
-    : totalWork(totalWork) {
+    : totalWork(std::max((int64_t)1, totalWork)) {
     int barLength = TerminalWidth() - 28;
     totalPlusses = std::max(2, barLength - (int)title.size());
     plussesPrinted = 0;

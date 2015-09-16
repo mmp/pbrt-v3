@@ -69,9 +69,10 @@ struct Distribution1D {
     int Count() const { return func.size(); }
     Float SampleContinuous(Float u, Float *pdf, int *off = nullptr) const {
         // Find surrounding CDF segments and _offset_
-        int offset = std::upper_bound(cdf.begin(), cdf.end(), u) - cdf.begin();
-        offset = Clamp(offset - 1, 0, Count() - 1);
-        Assert(u >= cdf[offset] && u <= cdf[offset + 1]);
+        int offset = FindInterval(cdf.size(),
+                                  [&](int index) { return cdf[index] <= u; });
+        int offset2 = std::upper_bound(cdf.begin(), cdf.end(), u) - cdf.begin();
+        offset2 = Clamp(offset2 - 1, 0, Count() - 1);
         if (off) *off = offset;
         // Compute offset along CDF segment
         Float du = u - cdf[offset];
@@ -88,9 +89,10 @@ struct Distribution1D {
     int SampleDiscrete(Float u, Float *pdf = nullptr,
                        Float *uRemapped = nullptr) const {
         // Find surrounding CDF segments and _offset_
-        int offset = std::upper_bound(cdf.begin(), cdf.end(), u) - cdf.begin();
-        offset = Clamp(offset - 1, 0, Count() - 1);
-        Assert(u >= cdf[offset] && u <= cdf[offset + 1]);
+        int offset = FindInterval(cdf.size(),
+                                  [&](int index) { return cdf[index] <= u; });
+        int offset2 = std::upper_bound(cdf.begin(), cdf.end(), u) - cdf.begin();
+        offset2 = Clamp(offset2 - 1, 0, Count() - 1);
         if (pdf) *pdf = func[offset] / (funcInt * Count());
         if (uRemapped)
             *uRemapped = (u - cdf[offset]) / (cdf[offset + 1] - cdf[offset]);

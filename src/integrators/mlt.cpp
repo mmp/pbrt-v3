@@ -168,7 +168,8 @@ void MLTIntegrator::Render(const Scene &scene) {
     int nBootstrapSamples = nBootstrap * (maxDepth + 1);
     std::vector<Float> bootstrapWeights(nBootstrapSamples, 0);
     {
-        ProgressReporter progress(nBootstrap, "Generating bootstrap paths");
+        ProgressReporter progress(nBootstrap / 4096,
+                                  "Generating bootstrap paths");
         std::vector<MemoryArena> bootstrapThreadArenas(MaxThreadIndex());
         ParallelFor([&](int i) {
             // Generate _i_th bootstrap sample
@@ -182,7 +183,7 @@ void MLTIntegrator::Render(const Scene &scene) {
                     L(scene, arena, lightDistr, sampler, depth, &pRaster).y();
                 arena.Reset();
             }
-            progress.Update();
+            if ((i + 1 % 4096) == 0) progress.Update();
         }, nBootstrap, 4096);
         progress.Done();
     }
@@ -195,7 +196,9 @@ void MLTIntegrator::Render(const Scene &scene) {
         (int64_t)mutationsPerPixel * (int64_t)film.GetSampleBounds().Area();
     {
         StatTimer timer(&renderingTime);
-        ProgressReporter progress(nTotalMutations / 100, "Rendering");
+        const int progressFrequency = 32768;
+        ProgressReporter progress(nTotalMutations / progressFrequency,
+                                  "Rendering");
         ParallelFor([&](int i) {
             int64_t nChainMutations =
                 std::min((i + 1) * nTotalMutations / nChains, nTotalMutations) -
@@ -216,7 +219,7 @@ void MLTIntegrator::Render(const Scene &scene) {
                 L(scene, arena, lightDistr, sampler, depth, &pCurrent);
 
             // Run the Markov chain for _nChainMutations_ steps
-            for (int64_t i = 0; i < nChainMutations; ++i) {
+            for (int64_t j = 0; j < nChainMutations; ++j) {
                 sampler.StartIteration();
                 Point2f pProposed;
                 Spectrum LProposed =
@@ -239,7 +242,9 @@ void MLTIntegrator::Render(const Scene &scene) {
                 } else
                     sampler.Reject();
                 ++totalMutations;
-                if (i % 100 == 0) progress.Update();
+                if ((i * nTotalMutations / nChains + j) % progressFrequency ==
+                    0)
+                    progress.Update();
                 arena.Reset();
             }
         }, nChains);

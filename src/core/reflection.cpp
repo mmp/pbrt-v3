@@ -498,8 +498,9 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
     *pdf = std::max((Float)0, pdfPhi * pdfMu);
 
     // Compute the scattered direction for _FourierBSDF_
-    Float sin2ThetaI = 1 - muI * muI;
+    Float sin2ThetaI = std::max((Float)0, 1 - muI * muI);
     Float norm = std::sqrt(sin2ThetaI / Sin2Theta(wo));
+    if (std::isinf(norm)) norm = 0;
     Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
     *wi = -Vector3f(norm * (cosPhi * wo.x - sinPhi * wo.y),
                     norm * (sinPhi * wo.x + cosPhi * wo.y), muI);
