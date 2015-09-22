@@ -63,7 +63,7 @@ class GridDensityMedium : public Medium {
         sigma_t = (sigma_a + sigma_s)[0];
         if (Spectrum(sigma_t) != sigma_a + sigma_s)
             Error(
-                "GridDensityMedium requires a spectrally uniform extinction "
+                "GridDensityMedium requires a spectrally uniform attenuation "
                 "coefficient!");
         Float maxDensity = 0;
         for (int i = 0; i < nx * ny * nz; ++i)
@@ -77,9 +77,9 @@ class GridDensityMedium : public Medium {
         if (!InsideExclusive(p, sampleBounds)) return 0;
         return density[(p.z * ny + p.y) * nx + p.x];
     }
-    Spectrum Tr(const Ray &ray, Sampler &sampler) const;
     Spectrum Sample(const Ray &ray, Sampler &sampler, MemoryArena &arena,
                     MediumInteraction *mi) const;
+    Spectrum Tr(const Ray &ray, Sampler &sampler) const;
 
   private:
     // GridDensityMedium Private Data
