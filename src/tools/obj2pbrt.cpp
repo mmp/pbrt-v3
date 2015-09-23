@@ -355,6 +355,10 @@ bool IsBumpMap(const char *&token) {
       token += 9;
       return true;
     }
+    if ((0 == strncmp(token, "map_Bump", 8)) && isSpace(token[8])) {
+      token += 9;
+      return true;
+    }
     return false;
 }
 
@@ -955,58 +959,72 @@ int main(int argc, char *argv[]) {
       ++numAreaLights;
     }
 
+    fprintf(f,"# Material name \"%s\"\n", mtl.name.c_str());
+    bool hasDiffuseTex = (mtl.diffuse_texname != "");
     if (mtl.diffuse_texname != "") {
       if (mtl.diffuse[0] != 0 || mtl.diffuse[1] != 0 || mtl.diffuse[2] != 0) {
-          fprintf(f, "Texture \"obj-kd-img\" \"color\" \"imagemap\" "
-                  "\"string filename\" [\"%s\"]\n", mtl.diffuse_texname.c_str());
-          fprintf(f, "Texture \"obj-kd\" \"color\" \"scale\" \"texture tex1\" "
-                  "\"obj-kd-img\" \"color tex2\" [%f %f %f]\n",
+          fprintf(f, "Texture \"%s-kd-img\" \"color\" \"imagemap\" "
+                  "\"string filename\" [\"%s\"]\n",
+                  mtl.name.c_str(), mtl.diffuse_texname.c_str());
+          fprintf(f, "Texture \"%s-kd\" \"color\" \"scale\" \"texture tex1\" "
+                  "\"%s-kd-img\" \"color tex2\" [%f %f %f]\n",
+                  mtl.name.c_str(), mtl.name.c_str(),
                   mtl.diffuse[0], mtl.diffuse[1], mtl.diffuse[2]);
       }
       else {
-          fprintf(f, "Texture \"obj-kd\" \"color\" \"imagemap\" "
-                  "\"string filename\" [\"%s\"]\n", mtl.diffuse_texname.c_str());
+          fprintf(f, "Texture \"%s-kd\" \"color\" \"imagemap\" "
+                  "\"string filename\" [\"%s\"]\n",
+                  mtl.name.c_str(), mtl.diffuse_texname.c_str());
       }
     }
-    else
-      fprintf(f, "Texture \"obj-kd\" \"color\" \"constant\" \"color value\" "
-              "[%f %f %f]\n", mtl.diffuse[0], mtl.diffuse[1], mtl.diffuse[2]);
 
+    bool hasSpecularTex = (mtl.specular_texname != "");
     if (mtl.specular_texname != "") {
       if (mtl.specular[0] != 0 || mtl.specular[1] != 0 || mtl.specular[2] != 0) {
-        fprintf(f, "Texture \"obj-ks-img\" \"color\" \"imagemap\" "
-                "\"string filename\" [\"%s\"]\n", mtl.specular_texname.c_str());
-        fprintf(f, "Texture \"obj-ks\" \"color\" \"scale\" \"texture tex1\" "
-                "\"obj-ks-img\" \"color tex2\" [%f %f %f]\n",
+        fprintf(f, "Texture \"%s-ks-img\" \"color\" \"imagemap\" "
+                "\"string filename\" [\"%s\"]\n",
+                mtl.name.c_str(), mtl.specular_texname.c_str());
+        fprintf(f, "Texture \"%s-ks\" \"color\" \"scale\" \"texture tex1\" "
+                "\"%s-ks-img\" \"color tex2\" [%f %f %f]\n",
+                mtl.name.c_str(), mtl.name.c_str(),
                 mtl.specular[0], mtl.specular[1], mtl.specular[2]);
       }
       else {
-        fprintf(f, "Texture \"obj-ks\" \"color\" \"imagemap\" "
-                "\"string filename\" [\"%s\"]\n", mtl.specular_texname.c_str());
+        fprintf(f, "Texture \"%s-ks\" \"color\" \"imagemap\" "
+                "\"string filename\" [\"%s\"]\n",
+                mtl.name.c_str(), mtl.specular_texname.c_str());
       }
     }
-    else
-      fprintf(f, "Texture \"obj-ks\" \"color\" \"constant\" \"color value\" "
-              "[%f %f %f]\n", mtl.specular[0], mtl.specular[1],
-              mtl.specular[2]);
 
     if (mtl.normal_texname != "") {
-      fprintf(f, "Texture \"obj-bump-map\" \"float\" \"imagemap\" "
-              "\"string filename\" [\"%s\"]\n", mtl.normal_texname.c_str());
-      fprintf(f, "Texture \"obj-bump\" \"float\" \"scale\" \"float tex1\" [%f] "
-              "\"texture tex2\" \"obj-bump-map\"\n", mtl.bump_scale);
+      fprintf(f, "Texture \"%s-bump-map\" \"float\" \"imagemap\" "
+              "\"string filename\" [\"%s\"]\n",
+              mtl.name.c_str(), mtl.normal_texname.c_str());
+      fprintf(f, "Texture \"%s-bump\" \"float\" \"scale\" \"float tex1\" [%f] "
+              "\"texture tex2\" \"%s-bump-map\"\n",
+              mtl.name.c_str(), mtl.bump_scale, mtl.name.c_str());
     }
 
     float roughness = (mtl.shininess == 0) ? 0. : (1.f / mtl.shininess);
-    fprintf(f, "Material \"uber\" \"texture Kd\" \"obj-kd\" "
-            "\"texture Ks\" \"obj-ks\" \"float roughness\" [%f] "
+    fprintf(f, "Material \"uber\" ");
+    if (hasDiffuseTex)
+        fprintf(f, "\"texture Kd\" \"%s-kd\" ", mtl.name.c_str());
+    else
+        fprintf(f, "\"color Kd\" [%f %f %f] ", mtl.diffuse[0],
+                mtl.diffuse[1], mtl.diffuse[2]);
+    if (hasSpecularTex)
+        fprintf(f, "\"texture Ks\" \"%s-ks\" ", mtl.name.c_str());
+    else
+        fprintf(f, "\"color Ks\" [%f %f %f] ", mtl.specular[0],
+                mtl.specular[1], mtl.specular[2]);
+    fprintf(f, "\"float roughness\" [%f] "
             "\"rgb Kt\" [%f %f %f] \"float index\" [%f] "
             "\"rgb opacity\" [%f %f %f] ",
             roughness, mtl.transmittance[0], mtl.transmittance[1],
             mtl.transmittance[2], mtl.ior, mtl.dissolve, mtl.dissolve,
             mtl.dissolve);
     if (mtl.normal_texname != "")
-      fprintf(f, "\"texture bumpmap\" \"obj-bump\" ");
+        fprintf(f, "\"texture bumpmap\" \"%s-bump\" ", mtl.name.c_str());
     fprintf(f, "\n\n");
 
     const mesh_t &mesh = shape.mesh;
