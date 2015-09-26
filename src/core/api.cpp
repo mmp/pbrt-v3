@@ -648,8 +648,10 @@ std::unique_ptr<Filter> MakeFilter(const std::string &name,
         filter = CreateSincFilter(paramSet);
     else if (name == "triangle")
         filter = CreateTriangleFilter(paramSet);
-    else
-        Warning("Filter \"%s\" unknown.", name.c_str());
+    else {
+        Error("Filter \"%s\" unknown.", name.c_str());
+        exit(1);
+    }
     paramSet.ReportUnused();
     return std::unique_ptr<Filter>(filter);
 }
@@ -1184,7 +1186,7 @@ Integrator *RenderOptions::MakeIntegrator() const {
         MakeSampler(SamplerName, SamplerParams, camera->film);
     if (!sampler) {
         Error("Unable to create sampler.");
-        return nullptr;
+        exit(1);
     }
 
     Integrator *integrator = nullptr;
@@ -1203,14 +1205,17 @@ Integrator *RenderOptions::MakeIntegrator() const {
         integrator = CreateMLTIntegrator(IntegratorParams, camera);
     } else if (IntegratorName == "sppm") {
         integrator = CreateSPPMIntegrator(IntegratorParams, camera);
-    } else
-        Warning("Integrator \"%s\" unknown.", IntegratorName.c_str());
+    } else {
+        Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
+        exit(1);
+    }
+
     IntegratorParams.ReportUnused();
     // Warn if no light sources are defined
     if (lights.size() == 0)
         Warning(
             "No light sources defined in scene; "
-            "possibly rendering a black image.");
+            "rendering a black image.");
     return integrator;
 }
 
