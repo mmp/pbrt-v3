@@ -173,7 +173,7 @@ class BSDF {
     }
     Spectrum f(const Vector3f &woW, const Vector3f &wiW,
                BxDFType flags = BSDF_ALL) const;
-    Spectrum rho(RNG &rng, int nSamples, const Point2f *samples1,
+    Spectrum rho(int nSamples, const Point2f *samples1,
                  const Point2f *samples2, BxDFType flags = BSDF_ALL) const;
     Spectrum rho(const Vector3f &wo, int nSamples, const Point2f *samples,
                  BxDFType flags = BSDF_ALL) const;

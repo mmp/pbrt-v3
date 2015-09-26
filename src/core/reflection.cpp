@@ -602,7 +602,7 @@ Spectrum BSDF::f(const Vector3f &woW, const Vector3f &wiW,
     return f;
 }
 
-Spectrum BSDF::rho(RNG &rng, int nSamples, const Point2f *samples1,
+Spectrum BSDF::rho(int nSamples, const Point2f *samples1,
                    const Point2f *samples2, BxDFType flags) const {
     Spectrum ret(0.f);
     for (int i = 0; i < nBxDFs; ++i)
