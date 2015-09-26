@@ -44,6 +44,7 @@
 #include <map>
 #include <chrono>
 #include <string>
+#include <functional>
 
 // Statistics Declarations
 class StatsAccumulator;

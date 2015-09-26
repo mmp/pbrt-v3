@@ -42,6 +42,7 @@
 // core/imageio.h*
 #include "pbrt.h"
 #include "geometry.h"
+#include <cctype>
 
 // ImageIO Declarations
 inline bool HasExtension(const std::string &value, const std::string &ending) {
