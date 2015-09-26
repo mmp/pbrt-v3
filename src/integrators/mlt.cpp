@@ -167,7 +167,7 @@ void MLTIntegrator::Render(const Scene &scene) {
     // Generate bootstrap samples and compute normalization constant $b$
     int nBootstrapSamples = nBootstrap * (maxDepth + 1);
     std::vector<Float> bootstrapWeights(nBootstrapSamples, 0);
-    {
+    if (scene.lights.size() > 0) {
         ProgressReporter progress(nBootstrap / 4096,
                                   "Generating bootstrap paths");
         std::vector<MemoryArena> bootstrapThreadArenas(MaxThreadIndex());
@@ -194,7 +194,7 @@ void MLTIntegrator::Render(const Scene &scene) {
     Film &film = *camera->film;
     int64_t nTotalMutations =
         (int64_t)mutationsPerPixel * (int64_t)film.GetSampleBounds().Area();
-    {
+    if (scene.lights.size() > 0) {
         StatTimer timer(&renderingTime);
         const int progressFrequency = 32768;
         ProgressReporter progress(nTotalMutations / progressFrequency,
