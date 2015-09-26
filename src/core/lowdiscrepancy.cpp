@@ -449,11 +449,11 @@ static Float ScrambledRadicalInverseSpecialized(const uint16_t *perm,
 Float RadicalInverse(int baseIndex, uint64_t a) {
     switch (baseIndex) {
     case 0:
-        // Compute base-2 radical inverse
+    // Compute base-2 radical inverse
 #ifdef PBRT_IS_MSVC
-      return ReverseBits64(a) * 5.4210108624275222e-20;
+        return ReverseBits64(a) * 5.4210108624275222e-20;
 #else
-      return ReverseBits64(a) * 0x1p-64;
+        return ReverseBits64(a) * 0x1p-64;
 #endif
     case 1:
         return RadicalInverseSpecialized<3>(a);
