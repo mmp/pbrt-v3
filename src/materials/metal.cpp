@@ -43,13 +43,18 @@
 MetalMaterial::MetalMaterial(const std::shared_ptr<Texture<Spectrum>> &eta,
                              const std::shared_ptr<Texture<Spectrum>> &k,
                              const std::shared_ptr<Texture<Float>> &roughness,
+                             const std::shared_ptr<Texture<Float>> &uRoughness,
+                             const std::shared_ptr<Texture<Float>> &vRoughness,
                              const std::shared_ptr<Texture<Float>> &bumpMap,
                              bool remapRoughness)
     : eta(eta),
       k(k),
       roughness(roughness),
+      uRoughness(uRoughness),
+      vRoughness(vRoughness),
       bumpMap(bumpMap),
       remapRoughness(remapRoughness) {}
+
 void MetalMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                                MemoryArena &arena,
                                                TransportMode mode,
@@ -58,13 +63,18 @@ void MetalMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
     if (bumpMap) Bump(bumpMap, si);
     si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
 
-    Float rough = roughness->Evaluate(*si);
-    if (remapRoughness)
-        rough = TrowbridgeReitzDistribution::RoughnessToAlpha(rough);
+    Float uRough = uRoughness ? uRoughness->Evaluate(*si) :
+        roughness->Evaluate(*si);
+    Float vRough = vRoughness ? vRoughness->Evaluate(*si) :
+        roughness->Evaluate(*si);
+    if (remapRoughness) {
+        uRough = TrowbridgeReitzDistribution::RoughnessToAlpha(uRough);
+        vRough = TrowbridgeReitzDistribution::RoughnessToAlpha(vRough);
+    }
     Fresnel *frMf = ARENA_ALLOC(arena, FresnelConductor)(1., eta->Evaluate(*si),
                                                          k->Evaluate(*si));
     MicrofacetDistribution *distrib =
-        ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(rough, rough);
+        ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(uRough, vRough);
     si->bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(1., distrib, frMf));
 }
 
@@ -100,6 +110,7 @@ const Float CopperK[CopperSamples] = {
     2.535875, 2.564, 2.589625, 2.605, 2.595562, 2.583, 2.5765,   2.599,
     2.678062, 2.809, 3.01075,  3.24,  3.458187, 3.67,  3.863125, 4.05,
     4.239563, 4.43,  4.619563, 4.817, 5.034125, 5.26,  5.485625, 5.717};
+
 MetalMaterial *CreateMetalMaterial(const TextureParams &mp) {
     static Spectrum copperN =
         Spectrum::FromSampled(CopperWavelengths, CopperN, CopperSamples);
@@ -110,8 +121,13 @@ MetalMaterial *CreateMetalMaterial(const TextureParams &mp) {
     std::shared_ptr<Texture<Spectrum>> k = mp.GetSpectrumTexture("k", copperK);
     std::shared_ptr<Texture<Float>> roughness =
         mp.GetFloatTexture("roughness", .01f);
+    std::shared_ptr<Texture<Float>> uRoughness =
+        mp.GetFloatTextureOrNull("uroughness");
+    std::shared_ptr<Texture<Float>> vRoughness =
+        mp.GetFloatTextureOrNull("vroughness");
     std::shared_ptr<Texture<Float>> bumpMap =
         mp.GetFloatTextureOrNull("bumpmap");
     bool remapRoughness = mp.FindBool("remaproughness", true);
-    return new MetalMaterial(eta, k, roughness, bumpMap, remapRoughness);
+    return new MetalMaterial(eta, k, roughness, uRoughness, vRoughness, bumpMap,
+                             remapRoughness);
 }
