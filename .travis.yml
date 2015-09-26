@@ -14,3 +14,20 @@ script:
   - cmake -G 'Unix Makefiles'
   - make -j2
   - ./pbrt_test
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "PLm0DL4j6SSctASgk/mF88Ynax0DNJANTzRoULFdQH8UwWb4EKKjwJlI0N3dxItwA8/9EtQCWaDvVcn9q+If9f33shnUL4zydVjvT6n1Jv3YKkdWZBIFQRyoYz7aHfzBPHUxA9KiZ/lQlQaMuhpmO+5WxfxLqfJzJh5Ao+CWlPxLk14QcttUuuRZEPOuEhaUsA4cjLuFyJOmq30EjlvRmJEO444CQJG8IdFqeptvyXn8DjW+/WCWQeTxkYkhRL+qUM0BF6YEBed74eW78v8NfuF154Tq0YBndo8YyO7iS25vQNkd6m/85KQtEhq9FRx9CLoEl1KD/5yCsZvdXIufw9DYyoWYAzfAZ5u1hkIvJ8Mad9laRZUnAdIBn/e6xtd5z7Cb8dLR7+VJeObTzRG7Lo9FqpgC4aYNMrMohw++THf3XpXdviaUVW2fRuy3cKwcevvUd2cYMXEgwfhNJeASY1P7kOXkSZwBr+0llr8grhf60nfMn44amDkSVuBAhr0k995cXiLw0N8feRmyAD93XiONqeQy9juR6WMGwQc29RWijmnuIiB0kczo+7eU7EPJv8q3w9uLxcF909qTmCMGiNyo3clxJFloDet11bFvEopqRDdfn8CZ73zm1dOgTp3dN27zZxA+XK0YzYeOr8pOjG+Jwzr6CaUOfdDRv5c+YCA="
+
+addons:
+  coverity_scan:
+    project:
+      name: "mmp/pbrt-v3"
+      description: "Source code to the rendering system described in Physically Based Rendering"
+    notification_email: matt@pharr.org
+    build_command_prepend: "cmake -G 'Unix Makefiles'"
+    build_command: "make -j4"
+    branch_pattern: coverity_scan
+
