@@ -415,7 +415,10 @@ void RealisticCamera::DrawRayPathFromScene(const Ray &r, bool arrow,
     // go to the film plane by default
     {
         Float ta = -ray.o.z / ray.d.z;
-        if (toOpticalIntercept) ta = -ray.o.x / ray.d.x;
+        if (toOpticalIntercept) {
+          ta = -ray.o.x / ray.d.x;
+          printf("Point[{%f, %f}], ", ray(ta).z, ray(ta).x);
+        }
         printf("%s[{{%f, %f}, {%f, %f}}]", arrow ? "Arrow" : "Line", ray.o.z,
                ray.o.x, ray(ta).z, ray(ta).x);
     }
