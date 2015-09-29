@@ -54,7 +54,7 @@ Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm);
 extern const int PrimeSums[PrimeTableSize];
 inline void Sobol2D(int nSamplesPerPixelSample, int nPixelSamples,
                     Point2f *samples, RNG &rng);
-extern uint32_t CMaxMinDist[32 * 32];
+extern uint32_t CMaxMinDist[17][32];
 inline uint64_t SobolIntervalToIndex(const uint32_t log2Resolution,
                                      uint64_t sampleNum, const Point2i &p);
 inline float SobolSampleFloat(int64_t index, int dimension,
