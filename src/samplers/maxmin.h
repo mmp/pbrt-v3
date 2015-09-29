@@ -51,12 +51,27 @@ class MaxMinDistSampler : public PixelSampler {
     std::unique_ptr<Sampler> Clone(int seed);
     int RoundCount(int count) const { return RoundUpPow2(count); }
     MaxMinDistSampler(int64_t samplesPerPixel, int nSampledDimensions)
-        : PixelSampler(RoundUpPow2(samplesPerPixel), nSampledDimensions) {
-        if (!IsPowerOf2(samplesPerPixel))
-            Warning("Non power-of-two sample count rounded up to %" PRId64
-                    "for MaxMinDistSampler.",
-                    samplesPerPixel);
-        CPixel = &CMaxMinDist[Log2Int(samplesPerPixel) * 32];
+        : PixelSampler([](int64_t spp) {
+            int Cindex = Log2Int(spp);
+            if (Cindex >= sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0])) {
+              Warning(
+                  "No more than %d samples per pixel are supported with "
+                  "MaxMinDistSampler. Rounding down.",
+                  1 << int(sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0]) - 1));
+              spp = 1 << (sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0]) - 1);
+            }
+            if (!IsPowerOf2(spp)) {
+              spp = RoundUpPow2(spp);
+              Warning("Non power-of-two sample count rounded up to %" PRId64
+                      " for MaxMinDistSampler.",
+                      spp);
+            }
+            return spp;
+          }(samplesPerPixel), nSampledDimensions) {
+        int Cindex = Log2Int(samplesPerPixel);
+        Assert(Cindex >= 0 &&
+               Cindex < (sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0])));
+        CPixel = CMaxMinDist[Cindex];
     }
 
   private:

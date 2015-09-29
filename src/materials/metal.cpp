@@ -63,10 +63,10 @@ void MetalMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
     if (bumpMap) Bump(bumpMap, si);
     si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
 
-    Float uRough = uRoughness ? uRoughness->Evaluate(*si) :
-        roughness->Evaluate(*si);
-    Float vRough = vRoughness ? vRoughness->Evaluate(*si) :
-        roughness->Evaluate(*si);
+    Float uRough =
+        uRoughness ? uRoughness->Evaluate(*si) : roughness->Evaluate(*si);
+    Float vRough =
+        vRoughness ? vRoughness->Evaluate(*si) : roughness->Evaluate(*si);
     if (remapRoughness) {
         uRough = TrowbridgeReitzDistribution::RoughnessToAlpha(uRough);
         vRough = TrowbridgeReitzDistribution::RoughnessToAlpha(vRough);
