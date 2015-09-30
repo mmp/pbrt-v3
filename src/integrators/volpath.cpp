@@ -68,6 +68,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             ++volumeInteractions;
             // Handle scattering at point in medium for volumetric path tracer
             L += beta * UniformSampleOneLight(mi, scene, arena, sampler, true);
+
+            // Terminate path if ray escaped or _maxDepth_ was reached
+            if (bounces >= maxDepth) break;
+
             Vector3f wo = -ray.d, wi;
             mi.phase->Sample_p(wo, &wi, sampler.Get2D());
             ray = mi.SpawnRay(wi);
