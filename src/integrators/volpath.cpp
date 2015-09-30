@@ -40,6 +40,10 @@
 #include "bssrdf.h"
 #include "stats.h"
 
+STAT_FLOAT_DISTRIBUTION("Integrator/Path length", pathLength);
+STAT_COUNTER("Integrator/Volume interactions", volumeInteractions);
+STAT_COUNTER("Integrator/Surface interactions", surfaceInteractions);
+
 // VolPathIntegrator Method Definitions
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena,
@@ -48,7 +52,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     Spectrum L(0.f), beta(1.f);
     RayDifferential ray(r);
     bool specularBounce = false;
-    for (int bounces = 0;; ++bounces) {
+    int bounces;
+    for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
@@ -60,12 +65,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Handle an interaction with a medium or a surface
         if (mi.IsValid()) {
+            ++volumeInteractions;
             // Handle scattering at point in medium for volumetric path tracer
             L += beta * UniformSampleOneLight(mi, scene, arena, sampler, true);
             Vector3f wo = -ray.d, wi;
             mi.phase->Sample_p(wo, &wi, sampler.Get2D());
             ray = mi.SpawnRay(wi);
         } else {
+            ++surfaceInteractions;
             // Handle scattering at point on surface for volumetric path tracer
 
             // Possibly add emitted light at intersection
@@ -144,6 +151,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             Assert(std::isinf(beta.y()) == false);
         }
     }
+    ReportValue(pathLength, bounces);
     return L;
 }
 
