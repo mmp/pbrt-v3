@@ -56,18 +56,16 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    float *diffImage = NULL;
+    float *diffRGB = NULL;
     if (outfile != NULL)
-        diffImage = new float[4 * r1[0] * r1[1]];
+        diffRGB = new float[3 * r1[0] * r1[1]];
 
     double sum1 = 0.f, sum2 = 0.f;
     int smallDiff = 0, bigDiff = 0;
     double mse = 0.f;
-    for (int i = 0; i < 4*r1[0]*r1[1]; ++i) {
-        if (diffImage) diffImage[i] = fabsf(im1[i] - im2[i]);
+    for (int i = 0; i < 3 * r1[0] * r1[1]; ++i) {
+        if (diffRGB) diffRGB[i] = fabsf(im1[i] - im2[i]);
         if (im1[i] == 0 && im2[i] == 0)
-            continue;
-        if ((i % 4) == 3) // alpha channel
             continue;
 
         sum1 += im1[i];
@@ -92,14 +90,14 @@ int main(int argc, char *argv[])
                mse / (3. * r1[0] * r1[1]),
                100. * sqrt(mse / (3. * r1[0] * r1[1])));
         if (outfile)
-            WriteEXR(outfile, diffImage, r1[0], r1[1]);
+            WriteEXR(outfile, diffRGB, r1[0], r1[1]);
         return 1;
     }
 
     return 0;
 }
 
-static bool ReadEXR(const char *name, float **rgba, int *width, int *height)
+static bool ReadEXR(const char *name, float **rgb, int *width, int *height)
 {
     Point2i res;
     std::unique_ptr<RGBSpectrum[]> image = ReadImage(name, &res);
@@ -107,19 +105,14 @@ static bool ReadEXR(const char *name, float **rgba, int *width, int *height)
       return false;
     *width = res.x;
     *height = res.y;
-    *rgba = new float[4 * *width * *height];
+    *rgb = new float[3 * *width * *height];
     for (int i = 0; i < *width * *height; ++i) {
-        Float rgb[3];
-        image[i].ToRGB(rgb);
-        for (int c = 0; c < 3; ++c) {
-            (*rgba)[4*i + c] = rgb[c];
-        }
-        (*rgba)[4*i + 3] = 1.;
+        image[i].ToRGB(*rgb + 3 * i);
     }
     return true;
 }
 
-static void WriteEXR(const char *name, float *pixels, int xRes, int yRes) {
-  WriteImage(name, pixels, Bounds2i(Point2i(0, 0), Point2i(xRes, yRes)),
+static void WriteEXR(const char *name, float *rgb, int xRes, int yRes) {
+  WriteImage(name, rgb, Bounds2i(Point2i(0, 0), Point2i(xRes, yRes)),
                                     Point2i(xRes, yRes));
 }
