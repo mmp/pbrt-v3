@@ -57,7 +57,8 @@ struct CallbackContext {
           uv(nullptr),
           indices(nullptr),
           indexCtr(0),
-          error(false) {}
+          error(false),
+          vertexCount(0) {}
 
     ~CallbackContext() {
         delete[] p;

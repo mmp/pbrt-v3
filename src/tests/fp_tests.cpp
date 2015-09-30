@@ -100,7 +100,7 @@ TEST(FloatingPoint, EFloat) {
 
             EFloat ef2 = 0;
             float f = -10000 + 20000 * rng.UniformFloat();
-            switch (rng.UniformUInt32() % 3) {
+            switch (rng.UniformUInt32() % 4) {
             case 0:
                 ef2 = f;
                 break;

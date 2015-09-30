@@ -327,7 +327,7 @@ static inline int isWhitespace(char c) {
 // return -1 on an error
 static int readWord(FILE *fp, char *buffer, int bufferLength) {
     int n;
-    char c;
+    int c;
 
     if (bufferLength < 1) return -1;
 
@@ -421,7 +421,7 @@ static RGBSpectrum *ReadImagePFM(const std::string &filename, int *xres,
 
 fail:
     Error("Error reading PFM file \"%s\"", filename.c_str());
-    fclose(fp);
+    if (fp) fclose(fp);
     delete[] data;
     delete[] rgb;
     return nullptr;

@@ -170,7 +170,7 @@ WorldEnd                { return WORLDEND; }
 
 
 {IDENT} {
-    strcpy(yylval.string, yytext);
+    strlcpy(yylval.string, yytext, sizeof(yytext));
     return ID;
 }
 

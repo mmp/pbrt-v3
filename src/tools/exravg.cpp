@@ -21,16 +21,16 @@ int main(int argc, char *argv[])
 
     for (file = 1 ; file < argc ; file++) {
         if (ReadEXR(argv[file], &rgba, &xRes, &yRes)) {
-            orig_rgba = rgba;
+            float *orig_rgba = rgba;
             a = 0;
             for (int i = 0; i < xRes*yRes; ++i) {
                 for (int j = 0; j < 3; ++j)
                     a += rgba[j];
                 rgba += 4;
             }
+            printf("%s: Average value %f\n", argv[file], a / (3.f * xRes * yRes));
+            delete[] orig_rgba;
         }
-        printf("%s: Average value %f\n", argv[file], a / (3.f * xRes * yRes));
-        delete [] orig_rgba;
     }
     return 0;
 }

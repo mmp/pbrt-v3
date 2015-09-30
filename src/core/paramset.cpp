@@ -152,12 +152,13 @@ void ParamSet::AddSampledSpectrum(const std::string &name, const Float *values,
     EraseSpectrum(name);
     Assert(nValues % 2 == 0);
     nValues /= 2;
-    Float *wl = new Float[nValues], *v = new Float[nValues];
+    std::unique_ptr<Float[]> wl(new Float[nValues]);
+    std::unique_ptr<Float[]> v(new Float[nValues]);
     for (int i = 0; i < nValues; ++i) {
         wl[i] = values[2 * i];
         v[i] = values[2 * i + 1];
     }
-    Spectrum s = Spectrum::FromSampled(wl, v, nValues);
+    Spectrum s = Spectrum::FromSampled(wl.get(), v.get(), nValues);
     std::shared_ptr<ParamSetItem<Spectrum>> psi(
         new ParamSetItem<Spectrum>(name, &s, 1));
     spectra.push_back(psi);
