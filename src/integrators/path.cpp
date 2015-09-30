@@ -120,7 +120,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Possibly terminate the path with Russian roulette
         if (bounces > 3) {
-            Float continueProbability = std::min((Float).5, beta.y());
+            Float continueProbability = std::min((Float).95, beta.y());
             if (sampler.Get1D() > continueProbability) break;
             beta /= continueProbability;
             Assert(std::isinf(beta.y()) == false);
