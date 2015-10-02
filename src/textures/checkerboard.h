@@ -43,10 +43,6 @@
 #include "pbrt.h"
 #include "texture.h"
 #include "paramset.h"
-#include "sampling.h"
-#include "shape.h"
-#include "parallel.h"
-#include "progressreporter.h"
 
 // AAMethod Declaration
 enum class AAMethod { None, ClosedForm };
