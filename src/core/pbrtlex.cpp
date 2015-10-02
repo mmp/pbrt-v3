@@ -724,6 +724,7 @@ struct ParamArray;
 #pragma warning(disable:4065)
 #pragma warning(disable:4018)
 #pragma warning(disable:4996)
+int isatty(int) { return 0; }
 #endif  // PBRT_IS_MSVC
 #include "pbrtparse.hh"
 

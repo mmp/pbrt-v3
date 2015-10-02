@@ -77,9 +77,9 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
                 lensData[i + 3] = apertureDiameter;
             }
         }
-        elementInterfaces.push_back((LensElementInterface){
+        elementInterfaces.push_back(LensElementInterface({
             lensData[i] * (Float).001, lensData[i + 1] * (Float).001,
-            lensData[i + 2], lensData[i + 3] * Float(.001) / Float(2.)});
+            lensData[i + 2], lensData[i + 3] * Float(.001) / Float(2.)}));
     }
 
     // Compute lens--film distance for given focus distance

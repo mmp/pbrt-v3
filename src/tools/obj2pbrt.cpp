@@ -18,6 +18,8 @@
 #ifndef _TINY_OBJ_LOADER_H
 #define _TINY_OBJ_LOADER_H
 
+#include <algorithm>
+#include <cctype>
 #include <string>
 #include <vector>
 #include <map>
