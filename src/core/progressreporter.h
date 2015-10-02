@@ -64,7 +64,8 @@ class ProgressReporter {
   private:
     // ProgressReporter Private Data
     const int64_t totalWork;
-    int workDone, plussesPrinted, totalPlusses;
+    int64_t workDone;
+    int plussesPrinted, totalPlusses;
     std::chrono::system_clock::time_point startTime;
     FILE *outFile;
     std::unique_ptr<char[]> buf;
