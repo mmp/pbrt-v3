@@ -57,8 +57,8 @@ class MaxMinDistSampler : public PixelSampler {
               Warning(
                   "No more than %d samples per pixel are supported with "
                   "MaxMinDistSampler. Rounding down.",
-                  1 << int(sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0]) - 1));
-              spp = 1 << (sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0]) - 1);
+                  (1 << int(sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0]))) - 1);
+              spp = (1 << (sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0]))) - 1;
             }
             if (!IsPowerOf2(spp)) {
               spp = RoundUpPow2(spp);
