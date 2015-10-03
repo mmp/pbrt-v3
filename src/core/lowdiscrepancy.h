@@ -107,7 +107,7 @@ inline uint32_t ReverseMultiplyGenerator(const uint32_t *C, uint32_t a) {
 inline Float SampleGeneratorMatrix(const uint32_t *C, uint32_t a,
                                    uint32_t scramble = 0) {
 #ifdef PBRT_IS_MSVC
-    return (ReverseMultiplyGenerator(C, a) ^ scramble) * 2.3283064365386963e-10f);
+    return (ReverseMultiplyGenerator(C, a) ^ scramble) * 2.3283064365386963e-10f;
 #else
     return (ReverseMultiplyGenerator(C, a) ^ scramble) * 0x1p-32f;
 #endif

@@ -84,7 +84,9 @@
 #pragma warning(disable : 4305)  // double constant assigned to float
 #pragma warning(disable : 4244)  // int -> float conversion
 #pragma warning(disable : 4267)  // size_t -> unsigned int conversion
+#if _MSC_VER < 1900
 #define constexpr const
+#endif
 #endif
 
 // Global Macros
