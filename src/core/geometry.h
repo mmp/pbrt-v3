@@ -43,11 +43,11 @@
 #include "pbrt.h"
 
 template<typename T>
-bool isNaN(const T x){
+inline bool isNaN(const T x){
     return std::isnan(x);
 }
 template<>
-constexpr bool isNaN(const int x){
+inline bool isNaN(const int x){
     return false;
 }
 
