@@ -421,7 +421,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         // Update pixel values from this pass's photons
         {
             StatTimer timer(&statsUpdateTimer);
-            for (int i = 0; i < nPixels; ++i) {
+            ParallelFor([&](int i) {
                 SPPMPixel &p = pixels[i];
                 if (p.M > 0) {
                     // Update pixel photon count, search radius, and $\tau$ from
@@ -443,7 +443,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 // Reset _VisiblePoint_ in pixel
                 p.vp.beta = 0.;
                 p.vp.bsdf = nullptr;
-            }
+            }, nPixels, 4096);
         }
 
         // Periodically store SPPM image in film and write image
