@@ -1297,7 +1297,8 @@ case 47:
 YY_RULE_SETUP
 #line 172 "/Users/mpharr/pbrt-3ed/src/core/pbrtlex.ll"
 {
-    strcpy(yylval.string, yytext);
+    yylval.string[0] = '\0';
+    strncat(yylval.string, yytext, sizeof(yylval.string) - 1);
     return ID;
 }
 	YY_BREAK

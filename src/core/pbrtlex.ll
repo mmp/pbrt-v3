@@ -172,7 +172,7 @@ WorldEnd                { return WORLDEND; }
 
 {IDENT} {
     yylval.string[0] = '\0';
-    strncat(yylval.string, yytext, sizeof(yylval.string));
+    strncat(yylval.string, yytext, sizeof(yylval.string) - 1);
     return ID;
 }
 
