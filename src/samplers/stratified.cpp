@@ -79,5 +79,5 @@ StratifiedSampler *CreateStratifiedSampler(const ParamSet &params) {
     int ysamp = params.FindOneInt("ysamples", 4);
     int sd = params.FindOneInt("dimensions", 4);
     if (PbrtOptions.quickRender) xsamp = ysamp = 1;
-    return new StratifiedSampler(xsamp, ysamp, sd, jitter);
+    return new StratifiedSampler(xsamp, ysamp, jitter, sd);
 }
