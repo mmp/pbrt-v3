@@ -247,6 +247,17 @@ std::vector<std::shared_ptr<Shape>> CreatePLYMesh(
         alphaTex.reset(new ConstantTexture<Float>(0.f));
     }
 
+    std::shared_ptr<Texture<Float>> shadowAlphaTex;
+    std::string shadowAlphaTexName = params.FindTexture("shadowalpha");
+    if (shadowAlphaTexName != "") {
+        if (floatTextures->find(shadowAlphaTexName) != floatTextures->end())
+            shadowAlphaTex = (*floatTextures)[shadowAlphaTexName];
+        else
+            Error("Couldn't find float texture \"%s\" for \"shadowalpha\" parameter",
+                  shadowAlphaTexName.c_str());
+    } else if (params.FindOneFloat("shadowalpha", 1.f) == 0.f)
+        shadowAlphaTex.reset(new ConstantTexture<Float>(0.f));
+
     bool discardDegenerateUVs =
         params.FindOneBool("discarddegenerateUVs", false);
     if (discardDegenerateUVs && context.uv && context.n) {
@@ -275,5 +286,6 @@ std::vector<std::shared_ptr<Shape>> CreatePLYMesh(
 
     return CreateTriangleMesh(
         o2w, w2o, reverseOrientation, context.indexCtr / 3, context.indices,
-        vertexCount, context.p, nullptr, context.n, context.uv, alphaTex);
+        vertexCount, context.p, nullptr, context.n, context.uv, alphaTex,
+        shadowAlphaTex);
 }

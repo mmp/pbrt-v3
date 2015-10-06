@@ -53,11 +53,13 @@ TriangleMesh::TriangleMesh(const Transform &ObjectToWorld, int nTriangles,
                            const int *vertexIndices, int nVertices,
                            const Point3f *P, const Vector3f *S,
                            const Normal3f *N, const Point2f *UV,
-                           const std::shared_ptr<Texture<Float>> &alphaMask)
+                           const std::shared_ptr<Texture<Float>> &alphaMask,
+                           const std::shared_ptr<Texture<Float>> &shadowAlphaMask)
     : nTriangles(nTriangles),
       nVertices(nVertices),
       vertexIndices(vertexIndices, vertexIndices + 3 * nTriangles),
-      alphaMask(alphaMask) {
+      alphaMask(alphaMask),
+      shadowAlphaMask(shadowAlphaMask) {
     ++nMeshes;
     nTris += nTriangles;
     triMeshBytes += sizeof(*this) + (3 * nTriangles * sizeof(int)) +
@@ -138,10 +140,11 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
     const Transform *ObjectToWorld, const Transform *WorldToObject,
     bool reverseOrientation, int nTriangles, const int *vertexIndices,
     int nVertices, const Point3f *p, const Vector3f *s, const Normal3f *n,
-    const Point2f *uv, const std::shared_ptr<Texture<Float>> &alphaMask) {
+    const Point2f *uv, const std::shared_ptr<Texture<Float>> &alphaMask,
+    const std::shared_ptr<Texture<Float>> &shadowAlphaMask) {
     std::shared_ptr<TriangleMesh> mesh = std::make_shared<TriangleMesh>(
         *ObjectToWorld, nTriangles, vertexIndices, nVertices, p, s, n, uv,
-        alphaMask);
+        alphaMask, shadowAlphaMask);
     std::vector<std::shared_ptr<Shape>> tris;
     tris.reserve(nTriangles);
     for (int i = 0; i < nTriangles; ++i)
@@ -639,7 +642,7 @@ bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
 #endif  // !NDEBUG
 
     // Test shadow ray intersection against alpha texture, if present
-    if (testAlphaTexture && mesh->alphaMask) {
+    if (testAlphaTexture && (mesh->alphaMask || mesh->shadowAlphaMask)) {
         // Compute triangle partial derivatives
         Vector3f dpdu, dpdv;
         Point2f uv[3];
@@ -664,7 +667,11 @@ bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
         SurfaceInteraction isectLocal(
             pHit, Vector3f(0, 0, 0), uvHit, Vector3f(0, 0, 0), dpdu, dpdv,
             Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time, this);
-        if (mesh->alphaMask->Evaluate(isectLocal) == 0) return false;
+        if (mesh->alphaMask && mesh->alphaMask->Evaluate(isectLocal) == 0)
+            return false;
+        if (mesh->shadowAlphaMask &&
+            mesh->shadowAlphaMask->Evaluate(isectLocal) == 0)
+            return false;
     }
     ++nHits;
     return true;
@@ -800,6 +807,18 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
                   alphaTexName.c_str());
     } else if (params.FindOneFloat("alpha", 1.f) == 0.f)
         alphaTex.reset(new ConstantTexture<Float>(0.f));
+
+    std::shared_ptr<Texture<Float>> shadowAlphaTex;
+    std::string shadowAlphaTexName = params.FindTexture("shadowalpha");
+    if (shadowAlphaTexName != "") {
+        if (floatTextures->find(shadowAlphaTexName) != floatTextures->end())
+            shadowAlphaTex = (*floatTextures)[shadowAlphaTexName];
+        else
+            Error("Couldn't find float texture \"%s\" for \"shadowalpha\" parameter",
+                  shadowAlphaTexName.c_str());
+    } else if (params.FindOneFloat("shadowalpha", 1.f) == 0.f)
+        shadowAlphaTex.reset(new ConstantTexture<Float>(0.f));
+
     return CreateTriangleMesh(o2w, w2o, reverseOrientation, nvi / 3, vi, npi, P,
-                              S, N, uvs, alphaTex);
+                              S, N, uvs, alphaTex, shadowAlphaTex);
 }

@@ -393,7 +393,7 @@ std::vector<std::shared_ptr<Shape>> LoopSubdivide(
         return CreateTriangleMesh(ObjectToWorld, WorldToObject,
                                   reverseOrientation, ntris, verts.get(),
                                   totVerts, pLimit.get(), nullptr, &Ns[0],
-                                  nullptr, nullptr);
+                                  nullptr, nullptr, nullptr);
     }
 }
 

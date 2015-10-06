@@ -303,5 +303,5 @@ std::vector<std::shared_ptr<Shape>> CreateNURBS(const Transform *o2w,
 
     return CreateTriangleMesh(o2w, w2o, reverseOrientation, nTris,
                               vertices.get(), nVerts, evalPs.get(), nullptr,
-                              evalNs.get(), uvs.get(), nullptr);
+                              evalNs.get(), uvs.get(), nullptr, nullptr);
 }

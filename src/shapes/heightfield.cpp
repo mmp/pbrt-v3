@@ -82,5 +82,5 @@ std::vector<std::shared_ptr<Shape>> CreateHeightfield(
 
     return CreateTriangleMesh(ObjectToWorld, WorldToObject, reverseOrientation,
                               ntris, indices.get(), nverts, P.get(), nullptr,
-                              nullptr, uvs.get(), nullptr);
+                              nullptr, uvs.get(), nullptr, nullptr);
 }
