@@ -54,18 +54,19 @@ int main(int argc, char *argv[]) {
             options.quiet = true;
         else if (!strcmp(argv[i], "--verbose"))
             options.verbose = true;
+        else if (!strcmp(argv[i], "--cat"))
+            options.cat = true;
         else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
             printf(
                 "usage: pbrt [--nthreads n] [--outfile filename] [--quick] "
-                "[--quiet] "
-                "[--verbose] [--help] <filename.pbrt> ...\n");
+                "[--quiet] [--cat] [--verbose] [--help] <filename.pbrt> ...\n");
             return 0;
         } else
             filenames.push_back(argv[i]);
     }
 
     // Print welcome banner
-    if (!options.quiet) {
+    if (!options.quiet && !options.cat) {
         printf("pbrt version 3 (built %s at %s) [Detected %d cores]\n",
                __DATE__, __TIME__, NumSystemCores());
         printf(

@@ -683,6 +683,77 @@ std::string ParamSet::ToString() const {
     return ret;
 }
 
+static int print(int i) { return printf("%d ", i); }
+static int print(bool v) {
+    return v ? printf("\"true\" ") : printf("\"false\" ");
+}
+static int print(float f) {
+    if ((int)f == f)
+        return printf("%d ", (int)f);
+    else
+        return printf("%.10f ", f);
+}
+static int print(const Point2f &p) {
+    int np = print(p.x);
+    return np + print(p.y);
+}
+static int print(const Vector2f &v) {
+    int np = print(v.x);
+    return np + print(v.y);
+}
+static int print(const Point3f &p) {
+    int np = print(p.x);
+    np += print(p.y);
+    return np + print(p.z);
+}
+static int print(const Vector3f &v) {
+    int np = print(v.x);
+    np += print(v.y);
+    return np + print(v.z);
+}
+static int print(const Normal3f &n) {
+    int np = print(n.x);
+    np += print(n.y);
+    return np + print(n.z);
+}
+static int print(const std::string &s) { return printf("\"%s\" ", s.c_str()); }
+static int print(const Spectrum &s) {
+    Float rgb[3];
+    s.ToRGB(rgb);
+    int np = print(rgb[0]);
+    np += print(rgb[1]);
+    return np + print(rgb[2]);
+}
+
+template <typename T>
+static void printItems(
+    const char *type, int indent,
+    const std::vector<std::shared_ptr<ParamSetItem<T>>> &items) {
+    for (const auto &item : items) {
+        int np =
+            printf("\n%*s\"%s %s\" [ ", indent + 8, "", type, item->name.c_str());
+        for (int i = 0; i < item->nValues; ++i) {
+            np += print(item->values[i]);
+            if (np > 80) np = printf("\n%*s", indent + 8, "");
+        }
+        printf("] ");
+    }
+}
+
+void ParamSet::Print(int indent) const {
+    printItems("integer", indent, ints);
+    printItems("boolean", indent, bools);
+    printItems("float", indent, floats);
+    printItems("point2", indent, point2fs);
+    printItems("vector2", indent, vector2fs);
+    printItems("point", indent, point3fs);
+    printItems("vector", indent, vector3fs);
+    printItems("normal", indent, normals);
+    printItems("string", indent, strings);
+    printItems("texture", indent, textures);
+    printItems("rgb", indent, spectra);
+}
+
 // TextureParams Method Definitions
 std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTexture(
     const std::string &n, const Spectrum &def) const {

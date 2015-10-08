@@ -109,6 +109,7 @@ class ParamSet {
     void ReportUnused() const;
     void Clear();
     std::string ToString() const;
+    void Print(int indent) const;
 
   private:
     // ParamSet Private Data
