@@ -49,23 +49,10 @@ STAT_PERCENT("Camera/Rays vignetted by lens system", vignettedRays, totalRays);
 RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
                                  Float shutterOpen, Float shutterClose,
                                  Float apertureDiameter, Float focusDistance,
-                                 bool simpleWeighting, const char *lensFile,
+                                 bool simpleWeighting, std::vector<Float> &lensData,
                                  Film *film, const Medium *medium)
     : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium),
       simpleWeighting(simpleWeighting) {
-    // Load element data from lens description file
-    std::vector<Float> lensData;
-    if (ReadFloatFile(lensFile, &lensData) == false) {
-        Error("Error reading lens specification file \"%s\".", lensFile);
-        return;
-    }
-    if ((lensData.size() % 4) != 0) {
-        Error(
-            "Excess values in lens specification file \"%s\"; "
-            "must be multiple-of-four values, read %d.",
-            lensFile, (int)lensData.size());
-        return;
-    }
     for (int i = 0; i < (int)lensData.size(); i += 4) {
         if (lensData[i] == 0) {
             if (apertureDiameter > lensData[i + 3]) {
@@ -713,10 +700,22 @@ RealisticCamera *CreateRealisticCamera(const ParamSet &params,
     bool simpleWeighting = params.FindOneBool("simpleweighting", true);
     if (lensFile == "") {
         Error("No lens description file supplied!");
-        return NULL;
+        return nullptr;
+    }
+    // Load element data from lens description file
+    std::vector<Float> lensData;
+    if (!ReadFloatFile(lensFile.c_str(), &lensData)) {
+        Error("Error reading lens specification file \"%s\".", lensFile.c_str());
+        return nullptr;
+    }
+    if (lensData.size() % 4 != 0) {
+        Error("Excess values in lens specification file \"%s\"; "
+            "must be multiple-of-four values, read %d.",
+            lensFile.c_str(), (int)lensData.size());
+        return nullptr;
     }
 
     return new RealisticCamera(cam2world, shutteropen, shutterclose,
                                apertureDiameter, focusDistance, simpleWeighting,
-                               lensFile.c_str(), film, medium);
+                               lensData, film, medium);
 }
