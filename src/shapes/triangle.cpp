@@ -49,12 +49,11 @@ static void PlyErrorCallback(p_ply, const char *message) {
 
 // Triangle Method Definitions
 STAT_RATIO("Scene/Triangles per triangle mesh", nTris, nMeshes);
-TriangleMesh::TriangleMesh(const Transform &ObjectToWorld, int nTriangles,
-                           const int *vertexIndices, int nVertices,
-                           const Point3f *P, const Vector3f *S,
-                           const Normal3f *N, const Point2f *UV,
-                           const std::shared_ptr<Texture<Float>> &alphaMask,
-                           const std::shared_ptr<Texture<Float>> &shadowAlphaMask)
+TriangleMesh::TriangleMesh(
+    const Transform &ObjectToWorld, int nTriangles, const int *vertexIndices,
+    int nVertices, const Point3f *P, const Vector3f *S, const Normal3f *N,
+    const Point2f *UV, const std::shared_ptr<Texture<Float>> &alphaMask,
+    const std::shared_ptr<Texture<Float>> &shadowAlphaMask)
     : nTriangles(nTriangles),
       nVertices(nVertices),
       vertexIndices(vertexIndices, vertexIndices + 3 * nTriangles),
@@ -751,12 +750,10 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
         Error(
             "Vertex indices \"indices\" not provided with triangle mesh shape");
         return std::vector<std::shared_ptr<Shape>>();
-        ;
     }
     if (!P) {
         Error("Vertex positions \"P\" not provided with triangle mesh shape");
         return std::vector<std::shared_ptr<Shape>>();
-        ;
     }
     const Vector3f *S = params.FindVector3f("S", &nsi);
     if (S && nsi != npi) {
@@ -797,7 +794,6 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
                 "values were given",
                 vi[i], npi);
             return std::vector<std::shared_ptr<Shape>>();
-            ;
         }
 
     std::shared_ptr<Texture<Float>> alphaTex;
@@ -817,8 +813,10 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
         if (floatTextures->find(shadowAlphaTexName) != floatTextures->end())
             shadowAlphaTex = (*floatTextures)[shadowAlphaTexName];
         else
-            Error("Couldn't find float texture \"%s\" for \"shadowalpha\" parameter",
-                  shadowAlphaTexName.c_str());
+            Error(
+                "Couldn't find float texture \"%s\" for \"shadowalpha\" "
+                "parameter",
+                shadowAlphaTexName.c_str());
     } else if (params.FindOneFloat("shadowalpha", 1.f) == 0.f)
         shadowAlphaTex.reset(new ConstantTexture<Float>(0.f));
 
