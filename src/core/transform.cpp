@@ -266,7 +266,7 @@ SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const {
     // Transform remaining members of _SurfaceInteraction_
     const Transform &t = *this;
     ret.n = Normalize(t(si.n));
-    ret.wo = t(si.wo);
+    ret.wo = Normalize(t(si.wo));
     ret.time = si.time;
     ret.mediumInterface = si.mediumInterface;
     ret.uv = si.uv;

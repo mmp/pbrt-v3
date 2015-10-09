@@ -56,7 +56,7 @@ struct Interaction {
         : p(p),
           time(time),
           pError(pError),
-          wo(wo),
+          wo(Normalize(wo)),
           n(n),
           mediumInterface(mediumInterface) {}
     bool IsSurfaceInteraction() const { return n != Normal3f(); }
