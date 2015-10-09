@@ -1181,12 +1181,16 @@ Scene *RenderOptions::MakeScene() {
 
 Integrator *RenderOptions::MakeIntegrator() const {
     std::shared_ptr<const Camera> camera(MakeCamera());
+    if (!camera) {
+        Error("Unable to create camera");
+        return nullptr;
+    }
 
     std::shared_ptr<Sampler> sampler =
         MakeSampler(SamplerName, SamplerParams, camera->film);
     if (!sampler) {
         Error("Unable to create sampler.");
-        exit(1);
+        return nullptr;
     }
 
     Integrator *integrator = nullptr;
@@ -1207,7 +1211,7 @@ Integrator *RenderOptions::MakeIntegrator() const {
         integrator = CreateSPPMIntegrator(IntegratorParams, camera);
     } else {
         Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
-        exit(1);
+        return nullptr;
     }
 
     IntegratorParams.ReportUnused();
@@ -1224,14 +1228,10 @@ Camera *RenderOptions::MakeCamera() const {
     Film *film = MakeFilm(FilmName, FilmParams, std::move(filter));
     if (!film) {
         Error("Unable to create film.");
-        exit(1);
+        return nullptr;
     }
     Camera *camera = ::MakeCamera(CameraName, CameraParams, CameraToWorld,
                                   renderOptions->transformStartTime,
                                   renderOptions->transformEndTime, film);
-    if (!camera) {
-        Error("Unable to create camera.");
-        exit(1);
-    }
     return camera;
 }
