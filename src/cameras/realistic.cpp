@@ -711,7 +711,7 @@ RealisticCamera *CreateRealisticCamera(const ParamSet &params,
     if (lensData.size() % 4 != 0) {
         Error("Excess values in lens specification file \"%s\"; "
             "must be multiple-of-four values, read %d.",
-            lensFile, (int)lensData.size());
+            lensFile.c_str(), (int)lensData.size());
         return nullptr;
     }
 
