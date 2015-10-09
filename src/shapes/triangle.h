@@ -113,4 +113,8 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
     std::map<std::string, std::shared_ptr<Texture<Float>>> *floatTextures =
         nullptr);
 
+bool WritePlyFile(const std::string &filename, int nTriangles,
+                  const int *vertexIndices, int nVertices, const Point3f *P,
+                  const Vector3f *S, const Normal3f *N, const Point2f *UV);
+
 #endif  // PBRT_SHAPES_TRIANGLE_H

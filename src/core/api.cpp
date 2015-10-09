@@ -321,11 +321,52 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
     else if (name == "curve")
         shapes = CreateCurveShape(object2world, world2object,
                                   reverseOrientation, paramSet);
-    else if (name == "trianglemesh")
-        shapes = CreateTriangleMeshShape(object2world, world2object,
-                                         reverseOrientation, paramSet,
-                                         &graphicsState.floatTextures);
-    else if (name == "plymesh")
+    else if (name == "trianglemesh") {
+        if (PbrtOptions.toPly) {
+            static int count = 1;
+            char fn[128];
+            sprintf(fn, "mesh_%05d.ply", count++);
+
+            int nvi, npi, nuvi, nsi, nni;
+            const int *vi = paramSet.FindInt("indices", &nvi);
+            const Point3f *P = paramSet.FindPoint3f("P", &npi);
+            const Point2f *uvs = paramSet.FindPoint2f("uv", &nuvi);
+            if (!uvs) uvs = paramSet.FindPoint2f("st", &nuvi);
+            std::vector<Point2f> tempUVs;
+            if (!uvs) {
+                const Float *fuv = paramSet.FindFloat("uv", &nuvi);
+                if (!fuv) fuv = paramSet.FindFloat("st", &nuvi);
+                if (fuv) {
+                    nuvi /= 2;
+                    tempUVs.reserve(nuvi);
+                    for (int i = 0; i < nuvi; ++i)
+                        tempUVs.push_back(Point2f(fuv[2 * i], fuv[2 * i + 1]));
+                    uvs = &tempUVs[0];
+                }
+            }
+            const Normal3f *N = paramSet.FindNormal3f("N", &nni);
+            const Vector3f *S = paramSet.FindVector3f("S", &nsi);
+
+            if (!WritePlyFile(fn, nvi / 3, vi, npi, P, S, N, uvs))
+                Error("Unable to write PLY file \"%s\"", fn);
+
+            printf("%*sShape \"plymesh\" \"string filename\" \"%s\" ",
+                   catIndentCount, "", fn);
+
+            std::string alphaTex = paramSet.FindTexture("alpha");
+            if (alphaTex != "")
+                printf("\n%*s\"texture alpha\" \"%s\" ", catIndentCount + 8, "",
+                       alphaTex.c_str());
+            std::string shadowAlphaTex = paramSet.FindTexture("alpha");
+            if (shadowAlphaTex != "")
+                printf("\n%*s\"texture shadowalpha\" \"%s\" ",
+                       catIndentCount + 8, "", shadowAlphaTex.c_str());
+            printf("\n");
+        } else
+            shapes = CreateTriangleMeshShape(object2world, world2object,
+                                             reverseOrientation, paramSet,
+                                             &graphicsState.floatTextures);
+    } else if (name == "plymesh")
         shapes = CreatePLYMesh(object2world, world2object, reverseOrientation,
                                paramSet, &graphicsState.floatTextures);
     else if (name == "heightfield")
@@ -698,14 +739,15 @@ void pbrtCleanup() {
 void pbrtIdentity() {
     VERIFY_INITIALIZED("Identity");
     FOR_ACTIVE_TRANSFORMS(curTransform[i] = Transform();)
-    if (PbrtOptions.cat) printf("%*sIdentity\n", catIndentCount, "");
+    if (PbrtOptions.cat || PbrtOptions.toPly)
+        printf("%*sIdentity\n", catIndentCount, "");
 }
 
 void pbrtTranslate(Float dx, Float dy, Float dz) {
     VERIFY_INITIALIZED("Translate");
     FOR_ACTIVE_TRANSFORMS(curTransform[i] = curTransform[i] *
                                             Translate(Vector3f(dx, dy, dz));)
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sTranslate %.10f %.10f %.10f\n", catIndentCount, "", dx, dy,
                dz);
 }
@@ -716,7 +758,7 @@ void pbrtTransform(Float tr[16]) {
         curTransform[i] = Transform(Matrix4x4(
             tr[0], tr[4], tr[8], tr[12], tr[1], tr[5], tr[9], tr[13], tr[2],
             tr[6], tr[10], tr[14], tr[3], tr[7], tr[11], tr[15]));)
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sTransform [ ", catIndentCount, "");
         for (int i = 0; i < 16; ++i) printf("%.10f ", tr[i]);
         printf(" ]\n");
@@ -731,7 +773,7 @@ void pbrtConcatTransform(Float tr[16]) {
             Transform(Matrix4x4(tr[0], tr[4], tr[8], tr[12], tr[1], tr[5],
                                 tr[9], tr[13], tr[2], tr[6], tr[10], tr[14],
                                 tr[3], tr[7], tr[11], tr[15]));)
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sConcatTransform [ ", catIndentCount, "");
         for (int i = 0; i < 16; ++i) printf("%.10f ", tr[i]);
         printf(" ]\n");
@@ -743,7 +785,7 @@ void pbrtRotate(Float angle, Float dx, Float dy, Float dz) {
     FOR_ACTIVE_TRANSFORMS(curTransform[i] =
                               curTransform[i] *
                               Rotate(angle, Vector3f(dx, dy, dz));)
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sRotate %.10f %.10f %.10f %.10f\n", catIndentCount, "", angle,
                dx, dy, dz);
 }
@@ -752,7 +794,7 @@ void pbrtScale(Float sx, Float sy, Float sz) {
     VERIFY_INITIALIZED("Scale");
     FOR_ACTIVE_TRANSFORMS(curTransform[i] =
                               curTransform[i] * Scale(sx, sy, sz);)
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sScale %.10f %.10f %.10f\n", catIndentCount, "", sx, sy, sz);
 }
 
@@ -762,7 +804,7 @@ void pbrtLookAt(Float ex, Float ey, Float ez, Float lx, Float ly, Float lz,
     Transform lookAt =
         LookAt(Point3f(ex, ey, ez), Point3f(lx, ly, lz), Vector3f(ux, uy, uz));
     FOR_ACTIVE_TRANSFORMS(curTransform[i] = curTransform[i] * lookAt;);
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf(
             "%*sLookAt %.10f %.10f %.10f\n%*s%.10f %.10f %.10f\n"
             "%*s%.10f %.10f %.10f\n",
@@ -773,7 +815,7 @@ void pbrtLookAt(Float ex, Float ey, Float ez, Float lx, Float ly, Float lz,
 void pbrtCoordinateSystem(const std::string &name) {
     VERIFY_INITIALIZED("CoordinateSystem");
     namedCoordinateSystems[name] = curTransform;
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sCoordinateSystem \"%s\"\n", catIndentCount, "",
                name.c_str());
 }
@@ -784,25 +826,26 @@ void pbrtCoordSysTransform(const std::string &name) {
         curTransform = namedCoordinateSystems[name];
     else
         Warning("Couldn't find named coordinate system \"%s\"", name.c_str());
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sCoordSysTransform \"%s\"\n", catIndentCount, "",
                name.c_str());
 }
 
 void pbrtActiveTransformAll() {
     activeTransformBits = AllTransformsBits;
-    if (PbrtOptions.cat) printf("%*sActiveTransform All\n", catIndentCount, "");
+    if (PbrtOptions.cat || PbrtOptions.toPly)
+        printf("%*sActiveTransform All\n", catIndentCount, "");
 }
 
 void pbrtActiveTransformEndTime() {
     activeTransformBits = EndTransformBits;
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sActiveTransform EndTime\n", catIndentCount, "");
 }
 
 void pbrtActiveTransformStartTime() {
     activeTransformBits = StartTransformBits;
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sActiveTransform StartTime\n", catIndentCount, "");
 }
 
@@ -810,7 +853,7 @@ void pbrtTransformTimes(Float start, Float end) {
     VERIFY_OPTIONS("TransformTimes");
     renderOptions->transformStartTime = start;
     renderOptions->transformEndTime = end;
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sTransformTimes %.10f %.10f\n", catIndentCount, "", start,
                end);
 }
@@ -819,7 +862,7 @@ void pbrtPixelFilter(const std::string &name, const ParamSet &params) {
     VERIFY_OPTIONS("PixelFilter");
     renderOptions->FilterName = name;
     renderOptions->FilterParams = params;
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sPixelFilter \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -830,7 +873,7 @@ void pbrtFilm(const std::string &type, const ParamSet &params) {
     VERIFY_OPTIONS("Film");
     renderOptions->FilmParams = params;
     renderOptions->FilmName = type;
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sFilm \"%s\" ", catIndentCount, "", type.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -841,7 +884,7 @@ void pbrtSampler(const std::string &name, const ParamSet &params) {
     VERIFY_OPTIONS("Sampler");
     renderOptions->SamplerName = name;
     renderOptions->SamplerParams = params;
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sSampler \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -852,7 +895,7 @@ void pbrtAccelerator(const std::string &name, const ParamSet &params) {
     VERIFY_OPTIONS("Accelerator");
     renderOptions->AcceleratorName = name;
     renderOptions->AcceleratorParams = params;
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sAccelerator \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -863,7 +906,7 @@ void pbrtIntegrator(const std::string &name, const ParamSet &params) {
     VERIFY_OPTIONS("Integrator");
     renderOptions->IntegratorName = name;
     renderOptions->IntegratorParams = params;
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sIntegrator \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -876,7 +919,7 @@ void pbrtCamera(const std::string &name, const ParamSet &params) {
     renderOptions->CameraParams = params;
     renderOptions->CameraToWorld = Inverse(curTransform);
     namedCoordinateSystems["camera"] = renderOptions->CameraToWorld;
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sCamera \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -894,7 +937,7 @@ void pbrtMakeNamedMedium(const std::string &name, const ParamSet &params) {
             MakeMedium(type, params, curTransform[0]);
         if (medium) renderOptions->namedMedia[name] = medium;
     }
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sMakeNamedMedium \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -906,7 +949,7 @@ void pbrtMediumInterface(const std::string &insideName,
     VERIFY_INITIALIZED("MediumInterface");
     graphicsState.currentInsideMedium = insideName;
     graphicsState.currentOutsideMedium = outsideName;
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sMediumInterface \"%s\" \"%s\"\n", catIndentCount, "",
                insideName.c_str(), outsideName.c_str());
 }
@@ -917,7 +960,7 @@ void pbrtWorldBegin() {
     for (int i = 0; i < MaxTransforms; ++i) curTransform[i] = Transform();
     activeTransformBits = AllTransformsBits;
     namedCoordinateSystems["world"] = curTransform;
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf(
             "\n#############################################\nWorldBegin\n\n");
 }
@@ -927,7 +970,7 @@ void pbrtAttributeBegin() {
     pushedGraphicsStates.push_back(graphicsState);
     pushedTransforms.push_back(curTransform);
     pushedActiveTransformBits.push_back(activeTransformBits);
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("\n%*sAttributeBegin\n", catIndentCount, "");
         catIndentCount += 4;
     }
@@ -947,7 +990,7 @@ void pbrtAttributeEnd() {
     pushedTransforms.pop_back();
     activeTransformBits = pushedActiveTransformBits.back();
     pushedActiveTransformBits.pop_back();
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         catIndentCount -= 4;
         printf("%*sAttributeEnd\n", catIndentCount, "");
     }
@@ -957,7 +1000,7 @@ void pbrtTransformBegin() {
     VERIFY_WORLD("TransformBegin");
     pushedTransforms.push_back(curTransform);
     pushedActiveTransformBits.push_back(activeTransformBits);
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sTransformBegin\n", catIndentCount, "");
         catIndentCount += 4;
     }
@@ -975,7 +1018,7 @@ void pbrtTransformEnd() {
     pushedTransforms.pop_back();
     activeTransformBits = pushedActiveTransformBits.back();
     pushedActiveTransformBits.pop_back();
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         catIndentCount -= 4;
         printf("%*sTransformEnd\n", catIndentCount, "");
     }
@@ -1006,7 +1049,7 @@ void pbrtTexture(const std::string &name, const std::string &type,
         if (st) graphicsState.spectrumTextures[name] = st;
     } else
         Error("Texture type \"%s\" unknown.", type.c_str());
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sTexture \"%s\" \"%s\" \"%s\" ", catIndentCount, "",
                name.c_str(), type.c_str(), texname.c_str());
         params.Print(catIndentCount);
@@ -1019,7 +1062,7 @@ void pbrtMaterial(const std::string &name, const ParamSet &params) {
     graphicsState.material = name;
     graphicsState.materialParams = params;
     graphicsState.currentNamedMaterial = "";
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sMaterial \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -1040,7 +1083,7 @@ void pbrtMakeNamedMaterial(const std::string &name, const ParamSet &params) {
         std::shared_ptr<Material> mtl = MakeMaterial(matName, mp);
         if (mtl) graphicsState.namedMaterials[name] = mtl;
     }
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sMakeNamedMaterial \"%s\" ", catIndentCount, "",
                name.c_str());
         params.Print(catIndentCount);
@@ -1051,7 +1094,7 @@ void pbrtMakeNamedMaterial(const std::string &name, const ParamSet &params) {
 void pbrtNamedMaterial(const std::string &name) {
     VERIFY_WORLD("NamedMaterial");
     graphicsState.currentNamedMaterial = name;
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sNamedMaterial \"%s\"\n", catIndentCount, "", name.c_str());
 }
 
@@ -1064,7 +1107,7 @@ void pbrtLightSource(const std::string &name, const ParamSet &params) {
         Error("LightSource: light type \"%s\" unknown.", name.c_str());
     else
         renderOptions->lights.push_back(lt);
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sLightSource \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -1075,7 +1118,7 @@ void pbrtAreaLightSource(const std::string &name, const ParamSet &params) {
     VERIFY_WORLD("AreaLightSource");
     graphicsState.areaLight = name;
     graphicsState.areaLightParams = params;
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sAreaLightSource \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -1086,7 +1129,7 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
     VERIFY_WORLD("Shape");
     std::vector<std::shared_ptr<Primitive>> prims;
     std::vector<std::shared_ptr<AreaLight>> areaLights;
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || (PbrtOptions.toPly && name != "trianglemesh")) {
         printf("%*sShape \"%s\" ", catIndentCount, "", name.c_str());
         params.Print(catIndentCount);
         printf("\n");
@@ -1208,7 +1251,8 @@ MediumInterface GraphicsState::CreateMediumInterface() {
 void pbrtReverseOrientation() {
     VERIFY_WORLD("ReverseOrientation");
     graphicsState.reverseOrientation = !graphicsState.reverseOrientation;
-    if (PbrtOptions.cat) printf("%*sReverseOrientation\n", catIndentCount, "");
+    if (PbrtOptions.cat || PbrtOptions.toPly)
+        printf("%*sReverseOrientation\n", catIndentCount, "");
 }
 
 void pbrtObjectBegin(const std::string &name) {
@@ -1218,7 +1262,7 @@ void pbrtObjectBegin(const std::string &name) {
         Error("ObjectBegin called inside of instance definition");
     renderOptions->instances[name] = std::vector<std::shared_ptr<Primitive>>();
     renderOptions->currentInstance = &renderOptions->instances[name];
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sObjectBegin \"%s\"\n", catIndentCount, "", name.c_str());
 }
 
@@ -1231,7 +1275,8 @@ void pbrtObjectEnd() {
     renderOptions->currentInstance = nullptr;
     pbrtAttributeEnd();
     ++nObjectInstancesCreated;
-    if (PbrtOptions.cat) printf("%*sObjectEnd\n", catIndentCount, "");
+    if (PbrtOptions.cat || PbrtOptions.toPly)
+        printf("%*sObjectEnd\n", catIndentCount, "");
 }
 
 STAT_COUNTER("Scene/Object instances used", nObjectInstancesUsed);
@@ -1239,7 +1284,7 @@ STAT_COUNTER("Scene/Object instances used", nObjectInstancesUsed);
 void pbrtObjectInstance(const std::string &name) {
     VERIFY_WORLD("ObjectInstance");
     // Perform object instance error checking
-    if (PbrtOptions.cat)
+    if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sObjectInstance \"%s\"\n", catIndentCount, "", name.c_str());
     if (renderOptions->currentInstance) {
         Error("ObjectInstance can't be called inside instance definition");
@@ -1289,7 +1334,7 @@ void pbrtWorldEnd() {
     }
 
     // Create scene and render
-    if (PbrtOptions.cat) {
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sWorldEnd\n", catIndentCount, "");
     } else {
         std::unique_ptr<Integrator> integrator(renderOptions->MakeIntegrator());
@@ -1303,7 +1348,7 @@ void pbrtWorldEnd() {
     transformCache.Clear();
     currentApiState = APIState::OptionsBlock;
     ReportThreadStats();
-    if (PbrtOptions.quiet == false && PbrtOptions.cat == false) {
+    if (!PbrtOptions.quiet && !PbrtOptions.cat && !PbrtOptions.toPly) {
         PrintStats(stdout);
         ReportProfilerResults(stdout);
     }

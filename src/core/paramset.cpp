@@ -730,11 +730,12 @@ static void printItems(
     const char *type, int indent,
     const std::vector<std::shared_ptr<ParamSetItem<T>>> &items) {
     for (const auto &item : items) {
-        int np =
-            printf("\n%*s\"%s %s\" [ ", indent + 8, "", type, item->name.c_str());
+        int np = printf("\n%*s\"%s %s\" [ ", indent + 8, "", type,
+                        item->name.c_str());
         for (int i = 0; i < item->nValues; ++i) {
             np += print(item->values[i]);
-            if (np > 80) np = printf("\n%*s", indent + 8, "");
+            if (np > 80 && i < item->nValues - 1)
+                np = printf("\n%*s", indent + 8, "");
         }
         printf("] ");
     }

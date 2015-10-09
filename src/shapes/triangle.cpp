@@ -65,58 +65,7 @@ TriangleMesh::TriangleMesh(const Transform &ObjectToWorld, int nTriangles,
     triMeshBytes += sizeof(*this) + (3 * nTriangles * sizeof(int)) +
                     nVertices * (sizeof(*P) + (N ? sizeof(*N) : 0) +
                                  (S ? sizeof(*S) : 0) + (UV ? sizeof(*UV) : 0));
-    if (getenv("PBRT_DUMP_PLY")) {
-        // Write out triangle mesh as PLY file
-        static int count = 1;
-        char fn[128];
-        sprintf(fn, "mesh_%05d.ply", count++);
-        p_ply plyFile =
-            ply_create(fn, PLY_DEFAULT, PlyErrorCallback, 0, nullptr);
-        if (plyFile != nullptr) {
-            ply_add_element(plyFile, "vertex", nVertices);
-            ply_add_scalar_property(plyFile, "x", PLY_FLOAT);
-            ply_add_scalar_property(plyFile, "y", PLY_FLOAT);
-            ply_add_scalar_property(plyFile, "z", PLY_FLOAT);
-            if (N != nullptr) {
-                ply_add_scalar_property(plyFile, "nx", PLY_FLOAT);
-                ply_add_scalar_property(plyFile, "ny", PLY_FLOAT);
-                ply_add_scalar_property(plyFile, "nz", PLY_FLOAT);
-            }
-            if (UV != nullptr) {
-                ply_add_scalar_property(plyFile, "u", PLY_FLOAT);
-                ply_add_scalar_property(plyFile, "v", PLY_FLOAT);
-            }
-            // TODO(?): tangent vectors...
 
-            ply_add_element(plyFile, "face", nTriangles);
-            ply_add_list_property(plyFile, "vertex_indices", PLY_UINT8,
-                                  PLY_INT);
-            ply_write_header(plyFile);
-
-            for (int i = 0; i < nVertices; ++i) {
-                ply_write(plyFile, P[i].x);
-                ply_write(plyFile, P[i].y);
-                ply_write(plyFile, P[i].z);
-                if (N) {
-                    ply_write(plyFile, N[i].x);
-                    ply_write(plyFile, N[i].y);
-                    ply_write(plyFile, N[i].z);
-                }
-                if (UV) {
-                    ply_write(plyFile, UV[i].x);
-                    ply_write(plyFile, UV[i].y);
-                }
-            }
-
-            for (int i = 0; i < nTriangles; ++i) {
-                ply_write(plyFile, 3);
-                ply_write(plyFile, vertexIndices[3 * i]);
-                ply_write(plyFile, vertexIndices[3 * i + 1]);
-                ply_write(plyFile, vertexIndices[3 * i + 2]);
-            }
-            ply_close(plyFile);
-        }
-    }
     // Transform mesh vertices to world space
     p.reset(new Point3f[nVertices]);
     for (int i = 0; i < nVertices; ++i) p[i] = ObjectToWorld(P[i]);
@@ -151,6 +100,60 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
         tris.push_back(std::make_shared<Triangle>(ObjectToWorld, WorldToObject,
                                                   reverseOrientation, mesh, i));
     return tris;
+}
+
+bool WritePlyFile(const std::string &filename, int nTriangles,
+                  const int *vertexIndices, int nVertices, const Point3f *P,
+                  const Vector3f *S, const Normal3f *N, const Point2f *UV) {
+    p_ply plyFile =
+        ply_create(filename.c_str(), PLY_DEFAULT, PlyErrorCallback, 0, nullptr);
+    if (plyFile != nullptr) {
+        ply_add_element(plyFile, "vertex", nVertices);
+        ply_add_scalar_property(plyFile, "x", PLY_FLOAT);
+        ply_add_scalar_property(plyFile, "y", PLY_FLOAT);
+        ply_add_scalar_property(plyFile, "z", PLY_FLOAT);
+        if (N != nullptr) {
+            ply_add_scalar_property(plyFile, "nx", PLY_FLOAT);
+            ply_add_scalar_property(plyFile, "ny", PLY_FLOAT);
+            ply_add_scalar_property(plyFile, "nz", PLY_FLOAT);
+        }
+        if (UV != nullptr) {
+            ply_add_scalar_property(plyFile, "u", PLY_FLOAT);
+            ply_add_scalar_property(plyFile, "v", PLY_FLOAT);
+        }
+        if (S != nullptr)
+            Warning("PLY mesh in \"%s\" will be missing tangent vectors \"S\".",
+                    filename.c_str());
+
+        ply_add_element(plyFile, "face", nTriangles);
+        ply_add_list_property(plyFile, "vertex_indices", PLY_UINT8, PLY_INT);
+        ply_write_header(plyFile);
+
+        for (int i = 0; i < nVertices; ++i) {
+            ply_write(plyFile, P[i].x);
+            ply_write(plyFile, P[i].y);
+            ply_write(plyFile, P[i].z);
+            if (N) {
+                ply_write(plyFile, N[i].x);
+                ply_write(plyFile, N[i].y);
+                ply_write(plyFile, N[i].z);
+            }
+            if (UV) {
+                ply_write(plyFile, UV[i].x);
+                ply_write(plyFile, UV[i].y);
+            }
+        }
+
+        for (int i = 0; i < nTriangles; ++i) {
+            ply_write(plyFile, 3);
+            ply_write(plyFile, vertexIndices[3 * i]);
+            ply_write(plyFile, vertexIndices[3 * i + 1]);
+            ply_write(plyFile, vertexIndices[3 * i + 2]);
+        }
+        ply_close(plyFile);
+        return true;
+    }
+    return false;
 }
 
 Bounds3f Triangle::ObjectBound() const {
