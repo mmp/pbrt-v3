@@ -357,7 +357,7 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
             if (alphaTex != "")
                 printf("\n%*s\"texture alpha\" \"%s\" ", catIndentCount + 8, "",
                        alphaTex.c_str());
-            std::string shadowAlphaTex = paramSet.FindTexture("alpha");
+            std::string shadowAlphaTex = paramSet.FindTexture("shadowalpha");
             if (shadowAlphaTex != "")
                 printf("\n%*s\"texture shadowalpha\" \"%s\" ",
                        catIndentCount + 8, "", shadowAlphaTex.c_str());
