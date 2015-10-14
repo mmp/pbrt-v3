@@ -54,8 +54,8 @@ TEST(LowDiscrepancy, GrayCodeSample) {
 // each of the elementary intervals actually do so.
 // TODO: check Halton (where the elementary intervals are (2^i, 3^j)).
 TEST(LowDiscrepancy, ElementaryIntervals) {
-  auto checkSampler = [](const char *name, std::unique_ptr<Sampler> sampler,
-                         int logSamples) {
+    auto checkSampler = [](const char *name, std::unique_ptr<Sampler> sampler,
+                           int logSamples) {
         // Get all of the samples for a pixel.
         sampler->StartPixel(Point2i(0, 0));
         std::vector<Point2f> samples;
@@ -68,7 +68,7 @@ TEST(LowDiscrepancy, ElementaryIntervals) {
             // in each dimension.
             int nx = 1 << i, ny = 1 << (logSamples - i);
 
-            std::vector<int> count(1 << logSamples,  0);
+            std::vector<int> count(1 << logSamples, 0);
             for (const Point2f &s : samples) {
                 // Map the sample to an interval
                 Float x = nx * s.x, y = ny * s.y;
@@ -89,14 +89,18 @@ TEST(LowDiscrepancy, ElementaryIntervals) {
     };
 
     for (int logSamples = 2; logSamples <= 10; ++logSamples) {
-      checkSampler("MaxMinDistSampler", std::unique_ptr<Sampler>(
-          new MaxMinDistSampler(1 << logSamples, 2)), logSamples);
-      checkSampler("ZeroTwoSequenceSampler", std::unique_ptr<Sampler>(
-          new ZeroTwoSequenceSampler(1 << logSamples, 2)), logSamples);
-      checkSampler("Sobol", std::unique_ptr<Sampler>(
-          new SobolSampler(1 << logSamples,
-                           Bounds2i(Point2i(0, 0), Point2i(10, 10)))),
-                   logSamples);
+        checkSampler(
+            "MaxMinDistSampler",
+            std::unique_ptr<Sampler>(new MaxMinDistSampler(1 << logSamples, 2)),
+            logSamples);
+        checkSampler("ZeroTwoSequenceSampler",
+                     std::unique_ptr<Sampler>(
+                         new ZeroTwoSequenceSampler(1 << logSamples, 2)),
+                     logSamples);
+        checkSampler("Sobol", std::unique_ptr<Sampler>(new SobolSampler(
+                                  1 << logSamples,
+                                  Bounds2i(Point2i(0, 0), Point2i(10, 10)))),
+                     logSamples);
     }
 }
 
@@ -122,34 +126,89 @@ TEST(MaxMinDist, MinDist) {
 
         Float minDist = Infinity;
         for (size_t i = 0; i < s.size(); ++i) {
-          for (size_t j = 0; j < s.size(); ++j) {
-            if (i == j)
-              continue;
-            minDist = std::min(minDist, dist(s[i], s[j]));
-          }
+            for (size_t j = 0; j < s.size(); ++j) {
+                if (i == j) continue;
+                minDist = std::min(minDist, dist(s[i], s[j]));
+            }
         }
 
         // Expected minimum distances from Gruenschloss et al.'s paper.
         Float expectedMinDist[17] = {
-          0., /* not checked */
-          0., /* not checked */
-          0.35355,
-          0.35355,
-          0.22534,
-          0.16829,
-          0.11267,
-          0.07812,
-          0.05644,
-          0.03906,
-          0.02816,
-          0.01953,
-          0.01408,
-          0.00975,
-          0.00704,
-          0.00486,
-          0.00352,
+            0., /* not checked */
+            0., /* not checked */
+            0.35355, 0.35355, 0.22534, 0.16829, 0.11267,
+            0.07812, 0.05644, 0.03906, 0.02816, 0.01953,
+            0.01408, 0.00975, 0.00704, 0.00486, 0.00352,
         };
         // Increase the tolerance by a small slop factor.
         EXPECT_GT(minDist, 0.99 * expectedMinDist[logSamples]);
     }
+}
+
+TEST(Distribution1D, Discrete) {
+    // Carefully chosen distribution so that transitions line up with
+    // (inverse) powers of 2.
+    Float func[4] = {0, 1., 0., 3.};
+    Distribution1D dist(func, sizeof(func) / sizeof(func[0]));
+    EXPECT_EQ(4, dist.Count());
+
+    EXPECT_EQ(0, dist.DiscretePDF(0));
+    EXPECT_EQ(.25, dist.DiscretePDF(1));
+    EXPECT_EQ(0, dist.DiscretePDF(2));
+    EXPECT_EQ(.75, dist.DiscretePDF(3));
+
+    Float pdf, uRemapped;
+    EXPECT_EQ(1, dist.SampleDiscrete(0., &pdf));
+    EXPECT_EQ(0.25, pdf);
+    EXPECT_EQ(1, dist.SampleDiscrete(0.125, &pdf, &uRemapped));
+    EXPECT_EQ(0.25, pdf);
+    EXPECT_FLOAT_EQ(0.5, uRemapped);
+    EXPECT_EQ(1, dist.SampleDiscrete(.24999, &pdf));
+    EXPECT_EQ(0.25, pdf);
+    EXPECT_EQ(3, dist.SampleDiscrete(.250001, &pdf));
+    EXPECT_EQ(0.75, pdf);
+    EXPECT_EQ(3, dist.SampleDiscrete(0.625, &pdf, &uRemapped));
+    EXPECT_EQ(0.75, pdf);
+    EXPECT_FLOAT_EQ(0.5, uRemapped);
+    EXPECT_EQ(3, dist.SampleDiscrete(OneMinusEpsilon, &pdf));
+    EXPECT_EQ(0.75, pdf);
+    EXPECT_EQ(3, dist.SampleDiscrete(1., &pdf));
+    EXPECT_EQ(0.75, pdf);
+
+    Float u = .24999;
+    // We should get a stream of hits in the first interval, up until the
+    // cross-over point at 0.25 (plus/minus fp slop).
+    for (; u <= .250001; u = NextFloatUp(u)) {
+        int interval = dist.SampleDiscrete(u);
+        if (interval == 3) break;
+        EXPECT_EQ(1, interval);
+    }
+    // And then all the rest should be in the third interval
+    for (; u <= .250001; u = NextFloatUp(u)) {
+        int interval = dist.SampleDiscrete(u);
+        EXPECT_EQ(3, interval);
+    }
+}
+
+TEST(Distribution1D, Continuous) {
+    Float func[] = {1, 1, 2, 4, 8};
+    Distribution1D dist(func, sizeof(func) / sizeof(func[0]));
+    EXPECT_EQ(5, dist.Count());
+
+    Float pdf;
+    int offset;
+    EXPECT_EQ(0., dist.SampleContinuous(0., &pdf, &offset));
+    EXPECT_FLOAT_EQ(dist.Count() * 1. / 16., pdf);
+    EXPECT_EQ(0, offset);
+
+    // Right at the bounary between the 4 and the 8 segments.
+    EXPECT_FLOAT_EQ(.8, dist.SampleContinuous(0.5, &pdf, &offset));
+
+    // Middle of the 8 segment
+    EXPECT_FLOAT_EQ(.9, dist.SampleContinuous(0.75, &pdf, &offset));
+    EXPECT_FLOAT_EQ(dist.Count() * 8. / 16., pdf);
+    EXPECT_EQ(4, offset);
+
+    EXPECT_FLOAT_EQ(0., dist.SampleContinuous(0., &pdf));
+    EXPECT_FLOAT_EQ(1., dist.SampleContinuous(1., &pdf));
 }
