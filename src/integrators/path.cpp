@@ -40,6 +40,8 @@
 #include "bssrdf.h"
 #include "stats.h"
 
+STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
+
 // PathIntegrator Method Definitions
 Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                             Sampler &sampler, MemoryArena &arena,
@@ -77,7 +79,10 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         }
 
         // Sample illumination from lights to find path contribution
-        L += beta * UniformSampleOneLight(isect, scene, arena, sampler);
+        ++totalPaths;
+        Spectrum Ld = beta * UniformSampleOneLight(isect, scene, arena, sampler);
+        if (Ld.IsBlack()) ++zeroRadiancePaths;
+        L += Ld;
 
         // Sample BSDF to get new path direction
         Vector3f wo = -ray.d, wi;
