@@ -44,11 +44,12 @@
 struct ParamArray;
 
 #if defined(PBRT_IS_MSVC)
+#include <io.h>
 #pragma warning(disable:4244)
 #pragma warning(disable:4065)
 #pragma warning(disable:4018)
 #pragma warning(disable:4996)
-int isatty(int) { return 0; }
+int isatty(int fd) { return _isatty(fd); }
 #endif  // PBRT_IS_MSVC
 #include "pbrtparse.hh"
 
