@@ -143,7 +143,7 @@ struct Vertex {
     Spectrum beta;
 // Switch to a struct in debug mode to avoid a compiler error regarding
 // non-trivial constructors
-#if defined(NDEBUG) && !defined(PBRT_IS_MSVC)
+#if defined(NDEBUG) && !defined(PBRT_IS_MSVC) && !defined(PBRT_IS_INTEL)
     union
 #else
     struct

@@ -13,6 +13,27 @@ endif()
 
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-deprecated-register")
+ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+  FIND_PROGRAM(XIAR xiar)
+  IF(XIAR)
+    SET(CMAKE_AR "${XIAR}")
+  ENDIF(XIAR)
+  MARK_AS_ADVANCED(XIAR)
+
+  FIND_PROGRAM(XILD xild)
+  IF(XILD)
+    SET(CMAKE_LINKER "${XILD}")
+  ENDIF(XILD)
+  MARK_AS_ADVANCED(XILD)
+
+  # ICC will default to -fp-model fast=1, which performs value-unsafe optimizations which will
+  # cause pbrt_test to fail. For safety, -fp-model precise is explicitly set here by default.
+  set(FP_MODEL "precise" CACHE STRING "The floating point model to compile with.")
+  set_property(CACHE FP_MODEL PROPERTY STRINGS "precise" "fast=1" "fast=2")
+
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fp-model ${FP_MODEL}")
 ENDIF()
 
 IF(MSVC)
@@ -21,6 +42,10 @@ IF(MSVC)
 ENDIF()
 
 FIND_PACKAGE ( Threads )
+
+IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
+  ADD_DEFINITIONS (-DNDEBUG)
+ENDIF()
 
 # Optionally use Bison and Flex to regenerate parser files
 # Use pregenerated files otherwise (may be outdated)
@@ -240,7 +265,7 @@ TARGET_LINK_LIBRARIES ( obj2pbrt
 
 FILE ( GLOB PBRT_TEST_SOURCE
   src/tests/*.cpp
-  src/tests/gtest/*.cc 
+  src/tests/gtest/*.cc
   )
 
 ADD_EXECUTABLE ( pbrt_test
