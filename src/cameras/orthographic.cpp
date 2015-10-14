@@ -129,7 +129,7 @@ OrthographicCamera *CreateOrthographicCamera(const ParamSet &params,
         std::swap(shutterclose, shutteropen);
     }
     Float lensradius = params.FindOneFloat("lensradius", 0.f);
-    Float focaldistance = params.FindOneFloat("focaldistance", 1e30f);
+    Float focaldistance = params.FindOneFloat("focaldistance", 1e6f);
     Float frame = params.FindOneFloat(
         "frameaspectratio",
         Float(film->fullResolution.x) / Float(film->fullResolution.y));
