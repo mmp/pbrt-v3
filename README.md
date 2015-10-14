@@ -3,10 +3,10 @@ pbrt, Version 3
 
 [![Build Status](https://travis-ci.org/mmp/pbrt-v3.svg?branch=master)](https://travis-ci.org/mmp/pbrt-v3)
 
-This repository holds the current snapshot of the source code to the new
-version of pbrt that will be described in the forthcoming third edition of
-*Physically Based Rendering: From Theory to Implementation*.  As before,
-the code is available under the BSD license.
+This repository holds the source code to the new version of pbrt that will
+be described in the forthcoming third edition of *Physically Based
+Rendering: From Theory to Implementation*.  As before, the code is
+available under the BSD license.
 
 Although the new version of the book won't be released until mid-2016,
 we're making the source code available now so that interested users can
@@ -28,9 +28,9 @@ Significant Changes
 
 The system has seen many changes since the second edition. To figure out
 how to use the new features, you may want to look at the example scene
-files in the `scenes/` directory and read through the source code to figure
-out the parameters and details of the following. (Better documentation will
-come once everything is finalized.)
+files and read through the source code to figure out the parameters and
+details of the following. (Better documentation will come once everything
+is finalized.)
 
 * Bidirectional path tracing: `Integrator "bdpt"` does proper bidirectional
   path tracing with multiple importance sampling.
@@ -46,6 +46,10 @@ come once everything is finalized.)
   hair, fur, and grass.
 * PLY mesh support: meshes in PLY format can be used directly: `Shape
   "plymesh" "string filename" "mesh.ply"`
+  * Existing scenes with triangle meshes specified via `Shape
+    "trianglemesh"` can be converted to PLY using the `--toply` command-line
+    option, which emits a PLY mesh for each triangle mesh and prints an
+    updated scene description file to standard out.
 * Realistic camera model: tracing rays through lenses to make images! See
   the `scenes/dragons` example scene.
 * Participating media: the boundaries of shapes are now used to delineate
@@ -151,17 +155,3 @@ place to report anything suspicious you find.  Useful things to do include:
 CPUs. It should be widely portable to other OSes and CPUs, but the only way
 to get those details right is for people to try it and let us know which
 targets don't currently work.
-* Images and figures: we'd like to refresh many of the figures in the book,
-but probably won't have time to get to all of them. If you can spend some
-time on making a nice scene or two that we can use for figures, that'd be a
-huge help. Specific areas of interest include:
-  * Subsurface scattering: a human face, biological objects, ...
-  * Showing off complex light transport using bidirectional path
-  tracing.
-  * Illustrating materials: something to replace all the usage of the
-  killeroo in Chapters 8 and 9...
-  * Showing the capabilities of the new curves primitive: hair, fur, fields
-  of grass, ...
-  * It would be great to have the [Digital
-  Emily](http://gl.ict.usc.edu/Research/DigitalEmily2) model available in pbrt.
-
