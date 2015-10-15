@@ -283,6 +283,7 @@ struct Vertex {
         // Return solid angle density if _next_ is an infinite area light
         if (next.IsInfiniteLight()) return pdf;
         Vector3f w = next.p() - p();
+        if (w.LengthSquared() == 0) return 0;
         Float invDist2 = 1 / w.LengthSquared();
         if (next.IsOnSurface())
             pdf *= AbsDot(next.ng(), w * std::sqrt(invDist2));
