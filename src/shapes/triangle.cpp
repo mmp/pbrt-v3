@@ -390,7 +390,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     // Test intersection against alpha texture, if present
     if (testAlphaTexture && mesh->alphaMask) {
         SurfaceInteraction isectLocal(
-            pHit, Vector3f(0, 0, 0), uvHit, Vector3f(0, 0, 0), dpdu, dpdv,
+            pHit, Vector3f(0, 0, 0), uvHit, -ray.d, dpdu, dpdv,
             Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time, this);
         if (mesh->alphaMask->Evaluate(isectLocal) == 0) return false;
     }
