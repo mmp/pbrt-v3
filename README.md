@@ -5,7 +5,8 @@ pbrt, Version 3
 
 This repository holds the source code to the new version of pbrt that will
 be described in the forthcoming third edition of *Physically Based
-Rendering: From Theory to Implementation*.  As before, the code is
+Rendering: From Theory to Implementation*, by [Matt
+Pharr](http://pharr.org/matt), Greg Humphreys, and [Wenzel Jakob](http://www.mitsuba-renderer.org/~wenzel/).  As before, the code is
 available under the BSD license.
 
 Although the new version of the book won't be released until mid-2016,
