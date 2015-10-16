@@ -84,7 +84,7 @@ Matrix4x4 Inverse(const Matrix4x4 &m) {
     Float minv[4][4];
     memcpy(minv, m.m, 4 * 4 * sizeof(Float));
     for (int i = 0; i < 4; i++) {
-        int irow = -1, icol = -1;
+        int irow = 0, icol = 0;
         Float big = 0.f;
         // Choose pivot
         for (int j = 0; j < 4; j++) {
