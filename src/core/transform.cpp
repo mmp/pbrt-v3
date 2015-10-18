@@ -1216,35 +1216,6 @@ Bounds3f AnimatedTransform::MotionBounds(const Bounds3f &b) const {
     Bounds3f bounds;
     for (int corner = 0; corner < 8; ++corner)
         bounds = Union(bounds, BoundPointMotion(b.Corner(corner)));
-#if 0
-
-    // Check motion bounds vs sampled bounds
-    Bounds3f oldBounds;
-    const int nSteps = 1024;
-    for (int i = 0; i < nSteps; ++i) {
-        Transform t;
-        Float time = Lerp(float(i)/float(nSteps-1), startTime, endTime);
-        Interpolate(time, &t);
-        oldBounds = Union(oldBounds, t(b));
-    }
-
-    bool oldBigger = false;
-    for (int c = 0; c < 3; ++c)
-        oldBigger |= (oldBounds.pMin[c] < bounds.pMin[c] ||
-                      oldBounds.pMax[c] > bounds.pMax[c]);
-
-    //bool newMuchBigger = false;
-    //for (int c = 0; c < 3; ++c)
-    //    newMuchBigger |= (oldBounds.pMin[c] < bounds.pMin[c] ||
-    //                  oldBounds.pMax[c] > bounds.pMax[c]);
-
-    //if (oldBigger)
-    fprintf(stderr, "Old: (%f, %f, %f) - (%f, %f, %f)\n" "New: (%f, %f, %f) - (%f, %f, %f)\n",
-        oldBounds.pMin.x, oldBounds.pMin.y, oldBounds.pMin.z,
-        oldBounds.pMax.x, oldBounds.pMax.y, oldBounds.pMax.z,
-        bounds.pMin.x, bounds.pMin.y, bounds.pMin.z,
-        bounds.pMax.x, bounds.pMax.y, bounds.pMax.z);
-#endif
     return bounds;
 }
 
