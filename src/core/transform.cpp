@@ -382,8 +382,11 @@ void IntervalFindZeros(Float c1, Float c2, Float c3, Float c4, Float c5,
             if (fNewton == 0 || fPrimeNewton == 0) break;
             tNewton = tNewton - fNewton / fPrimeNewton;
         }
-        zeros[*zeroCount] = tNewton;
-        (*zeroCount)++;
+        if (tNewton >= tInterval.low - 1e-3f &&
+            tNewton < tInterval.high + 1e-3f) {
+            zeros[*zeroCount] = tNewton;
+            (*zeroCount)++;
+        }
     }
 }
 
@@ -1252,7 +1255,7 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
     Float theta = std::acos(Clamp(cosTheta, -1, 1));
     for (int c = 0; c < 3; ++c) {
         // Find any motion derivative zeros for the component _c_
-        Float zeros[4];
+        Float zeros[8];
         int nZeros = 0;
         IntervalFindZeros(c1[c].Eval(p), c2[c].Eval(p), c3[c].Eval(p),
                           c4[c].Eval(p), c5[c].Eval(p), theta, Interval(0., 1.),
