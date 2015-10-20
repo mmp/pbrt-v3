@@ -211,10 +211,6 @@ ADD_EXECUTABLE ( bsdftest
   src/tools/bsdftest.cpp
   )
 
-ADD_EXECUTABLE ( chi2test
-  src/tools/chi2test.cpp
-  )
-
 ADD_EXECUTABLE ( exrdiff
   src/tools/exrdiff.cpp
   )
@@ -232,11 +228,6 @@ ADD_EXECUTABLE ( obj2pbrt
   )
 
 TARGET_LINK_LIBRARIES ( bsdftest
-  pbrt
-  ${CMAKE_THREAD_LIBS_INIT}
-  )
-
-TARGET_LINK_LIBRARIES ( chi2test
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
   )
@@ -286,7 +277,6 @@ ADD_TEST ( pbrt_unit_test
 INSTALL ( TARGETS
   pbrt_exe
   bsdftest
-  chi2test
   exrdiff
   hdrtoldr
   obj2pbrt
