@@ -514,10 +514,10 @@ TEST(BSDFSampling, Beckmann_VA_0p2_0p1) {
     }, "Beckmann, visible area sample, alpha = 0.2/0.1");
 }
 
-TEST(BSDFSampling, TR_VA_0p2_0p15) {
+TEST(BSDFSampling, TR_VA_0p3_0p15) {
     TestBSDF([](BSDF* bsdf, MemoryArena& arena) -> void {
-        createMicrofacet(bsdf, arena, false, true, 0.2, 0.15);
-    }, "Trowbridge-Reitz, visible area sample, alpha = 0.2/0.15");
+        createMicrofacet(bsdf, arena, false, true, 0.3, 0.15);
+    }, "Trowbridge-Reitz, visible area sample, alpha = 0.3/0.15");
 }
 
 TEST(BSDFSampling, Beckmann_std_0p2_0p1) {
