@@ -53,8 +53,8 @@ class Sphere : public Shape {
           radius(radius),
           zMin(Clamp(std::min(zMin, zMax), -radius, radius)),
           zMax(Clamp(std::max(zMin, zMax), -radius, radius)),
-          thetaMin(std::acos(Clamp(zMin / radius, -1, 1))),
-          thetaMax(std::acos(Clamp(zMax / radius, -1, 1))),
+          thetaMin(std::acos(Clamp(std::min(zMin, zMax) / radius, -1, 1))),
+          thetaMax(std::acos(Clamp(std::max(zMin, zMax) / radius, -1, 1))),
           phiMax(Radians(Clamp(phiMax, 0, 360))) {}
     Bounds3f ObjectBound() const;
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,

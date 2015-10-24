@@ -5,10 +5,11 @@
 #include "rng.h"
 #include "shape.h"
 #include "sampling.h"
+#include "shapes/sphere.h"
 #include "shapes/triangle.h"
 
-static Float p(RNG &rng) {
-    Float logu = Lerp(rng.UniformFloat(), -8., 8);
+static Float p(RNG &rng, Float exp = 8.) {
+    Float logu = Lerp(rng.UniformFloat(), -exp, exp);
     return std::pow(10, logu);
 }
 
@@ -73,3 +74,42 @@ TEST(Triangle, Reintersect) {
         }
     }
 }
+TEST(ParialSphere, Normal) {
+    for (int i = 0; i < 1000; ++i) {
+        RNG rng(i);
+        Transform identity;
+        Float radius = p(rng, 4);
+        Float zMin = rng.UniformFloat() < 0.5
+                         ? -radius
+                         : Lerp(rng.UniformFloat(), -radius, radius);
+        Float zMax = rng.UniformFloat() < 0.5
+                         ? radius
+                         : Lerp(rng.UniformFloat(), -radius, radius);
+        Float phiMax =
+            rng.UniformFloat() < 0.5 ? 360. : rng.UniformFloat() * 360.;
+        Sphere sphere(&identity, &identity, false, radius, zMin, zMax, phiMax);
+
+        // Ray origin
+        Point3f o;
+        for (int c = 0; c < 3; ++c) o[c] = p(rng);
+
+        // Destination: a random point in the shape's bounding box.
+        Bounds3f bbox = sphere.WorldBound();
+        Point3f t;
+        for (int c = 0; c < 3; ++c) t[c] = rng.UniformFloat();
+        Point3f p2 = bbox.Lerp(t);
+
+        // Ray to intersect with the shape.
+        Ray r(o, p2 - o);
+        if (rng.UniformFloat() < .5) r.d = Normalize(r.d);
+
+        // We should usually (but not always) find an intersection.
+        SurfaceInteraction isect;
+        Float tHit;
+        if (!sphere.Intersect(r, &tHit, &isect, false)) continue;
+
+        Float dot = Dot(Normalize(isect.n), Normalize(Vector3f(isect.p)));
+        EXPECT_FLOAT_EQ(1., dot);
+    }
+}
+
