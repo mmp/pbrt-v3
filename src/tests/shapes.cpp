@@ -16,6 +16,110 @@ static Float p(RNG &rng, Float exp = 8.) {
     return std::pow(10, logu);
 }
 
+TEST(Triangle, Watertight) {
+    RNG rng(12111);
+    int nTheta = 16, nPhi = 16;
+    ASSERT_GE(nTheta, 3);
+    ASSERT_GE(nPhi, 4);
+
+    // Make a triangle mesh representing a triangulated sphere (with
+    // vertices randomly offset along their normal), centered at the
+    // origin.
+    int nVertices = nTheta * nPhi;
+    std::vector<Point3f> vertices;
+    for (int t = 0; t < nTheta; ++t) {
+        Float theta = Pi * (Float)t / (Float)(nTheta - 1);
+        Float cosTheta = std::cos(theta);
+        Float sinTheta = std::sin(theta);
+        for (int p = 0; p < nPhi; ++p) {
+            Float phi = 2 * Pi * (Float)p / (Float)(nPhi - 1);
+            Float radius = 1;
+            // Make sure all of the top and bottom vertices are coincident.
+            if (t == 0)
+                vertices.push_back(Point3f(0, 0, radius));
+            else if (t == nTheta - 1)
+                vertices.push_back(Point3f(0, 0, -radius));
+            else if (p == nPhi - 1)
+              // Close it up exactly at the end
+                vertices.push_back(vertices[vertices.size() - (nPhi - 1)]);
+            else {
+                radius += 5 * rng.UniformFloat();
+                vertices.push_back(
+                    Point3f(0, 0, 0) +
+                    radius * SphericalDirection(sinTheta, cosTheta, phi));
+            }
+        }
+    }
+    EXPECT_EQ(nVertices, vertices.size());
+
+    int nTris = 2 * (nTheta - 1) * (nPhi - 1);
+    std::vector<int> indices;
+    // fan at top
+    auto offset = [nPhi](int t, int p) { return t * nPhi + p; };
+    for (int p = 0; p < nPhi - 1; ++p) {
+        indices.push_back(offset(0, 0));
+        indices.push_back(offset(1, p));
+        indices.push_back(offset(1, p + 1));
+    }
+
+    // quads in the middle rows
+    for (int t = 1; t < nTheta - 2; ++t) {
+        for (int p = 0; p < nPhi - 1; ++p) {
+            indices.push_back(offset(t, p));
+            indices.push_back(offset(t + 1, p));
+            indices.push_back(offset(t + 1, p + 1));
+
+            indices.push_back(offset(t, p));
+            indices.push_back(offset(t + 1, p + 1));
+            indices.push_back(offset(t, p + 1));
+        }
+    }
+
+    // fan at bottom
+    for (int p = 0; p < nPhi - 1; ++p) {
+        indices.push_back(offset(nTheta - 1, 0));
+        indices.push_back(offset(nTheta - 2, p));
+        indices.push_back(offset(nTheta - 2, p + 1));
+    }
+
+    Transform identity;
+    std::vector<std::shared_ptr<Shape>> tris = CreateTriangleMesh(
+        &identity, &identity, false, indices.size() / 3, &indices[0], nVertices,
+        &vertices[0], nullptr, nullptr, nullptr, nullptr, nullptr);
+
+    for (int i = 0; i < 100000; ++i) {
+        RNG rng(i);
+        // Choose a random point in sphere of radius 0.5 around the origin.
+        Point2f u;
+        u[0] = rng.UniformFloat();
+        u[1] = rng.UniformFloat();
+        Point3f p = Point3f(0, 0, 0) + Float(0.5) * UniformSampleSphere(u);
+
+        // Choose a random direction.
+        u[0] = rng.UniformFloat();
+        u[1] = rng.UniformFloat();
+        Ray r(p, UniformSampleSphere(u));
+        int nHits = 0;
+        for (const auto &tri : tris) {
+            Float tHit;
+            SurfaceInteraction isect;
+            if (tri->Intersect(r, &tHit, &isect, false)) ++nHits;
+        }
+        EXPECT_GE(nHits, 1);
+
+        // Now tougher: shoot directly at a vertex.
+        Point3f pVertex = vertices[rng.UniformUInt32(vertices.size())];
+        r.d = pVertex - r.o;
+        nHits = 0;
+        for (const auto &tri : tris) {
+            Float tHit;
+            SurfaceInteraction isect;
+            if (tri->Intersect(r, &tHit, &isect, false)) ++nHits;
+        }
+        EXPECT_GE(nHits, 1) << pVertex;
+    }
+}
+
 TEST(Triangle, Reintersect) {
     for (int i = 0; i < 1000; ++i) {
         RNG rng(i);
