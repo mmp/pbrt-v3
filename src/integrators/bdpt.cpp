@@ -443,9 +443,10 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
                 sampled =
                     Vertex::CreateLight(ei, lightWeight / (pdf * lightPdf), 0);
                 sampled.pdfFwd = sampled.PdfLightOrigin(scene, pt, lightDistr);
-                L = pt.beta * pt.f(sampled) * vis.Tr(scene, sampler) *
-                    sampled.beta;
+                L = pt.beta * pt.f(sampled) * sampled.beta;
                 if (pt.IsOnSurface()) L *= AbsDot(wi, pt.ns());
+                // Only check visibility if the path would carry radiance.
+                if (!L.IsBlack()) L *= vis.Tr(scene, sampler);
             }
         }
     } else {
