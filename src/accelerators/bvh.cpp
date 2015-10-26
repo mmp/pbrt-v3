@@ -201,6 +201,11 @@ Bounds3f BVHAccel::WorldBound() const {
     return nodes ? nodes[0].bounds : Bounds3f();
 }
 
+struct BucketInfo {
+    int count = 0;
+    Bounds3f bounds;
+};
+
 BVHBuildNode *BVHAccel::recursiveBuild(
     MemoryArena &arena, std::vector<BVHPrimitiveInfo> &primitiveInfo, int start,
     int end, int *totalNodes,
@@ -284,10 +289,6 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                 } else {
                     // Allocate _BucketInfo_ for SAH partition buckets
                     constexpr int nBuckets = 12;
-                    struct BucketInfo {
-                        int count = 0;
-                        Bounds3f bounds;
-                    };
                     BucketInfo buckets[nBuckets];
 
                     // Initialize _BucketInfo_ for SAH partition buckets
