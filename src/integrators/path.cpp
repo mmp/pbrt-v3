@@ -78,11 +78,16 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             continue;
         }
 
-        // Sample illumination from lights to find path contribution
-        ++totalPaths;
-        Spectrum Ld = beta * UniformSampleOneLight(isect, scene, arena, sampler);
-        if (Ld.IsBlack()) ++zeroRadiancePaths;
-        L += Ld;
+        // Sample illumination from lights to find path contribution.
+        // (But skip this for perfectly specular BSDFs.)
+        if (isect.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) >
+            0) {
+            ++totalPaths;
+            Spectrum Ld =
+                beta * UniformSampleOneLight(isect, scene, arena, sampler);
+            if (Ld.IsBlack()) ++zeroRadiancePaths;
+            L += Ld;
+        }
 
         // Sample BSDF to get new path direction
         Vector3f wo = -ray.d, wi;
