@@ -697,12 +697,12 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                 double *fdata = (double *)cur_paramlist[i].arg;
                 for (int j = 0; j < nAlloc; ++j)
                     idata[j] = int(fdata[j]);
-                ps.AddInt(name, idata.get(), nItems);
+                ps.AddInt(name, std::move(idata), nItems);
             }
             else if (type == PARAM_TYPE_BOOL) {
                 // strings -> bools
                 int nAlloc = cur_paramlist[i].size;
-                bool *bdata = new bool[nAlloc];
+                std::unique_ptr<bool[]> bdata(new bool[nAlloc]);
                 for (int j = 0; j < nAlloc; ++j) {
                     std::string s(((const char **)data)[j]);
                     if (s == "true") bdata[j] = true;
@@ -713,14 +713,13 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                         bdata[j] = false;
                     }
                 }
-                ps.AddBool(name, bdata, nItems);
-                delete[] bdata;
+                ps.AddBool(name, std::move(bdata), nItems);
             }
             else if (type == PARAM_TYPE_FLOAT) {
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
                 for (int i = 0; i < nItems; ++i)
                     floats[i] = ((double *)data)[i];
-                ps.AddFloat(name, floats.get(), nItems);
+                ps.AddFloat(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_POINT2) {
                 if ((nItems % 2) != 0)
                     Warning("Excess values given with point2 parameter \"%s\". "
@@ -730,7 +729,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                     pts[i].x = ((double *)data)[2 * i];
                     pts[i].y = ((double *)data)[2 * i + 1];
                 }
-                ps.AddPoint2f(name, pts.get(), nItems / 2);
+                ps.AddPoint2f(name, std::move(pts), nItems / 2);
             } else if (type == PARAM_TYPE_VECTOR2) {
                 if ((nItems % 2) != 0)
                     Warning("Excess values given with vector2 parameter \"%s\". "
@@ -740,7 +739,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                     vecs[i].x = ((double *)data)[2 * i];
                     vecs[i].y = ((double *)data)[2 * i + 1];
                 }
-                ps.AddVector2f(name, vecs.get(), nItems / 2);
+                ps.AddVector2f(name, std::move(vecs), nItems / 2);
             } else if (type == PARAM_TYPE_POINT3) {
                 if ((nItems % 3) != 0)
                     Warning("Excess values given with point3 parameter \"%s\". "
@@ -752,7 +751,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                     pts[i].y = ((double *)data)[3 * i + 1];
                     pts[i].z = ((double *)data)[3 * i + 2];
                 }
-                ps.AddPoint3f(name, pts.get(), nItems / 3);
+                ps.AddPoint3f(name, std::move(pts), nItems / 3);
             } else if (type == PARAM_TYPE_VECTOR3) {
                 if ((nItems % 3) != 0)
                     Warning("Excess values given with vector3 parameter \"%s\". "
@@ -764,7 +763,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                     vecs[i].y = ((double *)data)[3 * i + 1];
                     vecs[i].z = ((double *)data)[3 * i + 2];
                 }
-                ps.AddVector3f(name, vecs.get(), nItems / 3);
+                ps.AddVector3f(name, std::move(vecs), nItems / 3);
             } else if (type == PARAM_TYPE_NORMAL) {
                 if ((nItems % 3) != 0)
                     Warning("Excess values given with \"normal\" parameter \"%s\". "
@@ -776,7 +775,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                     normals[i].y = ((double *)data)[3 * i + 1];
                     normals[i].z = ((double *)data)[3 * i + 2];
                 }
-                ps.AddNormal3f(name, normals.get(), nItems / 3);
+                ps.AddNormal3f(name, std::move(normals), nItems / 3);
             } else if (type == PARAM_TYPE_RGB) {
                 if ((nItems % 3) != 0)
                     Warning("Excess RGB values given with parameter \"%s\". "
@@ -785,7 +784,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
                 for (int i = 0; i < nItems; ++i)
                     floats[i] = ((double *)data)[i];
-                ps.AddRGBSpectrum(name, floats.get(), nItems);
+                ps.AddRGBSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_XYZ) {
                 if ((nItems % 3) != 0)
                     Warning("Excess XYZ values given with parameter \"%s\". "
@@ -794,7 +793,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
                 for (int i = 0; i < nItems; ++i)
                     floats[i] = ((double *)data)[i];
-                ps.AddXYZSpectrum(name, floats.get(), nItems);
+                ps.AddXYZSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_BLACKBODY) {
                 if ((nItems % 2) != 0)
                     Warning("Excess value given with blackbody parameter \"%s\". "
@@ -802,7 +801,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
                 for (int i = 0; i < nItems; ++i)
                     floats[i] = ((double *)data)[i];
-                ps.AddBlackbodySpectrum(name, floats.get(), nItems);
+                ps.AddBlackbodySpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_SPECTRUM) {
                 if (cur_paramlist[i].isString) {
                     ps.AddSampledSpectrumFiles(name, (const char **)data, nItems);
@@ -815,13 +814,13 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                     std::unique_ptr<Float[]> floats(new Float[nItems]);
                     for (int i = 0; i < nItems; ++i)
                         floats[i] = ((double *)data)[i];
-                    ps.AddSampledSpectrum(name, floats.get(), nItems);
+                    ps.AddSampledSpectrum(name, std::move(floats), nItems);
                 }
             } else if (type == PARAM_TYPE_STRING) {
                 std::unique_ptr<std::string[]> strings(new std::string[nItems]);
                 for (int j = 0; j < nItems; ++j)
                     strings[j] = std::string(((const char **)data)[j]);
-                ps.AddString(name, strings.get(), nItems);
+                ps.AddString(name, std::move(strings), nItems);
             }
             else if (type == PARAM_TYPE_TEXTURE) {
                 if (nItems == 1) {
