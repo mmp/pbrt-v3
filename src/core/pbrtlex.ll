@@ -166,7 +166,7 @@ WorldEnd                { return WORLDEND; }
 {WHITESPACE} /* do nothing */
 \n { line_num++; }
 {NUMBER} {
-    yylval.num = (Float) atof(yytext);
+    yylval.num = atof(yytext);
     return NUM;
 }
 
