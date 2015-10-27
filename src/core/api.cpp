@@ -325,7 +325,9 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
         if (PbrtOptions.toPly) {
             static int count = 1;
             char fn[128];
-            sprintf(fn, "mesh_%05d.ply", count++);
+            const char *plyPrefix =
+                getenv("PLY_PREFIX") ? getenv("PLY_PREFIX") : "mesh";
+            sprintf(fn, "%s_%05d.ply", plyPrefix, count++);
 
             int nvi, npi, nuvi, nsi, nni;
             const int *vi = paramSet.FindInt("indices", &nvi);
