@@ -54,7 +54,8 @@ FIND_PACKAGE ( FLEX )
 IF(BISON_FOUND AND FLEX_FOUND)
   SET(BisonOutput ${CMAKE_BINARY_DIR}/pbrtparse.cpp)
   ADD_CUSTOM_COMMAND(
-    OUTPUT ${BisonOutput} ${CMAKE_BINARY_DIR}/pbrtparse.hh ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
+    OUTPUT ${BisonOutput} ${CMAKE_BINARY_DIR}/pbrtparse.hh
+    DEPENDS ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
     COMMAND ${BISON_EXECUTABLE} -d -v -t
             --output=${BisonOutput}
             ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
