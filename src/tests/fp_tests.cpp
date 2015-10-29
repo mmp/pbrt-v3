@@ -89,71 +89,122 @@ TEST(FloatingPoint, DoubleBits) {
 }
 
 TEST(FloatingPoint, EFloat) {
-    for (int trial = 0; trial < 1000; ++trial) {
+    for (int trial = 0; trial < 100000; ++trial) {
         RNG rng(trial);
-        EFloat ef = -10000 + 20000 * rng.UniformFloat();
-        long double ld = (float)ef;
+        // Return an exponentially-distributed floating-point value.
+        auto getFloat = [&rng](Float minExp = -4., Float maxExp = 4.) {
+            Float logu = Lerp(rng.UniformFloat(), minExp, maxExp);
+            Float sign = rng.UniformFloat() < .5 ? -1. : 1.;
+            return sign * std::pow(10, logu);
+        };
+
+        // We'll track a value in an EFloat and a precise version of the
+        // same value. As we perform random arithmetic operations to ef,
+        // we'll perform the same operations on efPrecise and make sure
+        // that efPrecise remains within the error bounds that ef has
+        // computed..
+        EFloat ef = getFloat();
+        long double efPrecise = (float)ef;
 
         for (int iter = 0; iter < 100; ++iter) {
-            EXPECT_GE(ld, ef.LowerBound());
-            EXPECT_LE(ld, ef.UpperBound());
+            // Exit out if we've gone off to a bad place.
+            if (std::isnan((float)ef) || std::isnan(efPrecise) ||
+                std::isinf((float)ef) || std::isinf(efPrecise) ||
+                std::isinf(ef.GetAbsoluteError()))
+                break;
 
+            // Make sure that the precise value is inside the bounds of the
+            // EFloat's interval.
+            EXPECT_GE(efPrecise, ef.LowerBound()) << "trial " << trial
+                                                  << ", iter " << iter;
+            EXPECT_LE(efPrecise, ef.UpperBound()) << "trial " << trial
+                                                  << ", iter " << iter;
+
+            // Choose a second value to (maybe) use as an operand below.
             EFloat ef2 = 0;
-            float f = -10000 + 20000 * rng.UniformFloat();
-            switch (rng.UniformUInt32() % 4) {
-            case 0:
+            long double efPrecise2;
+            switch (rng.UniformUInt32(3)) {
+            case 0: {
+                // Choose a new random floating-point value; assume it is
+                // fully precise.
+                Float f = getFloat();
                 ef2 = f;
-                break;
-            case 1:
-                ef2 = ef;
-                break;
-            case 3:
-                ef2 = EFloat(f, std::abs(rng.UniformFloat() * .001 * f));
+                efPrecise2 = f;
                 break;
             }
-            long double ld2 = (float)ef2;
+            case 1:
+                // Use the same value as ef.
+                ef2 = ef;
+                efPrecise2 = efPrecise;
+                break;
+            case 2: {
+                // Choose a random float and make up a small interval around it.
+                Float f = getFloat();
+                Float err = std::abs(getFloat(-8., -2.) * f);
+                ef2 = EFloat(f, err);
+                // Now compute a 'precise' value that's not equal to f, but
+                // is instead somewhere within the error bounds.
+                Float offset = rng.UniformFloat();
+                efPrecise2 = (1. - offset) * ef2.LowerBound() +
+                             offset * ef2.UpperBound();
+                // Sometimes the result isn't actually inside the bounds,
+                // due to round-off error.
+                if (efPrecise2 >= ef2.UpperBound() ||
+                    efPrecise2 <= ef2.LowerBound())
+                    efPrecise2 = f;
+#ifndef NDEBUG
+                ef2 = EFloat(f, efPrecise2, err);
+#else
+                ef2 = EFloat(f, err);
+#endif
+                break;
+            }
+            }
 
-            int op = rng.UniformUInt32() % 7;
-            switch (op) {
+            // Now do a random operation, upading the separate precise
+            // value in the same manner.
+            switch (rng.UniformUInt32(7)) {
             case 0:
+                // Negation.
                 ef = -ef;
-                ld = -ld;
+                efPrecise = -efPrecise;
                 break;
             case 1:
+                // Addition.
                 ef = ef + ef2;
-                ld = ld + ld2;
+                efPrecise = efPrecise + efPrecise2;
                 break;
             case 2:
+                // Subtraction.
                 ef = ef - ef2;
-                ld = ld - ld2;
+                efPrecise = efPrecise - efPrecise2;
                 break;
             case 3:
+                // Multiplication.
                 ef = ef * ef2;
-                ld = ld * ld2;
+                efPrecise = efPrecise * efPrecise2;
                 break;
             case 4:
+                // Division.
                 if (ef.LowerBound() * ef.UpperBound() > 0 &&
                     ef2.LowerBound() * ef2.UpperBound() > 0) {
                     ef = ef / ef2;
-                    ld = ld / ld2;
+                    efPrecise = efPrecise / efPrecise2;
                 }
                 break;
             case 5:
-                if (ld >= 0 && ef.LowerBound() > 0) {
+                // Sqrt.
+                if (efPrecise >= 0 && ef.LowerBound() > 0) {
                     ef = sqrt(ef);
-                    ld = std::sqrt(ld);
+                    efPrecise = std::sqrt(efPrecise);
                 }
                 break;
             case 6:
+                // Abs.
                 ef = abs(ef);
-                ld = (ld < 0) ? -ld : ld;
+                efPrecise = (efPrecise < 0) ? -efPrecise : efPrecise;
                 break;
             }
-
-            if (std::isnan((float)ef) || std::isnan(ld) ||
-                std::isinf((float)ef) || std::isinf(ld) ||
-                std::isinf(ef.GetAbsoluteError()))
-                break;
         }
     }
 }
