@@ -59,7 +59,7 @@ IF(BISON_FOUND AND FLEX_FOUND)
     COMMAND ${BISON_EXECUTABLE} -d -v -t
             --output=${BisonOutput}
             ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
-    COMMAND bash -c "if [[ -e ${CMAKE_BINARY_DIR}/pbrtparse.hpp ]]\; then /bin/mv ${CMAKE_BINARY_DIR}/pbrtparse.hpp ${CMAKE_BINARY_DIR}/pbrtparse.hh\; fi"
+	COMMAND bash -c "if [[ -e ${CMAKE_BINARY_DIR}/pbrtparse.hpp ]]; then /bin/mv ${CMAKE_BINARY_DIR}/pbrtparse.hpp ${CMAKE_BINARY_DIR}/pbrtparse.hh; fi"	
     COMMENT "Generating pbrtparse.cpp and pbrtparse.hh"
   )
 
