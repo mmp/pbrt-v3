@@ -158,7 +158,7 @@ static bool lookupType(const char *name, int *type, std::string &sname);
 
 %union {
 char string[1024];
-Float num;
+double num;
 ParamArray *ribarray;
 }
 
@@ -204,7 +204,7 @@ string_array_init: %prec HIGH_PRECEDENCE
 
 num_array_init: %prec HIGH_PRECEDENCE
 {
-    cur_array->element_size = sizeof(Float);
+    cur_array->element_size = sizeof(double);
     cur_array->isString = false;
 };
 
@@ -297,7 +297,7 @@ num_list: num_list num_list_entry
 
 num_list_entry: num_array_init NUM
 {
-    Float to_add = $2;
+    double to_add = $2;
     AddArrayElement(&to_add);
 };
 
@@ -411,8 +411,12 @@ pbrt_stmt: ACCELERATOR STRING paramlist
 
 | CONCATTRANSFORM num_array
 {
-    if (VerifyArrayLength($2, 16, "ConcatTransform"))
-        pbrtConcatTransform((Float *) $2->array);
+    if (VerifyArrayLength($2, 16, "ConcatTransform")) {
+        Float m[16];
+        double *dm = (double *)$2->array;
+        std::copy(dm, dm + 16, m);
+        pbrtConcatTransform(m);
+    }
     ArrayFree($2);
 }
 
@@ -611,8 +615,12 @@ pbrt_stmt: ACCELERATOR STRING paramlist
 
 | TRANSFORM num_array
 {
-    if (VerifyArrayLength( $2, 16, "Transform" ))
-        pbrtTransform( (Float *) $2->array );
+    if (VerifyArrayLength($2, 16, "Transform")) {
+        Float m[16];
+        double *dm = (double *)$2->array;
+        std::copy(dm, dm + 16, m);
+        pbrtTransform(m);
+    }
     ArrayFree($2);
 }
 
@@ -666,14 +674,16 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
             if (type == PARAM_TYPE_TEXTURE || type == PARAM_TYPE_STRING ||
                 type == PARAM_TYPE_BOOL) {
                 if (!cur_paramlist[i].isString) {
-                    Error("Expected string parameter value for parameter \"%s\" with type \"%s\". Ignoring.",
+                    Error("Expected string parameter value for parameter "
+                          "\"%s\" with type \"%s\". Ignoring.",
                           name.c_str(), paramTypeToName(type));
                     continue;
                 }
             }
             else if (type != PARAM_TYPE_SPECTRUM) { /* spectrum can be either... */
                 if (cur_paramlist[i].isString) {
-                    Error("Expected numeric parameter value for parameter \"%s\" with type \"%s\".  Ignoring.",
+                    Error("Expected numeric parameter value for parameter "
+                          "\"%s\" with type \"%s\".  Ignoring.",
                           name.c_str(), paramTypeToName(type));
                     continue;
                 }
@@ -681,19 +691,18 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
             void *data = cur_paramlist[i].arg;
             int nItems = cur_paramlist[i].size;
             if (type == PARAM_TYPE_INT) {
-                // parser doesn't handle ints, so convert from floats here....
+                // parser doesn't handle ints, so convert from doubles here....
                 int nAlloc = nItems;
-                int *idata = new int[nAlloc];
-                Float *fdata = (Float *)cur_paramlist[i].arg;
+                std::unique_ptr<int[]> idata(new int[nAlloc]);
+                double *fdata = (double *)cur_paramlist[i].arg;
                 for (int j = 0; j < nAlloc; ++j)
                     idata[j] = int(fdata[j]);
-                ps.AddInt(name, idata, nItems);
-                delete[] idata;
+                ps.AddInt(name, std::move(idata), nItems);
             }
             else if (type == PARAM_TYPE_BOOL) {
                 // strings -> bools
                 int nAlloc = cur_paramlist[i].size;
-                bool *bdata = new bool[nAlloc];
+                std::unique_ptr<bool[]> bdata(new bool[nAlloc]);
                 for (int j = 0; j < nAlloc; ++j) {
                     std::string s(((const char **)data)[j]);
                     if (s == "true") bdata[j] = true;
@@ -704,51 +713,95 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                         bdata[j] = false;
                     }
                 }
-                ps.AddBool(name, bdata, nItems);
-                delete[] bdata;
+                ps.AddBool(name, std::move(bdata), nItems);
             }
             else if (type == PARAM_TYPE_FLOAT) {
-                ps.AddFloat(name, (Float *)data, nItems);
+                std::unique_ptr<Float[]> floats(new Float[nItems]);
+                for (int i = 0; i < nItems; ++i)
+                    floats[i] = ((double *)data)[i];
+                ps.AddFloat(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_POINT2) {
                 if ((nItems % 2) != 0)
                     Warning("Excess values given with point2 parameter \"%s\". "
-                            "Ignoring last %d of them", cur_paramlist[i].name, nItems % 2);
-                ps.AddPoint2f(name, (Point2f *)data, nItems / 2);
+                            "Ignoring last one of them.", cur_paramlist[i].name);
+                std::unique_ptr<Point2f[]> pts(new Point2f[nItems / 2]);
+                for (int i = 0; i < nItems / 2; ++i) {
+                    pts[i].x = ((double *)data)[2 * i];
+                    pts[i].y = ((double *)data)[2 * i + 1];
+                }
+                ps.AddPoint2f(name, std::move(pts), nItems / 2);
             } else if (type == PARAM_TYPE_VECTOR2) {
                 if ((nItems % 2) != 0)
                     Warning("Excess values given with vector2 parameter \"%s\". "
-                            "Ignoring last %d of them", cur_paramlist[i].name, nItems % 2);
-                ps.AddVector2f(name, (Vector2f *)data, nItems / 2);
+                            "Ignoring last one of them.", cur_paramlist[i].name);
+                std::unique_ptr<Vector2f[]> vecs(new Vector2f[nItems / 2]);
+                for (int i = 0; i < nItems / 2; ++i) {
+                    vecs[i].x = ((double *)data)[2 * i];
+                    vecs[i].y = ((double *)data)[2 * i + 1];
+                }
+                ps.AddVector2f(name, std::move(vecs), nItems / 2);
             } else if (type == PARAM_TYPE_POINT3) {
                 if ((nItems % 3) != 0)
                     Warning("Excess values given with point3 parameter \"%s\". "
-                            "Ignoring last %d of them", cur_paramlist[i].name, nItems % 3);
-                ps.AddPoint3f(name, (Point3f *)data, nItems / 3);
+                            "Ignoring last %d of them.", cur_paramlist[i].name,
+                            nItems % 3);
+                std::unique_ptr<Point3f[]> pts(new Point3f[nItems / 3]);
+                for (int i = 0; i < nItems / 3; ++i) {
+                    pts[i].x = ((double *)data)[3 * i];
+                    pts[i].y = ((double *)data)[3 * i + 1];
+                    pts[i].z = ((double *)data)[3 * i + 2];
+                }
+                ps.AddPoint3f(name, std::move(pts), nItems / 3);
             } else if (type == PARAM_TYPE_VECTOR3) {
                 if ((nItems % 3) != 0)
                     Warning("Excess values given with vector3 parameter \"%s\". "
-                            "Ignoring last %d of them", cur_paramlist[i].name, nItems % 3);
-                ps.AddVector3f(name, (Vector3f *)data, nItems / 3);
+                            "Ignoring last %d of them.", cur_paramlist[i].name,
+                            nItems % 3);
+                std::unique_ptr<Vector3f[]> vecs(new Vector3f[nItems / 3]);
+                for (int i = 0; i < nItems / 3; ++i) {
+                    vecs[i].x = ((double *)data)[3 * i];
+                    vecs[i].y = ((double *)data)[3 * i + 1];
+                    vecs[i].z = ((double *)data)[3 * i + 2];
+                }
+                ps.AddVector3f(name, std::move(vecs), nItems / 3);
             } else if (type == PARAM_TYPE_NORMAL) {
                 if ((nItems % 3) != 0)
-                    Warning("Excess values given with normal parameter \"%s\". "
-                            "Ignoring last %d of them", cur_paramlist[i].name, nItems % 3);
-                ps.AddNormal3f(name, (Normal3f *)data, nItems / 3);
+                    Warning("Excess values given with \"normal\" parameter \"%s\". "
+                            "Ignoring last %d of them.", cur_paramlist[i].name,
+                            nItems % 3);
+                std::unique_ptr<Normal3f[]> normals(new Normal3f[nItems / 3]);
+                for (int i = 0; i < nItems / 3; ++i) {
+                    normals[i].x = ((double *)data)[3 * i];
+                    normals[i].y = ((double *)data)[3 * i + 1];
+                    normals[i].z = ((double *)data)[3 * i + 2];
+                }
+                ps.AddNormal3f(name, std::move(normals), nItems / 3);
             } else if (type == PARAM_TYPE_RGB) {
                 if ((nItems % 3) != 0)
                     Warning("Excess RGB values given with parameter \"%s\". "
-                            "Ignoring last %d of them", cur_paramlist[i].name, nItems % 3);
-                ps.AddRGBSpectrum(name, (Float *)data, nItems);
+                            "Ignoring last %d of them", cur_paramlist[i].name,
+                            nItems % 3);
+                std::unique_ptr<Float[]> floats(new Float[nItems]);
+                for (int i = 0; i < nItems; ++i)
+                    floats[i] = ((double *)data)[i];
+                ps.AddRGBSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_XYZ) {
                 if ((nItems % 3) != 0)
                     Warning("Excess XYZ values given with parameter \"%s\". "
-                            "Ignoring last %d of them", cur_paramlist[i].name, nItems % 3);
-                ps.AddXYZSpectrum(name, (Float *)data, nItems);
+                            "Ignoring last %d of them", cur_paramlist[i].name,
+                            nItems % 3);
+                std::unique_ptr<Float[]> floats(new Float[nItems]);
+                for (int i = 0; i < nItems; ++i)
+                    floats[i] = ((double *)data)[i];
+                ps.AddXYZSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_BLACKBODY) {
                 if ((nItems % 2) != 0)
                     Warning("Excess value given with blackbody parameter \"%s\". "
                             "Ignoring extra one.", cur_paramlist[i].name);
-                ps.AddBlackbodySpectrum(name, (Float *)data, nItems);
+                std::unique_ptr<Float[]> floats(new Float[nItems]);
+                for (int i = 0; i < nItems; ++i)
+                    floats[i] = ((double *)data)[i];
+                ps.AddBlackbodySpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_SPECTRUM) {
                 if (cur_paramlist[i].isString) {
                     ps.AddSampledSpectrumFiles(name, (const char **)data, nItems);
@@ -756,15 +809,18 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                 else {
                     if ((nItems % 2) != 0)
                         Warning("Non-even number of values given with sampled spectrum "
-                                "parameter \"%s\". Ignoring extra.", cur_paramlist[i].name);
-                    ps.AddSampledSpectrum(name, (Float *)data, nItems);
+                                "parameter \"%s\". Ignoring extra.",
+                                cur_paramlist[i].name);
+                    std::unique_ptr<Float[]> floats(new Float[nItems]);
+                    for (int i = 0; i < nItems; ++i)
+                        floats[i] = ((double *)data)[i];
+                    ps.AddSampledSpectrum(name, std::move(floats), nItems);
                 }
             } else if (type == PARAM_TYPE_STRING) {
-                std::string *strings = new std::string[nItems];
+                std::unique_ptr<std::string[]> strings(new std::string[nItems]);
                 for (int j = 0; j < nItems; ++j)
                     strings[j] = std::string(((const char **)data)[j]);
-                ps.AddString(name, strings, nItems);
-                delete[] strings;
+                ps.AddString(name, std::move(strings), nItems);
             }
             else if (type == PARAM_TYPE_TEXTURE) {
                 if (nItems == 1) {
@@ -773,12 +829,11 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                 }
                 else
                     Error("Only one string allowed for \"texture\" parameter \"%s\"",
-                        name.c_str());
+                          name.c_str());
             }
         }
         else
-            Warning("Type of parameter \"%s\" is unknown",
-                cur_paramlist[i].name);
+            Warning("Type of parameter \"%s\" is unknown", cur_paramlist[i].name);
     }
 }
 

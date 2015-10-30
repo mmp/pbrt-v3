@@ -56,22 +56,33 @@ class ParamSet {
   public:
     // ParamSet Public Methods
     ParamSet() {}
-    void AddFloat(const std::string &, const Float *, int nValues = 1);
-    void AddInt(const std::string &, const int *, int nValues);
-    void AddBool(const std::string &, const bool *, int nValues);
-    void AddPoint2f(const std::string &, const Point2f *, int nValues);
-    void AddVector2f(const std::string &, const Vector2f *, int nValues);
-    void AddPoint3f(const std::string &, const Point3f *, int nValues);
-    void AddVector3f(const std::string &, const Vector3f *, int nValues);
-    void AddNormal3f(const std::string &, const Normal3f *, int nValues);
-    void AddString(const std::string &, const std::string *, int nValues);
+    void AddFloat(const std::string &, std::unique_ptr<Float[]> v,
+                  int nValues = 1);
+    void AddInt(const std::string &, std::unique_ptr<int[]> v, int nValues);
+    void AddBool(const std::string &, std::unique_ptr<bool[]> v, int nValues);
+    void AddPoint2f(const std::string &, std::unique_ptr<Point2f[]> v,
+                    int nValues);
+    void AddVector2f(const std::string &, std::unique_ptr<Vector2f[]> v,
+                     int nValues);
+    void AddPoint3f(const std::string &, std::unique_ptr<Point3f[]> v,
+                    int nValues);
+    void AddVector3f(const std::string &, std::unique_ptr<Vector3f[]> v,
+                     int nValues);
+    void AddNormal3f(const std::string &, std::unique_ptr<Normal3f[]> v,
+                     int nValues);
+    void AddString(const std::string &, std::unique_ptr<std::string[]> v,
+                   int nValues);
     void AddTexture(const std::string &, const std::string &);
-    void AddRGBSpectrum(const std::string &, const Float *, int nValues);
-    void AddXYZSpectrum(const std::string &, const Float *, int nValues);
-    void AddBlackbodySpectrum(const std::string &, const Float *, int nValues);
+    void AddRGBSpectrum(const std::string &, std::unique_ptr<Float[]> v,
+                        int nValues);
+    void AddXYZSpectrum(const std::string &, std::unique_ptr<Float[]> v,
+                        int nValues);
+    void AddBlackbodySpectrum(const std::string &, std::unique_ptr<Float[]> v,
+                              int nValues);
     void AddSampledSpectrumFiles(const std::string &, const char **,
                                  int nValues);
-    void AddSampledSpectrum(const std::string &, const Float *, int nValues);
+    void AddSampledSpectrum(const std::string &, std::unique_ptr<Float[]> v,
+                            int nValues);
     bool EraseInt(const std::string &);
     bool EraseBool(const std::string &);
     bool EraseFloat(const std::string &);
@@ -130,7 +141,8 @@ class ParamSet {
 template <typename T>
 struct ParamSetItem {
     // ParamSetItem Public Methods
-    ParamSetItem(const std::string &name, const T *val, int nValues = 1);
+    ParamSetItem(const std::string &name, std::unique_ptr<T[]> val,
+                 int nValues = 1);
 
     // ParamSetItem Data
     const std::string name;
@@ -141,10 +153,9 @@ struct ParamSetItem {
 
 // ParamSetItem Methods
 template <typename T>
-ParamSetItem<T>::ParamSetItem(const std::string &name, const T *v, int nValues)
-    : name(name), values(new T[nValues]), nValues(nValues) {
-    std::copy(v, v + nValues, values.get());
-}
+ParamSetItem<T>::ParamSetItem(const std::string &name, std::unique_ptr<T[]> v,
+                              int nValues)
+    : name(name), values(std::move(v)), nValues(nValues) {}
 
 // TextureParams Declarations
 class TextureParams {

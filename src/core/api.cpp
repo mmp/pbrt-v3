@@ -325,7 +325,9 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
         if (PbrtOptions.toPly) {
             static int count = 1;
             char fn[128];
-            sprintf(fn, "mesh_%05d.ply", count++);
+            const char *plyPrefix =
+                getenv("PLY_PREFIX") ? getenv("PLY_PREFIX") : "mesh";
+            sprintf(fn, "%s_%05d.ply", plyPrefix, count++);
 
             int nvi, npi, nuvi, nsi, nni;
             const int *vi = paramSet.FindInt("indices", &nvi);
@@ -357,10 +359,25 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
             if (alphaTex != "")
                 printf("\n%*s\"texture alpha\" \"%s\" ", catIndentCount + 8, "",
                        alphaTex.c_str());
+            else {
+                int count;
+                const Float *alpha = paramSet.FindFloat("alpha", &count);
+                if (alpha)
+                    printf("\n%*s\"float alpha\" %f ", catIndentCount + 8,
+                           "", *alpha);
+            }
+
             std::string shadowAlphaTex = paramSet.FindTexture("shadowalpha");
             if (shadowAlphaTex != "")
                 printf("\n%*s\"texture shadowalpha\" \"%s\" ",
                        catIndentCount + 8, "", shadowAlphaTex.c_str());
+            else {
+                int count;
+                const Float *alpha = paramSet.FindFloat("shadowalpha", &count);
+                if (alpha)
+                    printf("\n%*s\"float shadowalpha\" %f ",
+                           catIndentCount + 8, "", *alpha);
+            }
             printf("\n");
         } else
             shapes = CreateTriangleMeshShape(object2world, world2object,

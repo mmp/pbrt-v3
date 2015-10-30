@@ -128,6 +128,10 @@ TEST(Triangle, Reintersect) {
         for (int j = 0; j < 3; ++j)
             for (int k = 0; k < 3; ++k) v[j][k] = p(rng);
 
+        if ((Cross(v[1] - v[0], v[2] - v[0]).LengthSquared()) < 1e-20)
+            // Don't into trouble with ~degenerate triangles.
+            continue;
+
         // Create the corresponding Triangle.
         Transform identity;
         int indices[3] = {0, 1, 2};

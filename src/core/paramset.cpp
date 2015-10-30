@@ -39,7 +39,7 @@
 
 // ParamSet Macros
 #define ADD_PARAM_TYPE(T, vec) \
-    (vec).emplace_back(new ParamSetItem<T>(name, (T *)values, nValues));
+    (vec).emplace_back(new ParamSetItem<T>(name, std::move(values), nValues));
 #define LOOKUP_PTR(vec)             \
     for (const auto &v : vec)       \
         if (v->name == name) {      \
@@ -57,81 +57,82 @@
     return d
 
 // ParamSet Methods
-void ParamSet::AddFloat(const std::string &name, const Float *values,
-                        int nValues) {
+void ParamSet::AddFloat(const std::string &name,
+                        std::unique_ptr<Float[]> values, int nValues) {
     EraseFloat(name);
-    floats.emplace_back(new ParamSetItem<Float>(name, values, nValues));
+    floats.emplace_back(
+        new ParamSetItem<Float>(name, std::move(values), nValues));
 }
 
-void ParamSet::AddInt(const std::string &name, const int *values, int nValues) {
+void ParamSet::AddInt(const std::string &name, std::unique_ptr<int[]> values,
+                      int nValues) {
     EraseInt(name);
     ADD_PARAM_TYPE(int, ints);
 }
 
-void ParamSet::AddBool(const std::string &name, const bool *values,
+void ParamSet::AddBool(const std::string &name, std::unique_ptr<bool[]> values,
                        int nValues) {
     EraseBool(name);
     ADD_PARAM_TYPE(bool, bools);
 }
 
-void ParamSet::AddPoint2f(const std::string &name, const Point2f *values,
-                          int nValues) {
+void ParamSet::AddPoint2f(const std::string &name,
+                          std::unique_ptr<Point2f[]> values, int nValues) {
     ErasePoint2f(name);
     ADD_PARAM_TYPE(Point2f, point2fs);
 }
 
-void ParamSet::AddVector2f(const std::string &name, const Vector2f *values,
-                           int nValues) {
+void ParamSet::AddVector2f(const std::string &name,
+                           std::unique_ptr<Vector2f[]> values, int nValues) {
     EraseVector2f(name);
     ADD_PARAM_TYPE(Vector2f, vector2fs);
 }
 
-void ParamSet::AddPoint3f(const std::string &name, const Point3f *values,
-                          int nValues) {
+void ParamSet::AddPoint3f(const std::string &name,
+                          std::unique_ptr<Point3f[]> values, int nValues) {
     ErasePoint3f(name);
     ADD_PARAM_TYPE(Point3f, point3fs);
 }
 
-void ParamSet::AddVector3f(const std::string &name, const Vector3f *values,
-                           int nValues) {
+void ParamSet::AddVector3f(const std::string &name,
+                           std::unique_ptr<Vector3f[]> values, int nValues) {
     EraseVector3f(name);
     ADD_PARAM_TYPE(Vector3f, vector3fs);
 }
 
-void ParamSet::AddNormal3f(const std::string &name, const Normal3f *values,
-                           int nValues) {
+void ParamSet::AddNormal3f(const std::string &name,
+                           std::unique_ptr<Normal3f[]> values, int nValues) {
     EraseNormal3f(name);
     ADD_PARAM_TYPE(Normal3f, normals);
 }
 
-void ParamSet::AddRGBSpectrum(const std::string &name, const Float *values,
-                              int nValues) {
+void ParamSet::AddRGBSpectrum(const std::string &name,
+                              std::unique_ptr<Float[]> values, int nValues) {
     EraseSpectrum(name);
     Assert(nValues % 3 == 0);
     nValues /= 3;
-    Spectrum *s = new Spectrum[nValues];
+    std::unique_ptr<Spectrum[]> s(new Spectrum[nValues]);
     for (int i = 0; i < nValues; ++i) s[i] = Spectrum::FromRGB(&values[3 * i]);
     std::shared_ptr<ParamSetItem<Spectrum>> psi(
-        new ParamSetItem<Spectrum>(name, s, nValues));
+        new ParamSetItem<Spectrum>(name, std::move(s), nValues));
     spectra.push_back(psi);
-    delete[] s;
 }
 
-void ParamSet::AddXYZSpectrum(const std::string &name, const Float *values,
-                              int nValues) {
+void ParamSet::AddXYZSpectrum(const std::string &name,
+                              std::unique_ptr<Float[]> values, int nValues) {
     EraseSpectrum(name);
     Assert(nValues % 3 == 0);
     nValues /= 3;
-    Spectrum *s = new Spectrum[nValues];
+    std::unique_ptr<Spectrum[]> s(new Spectrum[nValues]);
     for (int i = 0; i < nValues; ++i) s[i] = Spectrum::FromXYZ(&values[3 * i]);
     std::shared_ptr<ParamSetItem<Spectrum>> psi(
-        new ParamSetItem<Spectrum>(name, s, nValues));
+        new ParamSetItem<Spectrum>(name, std::move(s), nValues));
     spectra.push_back(psi);
-    delete[] s;
 }
 
 void ParamSet::AddBlackbodySpectrum(const std::string &name,
-                                    const Float *values, int nValues) {
+                                    std::unique_ptr<Float[]> values,
+                                    int nValues) {
     EraseSpectrum(name);
     Assert(nValues % 2 == 0);  // temperature (K), scale, ...
     nValues /= 2;
@@ -143,11 +144,12 @@ void ParamSet::AddBlackbodySpectrum(const std::string &name,
                Spectrum::FromSampled(CIE_lambda, v.get(), nCIESamples);
     }
     std::shared_ptr<ParamSetItem<Spectrum>> psi(
-        new ParamSetItem<Spectrum>(name, s.get(), nValues));
+        new ParamSetItem<Spectrum>(name, std::move(s), nValues));
     spectra.push_back(psi);
 }
 
-void ParamSet::AddSampledSpectrum(const std::string &name, const Float *values,
+void ParamSet::AddSampledSpectrum(const std::string &name,
+                                  std::unique_ptr<Float[]> values,
                                   int nValues) {
     EraseSpectrum(name);
     Assert(nValues % 2 == 0);
@@ -158,16 +160,17 @@ void ParamSet::AddSampledSpectrum(const std::string &name, const Float *values,
         wl[i] = values[2 * i];
         v[i] = values[2 * i + 1];
     }
-    Spectrum s = Spectrum::FromSampled(wl.get(), v.get(), nValues);
+    std::unique_ptr<Spectrum[]> s(new Spectrum[1]);
+    s[0] = Spectrum::FromSampled(wl.get(), v.get(), nValues);
     std::shared_ptr<ParamSetItem<Spectrum>> psi(
-        new ParamSetItem<Spectrum>(name, &s, 1));
+        new ParamSetItem<Spectrum>(name, std::move(s), 1));
     spectra.push_back(psi);
 }
 
 void ParamSet::AddSampledSpectrumFiles(const std::string &name,
                                        const char **names, int nValues) {
     EraseSpectrum(name);
-    Spectrum *s = new Spectrum[nValues];
+    std::unique_ptr<Spectrum[]> s(new Spectrum[nValues]);
     for (int i = 0; i < nValues; ++i) {
         std::string fn = AbsolutePath(ResolveFilename(names[i]));
         if (cachedSpectra.find(fn) != cachedSpectra.end()) {
@@ -199,22 +202,23 @@ void ParamSet::AddSampledSpectrumFiles(const std::string &name,
     }
 
     std::shared_ptr<ParamSetItem<Spectrum>> psi(
-        new ParamSetItem<Spectrum>(name, s, nValues));
+        new ParamSetItem<Spectrum>(name, std::move(s), nValues));
     spectra.push_back(psi);
-    delete[] s;
 }
 
 std::map<std::string, Spectrum> ParamSet::cachedSpectra;
-void ParamSet::AddString(const std::string &name, const std::string *values,
-                         int nValues) {
+void ParamSet::AddString(const std::string &name,
+                         std::unique_ptr<std::string[]> values, int nValues) {
     EraseString(name);
     ADD_PARAM_TYPE(std::string, strings);
 }
 
 void ParamSet::AddTexture(const std::string &name, const std::string &value) {
     EraseTexture(name);
+    std::unique_ptr<std::string[]> str(new std::string[1]);
+    str[0] = value;
     std::shared_ptr<ParamSetItem<std::string>> psi(
-        new ParamSetItem<std::string>(name, (std::string *)&value, 1));
+        new ParamSetItem<std::string>(name, std::move(str), 1));
     textures.push_back(psi);
 }
 
