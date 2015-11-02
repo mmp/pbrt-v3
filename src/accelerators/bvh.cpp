@@ -41,6 +41,9 @@
 
 STAT_TIMER("Time/BVH construction", constructionTime);
 STAT_MEMORY_COUNTER("Memory/BVH tree", treeBytes);
+STAT_RATIO("BVH/Primitives per leaf node", totalPrimitives, totalLeafNodes);
+STAT_COUNTER("BVH/Interior nodes", interiorNodes);
+STAT_COUNTER("BVH/Leaf nodes", leafNodes);
 
 // BVHAccel Local Declarations
 struct BVHPrimitiveInfo {
@@ -61,6 +64,9 @@ struct BVHBuildNode {
         nPrimitives = n;
         bounds = b;
         children[0] = children[1] = nullptr;
+        ++leafNodes;
+        ++totalLeafNodes;
+        totalPrimitives += n;
     }
     void InitInterior(int axis, BVHBuildNode *c0, BVHBuildNode *c1) {
         children[0] = c0;
@@ -68,6 +74,7 @@ struct BVHBuildNode {
         bounds = Union(c0->bounds, c1->bounds);
         splitAxis = axis;
         nPrimitives = 0;
+        ++interiorNodes;
     }
     Bounds3f bounds;
     BVHBuildNode *children[2];
