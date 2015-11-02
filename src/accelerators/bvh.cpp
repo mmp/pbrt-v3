@@ -285,7 +285,7 @@ BVHBuildNode *BVHAccel::recursiveBuild(
             case SplitMethod::SAH:
             default: {
                 // Partition primitives using approximate SAH
-                if (nPrimitives <= 4) {
+                if (nPrimitives <= 2) {
                     // Partition primitives into equally-sized subsets
                     mid = (start + end) / 2;
                     std::nth_element(&primitiveInfo[start], &primitiveInfo[mid],
@@ -325,7 +325,7 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                             b1 = Union(b1, buckets[j].bounds);
                             count1 += buckets[j].count;
                         }
-                        cost[i] = .125f +
+                        cost[i] = 1 +
                                   (count0 * b0.SurfaceArea() +
                                    count1 * b1.SurfaceArea()) /
                                       bounds.SurfaceArea();
