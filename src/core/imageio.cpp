@@ -139,7 +139,7 @@ static Float convert(void *p, int offset, int type) {
 
 static RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
                                  int *height) {
-    EXRImage img;
+    EXRImage img = {0};
     const char *err = nullptr;
     if (ParseMultiChannelEXRHeaderFromFile(&img, name.c_str(), &err) != 0) {
         Error("Unable to read \"%s\": %s", name.c_str(), err);
@@ -193,6 +193,7 @@ static void WriteImageEXR(const std::string &name, const Float *pixels,
                           int xRes, int yRes, int totalXRes, int totalYRes,
                           int xOffset, int yOffset) {
     EXRImage image;
+    InitEXRImage(&image);
     image.num_channels = 3;
     const char *channel_names[] = {"B", "G", "R"};
     image.channel_names = channel_names;
@@ -209,6 +210,11 @@ static void WriteImageEXR(const std::string &name, const Float *pixels,
     image.images[0] = (unsigned char *)bgr;
     image.images[1] = (unsigned char *)(bgr + 1 * xRes * yRes);
     image.images[2] = (unsigned char *)(bgr + 2 * xRes * yRes);
+    image.pixel_aspect_ratio = 1.;
+    // Work around bug in OpenEXR 1.1.
+    // See https://github.com/mmp/pbrt-v3/issues/43.
+    image.compression = (xRes < 64 || yRes < 64) ? TINYEXR_COMPRESSIONTYPE_NONE :
+                                                   TINYEXR_COMPRESSIONTYPE_ZIP;
 
     int offset = 0;
     for (int y = 0; y < yRes; ++y) {
