@@ -1,0 +1,3 @@
+[submodule "src/ext/openexr"]
+	path = src/ext/openexr
+	url = https://github.com/wjakob/openexr

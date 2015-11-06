@@ -84,6 +84,23 @@ ELSE()
     )
 ENDIF()
 
+SET(ILMBASE_NAMESPACE_VERSIONING OFF CACHE BOOL " " FORCE)
+SET(OPENEXR_NAMESPACE_VERSIONING OFF CACHE BOOL " " FORCE)
+SET(OPENEXR_BUILD_SHARED_LIBS    OFF CACHE BOOL " " FORCE)
+SET(ILMBASE_BUILD_SHARED_LIBS    OFF CACHE BOOL " " FORCE)
+ADD_SUBDIRECTORY(src/ext/openexr)
+SET_PROPERTY(TARGET IexMath eLut toFloat b44ExpLogTable dwaLookups CopyIlmBaseLibs IlmThread Half Iex Imath IlmImf PROPERTY FOLDER "dependencies")
+INCLUDE_DIRECTORIES (
+  src/ext/openexr/IlmBase/Imath
+  src/ext/openexr/IlmBase/half
+  src/ext/openexr/IlmBase/config
+  src/ext/openexr/IlmBase/Iex
+  src/ext/openexr/OpenEXR/IlmImf
+  src/ext/openexr/OpenEXR/config
+)
+
+SET(OPENEXR_LIBS IlmImf Imath Half)
+
 SET ( PBRT_CORE_SOURCE
   src/core/api.cpp
   src/core/bssrdf.cpp
@@ -205,6 +222,7 @@ SET_TARGET_PROPERTIES ( pbrt_exe
 TARGET_LINK_LIBRARIES ( pbrt_exe
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 # Tools
@@ -231,21 +249,25 @@ ADD_EXECUTABLE ( obj2pbrt
 TARGET_LINK_LIBRARIES ( bsdftest
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 TARGET_LINK_LIBRARIES ( exrdiff
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 TARGET_LINK_LIBRARIES ( exravg
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 TARGET_LINK_LIBRARIES ( hdrtoldr
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 TARGET_LINK_LIBRARIES ( obj2pbrt
@@ -267,6 +289,7 @@ ADD_EXECUTABLE ( pbrt_test
 TARGET_LINK_LIBRARIES ( pbrt_test
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 ADD_TEST ( pbrt_unit_test
