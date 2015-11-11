@@ -11,8 +11,19 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "MinSizeRel" "RelWithDebInfo")
 endif()
 
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/openexr/OpenEXR")
+  message(FATAL_ERROR "The OpenEXR submodule directory is missing! "
+    "You probably did not clone the project with --recursive. It is possible to recover "
+    "by calling \"git submodule update --init --recursive\"")
+endif()
+
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-deprecated-register")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  IF(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-register")
+  ELSE()
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion-null")
+  ENDIF()
 ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -83,6 +94,35 @@ ELSE()
     src/core/pbrtparse.cpp
     )
 ENDIF()
+
+IF(WIN32)
+  # Build zlib (only on Windows)
+  SET(ZLIB_BUILD_STATIC_LIBS ON CACHE BOOL " " FORCE)
+  SET(ZLIB_BUILD_SHARED_LIBS OFF CACHE BOOL " " FORCE)
+  ADD_SUBDIRECTORY(src/ext/zlib)
+
+  SET(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib")
+  SET(ZLIB_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib/$<CONFIGURATION>/zlibstatic.lib")
+  SET_PROPERTY(TARGET zlibstatic PROPERTY FOLDER "dependencies")
+  INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib")
+ENDIF()
+
+SET(ILMBASE_NAMESPACE_VERSIONING OFF CACHE BOOL " " FORCE)
+SET(OPENEXR_NAMESPACE_VERSIONING OFF CACHE BOOL " " FORCE)
+SET(OPENEXR_BUILD_SHARED_LIBS    OFF CACHE BOOL " " FORCE)
+SET(ILMBASE_BUILD_SHARED_LIBS    OFF CACHE BOOL " " FORCE)
+ADD_SUBDIRECTORY(src/ext/openexr)
+SET_PROPERTY(TARGET IexMath eLut toFloat b44ExpLogTable dwaLookups CopyIlmBaseLibs IlmThread Half Iex Imath IlmImf PROPERTY FOLDER "dependencies")
+INCLUDE_DIRECTORIES (
+  src/ext/openexr/IlmBase/Imath
+  src/ext/openexr/IlmBase/Half
+  src/ext/openexr/IlmBase/Iex
+  src/ext/openexr/OpenEXR/IlmImf
+  ${CMAKE_BINARY_DIR}/src/ext/openexr/IlmBase/config
+  ${CMAKE_BINARY_DIR}/src/ext/openexr/OpenEXR/config
+)
+
+SET(OPENEXR_LIBS IlmImf Imath Half)
 
 SET ( PBRT_CORE_SOURCE
   src/core/api.cpp
@@ -190,6 +230,14 @@ ADD_LIBRARY ( pbrt STATIC
   ${PBRT_SOURCE}
   )
 
+IF (WIN32)
+  # Avoid a name clash when building on Visual Studio
+  SET_TARGET_PROPERTIES ( pbrt
+    PROPERTIES
+    OUTPUT_NAME libpbrt
+    )
+ENDIF()
+
 FIND_PACKAGE ( Threads )
 
 # Main renderer
@@ -205,6 +253,7 @@ SET_TARGET_PROPERTIES ( pbrt_exe
 TARGET_LINK_LIBRARIES ( pbrt_exe
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 # Tools
@@ -231,21 +280,25 @@ ADD_EXECUTABLE ( obj2pbrt
 TARGET_LINK_LIBRARIES ( bsdftest
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 TARGET_LINK_LIBRARIES ( exrdiff
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 TARGET_LINK_LIBRARIES ( exravg
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 TARGET_LINK_LIBRARIES ( hdrtoldr
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 TARGET_LINK_LIBRARIES ( obj2pbrt
@@ -267,6 +320,7 @@ ADD_EXECUTABLE ( pbrt_test
 TARGET_LINK_LIBRARIES ( pbrt_test
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
+  ${OPENEXR_LIBS}
   )
 
 ADD_TEST ( pbrt_unit_test
