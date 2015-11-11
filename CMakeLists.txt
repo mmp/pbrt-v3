@@ -116,10 +116,10 @@ SET_PROPERTY(TARGET IexMath eLut toFloat b44ExpLogTable dwaLookups CopyIlmBaseLi
 INCLUDE_DIRECTORIES (
   src/ext/openexr/IlmBase/Imath
   src/ext/openexr/IlmBase/Half
-  src/ext/openexr/IlmBase/config
   src/ext/openexr/IlmBase/Iex
   src/ext/openexr/OpenEXR/IlmImf
-  src/ext/openexr/OpenEXR/config
+  ${CMAKE_BINARY_DIR}/src/ext/openexr/IlmBase/config
+  ${CMAKE_BINARY_DIR}/src/ext/openexr/OpenEXR/config
 )
 
 SET(OPENEXR_LIBS IlmImf Imath Half)
