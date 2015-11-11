@@ -73,11 +73,12 @@ is finalized.)
 * Improved microfacet models: specular transmission through microfacets,
   and Heitz's improved importance sampling.
 * No external dependencies: thanks to
-[Syoyo Fujita's tinyexr](https://github.com/syoyo/tinyexr),
 [Sean Barrett's stb_image_write.h](https://github.com/nothings/stb),
 [Diego Nehab's rply](http://www.impa.br/~diego/software/rply),
 and [Emil Mikulic's TARGA library](http://dmr.ath.cx/gfx/targa/), no
   external libraries need to be compiled to build pbrt.
+  The only slightly bigger dependency is [OpenEXR](http://www.openexr.com/),
+  and its build system is fully integrated with that of PBRT.
 
 Many other small things have been improved (parallelization scheme, image
 updates, statistics system, overall cleanliness of interfaces); see the
