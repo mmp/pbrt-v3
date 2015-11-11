@@ -87,6 +87,17 @@ source code for details.
 Building The System
 -------------------
 
+First, to check out PBRT together with all dependencies, be sure to use the ``--recursive`` flag
+when cloning the repository, i.e.
+```bash
+$ git clone --recursive https://github.com/mmp/pbrt-v3/
+```
+If you accidentally already cloned PBRT without this flag, run the following
+command to also fetch the dependencies:
+```bash
+$ git update --init --recursive
+```
+
 pbrt uses [cmake](http://www.cmake.org/) for its build system.  On Linux
 and OS X, cmake is available via most package management systems.  For
 Windows, or to build it from source, see the [cmake downloads
