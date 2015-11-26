@@ -18,7 +18,8 @@ documentation (and the book isn't out yet!), so you should only try it out
 if you're comfortable digging into source code.
 
 Some [example scenes are available for
-download](http://pbrt.org/pbrt-v3-scenes.tar.bz2).
+download](http://mmp.storage.googleapis.com/pbrt/pbrt-v3-scenes.tar.bz2). (Updated
+26 Nov 2015).
 
 The [pbrt website](http://pbrt.org) has  general information about
 both *Physically Based Rendering* as well as pbrt-v2, the previous version
