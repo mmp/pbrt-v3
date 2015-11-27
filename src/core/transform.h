@@ -152,8 +152,6 @@ class Transform {
     inline Vector3<T> operator()(const Vector3<T> &v) const;
     template <typename T>
     inline Normal3<T> operator()(const Normal3<T> &) const;
-    template <typename T>
-    inline void operator()(const Normal3<T> &, Normal3<T> *nt) const;
     inline Ray operator()(const Ray &r) const;
     inline RayDifferential operator()(const RayDifferential &r) const;
     Bounds3f operator()(const Bounds3f &b) const;
