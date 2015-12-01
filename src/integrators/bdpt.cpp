@@ -44,6 +44,7 @@
 
 STAT_TIMER("Time/Rendering", renderingTime);
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
+STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
 // BDPT Forward Declarations
 int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
@@ -460,6 +461,7 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
 
     ++totalPaths;
     if (L.IsBlack()) ++zeroRadiancePaths;
+    ReportValue(pathLength, s + t - 2);
 
     // Compute MIS weight for connection strategy
     Float misWeight =

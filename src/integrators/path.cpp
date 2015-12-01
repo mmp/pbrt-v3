@@ -41,6 +41,7 @@
 #include "stats.h"
 
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
+STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
 // PathIntegrator Method Definitions
 Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
@@ -50,7 +51,8 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     Spectrum L(0.f), beta(1.f);
     RayDifferential ray(r);
     bool specularBounce = false;
-    for (int bounces = 0;; ++bounces) {
+    int bounces;
+    for (bounces = 0;; ++bounces) {
         // Find next path vertex and accumulate contribution
 
         // Intersect _ray_ with scene and store intersection in _isect_
@@ -136,6 +138,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             Assert(std::isinf(beta.y()) == false);
         }
     }
+    ReportValue(pathLength, bounces);
     return L;
 }
 
