@@ -691,7 +691,7 @@ static int print(int i) { return printf("%d ", i); }
 static int print(bool v) {
     return v ? printf("\"true\" ") : printf("\"false\" ");
 }
-static int print(float f) {
+static int print(Float f) {
     if ((int)f == f)
         return printf("%d ", (int)f);
     else

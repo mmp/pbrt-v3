@@ -175,16 +175,22 @@ TEST(Distribution1D, Discrete) {
     EXPECT_EQ(3, dist.SampleDiscrete(1., &pdf));
     EXPECT_EQ(0.75, pdf);
 
-    Float u = .24999;
+    // Compute the interval to test over.
+    Float u = .25, uMax = .25;
+    for (int i = 0; i < 20; ++i) {
+      u = NextFloatDown(u);
+      uMax = NextFloatUp(uMax);
+    }
     // We should get a stream of hits in the first interval, up until the
     // cross-over point at 0.25 (plus/minus fp slop).
-    for (; u <= .250001; u = NextFloatUp(u)) {
+    for (; u < uMax; u = NextFloatUp(u)) {
         int interval = dist.SampleDiscrete(u);
         if (interval == 3) break;
         EXPECT_EQ(1, interval);
     }
+    EXPECT_LT(u, uMax);
     // And then all the rest should be in the third interval
-    for (; u <= .250001; u = NextFloatUp(u)) {
+    for (; u <= uMax; u = NextFloatUp(u)) {
         int interval = dist.SampleDiscrete(u);
         EXPECT_EQ(3, interval);
     }

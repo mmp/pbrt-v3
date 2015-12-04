@@ -85,6 +85,7 @@ class EFloat {
         return r;
     }
     explicit operator float() const { return v; }
+    explicit operator double() const { return v; }
     float GetAbsoluteError() const { return high - low; }
     float UpperBound() const { return high; }
     float LowerBound() const { return low; }

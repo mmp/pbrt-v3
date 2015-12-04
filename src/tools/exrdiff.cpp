@@ -6,8 +6,8 @@
 #include "spectrum.h"
 #include "imageio.h"
 
-static bool ReadEXR(const char *name, float **rgba, int *xRes, int *yRes);
-static void WriteEXR(const char *name, float *pixels, int xRes, int yRes);
+static bool ReadEXR(const char *name, Float **rgba, int *xRes, int *yRes);
+static void WriteEXR(const char *name, Float *pixels, int xRes, int yRes);
 
 static void usage() {
     fprintf(stderr, "usage: exrdiff [-o difffile.exr] [-d diff tolerance %%] <foo.exr> <bar.exr>\n");
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
             usage();
     }
 
-    float *im1, *im2;
+    Float *im1, *im2;
     int r1[2], r2[2];
     if (!ReadEXR(imageFile1, &im1, &r1[0], &r1[1])) {
         printf("couldn't read image %s\n", imageFile1);
@@ -56,21 +56,19 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    float *diffRGB = NULL;
-    if (outfile != NULL)
-        diffRGB = new float[3 * r1[0] * r1[1]];
+    Float *diffRGB = NULL;
+    if (outfile != NULL) diffRGB = new Float[3 * r1[0] * r1[1]];
 
     double sum1 = 0.f, sum2 = 0.f;
     int smallDiff = 0, bigDiff = 0;
     double mse = 0.f;
     for (int i = 0; i < 3 * r1[0] * r1[1]; ++i) {
-        if (diffRGB) diffRGB[i] = fabsf(im1[i] - im2[i]);
-        if (im1[i] == 0 && im2[i] == 0)
-            continue;
+        if (diffRGB) diffRGB[i] = std::abs(im1[i] - im2[i]);
+        if (im1[i] == 0 && im2[i] == 0) continue;
 
         sum1 += im1[i];
         sum2 += im2[i];
-        float d = fabsf(im1[i] - im2[i]) / im1[i];
+        float d = std::abs(im1[i] - im2[i]) / im1[i];
         mse += (im1[i] - im2[i]) * (im1[i] - im2[i]);
         if (d > .005) ++smallDiff;
         if (d > .05) ++bigDiff;
@@ -97,22 +95,21 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-static bool ReadEXR(const char *name, float **rgb, int *width, int *height)
-{
+static bool ReadEXR(const char *name, Float **rgb, int *width, int *height) {
     Point2i res;
     std::unique_ptr<RGBSpectrum[]> image = ReadImage(name, &res);
     if (!image)
       return false;
     *width = res.x;
     *height = res.y;
-    *rgb = new float[3 * *width * *height];
+    *rgb = new Float[3 * *width * *height];
     for (int i = 0; i < *width * *height; ++i) {
         image[i].ToRGB(*rgb + 3 * i);
     }
     return true;
 }
 
-static void WriteEXR(const char *name, float *rgb, int xRes, int yRes) {
-  WriteImage(name, rgb, Bounds2i(Point2i(0, 0), Point2i(xRes, yRes)),
-                                    Point2i(xRes, yRes));
+static void WriteEXR(const char *name, Float *rgb, int xRes, int yRes) {
+    WriteImage(name, rgb, Bounds2i(Point2i(0, 0), Point2i(xRes, yRes)),
+               Point2i(xRes, yRes));
 }

@@ -137,7 +137,7 @@ static RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
 
         RGBSpectrum *ret = new RGBSpectrum[*width * *height];
         for (int i = 0; i < *width * *height; ++i) {
-            float frgb[3] = {pixels[i].r, pixels[i].g, pixels[i].b};
+            Float frgb[3] = {pixels[i].r, pixels[i].g, pixels[i].b};
             ret[i] = RGBSpectrum::FromRGB(frgb);
         }
         Info("Read EXR image %s (%d x %d)", name.c_str(), *width, *height);

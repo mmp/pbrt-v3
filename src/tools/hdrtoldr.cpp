@@ -71,7 +71,8 @@ int main(int argc, char *argv[])
     for (int i = 0; i < res.x * res.y; ++i)
         image[i] *= scale;
 
-    WriteImage(outFile, (float *)image.get(), Bounds2i(Point2i(0, 0), res), res);
+    WriteImage(outFile, (Float *)image.get(), Bounds2i(Point2i(0, 0), res),
+               res);
 
     return 0;
 }

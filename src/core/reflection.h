@@ -96,7 +96,7 @@ inline bool Refract(const Vector3f &wi, const Normal3f &n, Float eta,
                     Vector3f *wt) {
     // Compute $\cos \theta_\roman{t}$ using Snell's law
     Float cosThetaI = Dot(n, wi);
-    Float sin2ThetaI = std::max(0.f, 1.f - cosThetaI * cosThetaI);
+    Float sin2ThetaI = std::max(Float(0), Float(1 - cosThetaI * cosThetaI));
     Float sin2ThetaT = eta * eta * sin2ThetaI;
 
     // Handle total internal reflection for transmission
