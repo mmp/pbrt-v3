@@ -73,9 +73,9 @@ class RNG {
     Float UniformFloat() {
 #ifdef PBRT_IS_MSVC
         return std::min(OneMinusEpsilon,
-                        UniformUInt32() * 2.3283064365386963e-10f);
+                        Float(UniformUInt32() * 2.3283064365386963e-10f));
 #else
-        return std::min(OneMinusEpsilon, UniformUInt32() * 0x1p-32f);
+        return std::min(OneMinusEpsilon, Float(UniformUInt32() * 0x1p-32f));
 #endif
     }
     template <typename Iterator>

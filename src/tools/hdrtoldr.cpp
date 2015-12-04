@@ -12,45 +12,41 @@
 #include "imageio.h"
 
 static void usage() {
-  fprintf( stderr, "usage: exrtopng [options] <input.exr> <output.png>\n" );
-  fprintf( stderr, "Supported options:\n");
-  fprintf( stderr, "\t-scale scale\n" );
-  fprintf( stderr, "\t-repeatpix [count]\n" );
-  exit(1);
+    fprintf(stderr, "usage: exrtopng [options] <input.exr> <output.png>\n");
+    fprintf(stderr, "Supported options:\n");
+    fprintf(stderr, "\t-scale scale\n");
+    fprintf(stderr, "\t-repeatpix [count]\n");
+    exit(1);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     float scale = 1.f;
     int repeat = 1;
     float rp = 1;
 
     int argNum = 1;
     while (argNum < argc && argv[argNum][0] == '-') {
-#define ARG(name, var) \
-      else if (!strcmp(argv[argNum], "-" name)) { \
-        if (argNum+1 == argc) \
-          usage(); \
-        var = atof(argv[argNum+1]); \
-        ++argNum; \
-      }
-      if (false) { }
-      ARG("repeatpix", rp)
-      ARG("scale", scale)
-      else
-          usage();
-      ++argNum;
-
+#define ARG(name, var)                          \
+    else if (!strcmp(argv[argNum], "-" name)) { \
+        if (argNum + 1 == argc) usage();        \
+        var = atof(argv[argNum + 1]);           \
+        ++argNum;                               \
+    }
+        if (false) {
+        }
+        ARG("repeatpix", rp)
+        ARG("scale", scale)
+        else usage();
+        ++argNum;
     }
     if (argNum + 2 > argc) usage();
     repeat = int(rp);
 
-    char *inFile = argv[argNum], *outFile = argv[argNum+1];
+    char *inFile = argv[argNum], *outFile = argv[argNum + 1];
 
     Point2i res;
     std::unique_ptr<RGBSpectrum[]> image = ReadImage(inFile, &res);
-    if (!image)
-      return 1;
+    if (!image) return 1;
 
     if (repeat > 1) {
         std::unique_ptr<RGBSpectrum[]> rscale(
@@ -68,8 +64,7 @@ int main(int argc, char *argv[])
         image = std::move(rscale);
     }
 
-    for (int i = 0; i < res.x * res.y; ++i)
-        image[i] *= scale;
+    for (int i = 0; i < res.x * res.y; ++i) image[i] *= scale;
 
     WriteImage(outFile, (Float *)image.get(), Bounds2i(Point2i(0, 0), res),
                res);

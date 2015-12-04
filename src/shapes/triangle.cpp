@@ -310,9 +310,9 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
 
     // Test intersection against alpha texture, if present
     if (testAlphaTexture && mesh->alphaMask) {
-        SurfaceInteraction isectLocal(
-            pHit, Vector3f(0, 0, 0), uvHit, -ray.d, dpdu, dpdv,
-            Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time, this);
+        SurfaceInteraction isectLocal(pHit, Vector3f(0, 0, 0), uvHit, -ray.d,
+                                      dpdu, dpdv, Normal3f(0, 0, 0),
+                                      Normal3f(0, 0, 0), ray.time, this);
         if (mesh->alphaMask->Evaluate(isectLocal) == 0) return false;
     }
 
@@ -508,9 +508,9 @@ bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
         // Interpolate $(u,v)$ parametric coordinates and hit point
         Point3f pHit = b0 * p0 + b1 * p1 + b2 * p2;
         Point2f uvHit = b0 * uv[0] + b1 * uv[1] + b2 * uv[2];
-        SurfaceInteraction isectLocal(
-            pHit, Vector3f(0, 0, 0), uvHit, -ray.d, dpdu, dpdv,
-            Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time, this);
+        SurfaceInteraction isectLocal(pHit, Vector3f(0, 0, 0), uvHit, -ray.d,
+                                      dpdu, dpdv, Normal3f(0, 0, 0),
+                                      Normal3f(0, 0, 0), ray.time, this);
         if (mesh->alphaMask && mesh->alphaMask->Evaluate(isectLocal) == 0)
             return false;
         if (mesh->shadowAlphaMask &&

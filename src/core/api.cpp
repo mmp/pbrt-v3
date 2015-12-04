@@ -363,8 +363,8 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
                 int count;
                 const Float *alpha = paramSet.FindFloat("alpha", &count);
                 if (alpha)
-                    printf("\n%*s\"float alpha\" %f ", catIndentCount + 8,
-                           "", *alpha);
+                    printf("\n%*s\"float alpha\" %f ", catIndentCount + 8, "",
+                           *alpha);
             }
 
             std::string shadowAlphaTex = paramSet.FindTexture("shadowalpha");
@@ -375,8 +375,8 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
                 int count;
                 const Float *alpha = paramSet.FindFloat("shadowalpha", &count);
                 if (alpha)
-                    printf("\n%*s\"float shadowalpha\" %f ",
-                           catIndentCount + 8, "", *alpha);
+                    printf("\n%*s\"float shadowalpha\" %f ", catIndentCount + 8,
+                           "", *alpha);
             }
             printf("\n");
         } else

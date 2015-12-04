@@ -10,12 +10,13 @@ static bool ReadEXR(const char *name, Float **rgba, int *xRes, int *yRes);
 static void WriteEXR(const char *name, Float *pixels, int xRes, int yRes);
 
 static void usage() {
-    fprintf(stderr, "usage: exrdiff [-o difffile.exr] [-d diff tolerance %%] <foo.exr> <bar.exr>\n");
+    fprintf(stderr,
+            "usage: exrdiff [-o difffile.exr] [-d diff tolerance %%] <foo.exr> "
+            "<bar.exr>\n");
     exit(1);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     const char *outfile = NULL;
     const char *imageFile1 = NULL, *imageFile2 = NULL;
     float tol = 0.f;
@@ -23,16 +24,14 @@ int main(int argc, char *argv[])
     if (argc == 1) usage();
     for (int i = 1; i < argc; ++i) {
         if (!strcmp(argv[i], "-o")) {
-            if (!argv[i+1]) usage();
-            outfile = argv[i+1];
+            if (!argv[i + 1]) usage();
+            outfile = argv[i + 1];
             ++i;
-        }
-        else if (!strcmp(argv[i], "-d")) {
-            if (!argv[i+1]) usage();
-            tol = atof(argv[i+1]);
+        } else if (!strcmp(argv[i], "-d")) {
+            if (!argv[i + 1]) usage();
+            tol = atof(argv[i + 1]);
             ++i;
-        }
-        else if (!imageFile1)
+        } else if (!imageFile1)
             imageFile1 = argv[i];
         else if (!imageFile2)
             imageFile2 = argv[i];
@@ -75,20 +74,19 @@ int main(int argc, char *argv[])
     }
     double avg1 = sum1 / (3. * r1[0] * r1[1]);
     double avg2 = sum2 / (3. * r1[0] * r1[1]);
-    double avgDelta = (avg1-avg2) / std::min(avg1, avg2);
+    double avgDelta = (avg1 - avg2) / std::min(avg1, avg2);
     if ((tol == 0. && (bigDiff > 0 || smallDiff > 0)) ||
         (tol > 0. && 100.f * fabs(avgDelta) > tol)) {
-        printf("%s %s\n\tImages differ: %d big (%.2f%%), %d small (%.2f%%)\n"
-               "\tavg 1 = %g, avg2 = %g (%f%% delta)\n"
-               "\tMSE = %g, RMS = %.3f%%\n",
-               imageFile1, imageFile2,
-               bigDiff, 100.f * float(bigDiff) / (3 * r1[0] * r1[1]),
-               smallDiff, 100.f * float(smallDiff) / (3 * r1[0] * r1[1]),
-               avg1, avg2, 100. * avgDelta,
-               mse / (3. * r1[0] * r1[1]),
-               100. * sqrt(mse / (3. * r1[0] * r1[1])));
-        if (outfile)
-            WriteEXR(outfile, diffRGB, r1[0], r1[1]);
+        printf(
+            "%s %s\n\tImages differ: %d big (%.2f%%), %d small (%.2f%%)\n"
+            "\tavg 1 = %g, avg2 = %g (%f%% delta)\n"
+            "\tMSE = %g, RMS = %.3f%%\n",
+            imageFile1, imageFile2, bigDiff,
+            100.f * float(bigDiff) / (3 * r1[0] * r1[1]), smallDiff,
+            100.f * float(smallDiff) / (3 * r1[0] * r1[1]), avg1, avg2,
+            100. * avgDelta, mse / (3. * r1[0] * r1[1]),
+            100. * sqrt(mse / (3. * r1[0] * r1[1])));
+        if (outfile) WriteEXR(outfile, diffRGB, r1[0], r1[1]);
         return 1;
     }
 
@@ -98,8 +96,7 @@ int main(int argc, char *argv[])
 static bool ReadEXR(const char *name, Float **rgb, int *width, int *height) {
     Point2i res;
     std::unique_ptr<RGBSpectrum[]> image = ReadImage(name, &res);
-    if (!image)
-      return false;
+    if (!image) return false;
     *width = res.x;
     *height = res.y;
     *rgb = new Float[3 * *width * *height];

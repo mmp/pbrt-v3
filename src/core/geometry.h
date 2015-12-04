@@ -42,12 +42,12 @@
 // core/geometry.h*
 #include "pbrt.h"
 
-template<typename T>
-inline bool isNaN(const T x){
+template <typename T>
+inline bool isNaN(const T x) {
     return std::isnan(x);
 }
-template<>
-inline bool isNaN(const int x){
+template <>
+inline bool isNaN(const int x) {
     return false;
 }
 
@@ -169,9 +169,7 @@ class Vector3 {
     }
     Vector3() { x = y = z = 0; }
     Vector3(T x, T y, T z) : x(x), y(y), z(z) { Assert(!HasNaNs()); }
-    bool HasNaNs() const {
-        return isNaN(x) || isNaN(y) || isNaN(z);
-    }
+    bool HasNaNs() const { return isNaN(x) || isNaN(y) || isNaN(z); }
     explicit Vector3(const Point3<T> &p);
 #ifndef NDEBUG
     // The default versions of these are fine for release builds; for debug
@@ -384,9 +382,7 @@ class Point2 {
     }
     bool operator==(const Point2<T> &p) const { return x == p.x && y == p.y; }
     bool operator!=(const Point2<T> &p) const { return x != p.x || y != p.y; }
-    bool HasNaNs() const {
-        return isNaN(x) || isNaN(y);
-    }
+    bool HasNaNs() const { return isNaN(x) || isNaN(y); }
 
     // Point2 Public Data
     T x, y;
@@ -507,9 +503,7 @@ class Point3 {
     bool operator!=(const Point3<T> &p) const {
         return x != p.x || y != p.y || z != p.z;
     }
-    bool HasNaNs() const {
-        return isNaN(x) || isNaN(y) || isNaN(z);
-    }
+    bool HasNaNs() const { return isNaN(x) || isNaN(y) || isNaN(z); }
     Point3<T> operator-() const { return Point3<T>(-x, -y, -z); }
 
     // Point3 Public Data
@@ -553,8 +547,7 @@ class Normal3 {
         z -= n.z;
         return *this;
     }
-    bool HasNaNs() const {
-        return isNaN(x) || isNaN(y) || isNaN(z);
+    bool HasNaNs() const { return isNaN(x) || isNaN(y) || isNaN(z); }
     template <typename U>
     Normal3<T> operator*(U f) const {
         return Normal3<T>(f * x, f * y, f * z);
@@ -827,9 +820,7 @@ class Ray {
         Float time = 0.f, const Medium *medium = nullptr)
         : o(o), d(d), tMax(tMax), time(time), medium(medium) {}
     Point3f operator()(Float t) const { return o + d * t; }
-    bool HasNaNs() const {
-        return (o.HasNaNs() || d.HasNaNs() || isNaN(tMax));
-    }
+    bool HasNaNs() const { return (o.HasNaNs() || d.HasNaNs() || isNaN(tMax)); }
     friend std::ostream &operator<<(std::ostream &os, const Ray &r) {
         os << "[o=" << r.o << ", d=" << r.d << ", tMax=" << r.tMax
            << ", time=" << r.time << "]";

@@ -51,7 +51,8 @@ class RealisticCamera : public Camera {
     RealisticCamera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
                     Float shutterClose, Float apertureDiameter,
                     Float focusDistance, bool simpleWeighting,
-                    std::vector<Float> &lensData, Film *film, const Medium *medium);
+                    std::vector<Float> &lensData, Film *film,
+                    const Medium *medium);
     Float GenerateRay(const CameraSample &sample, Ray *) const;
 
   private:

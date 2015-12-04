@@ -105,8 +105,8 @@ static void workerThreadFunc(int tIndex) {
 
             // Find the set of loop iterations to run next
             int64_t indexStart = loop.nextIndex;
-            int64_t indexEnd = std::min(indexStart + loop.chunkSize,
-                                        loop.maxIndex);
+            int64_t indexEnd =
+                std::min(indexStart + loop.chunkSize, loop.maxIndex);
 
             // Update _loop_ to reflect iterations this thread will run
             loop.nextIndex = indexEnd;

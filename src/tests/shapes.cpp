@@ -40,7 +40,7 @@ TEST(Triangle, Watertight) {
             else if (t == nTheta - 1)
                 vertices.push_back(Point3f(0, 0, -radius));
             else if (p == nPhi - 1)
-              // Close it up exactly at the end
+                // Close it up exactly at the end
                 vertices.push_back(vertices[vertices.size() - (nPhi - 1)]);
             else {
                 radius += 5 * rng.UniformFloat();

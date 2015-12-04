@@ -132,7 +132,8 @@ static RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
         *width = dw.max.x - dw.min.x + 1;
         *height = dw.max.y - dw.min.y + 1;
         std::vector<Rgba> pixels(*width * *height);
-        file.setFrameBuffer(&pixels[0] - dw.min.x - dw.min.y * *width, 1, *width);
+        file.setFrameBuffer(&pixels[0] - dw.min.x - dw.min.y * *width, 1,
+                            *width);
         file.readPixels(dw.min.y, dw.max.y);
 
         RGBSpectrum *ret = new RGBSpectrum[*width * *height];
@@ -157,13 +158,15 @@ static void WriteImageEXR(const std::string &name, const Float *pixels,
 
     Rgba *hrgba = new Rgba[xRes * yRes];
     for (int i = 0; i < xRes * yRes; ++i)
-        hrgba[i] = Rgba(pixels[3*i], pixels[3*i+1], pixels[3*i+2]);
+        hrgba[i] = Rgba(pixels[3 * i], pixels[3 * i + 1], pixels[3 * i + 2]);
 
-    Box2i displayWindow(V2i(0,0), V2i(totalXRes-1, totalYRes-1));
-    Box2i dataWindow(V2i(xOffset, yOffset), V2i(xOffset + xRes - 1, yOffset + yRes - 1));
+    Box2i displayWindow(V2i(0, 0), V2i(totalXRes - 1, totalYRes - 1));
+    Box2i dataWindow(V2i(xOffset, yOffset),
+                     V2i(xOffset + xRes - 1, yOffset + yRes - 1));
 
     try {
-        RgbaOutputFile file(name.c_str(), displayWindow, dataWindow, WRITE_RGBA);
+        RgbaOutputFile file(name.c_str(), displayWindow, dataWindow,
+                            WRITE_RGBA);
         file.setFrameBuffer(hrgba - xOffset - yOffset * xRes, 1, xRes);
         file.writePixels(yRes);
     } catch (const std::exception &exc) {

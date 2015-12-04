@@ -49,8 +49,9 @@ STAT_PERCENT("Camera/Rays vignetted by lens system", vignettedRays, totalRays);
 RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
                                  Float shutterOpen, Float shutterClose,
                                  Float apertureDiameter, Float focusDistance,
-                                 bool simpleWeighting, std::vector<Float> &lensData,
-                                 Film *film, const Medium *medium)
+                                 bool simpleWeighting,
+                                 std::vector<Float> &lensData, Film *film,
+                                 const Medium *medium)
     : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium),
       simpleWeighting(simpleWeighting) {
     for (int i = 0; i < (int)lensData.size(); i += 4) {
@@ -64,9 +65,9 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
                 lensData[i + 3] = apertureDiameter;
             }
         }
-        elementInterfaces.push_back(LensElementInterface({
-            lensData[i] * (Float).001, lensData[i + 1] * (Float).001,
-            lensData[i + 2], lensData[i + 3] * Float(.001) / Float(2.)}));
+        elementInterfaces.push_back(LensElementInterface(
+            {lensData[i] * (Float).001, lensData[i + 1] * (Float).001,
+             lensData[i + 2], lensData[i + 3] * Float(.001) / Float(2.)}));
     }
 
     // Compute lens--film distance for given focus distance
@@ -403,8 +404,8 @@ void RealisticCamera::DrawRayPathFromScene(const Ray &r, bool arrow,
     {
         Float ta = -ray.o.z / ray.d.z;
         if (toOpticalIntercept) {
-          ta = -ray.o.x / ray.d.x;
-          printf("Point[{%f, %f}], ", ray(ta).z, ray(ta).x);
+            ta = -ray.o.x / ray.d.x;
+            printf("Point[{%f, %f}], ", ray(ta).z, ray(ta).x);
         }
         printf("%s[{{%f, %f}, {%f, %f}}]", arrow ? "Arrow" : "Line", ray.o.z,
                ray.o.x, ray(ta).z, ray(ta).x);
@@ -705,11 +706,13 @@ RealisticCamera *CreateRealisticCamera(const ParamSet &params,
     // Load element data from lens description file
     std::vector<Float> lensData;
     if (!ReadFloatFile(lensFile.c_str(), &lensData)) {
-        Error("Error reading lens specification file \"%s\".", lensFile.c_str());
+        Error("Error reading lens specification file \"%s\".",
+              lensFile.c_str());
         return nullptr;
     }
     if (lensData.size() % 4 != 0) {
-        Error("Excess values in lens specification file \"%s\"; "
+        Error(
+            "Excess values in lens specification file \"%s\"; "
             "must be multiple-of-four values, read %d.",
             lensFile.c_str(), (int)lensData.size());
         return nullptr;

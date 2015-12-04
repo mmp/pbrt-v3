@@ -42,7 +42,7 @@
 #include <signal.h>
 #ifndef PBRT_IS_WINDOWS
 #include <sys/time.h>
-#endif // !PBRT_IS_WINDOWS
+#endif  // !PBRT_IS_WINDOWS
 
 // Statistics Local Variables
 std::vector<std::function<void(StatsAccumulator &)>> *StatRegisterer::funcs;

@@ -218,7 +218,7 @@ void ReportProfilerResults(FILE *dest);
     static StatRegisterer STATS_REG##var(STATS_FUNC##var)
 
 // Work around lack of support for constexpr in VS2013 and earlier.
-#if defined(PBRT_IS_MSVC) && (_MSC_VER<=1800)
+#if defined(PBRT_IS_MSVC) && (_MSC_VER <= 1800)
 #define STATS_INT64_T_MIN LLONG_MAX
 #define STATS_INT64_T_MAX _I64_MIN
 #define STATS_DBL_T_MIN DBL_MAX
@@ -245,19 +245,19 @@ void ReportProfilerResults(FILE *dest);
     }                                                                      \
     static StatRegisterer STATS_REG##var(STATS_FUNC##var)
 
-#define STAT_FLOAT_DISTRIBUTION(title, var)                                   \
-    static thread_local double var##sum;                                      \
-    static thread_local int64_t var##count;                                   \
-    static thread_local double var##min = (STATS_DBL_T_MIN);                  \
-    static thread_local double var##max = (STATS_DBL_T_MAX);                  \
-    static void STATS_FUNC##var(StatsAccumulator &accum) {                    \
-        accum.ReportFloatDistribution(title, var##sum, var##count, var##min,  \
-                                      var##max);                              \
-        var##sum = 0;                                                         \
-        var##count = 0;                                                       \
-        var##min = std::numeric_limits<double>::max();                        \
-        var##max = std::numeric_limits<double>::lowest();                     \
-    }                                                                         \
+#define STAT_FLOAT_DISTRIBUTION(title, var)                                  \
+    static thread_local double var##sum;                                     \
+    static thread_local int64_t var##count;                                  \
+    static thread_local double var##min = (STATS_DBL_T_MIN);                 \
+    static thread_local double var##max = (STATS_DBL_T_MAX);                 \
+    static void STATS_FUNC##var(StatsAccumulator &accum) {                   \
+        accum.ReportFloatDistribution(title, var##sum, var##count, var##min, \
+                                      var##max);                             \
+        var##sum = 0;                                                        \
+        var##count = 0;                                                      \
+        var##min = std::numeric_limits<double>::max();                       \
+        var##max = std::numeric_limits<double>::lowest();                    \
+    }                                                                        \
     static StatRegisterer STATS_REG##var(STATS_FUNC##var)
 
 #define ReportValue(var, value)                                   \
