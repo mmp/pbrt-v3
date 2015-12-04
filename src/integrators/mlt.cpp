@@ -171,6 +171,7 @@ void MLTIntegrator::Render(const Scene &scene) {
         ProgressReporter progress(nBootstrap / 4096,
                                   "Generating bootstrap paths");
         std::vector<MemoryArena> bootstrapThreadArenas(MaxThreadIndex());
+        int chunkSize = Clamp(nBootstrap / 128, 1, 8192);
         ParallelFor([&](int i) {
             // Generate _i_th bootstrap sample
             MemoryArena &arena = bootstrapThreadArenas[threadIndex];
@@ -184,7 +185,7 @@ void MLTIntegrator::Render(const Scene &scene) {
                 arena.Reset();
             }
             if ((i + 1 % 4096) == 0) progress.Update();
-        }, nBootstrap, 4096);
+        }, nBootstrap, chunkSize);
         progress.Done();
     }
     Distribution1D bootstrap(&bootstrapWeights[0], nBootstrapSamples);
