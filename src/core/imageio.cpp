@@ -89,7 +89,7 @@ void WriteImage(const std::string &name, const Float *rgb,
         WriteImageEXR(name, rgb, resolution.x, resolution.y, totalResolution.x,
                       totalResolution.y, outputBounds.pMin.x,
                       outputBounds.pMin.y);
-    } else if (HasExtension(name, ".exr")) {
+    } else if (HasExtension(name, ".pfm")) {
         WriteImagePFM(name, rgb, resolution.x, resolution.y);
     } else if (HasExtension(name, ".tga") || HasExtension(name, ".png")) {
         // 8-bit formats; apply gamma
