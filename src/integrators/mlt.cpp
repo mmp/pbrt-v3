@@ -168,7 +168,7 @@ void MLTIntegrator::Render(const Scene &scene) {
     int nBootstrapSamples = nBootstrap * (maxDepth + 1);
     std::vector<Float> bootstrapWeights(nBootstrapSamples, 0);
     if (scene.lights.size() > 0) {
-        ProgressReporter progress(nBootstrap / 4096,
+        ProgressReporter progress(nBootstrap / 256,
                                   "Generating bootstrap paths");
         std::vector<MemoryArena> bootstrapThreadArenas(MaxThreadIndex());
         int chunkSize = Clamp(nBootstrap / 128, 1, 8192);
@@ -184,7 +184,7 @@ void MLTIntegrator::Render(const Scene &scene) {
                     L(scene, arena, lightDistr, sampler, depth, &pRaster).y();
                 arena.Reset();
             }
-            if ((i + 1 % 4096) == 0) progress.Update();
+            if ((i + 1 % 256) == 0) progress.Update();
         }, nBootstrap, chunkSize);
         progress.Done();
     }
