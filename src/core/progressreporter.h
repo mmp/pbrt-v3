@@ -41,15 +41,19 @@
 
 // core/progressreporter.h*
 #include "pbrt.h"
-#include <mutex>
 #include <atomic>
+#include <thread>
 
 // ProgressReporter Declarations
 class ProgressReporter {
   public:
     // ProgressReporter Public Methods
     ProgressReporter(int64_t totalWork, const std::string &title);
-    void Update(int64_t num = 1);
+    ~ProgressReporter();
+    void Update(int64_t num = 1) {
+        if (num == 0 || PbrtOptions.quiet) return;
+        workDone += num;
+    }
     Float ElapsedMS() const {
         std::chrono::system_clock::time_point now =
             std::chrono::system_clock::now();
@@ -62,15 +66,16 @@ class ProgressReporter {
     void Done();
 
   private:
+    // ProgressReporter Private Methods
+    void PrintBar();
+
     // ProgressReporter Private Data
     const int64_t totalWork;
-    int64_t workDone;
-    int plussesPrinted, totalPlusses;
-    std::chrono::system_clock::time_point startTime;
-    FILE *outFile;
-    std::unique_ptr<char[]> buf;
-    char *curSpace;
-    std::mutex mutex;
+    const std::string title;
+    const std::chrono::system_clock::time_point startTime;
+    std::atomic<int64_t> workDone;
+    std::atomic<bool> exitThread;
+    std::thread updateThread;
 };
 
 extern int TerminalWidth();

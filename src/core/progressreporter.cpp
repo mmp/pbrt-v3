@@ -46,60 +46,82 @@
 
 // ProgressReporter Method Definitions
 ProgressReporter::ProgressReporter(int64_t totalWork, const std::string &title)
-    : totalWork(std::max((int64_t)1, totalWork)) {
-    int barLength = TerminalWidth() - 28;
-    totalPlusses = std::max(2, barLength - (int)title.size());
-    plussesPrinted = 0;
+    : totalWork(std::max((int64_t)1, totalWork)),
+      title(title),
+      startTime(std::chrono::system_clock::now()) {
     workDone = 0;
-    startTime = std::chrono::system_clock::now();
-    outFile = stdout;
+    exitThread = false;
+    // Launch thread to periodically update progress bar
+    if (!PbrtOptions.quiet)
+        updateThread = std::thread([this]() { PrintBar(); });
+}
+
+ProgressReporter::~ProgressReporter() {
+    if (!PbrtOptions.quiet) {
+        workDone = totalWork;
+        exitThread = true;
+        updateThread.join();
+        printf("\n");
+    }
+}
+
+void ProgressReporter::PrintBar() {
+    int barLength = TerminalWidth() - 28;
+    int totalPlusses = std::max(2, barLength - (int)title.size());
+    int plussesPrinted = 0;
+
     // Initialize progress string
     const int bufLen = title.size() + totalPlusses + 64;
-    buf.reset(new char[bufLen]);
+    std::unique_ptr<char[]> buf(new char[bufLen]);
     snprintf(buf.get(), bufLen, "\r%s: [", title.c_str());
-    curSpace = buf.get() + strlen(buf.get());
+    char *curSpace = buf.get() + strlen(buf.get());
     char *s = curSpace;
     for (int i = 0; i < totalPlusses; ++i) *s++ = ' ';
     *s++ = ']';
     *s++ = ' ';
     *s++ = '\0';
-    if (!PbrtOptions.quiet) {
-        fputs(buf.get(), outFile);
-        fflush(outFile);
-    }
-}
+    fputs(buf.get(), stdout);
+    fflush(stdout);
 
-void ProgressReporter::Update(int64_t num) {
-    if (num == 0 || PbrtOptions.quiet) return;
-    std::lock_guard<std::mutex> lock(mutex);
-    workDone += num;
-    Float percentDone = Float(workDone) / Float(totalWork);
-    int plussesNeeded = std::round(totalPlusses * percentDone);
-    if (plussesNeeded > totalPlusses) plussesNeeded = totalPlusses;
-    while (plussesPrinted < plussesNeeded) {
-        *curSpace++ = '+';
-        ++plussesPrinted;
+    std::chrono::milliseconds sleepDuration(250);
+    int iterCount = 0;
+    while (!exitThread) {
+        std::this_thread::sleep_for(sleepDuration);
+
+        // Periodically increase sleepDuration to reduce overhead of
+        // updates.
+        ++iterCount;
+        if (iterCount == 10)
+            // Up to 0.5s after ~2.5s elapsed
+            sleepDuration *= 2;
+        else if (iterCount == 70)
+            // Up to 1s after an additional ~30s have elapsed.
+            sleepDuration *= 2;
+
+        Float percentDone = Float(workDone) / Float(totalWork);
+        int plussesNeeded = std::round(totalPlusses * percentDone);
+        while (plussesPrinted < plussesNeeded) {
+            *curSpace++ = '+';
+            ++plussesPrinted;
+        }
+        fputs(buf.get(), stdout);
+
+        // Update elapsed time and estimated time to completion
+        Float seconds = ElapsedMS() / 1000.f;
+        Float estRemaining = seconds / percentDone - seconds;
+        if (percentDone == 1.f)
+            printf(" (%.1fs)       ", seconds);
+        else if (!std::isinf(estRemaining))
+            printf(" (%.1fs|%.1fs)  ", seconds,
+                   std::max((Float)0., estRemaining));
+        else
+            printf(" (%.1fs|?s)  ", seconds);
+        fflush(stdout);
     }
-    fputs(buf.get(), outFile);
-    // Update elapsed time and estimated time to completion
-    Float seconds = ElapsedMS() / 1000.f;
-    Float estRemaining = seconds / percentDone - seconds;
-    if (percentDone == 1.f)
-        fprintf(outFile, " (%.1fs)       ", seconds);
-    else
-        fprintf(outFile, " (%.1fs|%.1fs)  ", seconds,
-                std::max((Float)0., estRemaining));
-    fflush(outFile);
 }
 
 void ProgressReporter::Done() {
-    if (PbrtOptions.quiet) return;
-    std::lock_guard<std::mutex> lock(mutex);
-    while (plussesPrinted++ < totalPlusses) *curSpace++ = '+';
-    fputs(buf.get(), outFile);
-    Float seconds = ElapsedMS() / 1000.f;
-    fprintf(outFile, " (%.1fs)       \n", seconds);
-    fflush(outFile);
+    workDone = totalWork;
 }
 
 int TerminalWidth() {
