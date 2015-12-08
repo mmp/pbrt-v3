@@ -53,7 +53,7 @@ T *AllocAligned(int count) {
 }
 
 void FreeAligned(void *);
-class MemoryArena {
+class alignas(128) MemoryArena {
   public:
     // MemoryArena Public Methods
     MemoryArena(size_t blockSize = 262144) : blockSize(blockSize) {}
