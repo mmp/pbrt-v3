@@ -51,7 +51,7 @@ Spectrum GonioPhotometricLight::Sample_Li(const Interaction &ref,
 
 Spectrum GonioPhotometricLight::Power() const {
     return 4 * Pi * I * Spectrum(mipmap ? mipmap->Lookup(Point2f(.5f, .5f), .5f)
-                                        : Spectrum(1.f),
+                                        : RGBSpectrum(1.f),
                                  SpectrumType::Illuminant);
 }
 
