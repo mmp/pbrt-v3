@@ -352,6 +352,11 @@ uint32_t CMaxMinDist[17][32] = {
 
 // Low Discrepancy Static Functions
 template <int base>
+#if defined(PBRT_IS_MSVC)
+__declspec(noinline)
+#else
+__attribute__ ((noinline))
+#endif
 static Float RadicalInverseSpecialized(uint64_t a) {
     const Float invBase = (Float)1 / (Float)base;
     uint64_t reversedDigits = 0;
@@ -367,8 +372,13 @@ static Float RadicalInverseSpecialized(uint64_t a) {
 }
 
 template <int base>
-static Float ScrambledRadicalInverseSpecialized(const uint16_t *perm,
-                                                uint64_t a) {
+#if defined(PBRT_IS_MSVC)
+__declspec(noinline)
+#else
+__attribute__((noinline))
+#endif
+static Float
+ScrambledRadicalInverseSpecialized(const uint16_t *perm, uint64_t a) {
     const Float invBase = (Float)1 / (Float)base;
     uint64_t reversedDigits = 0;
     Float invBaseN = 1;
@@ -380,7 +390,9 @@ static Float ScrambledRadicalInverseSpecialized(const uint16_t *perm,
         invBaseN *= invBase;
         a = next;
     }
-    return std::min(reversedDigits * invBaseN, OneMinusEpsilon);
+    return std::min(
+        invBaseN * (reversedDigits + invBase * perm[0] / (1 - invBase)),
+        OneMinusEpsilon);
 }
 
 // Low Discrepancy Function Definitions

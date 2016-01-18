@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <algorithm>
 #include "pbrt.h"
+#include "rng.h"
 #include "sampling.h"
 #include "lowdiscrepancy.h"
 #include "samplers/maxmin.h"
@@ -13,6 +14,60 @@ TEST(LowDiscrepancy, RadicalInverse) {
     for (int a = 0; a < 1024; ++a) {
         EXPECT_EQ(ReverseBits32(a) * 2.3283064365386963e-10f,
                   RadicalInverse(0, a));
+    }
+}
+
+TEST(LowDiscrepancy, ScrambledRadicalInverse) {
+    for (int dim = 0; dim < 128; ++dim) {
+        RNG rng(dim);
+        // Random permutation table
+        const int base = Primes[dim];
+
+        std::vector<uint16_t> perm;
+        for (int i = 0; i < base; ++i) perm.push_back(base - 1 - i);
+        Shuffle(&perm[0], perm.size(), 1, rng);
+
+        for (const uint32_t index : { 0, 1, 2, 1151, 32351, 4363211, 681122 }) {
+            // First, compare to the pbrt-v2 implementation.
+            {
+                Float val = 0;
+                Float invBase = 1. / base, invBi = invBase;
+                uint32_t n = index;
+                while (n > 0) {
+                    uint32_t d_i = perm[n % base];
+                    val += d_i * invBi;
+                    n *= invBase;
+                    invBi *= invBase;
+                }
+                // For the case where the permutation table permutes the digit 0
+                // to
+                // another digit, account for the infinite sequence of that
+                // digit
+                // trailing at the end of the radical inverse value.
+                val += perm[0] * base / (base - 1.0f) * invBi;
+
+                EXPECT_NEAR(val, ScrambledRadicalInverse(dim, index, &perm[0]),
+                            1e-5);
+            }
+
+            {
+                // Now also check against a totally naive "loop over all the
+                // bits in
+                // the index" approach, regardless of hitting zero...
+                Float val = 0;
+                Float invBase = 1. / base, invBi = invBase;
+
+                uint32_t a = index;
+                for (int i = 0; i < 32; ++i) {
+                    uint32_t d_i = perm[a % base];
+                    a /= base;
+                    val += d_i * invBi;
+                    invBi *= invBase;
+                }
+                EXPECT_NEAR(val, ScrambledRadicalInverse(dim, index, &perm[0]),
+                            1e-5);
+            }
+        }
     }
 }
 
@@ -178,8 +233,8 @@ TEST(Distribution1D, Discrete) {
     // Compute the interval to test over.
     Float u = .25, uMax = .25;
     for (int i = 0; i < 20; ++i) {
-      u = NextFloatDown(u);
-      uMax = NextFloatUp(uMax);
+        u = NextFloatDown(u);
+        uMax = NextFloatUp(uMax);
     }
     // We should get a stream of hits in the first interval, up until the
     // cross-over point at 0.25 (plus/minus fp slop).
