@@ -405,11 +405,9 @@ void SPPMIntegrator::Render(const Scene &scene) {
                         beta * fr * AbsDot(wi, isect.shading.n) / pdf;
 
                     // Possibly terminate photon path with Russian roulette
-                    Float continueProb =
-                        std::min((Float)1, bnew.y() / beta.y());
-                    if (RadicalInverse(haltonDim++, haltonIndex) > continueProb)
-                        break;
-                    beta = bnew / continueProb;
+                    Float q = std::max((Float)0, 1 - bnew.y() / beta.y());
+                    if (RadicalInverse(haltonDim++, haltonIndex) < q) break;
+                    beta = bnew / (1 - q);
                     photonRay = (RayDifferential)isect.SpawnRay(wi);
                 }
                 arena.Reset();
