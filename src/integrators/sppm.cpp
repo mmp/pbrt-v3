@@ -333,13 +333,13 @@ void SPPMIntegrator::Render(const Scene &scene) {
 
                 // Generate _photonRay_ from light source and initialize _beta_
                 RayDifferential photonRay;
-                Normal3f Nl;
+                Normal3f nLight;
                 Float pdfPos, pdfDir;
                 Spectrum Le =
                     light->Sample_Le(uLight0, uLight1, uLightTime, &photonRay,
-                                     &Nl, &pdfPos, &pdfDir);
+                                     &nLight, &pdfPos, &pdfDir);
                 if (pdfPos == 0 || pdfDir == 0 || Le.IsBlack()) return;
-                Spectrum beta = (AbsDot(Nl, photonRay.d) * Le) /
+                Spectrum beta = (AbsDot(nLight, photonRay.d) * Le) /
                                 (lightPdf * pdfPos * pdfDir);
                 if (beta.IsBlack()) return;
 

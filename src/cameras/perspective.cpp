@@ -142,7 +142,7 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
     return 1;
 }
 
-Spectrum PerspectiveCamera::We(const Ray &ray, Point2f *raster) const {
+Spectrum PerspectiveCamera::We(const Ray &ray, Point2f *pRaster2) const {
     // Interpolate camera matrix and check if $\w{}$ is forward-facing
     Transform c2w;
     CameraToWorld.Interpolate(ray.time, &c2w);
@@ -154,7 +154,7 @@ Spectrum PerspectiveCamera::We(const Ray &ray, Point2f *raster) const {
     Point3f pRaster = Inverse(RasterToCamera)(Inverse(c2w)(pFocus));
 
     // Return raster position if requested
-    if (raster) *raster = Point2f(pRaster.x, pRaster.y);
+    if (pRaster2) *pRaster2 = Point2f(pRaster.x, pRaster.y);
 
     // Return zero importance for out of bounds points
     Bounds2i sampleBounds = film->GetSampleBounds();

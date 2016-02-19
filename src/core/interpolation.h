@@ -46,7 +46,7 @@
 Float CatmullRom(int size, const Float *nodes, const Float *values, Float x);
 bool CatmullRomWeights(int size, const Float *nodes, Float x, int *offset,
                        Float *weights);
-Float SampleCatmullRom(int size, const Float *nodes, const Float *values,
+Float SampleCatmullRom(int size, const Float *nodes, const Float *f,
                        const Float *cdf, Float sample, Float *fval = nullptr,
                        Float *pdf = nullptr);
 Float SampleCatmullRom2D(int size1, int size2, const Float *nodes1,

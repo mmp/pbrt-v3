@@ -135,7 +135,7 @@ struct FourierBSDFTable {
     int *m;
     int *aOffset;
     Float *a;
-    Float *avg;
+    Float *a0;
     Float *cdf;
     Float *recip;
 

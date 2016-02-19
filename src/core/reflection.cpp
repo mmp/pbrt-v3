@@ -459,7 +459,7 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
     Float muO = CosTheta(wo);
     Float pdfMu;
     Float muI = SampleCatmullRom2D(bsdfTable.nMu, bsdfTable.nMu, bsdfTable.mu,
-                                   bsdfTable.mu, bsdfTable.avg, bsdfTable.cdf,
+                                   bsdfTable.mu, bsdfTable.a0, bsdfTable.cdf,
                                    muO, u[1], nullptr, &pdfMu);
 
     // Compute Fourier coefficients $a_k$ for $(\mui, \muo)$

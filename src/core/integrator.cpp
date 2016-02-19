@@ -63,20 +63,20 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
         const std::shared_ptr<Light> &light = scene.lights[j];
         int nSamples = nLightSamples[j];
         const Point2f *uLightArray = sampler.Get2DArray(nSamples);
-        const Point2f *uShadingArray = sampler.Get2DArray(nSamples);
-        if (!uLightArray || !uShadingArray) {
+        const Point2f *uScatteringArray = sampler.Get2DArray(nSamples);
+        if (!uLightArray || !uScatteringArray) {
             // Use a single sample for illumination from _light_
             Point2f uLight = sampler.Get2D();
-            Point2f uShading = sampler.Get2D();
-            L += EstimateDirect(it, uShading, *light, uLight, scene, sampler,
+            Point2f uScattering = sampler.Get2D();
+            L += EstimateDirect(it, uScattering, *light, uLight, scene, sampler,
                                 arena, handleMedia);
         } else {
             // Estimate direct lighting using sample arrays
             Spectrum Ld(0.f);
             for (int k = 0; k < nSamples; ++k)
-                Ld +=
-                    EstimateDirect(it, uShadingArray[k], *light, uLightArray[k],
-                                   scene, sampler, arena, handleMedia);
+                Ld += EstimateDirect(it, uScatteringArray[k], *light,
+                                     uLightArray[k], scene, sampler, arena,
+                                     handleMedia);
             L += Ld / nSamples;
         }
     }
@@ -93,12 +93,12 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
     int lightNum = std::min((int)(sampler.Get1D() * nLights), nLights - 1);
     const std::shared_ptr<Light> &light = scene.lights[lightNum];
     Point2f uLight = sampler.Get2D();
-    Point2f uShading = sampler.Get2D();
-    return (Float)nLights * EstimateDirect(it, uShading, *light, uLight, scene,
-                                           sampler, arena, handleMedia);
+    Point2f uScattering = sampler.Get2D();
+    return (Float)nLights * EstimateDirect(it, uScattering, *light, uLight,
+                                           scene, sampler, arena, handleMedia);
 }
 
-Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
+Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
                         const Light &light, const Point2f &uLight,
                         const Scene &scene, Sampler &sampler,
                         MemoryArena &arena, bool handleMedia, bool specular) {
@@ -107,7 +107,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
     Spectrum Ld(0.f);
     // Sample light source with multiple importance sampling
     Vector3f wi;
-    Float lightPdf = 0, shadingPdf = 0;
+    Float lightPdf = 0, scatteringPdf = 0;
     VisibilityTester visibility;
     Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -118,13 +118,13 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
             f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
                 AbsDot(wi, isect.shading.n);
-            shadingPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
+            scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
         } else {
             // Evaluate phase function for light sampling strategy
             const MediumInteraction &mi = (const MediumInteraction &)it;
             Float p = mi.phase->p(mi.wo, wi);
             f = Spectrum(p);
-            shadingPdf = p;
+            scatteringPdf = p;
         }
         if (!f.IsBlack()) {
             // Compute effect of visibility for light source sample
@@ -138,7 +138,8 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
                 if (IsDeltaLight(light.flags))
                     Ld += f * Li / lightPdf;
                 else {
-                    Float weight = PowerHeuristic(1, lightPdf, 1, shadingPdf);
+                    Float weight =
+                        PowerHeuristic(1, lightPdf, 1, scatteringPdf);
                     Ld += f * Li * weight / lightPdf;
                 }
             }
@@ -153,24 +154,24 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
             // Sample scattered direction for surface interactions
             BxDFType sampledType;
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
-            f = isect.bsdf->Sample_f(isect.wo, &wi, uShading, &shadingPdf,
+            f = isect.bsdf->Sample_f(isect.wo, &wi, uScattering, &scatteringPdf,
                                      bsdfFlags, &sampledType);
             f *= AbsDot(wi, isect.shading.n);
             sampledSpecular = sampledType & BSDF_SPECULAR;
         } else {
             // Sample scattered direction for medium interactions
             const MediumInteraction &mi = (const MediumInteraction &)it;
-            Float p = mi.phase->Sample_p(mi.wo, &wi, uShading);
+            Float p = mi.phase->Sample_p(mi.wo, &wi, uScattering);
             f = Spectrum(p);
-            shadingPdf = p;
+            scatteringPdf = p;
         }
-        if (!f.IsBlack() && shadingPdf > 0) {
+        if (!f.IsBlack() && scatteringPdf > 0) {
             // Account for light contributions along sampled direction _wi_
             Float weight = 1;
             if (!sampledSpecular) {
                 lightPdf = light.Pdf_Li(it, wi);
                 if (lightPdf == 0) return Ld;
-                weight = PowerHeuristic(1, shadingPdf, 1, lightPdf);
+                weight = PowerHeuristic(1, scatteringPdf, 1, lightPdf);
             }
 
             // Find intersection and compute transmittance
@@ -188,7 +189,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
                     Li = lightIsect.Le(-wi);
             } else
                 Li = light.Le(ray);
-            if (!Li.IsBlack()) Ld += f * Li * Tr * weight / shadingPdf;
+            if (!Li.IsBlack()) Ld += f * Li * Tr * weight / scatteringPdf;
         }
     }
     return Ld;

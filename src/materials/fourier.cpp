@@ -155,7 +155,7 @@ bool FourierBSDFTable::Read(const std::string &filename,
 
     bsdfTable->mu = new Float[bsdfTable->nMu];
     bsdfTable->cdf = new Float[bsdfTable->nMu * bsdfTable->nMu];
-    bsdfTable->avg = new Float[bsdfTable->nMu * bsdfTable->nMu];
+    bsdfTable->a0 = new Float[bsdfTable->nMu * bsdfTable->nMu];
     offsetAndLength.reset(new int[bsdfTable->nMu * bsdfTable->nMu * 2]);
     bsdfTable->aOffset = new int[bsdfTable->nMu * bsdfTable->nMu];
     bsdfTable->m = new int[bsdfTable->nMu * bsdfTable->nMu];
@@ -174,7 +174,7 @@ bool FourierBSDFTable::Read(const std::string &filename,
         bsdfTable->aOffset[i] = offset;
         bsdfTable->m[i] = length;
 
-        bsdfTable->avg[i] = length > 0 ? bsdfTable->a[offset] : (Float)0;
+        bsdfTable->a0[i] = length > 0 ? bsdfTable->a[offset] : (Float)0;
     }
 
     bsdfTable->recip = new Float[bsdfTable->mMax];
