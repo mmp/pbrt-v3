@@ -156,7 +156,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         for (int i = 0; i < nThreads; ++i)
             resampleBufs.push_back(new T[resPow2[1]]);
         ParallelFor([&](int s) {
-            T *workData = resampleBufs[threadIndex];
+            T *workData = resampleBufs[ThreadIndex];
             for (int t = 0; t < resPow2[1]; ++t) {
                 workData[t] = 0.f;
                 for (int j = 0; j < 4; ++j) {

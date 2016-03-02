@@ -91,7 +91,7 @@ class ParallelForLoop {
 
 static std::condition_variable workListCondition;
 static void workerThreadFunc(int tIndex) {
-    threadIndex = tIndex;
+    ThreadIndex = tIndex;
     std::unique_lock<std::mutex> lock(workListMutex);
     while (!shutdownThreads) {
         if (!workList) {
@@ -151,7 +151,7 @@ void ParallelFor(const std::function<void(int64_t)> &func, int64_t count,
     // Launch worker threads if needed
     if (threads.size() == 0) {
         Assert(PbrtOptions.nThreads != 1);
-        threadIndex = 0;
+        ThreadIndex = 0;
         for (int i = 0; i < NumSystemCores() - 1; ++i)
             threads.push_back(std::thread(workerThreadFunc, i + 1));
     }
@@ -202,13 +202,13 @@ void ParallelFor(const std::function<void(int64_t)> &func, int64_t count,
     }
 }
 
-thread_local int threadIndex;
+thread_local int ThreadIndex;
 int MaxThreadIndex() {
     if (PbrtOptions.nThreads != 1) {
         // Launch worker threads if needed
         if (threads.size() == 0) {
             Assert(PbrtOptions.nThreads != 1);
-            threadIndex = 0;
+            ThreadIndex = 0;
             for (int i = 0; i < NumSystemCores() - 1; ++i)
                 threads.push_back(std::thread(workerThreadFunc, i + 1));
         }
@@ -225,7 +225,7 @@ void ParallelFor(std::function<void(Point2i)> func, const Point2i &count) {
     // Launch worker threads if needed
     if (threads.size() == 0) {
         Assert(PbrtOptions.nThreads != 1);
-        threadIndex = 0;
+        ThreadIndex = 0;
         for (int i = 0; i < NumSystemCores() - 1; ++i)
             threads.push_back(std::thread(workerThreadFunc, i + 1));
     }

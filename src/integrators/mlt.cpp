@@ -174,7 +174,7 @@ void MLTIntegrator::Render(const Scene &scene) {
         int chunkSize = Clamp(nBootstrap / 128, 1, 8192);
         ParallelFor([&](int i) {
             // Generate _i_th bootstrap sample
-            MemoryArena &arena = bootstrapThreadArenas[threadIndex];
+            MemoryArena &arena = bootstrapThreadArenas[ThreadIndex];
             for (int depth = 0; depth <= maxDepth; ++depth) {
                 int rngIndex = i * (maxDepth + 1) + depth;
                 MLTSampler sampler(mutationsPerPixel, rngIndex, sigma,
