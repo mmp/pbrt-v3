@@ -52,7 +52,6 @@ TEST(Triangle, Watertight) {
     }
     EXPECT_EQ(nVertices, vertices.size());
 
-    int nTris = 2 * (nTheta - 1) * (nPhi - 1);
     std::vector<int> indices;
     // fan at top
     auto offset = [nPhi](int t, int p) { return t * nPhi + p; };

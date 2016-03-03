@@ -242,8 +242,8 @@ static int catIndentCount = 0;
 
 // API Forward Declarations
 std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
-                                               const Transform *object2world,
-                                               const Transform *world2object,
+                                               const Transform *ObjectToWorld,
+                                               const Transform *WorldToObject,
                                                bool reverseOrientation,
                                                const ParamSet &paramSet);
 
@@ -1156,10 +1156,10 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         // Initialize _prims_ and _areaLights_ for static shape
 
         // Create shapes for shape _name_
-        Transform *obj2world, *world2obj;
-        transformCache.Lookup(curTransform[0], &obj2world, &world2obj);
+        Transform *ObjToWorld, *WorldToObj;
+        transformCache.Lookup(curTransform[0], &ObjToWorld, &WorldToObj);
         std::vector<std::shared_ptr<Shape>> shapes =
-            MakeShapes(name, obj2world, world2obj,
+            MakeShapes(name, ObjToWorld, WorldToObj,
                        graphicsState.reverseOrientation, params);
         if (shapes.size() == 0) return;
         std::shared_ptr<Material> mtl = graphicsState.CreateMaterial(params);
@@ -1202,11 +1202,11 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
 
         // Get _animatedObjectToWorld_ transform for shape
         Assert(MaxTransforms == 2);
-        Transform *obj2world[2];
-        transformCache.Lookup(curTransform[0], &obj2world[0], nullptr);
-        transformCache.Lookup(curTransform[1], &obj2world[1], nullptr);
+        Transform *ObjToWorld[2];
+        transformCache.Lookup(curTransform[0], &ObjToWorld[0], nullptr);
+        transformCache.Lookup(curTransform[1], &ObjToWorld[1], nullptr);
         AnimatedTransform animatedObjectToWorld(
-            obj2world[0], renderOptions->transformStartTime, obj2world[1],
+            ObjToWorld[0], renderOptions->transformStartTime, ObjToWorld[1],
             renderOptions->transformEndTime);
         if (prims.size() > 1) {
             std::shared_ptr<Primitive> bvh = std::make_shared<BVHAccel>(prims);
@@ -1326,11 +1326,11 @@ void pbrtObjectInstance(const std::string &name) {
     }
     Assert(MaxTransforms == 2);
     // Create _animatedInstanceToWorld_ transform for instance
-    Transform *instance2world[2];
-    transformCache.Lookup(curTransform[0], &instance2world[0], nullptr);
-    transformCache.Lookup(curTransform[1], &instance2world[1], nullptr);
+    Transform *InstanceToWorld[2];
+    transformCache.Lookup(curTransform[0], &InstanceToWorld[0], nullptr);
+    transformCache.Lookup(curTransform[1], &InstanceToWorld[1], nullptr);
     AnimatedTransform animatedInstanceToWorld(
-        instance2world[0], renderOptions->transformStartTime, instance2world[1],
+        InstanceToWorld[0], renderOptions->transformStartTime, InstanceToWorld[1],
         renderOptions->transformEndTime);
     std::shared_ptr<Primitive> prim(
         std::make_shared<TransformedPrimitive>(in[0], animatedInstanceToWorld));

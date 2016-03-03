@@ -168,7 +168,7 @@ struct Vertex {
                                       const Interaction &it,
                                       const Spectrum &beta);
     static inline Vertex CreateLight(const Light *light, const Ray &ray,
-                                     const Normal3f &Nl, const Spectrum &Le,
+                                     const Normal3f &nLight, const Spectrum &Le,
                                      Float pdf);
     static inline Vertex CreateLight(const EndpointInteraction &ei,
                                      const Spectrum &beta, Float pdf);
@@ -373,7 +373,7 @@ struct Vertex {
 
 extern int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
                                  MemoryArena &arena, int maxDepth,
-                                 const Camera &camera, Point2f &pFilm,
+                                 const Camera &camera, const Point2f &pFilm,
                                  Vertex *path);
 
 extern int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
