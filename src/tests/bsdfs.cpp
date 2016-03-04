@@ -187,7 +187,7 @@ void FrequencyTable(const BSDF* bsdf, const Vector3f& wo, RNG& rng,
 
         Vector3f wiL = bsdf->WorldToLocal(wi);
 
-        Point2f coords(std::acos(wiL.z) * factorTheta,
+        Point2f coords(std::acos(Clamp(wiL.z, -1, 1)) * factorTheta,
                        std::atan2(wiL.y, wiL.x) * factorPhi);
 
         if (coords.y < 0) coords.y += 2 * Pi * factorPhi;
@@ -389,14 +389,14 @@ void TestBSDF(void (*createBSDF)(BSDF*, MemoryArena&),
     // Create BSDF, which requires creating a Shape, casting a Ray that
     // hits the shape to get a SurfaceInteraction object.
     BSDF* bsdf = nullptr;
+    Transform t = RotateX(-90);
+    Transform tInv = Inverse(t);
     {
-        Transform t = RotateX(-90);
         bool reverseOrientation = false;
         ParamSet p;
 
         std::shared_ptr<Shape> disk(
-            new Disk(new Transform(t), new Transform(Inverse(t)),
-                     reverseOrientation, 0., 1., 0, 360.));
+            new Disk(&t, &tInv, reverseOrientation, 0., 1., 0, 360.));
         Point3f origin(0.1, 1,
                        0);  // offset slightly so we don't hit center of disk
         Vector3f direction(0, -1, 0);
