@@ -174,6 +174,8 @@ static MeasuredSS SubsurfaceParameterTable[] = {
      {0.031845, 0.031324, 0.030147}}};
 
 // Media Definitions
+PhaseFunction::~PhaseFunction() { }
+
 bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
                                    Spectrum *sigma_prime_s) {
     for (MeasuredSS &mss : SubsurfaceParameterTable) {
@@ -186,6 +188,7 @@ bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
     return false;
 }
 
+// HenyeyGreenstein Method Definitions
 Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
                                  const Point2f &u) const {
     // Compute $\cos \theta$ for Henyey--Greenstein sample
@@ -206,7 +209,6 @@ Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
     return PhaseHG(-cosTheta, g);
 }
 
-// HenyeyGreenstein Method Definitions
 Float HenyeyGreenstein::p(const Vector3f &wo, const Vector3f &wi) const {
     return PhaseHG(Dot(wo, wi), g);
 }

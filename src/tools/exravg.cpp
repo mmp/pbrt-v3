@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    float *rgba, *orig_rgba = NULL;
+    float *rgba;
     int xRes = 0, yRes = 0;
     float a = 0;
     int file;

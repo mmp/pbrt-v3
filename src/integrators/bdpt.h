@@ -300,7 +300,7 @@ struct Vertex {
             Assert(type == VertexType::Camera);
 
         // Compute directional density depending on the vertex types
-        Float pdf, unused;
+        Float pdf = 0, unused;
         if (type == VertexType::Camera)
             ei.camera->Pdf_We(ei.SpawnRay(wn), &unused, &pdf);
         else if (type == VertexType::Surface)

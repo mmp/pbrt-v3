@@ -168,8 +168,8 @@ static void RadixSort(std::vector<MortonPrimitive> *v) {
 BVHAccel::BVHAccel(const std::vector<std::shared_ptr<Primitive>> &p,
                    int maxPrimsInNode, SplitMethod splitMethod)
     : maxPrimsInNode(std::min(255, maxPrimsInNode)),
-      primitives(p),
-      splitMethod(splitMethod) {
+      splitMethod(splitMethod),
+      primitives(p) {
     StatTimer buildTime(&constructionTime);
     if (primitives.size() == 0) return;
     // Build BVH from _primitives_

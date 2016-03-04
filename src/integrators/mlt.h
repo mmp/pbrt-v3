@@ -125,9 +125,9 @@ class MLTIntegrator : public Integrator {
     std::shared_ptr<const Camera> camera;
     const int maxDepth;
     const int nBootstrap;
+    const int nChains;
     const int mutationsPerPixel;
     const Float sigma, largeStepProbability;
-    const int nChains;
 };
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,

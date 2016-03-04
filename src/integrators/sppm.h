@@ -53,12 +53,12 @@ class SPPMIntegrator : public Integrator {
                    int photonsPerIteration, int maxDepth,
                    Float initialSearchRadius, int writeFrequency)
         : camera(camera),
+          initialSearchRadius(initialSearchRadius),
           nIterations(nIterations),
+          maxDepth(maxDepth),
           photonsPerIteration(photonsPerIteration > 0
                                   ? photonsPerIteration
                                   : camera->film->croppedPixelBounds.Area()),
-          maxDepth(maxDepth),
-          initialSearchRadius(initialSearchRadius),
           writeFrequency(writeFrequency) {}
     void Render(const Scene &scene);
 
