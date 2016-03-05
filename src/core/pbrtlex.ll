@@ -30,12 +30,9 @@
 
  */
 
-/* state used for include file stuff */
-%{
+%option nounistd
 
-#define YY_MAIN 0
-#define YY_NO_INPUT 1
-#define YY_NEVER_INTERACTIVE 1
+%{
 
 #include "pbrt.h"
 #include "api.h"
@@ -50,6 +47,8 @@ struct ParamArray;
 #pragma warning(disable:4018)
 #pragma warning(disable:4996)
 int isatty(int fd) { return _isatty(fd); }
+#else
+#include <unistd.h>
 #endif  // PBRT_IS_MSVC
 #include "pbrtparse.hh"
 
@@ -58,7 +57,6 @@ struct IncludeInfo {
     YY_BUFFER_STATE bufState;
     int lineNum;
 };
-
 
 std::vector<IncludeInfo> includeStack;
 
@@ -69,7 +67,6 @@ void add_string_char(char c) {
     yylval.string[str_pos++] = c;
     yylval.string[str_pos] = '\0';
 }
-
 
 
 void include_push(char *filename) {
