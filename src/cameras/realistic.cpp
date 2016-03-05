@@ -621,8 +621,8 @@ void RealisticCamera::TestExitPupilBounds() const {
     // Now, randomly pick points on the aperture and see if any are outside
     // of pupil bounds...
     for (int i = 0; i < 1000; ++i) {
-        Point2f pd = ConcentricSampleDisk(
-            Point2f(rng.UniformFloat(), rng.UniformFloat()));
+        Point2f u2{rng.UniformFloat(), rng.UniformFloat()};
+        Point2f pd = ConcentricSampleDisk(u2);
         pd *= RearElementRadius();
 
         Ray testRay(pFilm, Point3f(pd.x, pd.y, 0.f) - pFilm);

@@ -175,7 +175,10 @@ inline void VanDerCorput(int nSamplesPerPixelSample, int nPixelSamples,
 
 inline void Sobol2D(int nSamplesPerPixelSample, int nPixelSamples,
                     Point2f *samples, RNG &rng) {
-    Point2i scramble(rng.UniformUInt32(), rng.UniformUInt32());
+    Point2i scramble;
+    scramble[0] = rng.UniformUInt32();
+    scramble[1] = rng.UniformUInt32();
+
     // Define 2D Sobol$'$ generator matrices _CSobol[2]_
     const uint32_t CSobol[2][32] = {
         {0x1u, 0x2u, 0x4u, 0x8u, 0x10u, 0x20u, 0x40u, 0x80u, 0x100u, 0x200u,

@@ -179,8 +179,7 @@ void FrequencyTable(const BSDF* bsdf, const Vector3f& wo, RNG& rng,
     Float pdf;
 
     for (int i = 0; i < sampleCount; ++i) {
-        Point2f sample(rng.UniformFloat(), rng.UniformFloat());
-
+        Point2f sample {rng.UniformFloat(), rng.UniformFloat()};
         Spectrum f = bsdf->Sample_f(wo, &wi, sample, &pdf, BSDF_ALL, &flags);
 
         if (f == Spectrum() || (flags & BSDF_SPECULAR)) continue;
@@ -410,7 +409,7 @@ void TestBSDF(void (*createBSDF)(BSDF*, MemoryArena&),
 
     for (int k = 0; k < CHI2_RUNS; ++k) {
         /* Randomly pick an outgoing direction on the hemisphere */
-        Point2f sample(rng.UniformFloat(), rng.UniformFloat());
+        Point2f sample {rng.UniformFloat(), rng.UniformFloat()};
         Vector3f woL = CosineSampleHemisphere(sample);
         Vector3f wo = bsdf->LocalToWorld(woL);
 
