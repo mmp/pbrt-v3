@@ -48,7 +48,7 @@
 #define ARENA_ALLOC(arena, Type) new ((arena).Alloc(sizeof(Type))) Type
 void *AllocAligned(size_t size);
 template <typename T>
-T *AllocAligned(int count) {
+T *AllocAligned(size_t count) {
     return (T *)AllocAligned(count * sizeof(T));
 }
 

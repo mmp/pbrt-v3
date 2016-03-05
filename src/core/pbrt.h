@@ -424,53 +424,53 @@ inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {
 
 inline Float ErfInv(Float x) {
     Float w, p;
-    x = Clamp(x, Float(-.99999), Float(.99999));
-    w = -std::log((1.0 - x) * (1.0 + x));
-    if (w < 5.000000) {
-        w = w - 2.500000;
-        p = 2.81022636e-08;
-        p = 3.43273939e-07 + p * w;
-        p = -3.5233877e-06 + p * w;
-        p = -4.39150654e-06 + p * w;
-        p = 0.00021858087 + p * w;
-        p = -0.00125372503 + p * w;
-        p = -0.00417768164 + p * w;
-        p = 0.246640727 + p * w;
-        p = 1.50140941 + p * w;
+    x = Clamp(x, -.99999f, .99999f);
+    w = -std::log((1 - x) * (1 + x));
+    if (w < 5) {
+        w = w - 2.5f;
+        p = 2.81022636e-08f;
+        p = 3.43273939e-07f + p * w;
+        p = -3.5233877e-06f + p * w;
+        p = -4.39150654e-06f + p * w;
+        p = 0.00021858087f + p * w;
+        p = -0.00125372503f + p * w;
+        p = -0.00417768164f + p * w;
+        p = 0.246640727f + p * w;
+        p = 1.50140941f + p * w;
     } else {
-        w = std::sqrt(w) - 3.000000;
-        p = -0.000200214257;
-        p = 0.000100950558 + p * w;
-        p = 0.00134934322 + p * w;
-        p = -0.00367342844 + p * w;
-        p = 0.00573950773 + p * w;
-        p = -0.0076224613 + p * w;
-        p = 0.00943887047 + p * w;
-        p = 1.00167406 + p * w;
-        p = 2.83297682 + p * w;
+        w = std::sqrt(w) - 3;
+        p = -0.000200214257f;
+        p = 0.000100950558f + p * w;
+        p = 0.00134934322f + p * w;
+        p = -0.00367342844f + p * w;
+        p = 0.00573950773f + p * w;
+        p = -0.0076224613f + p * w;
+        p = 0.00943887047f + p * w;
+        p = 1.00167406f + p * w;
+        p = 2.83297682f + p * w;
     }
     return p * x;
 }
 
 inline Float Erf(Float x) {
     // constants
-    Float a1 = 0.254829592;
-    Float a2 = -0.284496736;
-    Float a3 = 1.421413741;
-    Float a4 = -1.453152027;
-    Float a5 = 1.061405429;
-    Float p = 0.3275911;
+    Float a1 = 0.254829592f;
+    Float a2 = -0.284496736f;
+    Float a3 = 1.421413741f;
+    Float a4 = -1.453152027f;
+    Float a5 = 1.061405429f;
+    Float p = 0.3275911f;
 
     // Save the sign of x
     int sign = 1;
     if (x < 0) sign = -1;
-    x = fabs(x);
+    x = std::abs(x);
 
     // A&S formula 7.1.26
-    Float t = 1.0 / (1.0 + p * x);
+    Float t = 1 / (1 + p * x);
     Float y =
-        1.0 -
-        (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * exp(-x * x);
+        1 -
+        (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * std::exp(-x * x);
 
     return sign * y;
 }

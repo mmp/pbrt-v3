@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     double avg2 = sum2 / (3. * r1[0] * r1[1]);
     double avgDelta = (avg1 - avg2) / std::min(avg1, avg2);
     if ((tol == 0. && (bigDiff > 0 || smallDiff > 0)) ||
-        (tol > 0. && 100.f * fabs(avgDelta) > tol)) {
+        (tol > 0. && 100.f * std::abs(avgDelta) > tol)) {
         printf(
             "%s %s\n\tImages differ: %d big (%.2f%%), %d small (%.2f%%)\n"
             "\tavg 1 = %g, avg2 = %g (%f%% delta)\n"

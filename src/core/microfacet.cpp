@@ -140,6 +140,8 @@ static Vector3f BeckmannSample(const Vector3f &wi, Float alpha_x, Float alpha_y,
 }
 
 // MicrofacetDistribution Method Definitions
+MicrofacetDistribution::~MicrofacetDistribution() { }
+
 Float BeckmannDistribution::D(const Vector3f &wh) const {
     Float tan2Theta = Tan2Theta(wh);
     if (std::isinf(tan2Theta)) return 0.;

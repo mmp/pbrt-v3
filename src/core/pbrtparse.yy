@@ -758,10 +758,10 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                             "Ignoring last %d of them.", cur_paramlist[i].name,
                             nItems % 3);
                 std::unique_ptr<Vector3f[]> vecs(new Vector3f[nItems / 3]);
-                for (int i = 0; i < nItems / 3; ++i) {
-                    vecs[i].x = ((double *)data)[3 * i];
-                    vecs[i].y = ((double *)data)[3 * i + 1];
-                    vecs[i].z = ((double *)data)[3 * i + 2];
+                for (int j = 0; j < nItems / 3; ++j) {
+                    vecs[j].x = ((double *)data)[3 * j];
+                    vecs[j].y = ((double *)data)[3 * j + 1];
+                    vecs[j].z = ((double *)data)[3 * j + 2];
                 }
                 ps.AddVector3f(name, std::move(vecs), nItems / 3);
             } else if (type == PARAM_TYPE_NORMAL) {
@@ -770,10 +770,10 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                             "Ignoring last %d of them.", cur_paramlist[i].name,
                             nItems % 3);
                 std::unique_ptr<Normal3f[]> normals(new Normal3f[nItems / 3]);
-                for (int i = 0; i < nItems / 3; ++i) {
-                    normals[i].x = ((double *)data)[3 * i];
-                    normals[i].y = ((double *)data)[3 * i + 1];
-                    normals[i].z = ((double *)data)[3 * i + 2];
+                for (int j = 0; j < nItems / 3; ++j) {
+                    normals[j].x = ((double *)data)[3 * j];
+                    normals[j].y = ((double *)data)[3 * j + 1];
+                    normals[j].z = ((double *)data)[3 * j + 2];
                 }
                 ps.AddNormal3f(name, std::move(normals), nItems / 3);
             } else if (type == PARAM_TYPE_RGB) {
@@ -782,8 +782,8 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                             "Ignoring last %d of them", cur_paramlist[i].name,
                             nItems % 3);
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
-                for (int i = 0; i < nItems; ++i)
-                    floats[i] = ((double *)data)[i];
+                for (int j = 0; j < nItems; ++j)
+                    floats[j] = ((double *)data)[j];
                 ps.AddRGBSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_XYZ) {
                 if ((nItems % 3) != 0)
@@ -791,16 +791,16 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                             "Ignoring last %d of them", cur_paramlist[i].name,
                             nItems % 3);
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
-                for (int i = 0; i < nItems; ++i)
-                    floats[i] = ((double *)data)[i];
+                for (int j = 0; j < nItems; ++j)
+                    floats[j] = ((double *)data)[j];
                 ps.AddXYZSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_BLACKBODY) {
                 if ((nItems % 2) != 0)
                     Warning("Excess value given with blackbody parameter \"%s\". "
                             "Ignoring extra one.", cur_paramlist[i].name);
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
-                for (int i = 0; i < nItems; ++i)
-                    floats[i] = ((double *)data)[i];
+                for (int j = 0; j < nItems; ++j)
+                    floats[j] = ((double *)data)[j];
                 ps.AddBlackbodySpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_SPECTRUM) {
                 if (cur_paramlist[i].isString) {
@@ -812,8 +812,8 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                                 "parameter \"%s\". Ignoring extra.",
                                 cur_paramlist[i].name);
                     std::unique_ptr<Float[]> floats(new Float[nItems]);
-                    for (int i = 0; i < nItems; ++i)
-                        floats[i] = ((double *)data)[i];
+                    for (int j = 0; j < nItems; ++j)
+                        floats[j] = ((double *)data)[j];
                     ps.AddSampledSpectrum(name, std::move(floats), nItems);
                 }
             } else if (type == PARAM_TYPE_STRING) {

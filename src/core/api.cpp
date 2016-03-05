@@ -230,7 +230,7 @@ class TransformCache {
 enum class APIState { Uninitialized, OptionsBlock, WorldBlock };
 static APIState currentApiState = APIState::Uninitialized;
 static TransformSet curTransform;
-static int activeTransformBits = AllTransformsBits;
+static uint32_t activeTransformBits = AllTransformsBits;
 static std::map<std::string, TransformSet> namedCoordinateSystems;
 static std::unique_ptr<RenderOptions> renderOptions;
 static GraphicsState graphicsState;

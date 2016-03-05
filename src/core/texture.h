@@ -50,7 +50,7 @@
 class TextureMapping2D {
   public:
     // TextureMapping2D Interface
-    virtual ~TextureMapping2D() {}
+    virtual ~TextureMapping2D();
     virtual Point2f Map(const SurfaceInteraction &si, Vector2f *dstdx,
                         Vector2f *dstdy) const = 0;
 };
@@ -113,7 +113,7 @@ class PlanarMapping2D : public TextureMapping2D {
 class TextureMapping3D {
   public:
     // TextureMapping3D Interface
-    virtual ~TextureMapping3D() {}
+    virtual ~TextureMapping3D();
     virtual Point3f Map(const SurfaceInteraction &si, Vector3f *dpdx,
                         Vector3f *dpdy) const = 0;
 };

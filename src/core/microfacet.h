@@ -47,7 +47,7 @@
 class MicrofacetDistribution {
   public:
     // MicrofacetDistribution Public Methods
-    virtual ~MicrofacetDistribution() {}
+    virtual ~MicrofacetDistribution();
     virtual Float D(const Vector3f &wh) const = 0;
     virtual Float Lambda(const Vector3f &w) const = 0;
     Float G1(const Vector3f &w) const {

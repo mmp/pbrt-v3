@@ -45,7 +45,7 @@
 #include "geometry.h"
 #include "texture.h"
 #include "spectrum.h"
-#if (_MSC_VER >= 1400)
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #include <stdio.h>
 #define snprintf _snprintf
 #endif

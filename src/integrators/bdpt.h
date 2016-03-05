@@ -278,7 +278,7 @@ struct Vertex {
            << "  beta = " << v.beta << std::endl
            << "]" << std::endl;
         return os;
-    };
+    }
     Float ConvertDensity(Float pdf, const Vertex &next) const {
         // Return solid angle density if _next_ is an infinite area light
         if (next.IsInfiniteLight()) return pdf;

@@ -229,7 +229,7 @@ inline Float SobolSample(int64_t index, int dimension, uint64_t scramble = 0) {
 #ifdef PBRT_FLOAT_AS_DOUBLE
     return SobolSampleDouble(index, dimension, scramble);
 #else
-    return SobolSampleFloat(index, dimension, scramble);
+    return SobolSampleFloat(index, dimension, (uint32_t)scramble);
 #endif
 }
 
