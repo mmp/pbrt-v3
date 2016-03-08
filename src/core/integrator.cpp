@@ -43,7 +43,6 @@
 #include "integrator.h"
 #include "progressreporter.h"
 #include "camera.h"
-#include "interaction.h"
 #include "stats.h"
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 STAT_TIMER("Time/Rendering", renderingTime);
