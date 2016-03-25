@@ -88,6 +88,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             Spectrum Ld =
                 beta * UniformSampleOneLight(isect, scene, arena, sampler);
             if (Ld.IsBlack()) ++zeroRadiancePaths;
+            Assert(Ld.y() >= 0.f);
             L += Ld;
         }
 
@@ -99,6 +100,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                           BSDF_ALL, &flags);
         if (f.IsBlack() || pdf == 0.f) break;
         beta *= f * AbsDot(wi, isect.shading.n) / pdf;
+        Assert(beta.y() >= 0.f);
         Assert(std::isinf(beta.y()) == false);
         specularBounce = (flags & BSDF_SPECULAR) != 0;
         ray = isect.SpawnRay(wi);
