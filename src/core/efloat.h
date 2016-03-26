@@ -161,8 +161,10 @@ class EFloat {
         if (!std::isinf(low) && !std::isnan(low) && !std::isinf(high) &&
             !std::isnan(high))
             Assert(low <= high);
+#ifndef NDEBUG
         if (!std::isinf(v) && !std::isnan(v))
             Assert(LowerBound() <= vPrecise && vPrecise <= UpperBound());
+#endif
     }
     EFloat(const EFloat &ef) {
         ef.Check();
