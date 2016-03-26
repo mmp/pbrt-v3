@@ -394,12 +394,12 @@ Spectrum FresnelBlend::Sample_f(const Vector3f &wo, Vector3f *wi,
                                 BxDFType *sampledType) const {
     Point2f u = uOrig;
     if (u[0] < .5) {
-        u[0] = 2 * u[0];
+        u[0] = std::min(2 * u[0], OneMinusEpsilon);
         // Cosine-sample the hemisphere, flipping the direction if necessary
         *wi = CosineSampleHemisphere(u);
         if (wo.z < 0) wi->z *= -1;
     } else {
-        u[0] = 2 * (u[0] - .5f);
+        u[0] = std::min(2 * (u[0] - .5f), OneMinusEpsilon);
         // Sample microfacet orientation $\wh$ and reflected direction $\wi$
         Vector3f wh = distribution->Sample_wh(wo, u);
         *wi = Reflect(wo, wh);
@@ -645,7 +645,8 @@ Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
     Assert(bxdf);
 
     // Remap _BxDF_ sample _u_ to $[0,1)^2$
-    Point2f uRemapped(u[0] * matchingComps - comp, u[1]);
+    Point2f uRemapped(std::min(u[0] * matchingComps - comp, OneMinusEpsilon),
+                      u[1]);
 
     // Sample chosen _BxDF_
     Vector3f wi, wo = WorldToLocal(woWorld);
