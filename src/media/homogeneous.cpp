@@ -64,5 +64,9 @@ Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
     Float pdf = 0;
     for (int i = 0; i < Spectrum::nSamples; ++i) pdf += density[i];
     pdf *= 1 / (Float)Spectrum::nSamples;
+    if (pdf == 0) {
+        Assert(Tr.IsBlack());
+        pdf = 1;
+    }
     return sampledMedium ? (Tr * sigma_s / pdf) : (Tr / pdf);
 }
