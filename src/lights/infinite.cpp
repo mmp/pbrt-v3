@@ -63,15 +63,14 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
     // Initialize sampling PDFs for infinite area light
 
     // Compute scalar-valued image _img_ from environment map
-    int width = resolution.x, height = resolution.y;
-    Float filter = (Float)1 / std::max(width, height);
+    int width = Lmap->Width(), height = Lmap->Height();
     std::unique_ptr<Float[]> img(new Float[width * height]);
     for (int v = 0; v < height; ++v) {
         Float vp = (Float)v / (Float)height;
         Float sinTheta = std::sin(Pi * Float(v + .5f) / Float(height));
         for (int u = 0; u < width; ++u) {
             Float up = (Float)u / (Float)width;
-            img[u + v * width] = Lmap->Lookup(Point2f(up, vp), filter).y();
+            img[u + v * width] = Lmap->Lookup(Point2f(up, vp)).y();
             img[u + v * width] *= sinTheta;
         }
     }
@@ -98,6 +97,8 @@ Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
     Point2f uv = distribution->SampleContinuous(u, &mapPdf);
+    uv[0] -= (Float)0.5 / Lmap->Width();
+    uv[1] -= (Float)0.5 / Lmap->Height();
     if (mapPdf == 0) return Spectrum(0.f);
 
     // Convert infinite light sample point to direction
@@ -135,6 +136,8 @@ Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
     Point2f uv = distribution->SampleContinuous(u, &mapPdf);
+    uv[0] -= (Float)0.5 / Lmap->Width();
+    uv[1] -= (Float)0.5 / Lmap->Height();
     if (mapPdf == 0) return Spectrum(0.f);
     Float theta = uv[1] * Pi, phi = uv[0] * 2.f * Pi;
     Float cosTheta = std::cos(theta), sinTheta = std::sin(theta);
