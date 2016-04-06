@@ -350,6 +350,8 @@ Spectrum MicrofacetReflection::Sample_f(const Vector3f &wo, Vector3f *wi,
                                         const Point2f &u, Float *pdf,
                                         BxDFType *sampledType) const {
     // Sample microfacet orientation $\wh$ and reflected direction $\wi$
+    if (wo.z == 0)
+        return 0.;
     Vector3f wh = distribution->Sample_wh(wo, u);
     *wi = Reflect(wo, wh);
     if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
@@ -368,6 +370,8 @@ Float MicrofacetReflection::Pdf(const Vector3f &wo, const Vector3f &wi) const {
 Spectrum MicrofacetTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
                                           const Point2f &u, Float *pdf,
                                           BxDFType *sampledType) const {
+    if (wo.z == 0)
+        return 0.;
     Vector3f wh = distribution->Sample_wh(wo, u);
     Float eta = CosTheta(wo) > 0 ? (etaA / etaB) : (etaB / etaA);
     if (!Refract(wo, (Normal3f)wh, eta, wi)) return 0;
