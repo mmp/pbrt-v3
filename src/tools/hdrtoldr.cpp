@@ -12,7 +12,7 @@
 #include "imageio.h"
 
 static void usage() {
-    fprintf(stderr, "usage: exrtopng [options] <input.exr> <output.png>\n");
+    fprintf(stderr, "usage: hdrtoldr [options] <input.exr> <output.png>\n");
     fprintf(stderr, "Supported options:\n");
     fprintf(stderr, "\t-scale scale\n");
     fprintf(stderr, "\t-repeatpix [count]\n");
