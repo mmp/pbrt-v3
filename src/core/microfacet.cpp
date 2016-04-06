@@ -237,20 +237,20 @@ static void TrowbridgeReitzSample11(Float cosTheta, Float U1, Float U2,
 
     Float sinTheta =
         std::sqrt(std::max((Float)0, (Float)1 - cosTheta * cosTheta));
-    Float tan_theta_i = sinTheta / cosTheta;
-    Float a = 1 / tan_theta_i;
+    Float tanTheta = sinTheta / cosTheta;
+    Float a = 1 / tanTheta;
     Float G1 = 2 / (1 + std::sqrt(1.f + 1.f / (a * a)));
 
     // sample slope_x
     Float A = 2 * U1 / G1 - 1;
     Float tmp = 1.f / (A * A - 1.f);
     if (tmp > 1e10) tmp = 1e10;
-    Float B = tan_theta_i;
+    Float B = tanTheta;
     Float D = std::sqrt(
         std::max(Float(B * B * tmp * tmp - (A * A - B * B) * tmp), Float(0)));
     Float slope_x_1 = B * tmp - D;
     Float slope_x_2 = B * tmp + D;
-    *slope_x = (A < 0 || slope_x_2 > 1.f / tan_theta_i) ? slope_x_1 : slope_x_2;
+    *slope_x = (A < 0 || slope_x_2 > 1.f / tanTheta) ? slope_x_1 : slope_x_2;
 
     Assert(!std::isinf(*slope_x));
     Assert(!std::isnan(*slope_x));
