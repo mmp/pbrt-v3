@@ -328,17 +328,26 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
 
         // Compute shading normal _ns_ for triangle
         Normal3f ns;
-        if (mesh->n)
-            ns = Normalize(b0 * mesh->n[v[0]] + b1 * mesh->n[v[1]] +
-                           b2 * mesh->n[v[2]]);
-        else
+        if (mesh->n) {
+            ns = (b0 * mesh->n[v[0]] + b1 * mesh->n[v[1]] +
+                  b2 * mesh->n[v[2]]);
+            if (ns.LengthSquared() > 0)
+                ns = Normalize(ns);
+            else
+                ns = isect->n;
+        } else
             ns = isect->n;
 
         // Compute shading tangent _ss_ for triangle
         Vector3f ss;
-        if (mesh->s)
-            ss = Normalize(b0 * mesh->s[v[0]] + b1 * mesh->s[v[1]] +
-                           b2 * mesh->s[v[2]]);
+        if (mesh->s) {
+            ss = (b0 * mesh->s[v[0]] + b1 * mesh->s[v[1]] +
+                  b2 * mesh->s[v[2]]);
+            if (ss.LengthSquared() > 0)
+                ss = Normalize(ss);
+            else
+                ss = Normalize(isect->dpdu);
+        }
         else
             ss = Normalize(isect->dpdu);
 
