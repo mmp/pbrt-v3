@@ -596,6 +596,7 @@ Spectrum BSDF::f(const Vector3f &woW, const Vector3f &wiW,
                  BxDFType flags) const {
     ProfilePhase pp(Prof::BSDFEvaluation);
     Vector3f wi = WorldToLocal(wiW), wo = WorldToLocal(woW);
+    if (wo.z == 0) return 0.;
     bool reflect = Dot(wiW, ng) * Dot(woW, ng) > 0;
     Spectrum f(0.f);
     for (int i = 0; i < nBxDFs; ++i)
@@ -654,6 +655,7 @@ Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
 
     // Sample chosen _BxDF_
     Vector3f wi, wo = WorldToLocal(woWorld);
+    if (wo.z == 0) return 0.;
     *pdf = 0;
     if (sampledType) *sampledType = bxdf->type;
     Spectrum f = bxdf->Sample_f(wo, &wi, uRemapped, pdf, sampledType);
@@ -687,6 +689,7 @@ Float BSDF::Pdf(const Vector3f &woWorld, const Vector3f &wiWorld,
                 BxDFType flags) const {
     if (nBxDFs == 0.f) return 0.f;
     Vector3f wo = WorldToLocal(woWorld), wi = WorldToLocal(wiWorld);
+    if (wo.z == 0) return 0.;
     Float pdf = 0.f;
     int matchingComps = 0;
     for (int i = 0; i < nBxDFs; ++i)
