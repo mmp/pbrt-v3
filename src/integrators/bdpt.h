@@ -141,14 +141,7 @@ struct Vertex {
     // Vertex Public Data
     VertexType type;
     Spectrum beta;
-// Switch to a struct in debug mode to avoid a compiler error regarding
-// non-trivial constructors
-#if defined(NDEBUG) && !defined(PBRT_IS_MSVC) && !defined(PBRT_IS_INTEL)
-    union
-#else
-    struct
-#endif
-        {
+    union {
         EndpointInteraction ei;
         MediumInteraction mi;
         SurfaceInteraction si;
@@ -162,6 +155,15 @@ struct Vertex {
         : type(type), beta(beta), ei(ei) {}
     Vertex(const SurfaceInteraction &si, const Spectrum &beta)
         : type(VertexType::Surface), beta(beta), si(si) {}
+
+    // Need to define these two to make compilers happy with the non-POD
+    // objects in the anonymous union above.
+    Vertex(const Vertex &v) { memcpy(this, &v, sizeof(Vertex)); }
+    Vertex &operator=(const Vertex &v) {
+        memcpy(this, &v, sizeof(Vertex));
+        return *this;
+    }
+
     static inline Vertex CreateCamera(const Camera *camera, const Ray &ray,
                                       const Spectrum &beta);
     static inline Vertex CreateCamera(const Camera *camera,
