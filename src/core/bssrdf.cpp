@@ -104,7 +104,7 @@ Float BeamDiffusionMS(Float sigma_s, Float sigma_a, Float g, Float eta,
         Float phiD = Inv4Pi / D_g * (std::exp(-sigma_tr * dr) / dr -
                                      std::exp(-sigma_tr * dv) / dv);
 
-        // Compute dipole vector irradiance $\N{}\cdot\dipoleE(r)$ using
+        // Compute dipole vector irradiance $-\N{}\cdot\dipoleE(r)$ using
         // Equation $(\ref{eq:diffusion-dipole-vector-irradiance-normal})$
         Float EDn = Inv4Pi * (zr * (1 + sigma_tr * dr) *
                                   std::exp(-sigma_tr * dr) / (dr * dr * dr) -
