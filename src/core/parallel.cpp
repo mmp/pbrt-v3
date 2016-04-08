@@ -208,7 +208,7 @@ int MaxThreadIndex() {
     return 1 + threads.size();
 }
 
-void ParallelFor(std::function<void(Point2i)> func, const Point2i &count) {
+void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
     if (PbrtOptions.nThreads == 1) {
         for (int y = 0; y < count.y; ++y)
             for (int x = 0; x < count.x; ++x) func(Point2i(x, y));

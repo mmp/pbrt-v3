@@ -79,7 +79,7 @@ class AtomicFloat {
 void ParallelFor(const std::function<void(int64_t)> &func, int64_t count,
                  int chunkSize = 1);
 extern thread_local int ThreadIndex;
-void ParallelFor(std::function<void(Point2i)> func, const Point2i &count);
+void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count);
 int MaxThreadIndex();
 int NumSystemCores();
 void TerminateWorkerThreads();

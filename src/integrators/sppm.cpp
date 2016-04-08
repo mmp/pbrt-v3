@@ -138,7 +138,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         std::vector<MemoryArena> perThreadArenas(MaxThreadIndex());
         {
             StatTimer timer(&hitPointTimer);
-            ParallelFor([&](Point2i tile) {
+            ParallelFor2D([&](Point2i tile) {
                 MemoryArena &arena = perThreadArenas[ThreadIndex];
                 // Follow camera paths for _tile_ in image for SPPM
                 int tileIndex = tile.y * nTiles.x + tile.x;
