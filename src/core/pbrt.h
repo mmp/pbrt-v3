@@ -53,6 +53,8 @@
   #define PBRT_IS_OSX
 #elif defined(__OpenBSD__)
   #define PBRT_IS_OPENBSD
+#elif defined(__FreeBSD__)
+  #define PBRT_IS_FREEBSD
 #endif
 
 #if defined(__INTEL_COMPILER)
@@ -70,11 +72,11 @@
 #include <string>
 #include <vector>
 #include "error.h"
-#if !defined(PBRT_IS_OSX) && !defined(PBRT_IS_OPENBSD)
+#if !defined(PBRT_IS_OSX) && !defined(PBRT_IS_OPENBSD) && !defined(PBRT_IS_FREEBSD)
 #include <malloc.h>  // for _alloca, memalign
 #endif
 #if !defined(PBRT_IS_WINDOWS) && !defined(PBRT_IS_OSX) && \
-    !defined(PBRT_IS_OPENBSD)
+    !defined(PBRT_IS_OPENBSD) && !defined(PBRT_IS_FREEBSD)
 #include <alloca.h>
 #endif
 #include <assert.h>
