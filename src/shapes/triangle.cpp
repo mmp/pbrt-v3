@@ -322,7 +322,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                                 this);
 
     // Override surface normal in _isect_ for triangle
-    isect->n = isect->shading.n = Normal3f(Normalize(Cross(dp02, dp12)));
+    isect->n = isect->shading.n = Normal3f(Normalize(Cross(dp12, dp02)));
     if (mesh->n || mesh->s) {
         // Initialize _Triangle_ shading geometry
 
@@ -551,7 +551,7 @@ Interaction Triangle::Sample(const Point2f &u) const {
         it.n = Normalize(b[0] * mesh->n[v[0]] + b[1] * mesh->n[v[1]] +
                          (1 - b[0] - b[1]) * mesh->n[v[2]]);
     else
-        it.n = Normalize(Normal3f(Cross(p1 - p0, p2 - p0)));
+        it.n = Normalize(Normal3f(Cross(p2 - p0, p1 - p0)));
     if (reverseOrientation) it.n *= -1;
 
     // Compute error bounds for sampled point on triangle
