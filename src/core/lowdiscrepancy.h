@@ -106,7 +106,7 @@ inline uint32_t ReverseMultiplyGenerator(const uint32_t *C, uint32_t a) {
 
 inline Float SampleGeneratorMatrix(const uint32_t *C, uint32_t a,
                                    uint32_t scramble = 0) {
-#ifdef PBRT_IS_MSVC
+#ifndef PBRT_HAVE_HEX_FP_CONSTANTS
     return (ReverseMultiplyGenerator(C, a) ^ scramble) *
            2.3283064365386963e-10f;
 #else
@@ -120,7 +120,7 @@ inline void GrayCodeSample(const uint32_t *C, uint32_t n, uint32_t scramble,
                            Float *p) {
     uint32_t v = scramble;
     for (uint32_t i = 0; i < n; ++i) {
-#ifdef PBRT_IS_MSVC
+#ifndef PBRT_HAVE_HEX_FP_CONSTANTS
         p[i] = v * 2.3283064365386963e-10f; /* 1/2^32 */
 #else
         p[i] = v * 0x1p-32f; /* 1/2^32 */
@@ -133,7 +133,7 @@ inline void GrayCodeSample(const uint32_t *C0, const uint32_t *C1, uint32_t n,
                            const Point2i &scramble, Point2f *p) {
     uint32_t v[2] = {(uint32_t)scramble.x, (uint32_t)scramble.y};
     for (uint32_t i = 0; i < n; ++i) {
-#ifdef PBRT_IS_MSVC
+#ifndef PBRT_HAVE_HEX_FP_CONSTANTS
         p[i].x = v[0] * 2.3283064365386963e-10f;
         p[i].y = v[1] * 2.3283064365386963e-10f;
 #else
@@ -150,20 +150,12 @@ inline void VanDerCorput(int nSamplesPerPixelSample, int nPixelSamples,
     uint32_t scramble = rng.UniformUInt32();
     // Define _CVanDerCorput_ Generator Matrix
     const uint32_t CVanDerCorput[] = {
-        0b00000000000000000000000000000001, 0b00000000000000000000000000000010,
-        0b00000000000000000000000000000100, 0b00000000000000000000000000001000,
+        0x1, 0x2, 0x4, 0x8,
         // Remainder of Van Der Corput generator matrix entries
-        0b10000, 0b100000, 0b1000000, 0b10000000, 0b100000000, 0b1000000000,
-        0b10000000000, 0b100000000000, 0b1000000000000, 0b10000000000000,
-        0b100000000000000, 0b1000000000000000, 0b10000000000000000,
-        0b100000000000000000, 0b1000000000000000000, 0b10000000000000000000,
-        0b100000000000000000000, 0b1000000000000000000000,
-        0b10000000000000000000000, 0b100000000000000000000000,
-        0b1000000000000000000000000, 0b10000000000000000000000000,
-        0b100000000000000000000000000, 0b1000000000000000000000000000,
-        0b10000000000000000000000000000, 0b100000000000000000000000000000,
-        0b1000000000000000000000000000000, 0b10000000000000000000000000000000,
-    };
+        0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000,
+        0x4000, 0x8000, 0x10000, 0x20000, 0x40000, 0x80000, 0x100000, 0x200000,
+        0x400000, 0x800000, 0x1000000, 0x2000000, 0x4000000, 0x8000000,
+        0x10000000, 0x20000000, 0x40000000, 0x80000000};
     int totalSamples = nSamplesPerPixelSample * nPixelSamples;
     GrayCodeSample(CVanDerCorput, totalSamples, scramble, samples);
     // Randomly shuffle 1D sample points
@@ -239,7 +231,7 @@ inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
     for (int i = dimension * SobolMatrixSize + SobolMatrixSize - 1; a != 0;
          a >>= 1, --i)
         if (a & 1) v ^= SobolMatrices32[i];
-#ifdef PBRT_IS_MSVC
+#ifndef PBRT_HAVE_HEX_FP_CONSTANTS
     return v * 2.3283064365386963e-10f; /* 1/2^32 */
 #else
     return v * 0x1p-32f; /* 1/2^32 */

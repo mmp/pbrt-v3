@@ -53,7 +53,11 @@ T *AllocAligned(size_t count) {
 }
 
 void FreeAligned(void *);
-class alignas(128) MemoryArena {
+class
+#ifdef PBRT_HAVE_ALIGNAS
+alignas(128)
+#endif // PBRT_HAVE_ALIGNAS
+    MemoryArena {
   public:
     // MemoryArena Public Methods
     MemoryArena(size_t blockSize = 262144) : blockSize(blockSize) {}

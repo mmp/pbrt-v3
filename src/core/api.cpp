@@ -114,10 +114,7 @@
 #include "media/grid.h"
 #include "media/homogeneous.h"
 #include <map>
-#if (_MSC_VER >= 1400)
 #include <stdio.h>
-#define snprintf _snprintf
-#endif
 
 // API Global Variables
 Options PbrtOptions;

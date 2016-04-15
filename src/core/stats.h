@@ -217,8 +217,8 @@ void ReportProfilerResults(FILE *dest);
     }                                                      \
     static StatRegisterer STATS_REG##var(STATS_FUNC##var)
 
-// Work around lack of support for constexpr in VS2013 and earlier.
-#if defined(PBRT_IS_MSVC) && (_MSC_VER <= 1800)
+// Work around lack of support for constexpr in VS2013.
+#ifdef PBRT_IS_MSVC2013
 #define STATS_INT64_T_MIN LLONG_MAX
 #define STATS_INT64_T_MAX _I64_MIN
 #define STATS_DBL_T_MIN DBL_MAX

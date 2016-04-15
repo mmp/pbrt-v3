@@ -112,7 +112,7 @@ bool FourierBSDFTable::Read(const std::string &filename,
         if (IsBigEndian()) {
             int32_t *tmp = (int32_t *)target;
             for (size_t i = 0; i < count; ++i) {
-#if defined(__GNUC__)
+#ifndef PBRT_IS_MSVC
                 tmp[i] = __builtin_bswap32(tmp[i]);
 #else
                 tmp[i] = _byteswap_ulong(tmp[i]);

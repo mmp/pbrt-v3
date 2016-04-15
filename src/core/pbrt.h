@@ -40,26 +40,7 @@
 #include "stdafx.h"
 
 // core/pbrt.h*
-#if defined(_WIN32) || defined(_WIN64)
-  #define PBRT_IS_WINDOWS
-  #if defined(__MINGW32__)  // Defined for both 32 bit/64 bit MinGW
-    #define PBRT_IS_MINGW
-  #elif defined(_MSC_VER)
-    #define PBRT_IS_MSVC
-  #endif
-#elif defined(__linux__)
-  #define PBRT_IS_LINUX
-#elif defined(__APPLE__)
-  #define PBRT_IS_OSX
-#elif defined(__OpenBSD__)
-  #define PBRT_IS_OPENBSD
-#elif defined(__FreeBSD__)
-  #define PBRT_IS_FREEBSD
-#endif
-
-#if defined(__INTEL_COMPILER)
-  #define PBRT_IS_INTEL
-#endif
+#include "port.h"
 
 // Global Include Files
 #include <type_traits>
@@ -72,11 +53,10 @@
 #include <string>
 #include <vector>
 #include "error.h"
-#if !defined(PBRT_IS_OSX) && !defined(PBRT_IS_OPENBSD) && !defined(PBRT_IS_FREEBSD)
+#ifdef PBRT_HAVE_MALLOC_H
 #include <malloc.h>  // for _alloca, memalign
 #endif
-#if !defined(PBRT_IS_WINDOWS) && !defined(PBRT_IS_OSX) && \
-    !defined(PBRT_IS_OPENBSD) && !defined(PBRT_IS_FREEBSD)
+#ifdef PBRT_HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <assert.h>
@@ -90,20 +70,10 @@
 #pragma warning(disable : 4305)  // double constant assigned to float
 #pragma warning(disable : 4244)  // int -> float conversion
 #pragma warning(disable : 4267)  // size_t -> unsigned int conversion
-#if _MSC_VER < 1900
-#define constexpr const
-#endif
 #endif
 
 // Global Macros
 #define ALLOCA(TYPE, COUNT) (TYPE *) alloca((COUNT) * sizeof(TYPE))
-#ifdef PBRT_IS_MSVC
-#if _MSC_VER < 1900
-#define thread_local __declspec(thread)
-#endif // pre-MSVC 2015
-#else
-#define thread_local __thread
-#endif
 
 // Global Forward Declarations
 class Scene;

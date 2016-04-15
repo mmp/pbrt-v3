@@ -189,6 +189,7 @@ SET ( PBRT_CORE_HEADERS
   src/core/paramset.h
   src/core/parser.h
   src/core/pbrt.h
+  src/core/port.h
   src/core/primitive.h
   src/core/progressreporter.h
   src/core/quaternion.h

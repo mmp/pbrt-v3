@@ -43,8 +43,7 @@
 #include "pbrt.h"
 
 // Random Number Declarations
-#ifdef PBRT_IS_MSVC
-// sadly, MSVC2008 (at least) doesn't support hexadecimal fp constants...
+#ifndef PBRT_HAVE_HEX_FP_CONSTANTS
 static const Float OneMinusEpsilon = 0.9999999403953552f;
 #else
 #ifdef PBRT_FLOAT_IS_DOUBLE
@@ -71,7 +70,7 @@ class RNG {
         }
     }
     Float UniformFloat() {
-#ifdef PBRT_IS_MSVC
+#ifndef PBRT_HAVE_HEX_FP_CONSTANTS
         return std::min(OneMinusEpsilon,
                         Float(UniformUInt32() * 2.3283064365386963e-10f));
 #else
