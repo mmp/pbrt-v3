@@ -65,19 +65,19 @@ FIND_PACKAGE ( FLEX )
 IF(BISON_FOUND AND FLEX_FOUND)
   SET(BisonOutput ${CMAKE_BINARY_DIR}/pbrtparse.cpp)
   ADD_CUSTOM_COMMAND(
-    OUTPUT ${BisonOutput} ${CMAKE_BINARY_DIR}/pbrtparse.hh
-    DEPENDS ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
+    OUTPUT ${BisonOutput} ${CMAKE_BINARY_DIR}/pbrtparse.h
+    DEPENDS ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.y
     COMMAND ${BISON_EXECUTABLE} -d -v -t
-            --output=${BisonOutput}
-            ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.yy
-    COMMAND bash -c "if [[ -e ${CMAKE_BINARY_DIR}/pbrtparse.hpp ]]\; then /bin/mv ${CMAKE_BINARY_DIR}/pbrtparse.hpp ${CMAKE_BINARY_DIR}/pbrtparse.hh\; fi"
-    COMMENT "Generating pbrtparse.cpp and pbrtparse.hh"
+            --output=${CMAKE_BINARY_DIR}/pbrtparse.c
+            ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.y
+    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/pbrtparse.c ${CMAKE_BINARY_DIR}/pbrtparse.cpp
+    COMMENT "Generating pbrtparse.cpp and pbrtparse.h"
   )
 
   SET(FlexOutput ${CMAKE_BINARY_DIR}/pbrtlex.cpp)
   ADD_CUSTOM_COMMAND(
     OUTPUT ${FlexOutput}
-    DEPENDS ${CMAKE_BINARY_DIR}/pbrtparse.hh ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
+    DEPENDS ${CMAKE_BINARY_DIR}/pbrtparse.h ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
     COMMAND ${FLEX_EXECUTABLE}
             -o${FlexOutput}
             ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll

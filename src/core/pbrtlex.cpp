@@ -727,7 +727,7 @@ struct ParamArray;
 #pragma warning(disable:4996)
 int isatty(int fd) { return _isatty(fd); }
 #endif  // PBRT_IS_MSVC
-#include "pbrtparse.hh"
+#include "pbrtparse.h"
 
 struct IncludeInfo {
     std::string filename;

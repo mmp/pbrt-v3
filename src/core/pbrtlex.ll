@@ -50,7 +50,7 @@ int isatty(int fd) { return _isatty(fd); }
 #else
 #include <unistd.h>
 #endif  // PBRT_IS_MSVC
-#include "pbrtparse.hh"
+#include "pbrtparse.h"
 
 struct IncludeInfo {
     std::string filename;
