@@ -1,0 +1,33 @@
+version: 1.0.{build}
+branches:
+  only:
+  - appVeyor
+os: 
+- Visual Studio 2013
+- Visual Studio 2015
+configuration: Release
+platform: x64
+clone_folder: c:\pbrt-v3
+install:
+# os detection
+- ps: if ($env:VS140COMNTOOLS -gt 0) { $env:VS_VER = 14 } else { $env:VS_VER = 12 }
+- echo %VS_VER%
+- set PATH=C:\Program Files (x86)\MSBuild\%VS_VER%.0\Bin;%PATH%
+- echo %PATH%
+- git submodule update --init --recursive
+before_build:
+- md c:\pbrt-v3\build
+- cd c:\pbrt-v3\build
+- set WIN32=1
+- ps: if ($env:VS_VER -eq 14) {cmake -G "Visual Studio 14 2015 Win64" ..} else {cmake -G "Visual Studio 12 2013 Win64" ..}
+build:
+  project: c:\pbrt-v3\build\pbrt-v3.sln
+  parallel: true
+  verbosity: normal
+# Quick Hack to force zlib.sln to be built first, Default build failed to do so.
+build_script:
+- msbuild c:\pbrt-v3\build\src\ext\zlib\zlib.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- msbuild c:\pbrt-v3\build\pbrt-v3.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+after_build:
+- cd c:\pbrt-v3\build\Release
+- pbrt_test.exe
