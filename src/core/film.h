@@ -78,8 +78,9 @@ class Film {
   private:
     // Film Private Data
     struct Pixel {
-        Float xyz[3] = {0, 0, 0};
-        Float filterWeightSum = 0;
+        Pixel() { xyz[0] = xyz[1] = xyz[2] = filterWeightSum = 0; }
+        Float xyz[3];
+        Float filterWeightSum;
         AtomicFloat splatXYZ[3];
         Float pad;
     };
