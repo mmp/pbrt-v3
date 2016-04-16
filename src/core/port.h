@@ -81,10 +81,10 @@
   #define PBRT_HAVE_ALLOCA_H
 #endif
 
-#if !defined(PBRT_IS_MSVC)
-  #define PBRT_THREAD_LOCAL __thread
+#if defined(PBRT_IS_MSVC)
+  #define PBRT_THREAD_LOCAL __declspec(thread)
 #else
-  #define PBRT_THREAD_LOCAL thread_local
+  #define PBRT_THREAD_LOCAL __thread
 #endif
 
 #ifdef PBRT_IS_MSVC2013
