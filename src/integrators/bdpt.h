@@ -231,6 +231,8 @@ struct Vertex {
                                                    BSDF_REFLECTION |
                                                    BSDF_TRANSMISSION)) > 0;
         }
+        Severe("Unhandled vertex type in IsConnectable()");
+        return false;  // NOTREACHED
     }
     bool IsLight() const {
         return type == VertexType::Light ||

@@ -69,7 +69,11 @@ static Point3f EvalBezier(const Point3f cp[4], Float u,
 // Curve Method Definitions
 CurveCommon::CurveCommon(const Point3f c[4], Float width0, Float width1,
                          CurveType type, const Normal3f *norm)
-    : type(type), cpObj{c[0], c[1], c[2], c[3]}, width{width0, width1} {
+    : type(type);
+    width[0] = width0;
+    width[1] = width1;
+    for (int i = 0; i < 4; ++i)
+        cpObj[i] = c[i];
     if (norm) {
         n[0] = Normalize(norm[0]);
         n[1] = Normalize(norm[1]);
