@@ -163,13 +163,13 @@ class TextureParams;
 #define MaxFloat std::numeric_limits<Float>::max()
 #define Infinity std::numeric_limits<Float>::infinity()
 #else
-static constexpr Float MaxFloat = std::numeric_limits<Float>::max();
-static constexpr Float Infinity = std::numeric_limits<Float>::infinity();
+static PBRT_CONSTEXPR Float MaxFloat = std::numeric_limits<Float>::max();
+static PBRT_CONSTEXPR Float Infinity = std::numeric_limits<Float>::infinity();
 #endif
 #ifdef _MSC_VER
 #define MachineEpsilon (std::numeric_limits<Float>::epsilon() * 0.5)
 #else
-static constexpr Float MachineEpsilon =
+static PBRT_CONSTEXPR Float MachineEpsilon =
     std::numeric_limits<Float>::epsilon() * 0.5;
 #endif
 const Float ShadowEpsilon = 0.0001f;
@@ -260,7 +260,7 @@ inline double NextFloatDown(double v, int delta = 1) {
     return BitsToFloat(ui);
 }
 
-inline constexpr Float gamma(int n) {
+inline Float gamma(int n) {
     return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 }
 

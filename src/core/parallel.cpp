@@ -194,7 +194,7 @@ void ParallelFor(const std::function<void(int64_t)> &func, int64_t count,
     }
 }
 
-thread_local int ThreadIndex;
+PBRT_THREAD_LOCAL int ThreadIndex;
 int MaxThreadIndex() {
     if (PbrtOptions.nThreads != 1) {
         // Launch worker threads if needed

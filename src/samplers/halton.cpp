@@ -38,7 +38,7 @@
 #include "rng.h"
 
 // HaltonSampler Local Constants
-static constexpr int kMaxResolution = 128;
+static PBRT_CONSTEXPR int kMaxResolution = 128;
 
 // HaltonSampler Utility Functions
 static void extendedGCD(uint64_t a, uint64_t b, int64_t *x, int64_t *y);

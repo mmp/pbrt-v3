@@ -126,10 +126,10 @@ inline uint32_t EncodeMorton3(const Vector3f &v) {
 
 static void RadixSort(std::vector<MortonPrimitive> *v) {
     std::vector<MortonPrimitive> tempVector(v->size());
-    constexpr int bitsPerPass = 6;
-    constexpr int nBits = 30;
+    PBRT_CONSTEXPR int bitsPerPass = 6;
+    PBRT_CONSTEXPR int nBits = 30;
     Assert((nBits % bitsPerPass) == 0);
-    constexpr int nPasses = nBits / bitsPerPass;
+    PBRT_CONSTEXPR int nPasses = nBits / bitsPerPass;
     for (int pass = 0; pass < nPasses; ++pass) {
         // Perform one pass of radix sort, sorting _bitsPerPass_ bits
         int lowBit = pass * bitsPerPass;
@@ -139,9 +139,9 @@ static void RadixSort(std::vector<MortonPrimitive> *v) {
         std::vector<MortonPrimitive> &out = (pass & 1) ? *v : tempVector;
 
         // Count number of zero bits in array for current radix sort bit
-        constexpr int nBuckets = 1 << bitsPerPass;
+        PBRT_CONSTEXPR int nBuckets = 1 << bitsPerPass;
         int bucketCount[nBuckets] = {0};
-        constexpr int bitMask = (1 << bitsPerPass) - 1;
+        PBRT_CONSTEXPR int bitMask = (1 << bitsPerPass) - 1;
         for (const MortonPrimitive &mp : in) {
             int bucket = (mp.mortonCode >> lowBit) & bitMask;
             Assert(bucket >= 0 && bucket < nBuckets);
@@ -297,7 +297,7 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                                      });
                 } else {
                     // Allocate _BucketInfo_ for SAH partition buckets
-                    constexpr int nBuckets = 12;
+                    PBRT_CONSTEXPR int nBuckets = 12;
                     BucketInfo buckets[nBuckets];
 
                     // Initialize _BucketInfo_ for SAH partition buckets
@@ -392,8 +392,8 @@ BVHBuildNode *BVHAccel::HLBVHBuild(
     std::vector<MortonPrimitive> mortonPrims(primitiveInfo.size());
     ParallelFor([&](int i) {
         // Initialize _mortonPrims[i]_ for _i_th primitive
-        constexpr int mortonBits = 10;
-        constexpr int mortonScale = 1 << mortonBits;
+        PBRT_CONSTEXPR int mortonBits = 10;
+        PBRT_CONSTEXPR int mortonScale = 1 << mortonBits;
         mortonPrims[i].primitiveIndex = primitiveInfo[i].primitiveNumber;
         Vector3f centroidOffset = bounds.Offset(primitiveInfo[i].centroid);
         mortonPrims[i].mortonCode = EncodeMorton3(centroidOffset * mortonScale);
@@ -538,7 +538,7 @@ BVHBuildNode *BVHAccel::buildUpperSAH(MemoryArena &arena,
     Assert(centroidBounds.pMax[dim] != centroidBounds.pMin[dim]);
 
     // Allocate _BucketInfo_ for SAH partition buckets
-    constexpr int nBuckets = 12;
+    PBRT_CONSTEXPR int nBuckets = 12;
     struct BucketInfo {
         int count = 0;
         Bounds3f bounds;

@@ -141,7 +141,7 @@ class BlockedArray {
             for (int v = 0; v < vRes; ++v)
                 for (int u = 0; u < uRes; ++u) (*this)(u, v) = d[v * uRes + u];
     }
-    constexpr int BlockSize() const { return 1 << logBlockSize; }
+    PBRT_CONSTEXPR int BlockSize() const { return 1 << logBlockSize; }
     int RoundUp(int x) const {
         return (x + BlockSize() - 1) & ~(BlockSize() - 1);
     }

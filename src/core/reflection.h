@@ -194,7 +194,7 @@ class BSDF {
     const Normal3f ns, ng;
     const Vector3f ss, ts;
     int nBxDFs = 0;
-    static constexpr int MaxBxDFs = 8;
+    static PBRT_CONSTEXPR int MaxBxDFs = 8;
     BxDF *bxdfs[MaxBxDFs];
     friend class MixMaterial;
 };

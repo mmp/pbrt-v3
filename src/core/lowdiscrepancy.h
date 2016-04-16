@@ -48,7 +48,7 @@
 // Low Discrepancy Declarations
 Float RadicalInverse(int baseIndex, uint64_t a);
 std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng);
-static constexpr int PrimeTableSize = 1000;
+static PBRT_CONSTEXPR int PrimeTableSize = 1000;
 extern const int Primes[PrimeTableSize];
 Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm);
 extern const int PrimeSums[PrimeTableSize];

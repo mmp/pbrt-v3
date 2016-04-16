@@ -106,7 +106,7 @@ class MIPMap {
     const ImageWrap wrapMode;
     Point2i resolution;
     std::vector<std::unique_ptr<BlockedArray<T>>> pyramid;
-    static constexpr int WeightLUTSize = 128;
+    static PBRT_CONSTEXPR int WeightLUTSize = 128;
     static Float weightLut[WeightLUTSize];
 };
 

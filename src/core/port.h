@@ -86,11 +86,15 @@
 #endif
 
 #if !defined(PBRT_IS_MSVC)
-  #define thread_local __thread
+  #define PBRT_THREAD_LOCAL __thread
+#else
+  #define PBRT_THREAD_LOCAL thread_local
 #endif
 
 #ifdef PBRT_IS_MSVC2013
-  #define constexpr const
+  #define PBRT_CONSTEXPR const
+#else
+  #define PBRT_CONSTEXPR constexpr
 #endif
 
 #if !defined(PBRT_IS_MSVC2013)

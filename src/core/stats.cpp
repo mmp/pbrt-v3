@@ -160,8 +160,8 @@ void StatsAccumulator::Print(FILE *dest) {
     }
 }
 
-static constexpr int NumProfEvents = (int)Prof::NumProfEvents;
-thread_local uint32_t profilerState;
+static PBRT_CONSTEXPR int NumProfEvents = (int)Prof::NumProfEvents;
+PBRT_THREAD_LOCAL uint32_t profilerState;
 
 #ifdef PBRT_IS_OSX
 #include <execinfo.h>
