@@ -70,7 +70,7 @@
 
 #if !defined(PBRT_IS_MSVC)
   #define PBRT_HAVE_HEX_FP_CONSTANTS
-  #define PBRT_HAVE_BITVEC_CONSTANTS
+  #define PBRT_HAVE_BINARY_CONSTANTS
 #endif
 
 #if defined(PBRT_IS_LINUX) || defined(PBRT_IS_WINDOWS)
