@@ -51,8 +51,8 @@ struct CurveCommon {
     CurveCommon(const Point3f c[4], Float w0, Float w1, CurveType type,
                 const Normal3f *norm);
     const CurveType type;
-    const Point3f cpObj[4];
-    const Float width[2];
+    Point3f cpObj[4];
+    Float width[2];
     Normal3f n[2];
     Float normalAngle, invSinNormalAngle;
 };
