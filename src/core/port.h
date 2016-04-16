@@ -73,10 +73,6 @@
   #define PBRT_HAVE_BITVEC_CONSTANTS
 #endif
 
-#ifdef PBRT_IS_MSVC2013
-  #define thread_local __declspec(thread)
-#endif
-
 #if defined(PBRT_IS_LINUX) || defined(PBRT_IS_WINDOWS)
   #define PBRT_HAVE_MALLOC_H
 #endif
