@@ -305,7 +305,7 @@ Spectrum SeparableBSSRDF::Sample_Sp(const Scene &scene, Float u1,
     while (scene.Intersect(base.SpawnRayTo(pTarget), &ptr->si)) {
         base = ptr->si;
         // Append admissible intersection to _IntersectionChain_
-        if (ptr->si.primitive->GetMaterial() == material) {
+        if (ptr->si.primitive->GetMaterial() == this->material) {
             IntersectionChain *next = ARENA_ALLOC(arena, IntersectionChain)();
             ptr->next = next;
             ptr = next;
@@ -320,8 +320,8 @@ Spectrum SeparableBSSRDF::Sample_Sp(const Scene &scene, Float u1,
     *pi = chain->si;
 
     // Compute sample PDF and return the spatial BSSRDF term $\Sp$
-    *pdf = Pdf_Sp(*pi) / nFound;
-    return Sp(*pi);
+    *pdf = this->Pdf_Sp(*pi) / nFound;
+    return this->Sp(*pi);
 }
 
 Float SeparableBSSRDF::Pdf_Sp(const SurfaceInteraction &pi) const {

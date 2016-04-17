@@ -618,8 +618,8 @@ BVHBuildNode *BVHAccel::buildUpperSAH(MemoryArena &arena,
     int mid = pmid - &treeletRoots[0];
     Assert(mid > start && mid < end);
     node->InitInterior(
-        dim, buildUpperSAH(arena, treeletRoots, start, mid, totalNodes),
-        buildUpperSAH(arena, treeletRoots, mid, end, totalNodes));
+        dim, this->buildUpperSAH(arena, treeletRoots, start, mid, totalNodes),
+        this->buildUpperSAH(arena, treeletRoots, mid, end, totalNodes));
     return node;
 }
 
