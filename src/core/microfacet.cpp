@@ -46,6 +46,7 @@ static void BeckmannSample11(Float cosThetaI, Float U1, Float U2,
         Float cosPhi = std::cos(2 * Pi * U2);
         *slope_x = r * cosPhi;
         *slope_y = r * sinPhi;
+        return;
     }
 
     /* The original inversion routine from the paper contained
