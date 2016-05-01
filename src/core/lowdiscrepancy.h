@@ -96,21 +96,12 @@ inline uint32_t MultiplyGenerator(const uint32_t *C, uint32_t a) {
     return v;
 }
 
-inline uint32_t ReverseMultiplyGenerator(const uint32_t *C, uint32_t a) {
-    uint32_t v = 0;
-    for (int i = 31; a != 0; --i, a >>= 1) {
-        if (a & 1) v ^= C[i];
-    }
-    return v;
-}
-
 inline Float SampleGeneratorMatrix(const uint32_t *C, uint32_t a,
                                    uint32_t scramble = 0) {
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
-    return (ReverseMultiplyGenerator(C, a) ^ scramble) *
-           2.3283064365386963e-10f;
+    return (MultiplyGenerator(C, a) ^ scramble) * 2.3283064365386963e-10f;
 #else
-    return (ReverseMultiplyGenerator(C, a) ^ scramble) * 0x1p-32f;
+    return (MultiplyGenerator(C, a) ^ scramble) * 0x1p-32f;
 #endif
 }
 
@@ -125,7 +116,7 @@ inline void GrayCodeSample(const uint32_t *C, uint32_t n, uint32_t scramble,
 #else
         p[i] = v * 0x1p-32f; /* 1/2^32 */
 #endif
-        v ^= C[31 - CountTrailingZeros(i + 1)];
+        v ^= C[CountTrailingZeros(i + 1)];
     }
 }
 
@@ -140,8 +131,8 @@ inline void GrayCodeSample(const uint32_t *C0, const uint32_t *C1, uint32_t n,
         p[i].x = v[0] * 0x1p-32f;
         p[i].y = v[1] * 0x1p-32f;
 #endif
-        v[0] ^= C0[31 - CountTrailingZeros(i + 1)];
-        v[1] ^= C1[31 - CountTrailingZeros(i + 1)];
+        v[0] ^= C0[CountTrailingZeros(i + 1)];
+        v[1] ^= C1[CountTrailingZeros(i + 1)];
     }
 }
 
@@ -149,29 +140,51 @@ inline void VanDerCorput(int nSamplesPerPixelSample, int nPixelSamples,
                          Float *samples, RNG &rng) {
     uint32_t scramble = rng.UniformUInt32();
     // Define _CVanDerCorput_ Generator Matrix
-    const uint32_t CVanDerCorput[] = {
+    const uint32_t CVanDerCorput[32] = {
 #ifdef PBRT_HAVE_BINARY_CONSTANTS
-        0b00000000000000000000000000000001, 0b00000000000000000000000000000010,
-        0b00000000000000000000000000000100, 0b00000000000000000000000000001000,
-        // Remainder of Van Der Corput generator matrix entries
-        0b10000, 0b100000, 0b1000000, 0b10000000, 0b100000000, 0b1000000000,
-        0b10000000000, 0b100000000000, 0b1000000000000, 0b10000000000000,
-        0b100000000000000, 0b1000000000000000, 0b10000000000000000,
-        0b100000000000000000, 0b1000000000000000000, 0b10000000000000000000,
-        0b100000000000000000000, 0b1000000000000000000000,
-        0b10000000000000000000000, 0b100000000000000000000000,
-        0b1000000000000000000000000, 0b10000000000000000000000000,
-        0b100000000000000000000000000, 0b1000000000000000000000000000,
-        0b10000000000000000000000000000, 0b100000000000000000000000000000,
-        0b1000000000000000000000000000000, 0b10000000000000000000000000000000,
+      // clang-format off
+      0b10000000000000000000000000000000,
+      0b1000000000000000000000000000000,
+      0b100000000000000000000000000000,
+      0b10000000000000000000000000000,
+      // Remainder of Van Der Corput generator matrix entries
+      0b1000000000000000000000000000,
+      0b100000000000000000000000000,
+      0b10000000000000000000000000,
+      0b1000000000000000000000000,
+      0b100000000000000000000000,
+      0b10000000000000000000000,
+      0b1000000000000000000000,
+      0b100000000000000000000,
+      0b10000000000000000000,
+      0b1000000000000000000,
+      0b100000000000000000,
+      0b10000000000000000,
+      0b1000000000000000,
+      0b100000000000000,
+      0b10000000000000,
+      0b1000000000000,
+      0b100000000000,
+      0b10000000000,
+      0b1000000000,
+      0b100000000,
+      0b10000000,
+      0b1000000,
+      0b100000,
+      0b10000,
+      0b1000,
+      0b100,
+      0b10,
+      0b1,
+      // clang-format on
 #else
-        0x1, 0x2, 0x4, 0x8,
-        // Remainder of Van Der Corput generator matrix entries
-        0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000,
-        0x4000, 0x8000, 0x10000, 0x20000, 0x40000, 0x80000, 0x100000, 0x200000,
-        0x400000, 0x800000, 0x1000000, 0x2000000, 0x4000000, 0x8000000,
-        0x10000000, 0x20000000, 0x40000000, 0x80000000
-#endif // PBRT_HAVE_BINARY_CONSTANTS
+        0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000,
+        0x2000000,  0x1000000,  0x800000,   0x400000,   0x200000,  0x100000,
+        0x80000,    0x40000,    0x20000,    0x10000,    0x8000,    0x4000,
+        0x2000,     0x1000,     0x800,      0x400,      0x200,     0x100,
+        0x80,       0x40,       0x20,       0x10,       0x8,       0x4,
+        0x2,        0x1
+#endif  // PBRT_HAVE_BINARY_CONSTANTS
     };
     int totalSamples = nSamplesPerPixelSample * nPixelSamples;
     GrayCodeSample(CVanDerCorput, totalSamples, scramble, samples);
@@ -190,20 +203,16 @@ inline void Sobol2D(int nSamplesPerPixelSample, int nPixelSamples,
 
     // Define 2D Sobol$'$ generator matrices _CSobol[2]_
     const uint32_t CSobol[2][32] = {
-        {0x1u, 0x2u, 0x4u, 0x8u, 0x10u, 0x20u, 0x40u, 0x80u, 0x100u, 0x200u,
-         0x400u, 0x800u, 0x1000u, 0x2000u, 0x4000u, 0x8000u, 0x10000u, 0x20000u,
-         0x40000u, 0x80000u, 0x100000u, 0x200000u, 0x400000u, 0x800000u,
-         0x1000000u, 0x2000000u, 0x4000000u, 0x8000000u, 0x10000000u,
-         0x20000000u, 0x40000000u, 0x80000000u},
-        {
-            0xffffffffu, 0xaaaaaaaau, 0xccccccccu, 0x88888888u, 0xf0f0f0f0u,
-            0xa0a0a0a0u, 0xc0c0c0c0u, 0x80808080u, 0xff00ff00u, 0xaa00aa00u,
-            0xcc00cc00u, 0x88008800u, 0xf000f000u, 0xa000a000u, 0xc000c000u,
-            0x80008000u, 0xffff0000u, 0xaaaa0000u, 0xcccc0000u, 0x88880000u,
-            0xf0f00000u, 0xa0a00000u, 0xc0c00000u, 0x80800000u, 0xff000000u,
-            0xaa000000u, 0xcc000000u, 0x88000000u, 0xf0000000u, 0xa0000000u,
-            0xc0000000u, 0x80000000u,
-        }};
+        {0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000,
+         0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000,
+         0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800,
+         0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1},
+        {0x80000000, 0xc0000000, 0xa0000000, 0xf0000000, 0x88000000, 0xcc000000,
+         0xaa000000, 0xff000000, 0x80800000, 0xc0c00000, 0xa0a00000, 0xf0f00000,
+         0x88880000, 0xcccc0000, 0xaaaa0000, 0xffff0000, 0x80008000, 0xc000c000,
+         0xa000a000, 0xf000f000, 0x88008800, 0xcc00cc00, 0xaa00aa00, 0xff00ff00,
+         0x80808080, 0xc0c0c0c0, 0xa0a0a0a0, 0xf0f0f0f0, 0x88888888, 0xcccccccc,
+         0xaaaaaaaa, 0xffffffff}};
     GrayCodeSample(CSobol[0], CSobol[1], nSamplesPerPixelSample * nPixelSamples,
                    scramble, samples);
     for (int i = 0; i < nPixelSamples; ++i)
@@ -245,8 +254,7 @@ inline Float SobolSample(int64_t index, int dimension, uint64_t scramble = 0) {
 inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
     Assert(dimension < NumSobolDimensions);
     uint32_t v = scramble;
-    for (int i = dimension * SobolMatrixSize + SobolMatrixSize - 1; a != 0;
-         a >>= 1, --i)
+    for (int i = dimension * SobolMatrixSize; a != 0; a >>= 1, i++)
         if (a & 1) v ^= SobolMatrices32[i];
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
     return v * 2.3283064365386963e-10f; /* 1/2^32 */
@@ -255,13 +263,11 @@ inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
 #endif
 }
 
-inline double SobolSampleDouble(int64_t index, int dimension,
-                                uint64_t scramble) {
+inline double SobolSampleDouble(int64_t a, int dimension, uint64_t scramble) {
     Assert(dimension < NumSobolDimensions);
     uint64_t result = scramble & ~ - (1LL << SobolMatrixSize);
-    for (int i = dimension * SobolMatrixSize + SobolMatrixSize - 1; index != 0;
-         index >>= 1, --i)
-        if (index & 1) result ^= SobolMatrices64[i];
+    for (int i = dimension * SobolMatrixSize; a != 0; a >>= 1, i++)
+        if (a & 1) result ^= SobolMatrices64[i];
     return result * (1.0 / (1ULL << SobolMatrixSize));
 }
 
