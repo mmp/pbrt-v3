@@ -68,9 +68,9 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
     // Run delta-tracking iterations to sample a medium interaction
     Float t = tMin;
     while (true) {
-        t -= std::log(1 - sampler.Get1D()) * invMaxDensity;
+        t -= std::log(1 - sampler.Get1D()) * invMaxDensity / sigma_t;
         if (t >= tMax) break;
-        if (Density(ray(t)) * invMaxDensity * sigma_t > sampler.Get1D()) {
+        if (Density(ray(t)) * invMaxDensity > sampler.Get1D()) {
             // Populate _mi_ with medium interaction information and return
             PhaseFunction *phase = ARENA_ALLOC(arena, HenyeyGreenstein)(g);
             *mi = MediumInteraction(rWorld(t), -rWorld.d, rWorld.time, this,
@@ -92,10 +92,10 @@ Spectrum GridDensityMedium::Tr(const Ray &rWorld, Sampler &sampler) const {
     // Perform ratio tracking to estimate the transmittance value
     Float Tr = 1, t = tMin;
     while (true) {
-        t += -std::log(1 - sampler.Get1D()) * invMaxDensity;
+        t -= std::log(1 - sampler.Get1D()) * invMaxDensity / sigma_t;
         if (t >= tMax) break;
         Float density = Density(ray(t));
-        Tr *= 1 - std::max((Float)0, sigma_t * density * invMaxDensity);
+        Tr *= 1 - std::max((Float)0, density * invMaxDensity);
     }
     return Spectrum(Tr);
 }
