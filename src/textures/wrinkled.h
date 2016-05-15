@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_WRINKLED_H
 #define PBRT_TEXTURES_WRINKLED_H
-#include "stdafx.h"
 
 // textures/wrinkled.h*
 #include "pbrt.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/film.cpp*
 #include "film.h"

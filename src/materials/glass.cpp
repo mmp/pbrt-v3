@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/glass.cpp*
 #include "materials/glass.h"

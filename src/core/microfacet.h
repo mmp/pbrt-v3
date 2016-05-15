@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_MICROFACET_H
 #define PBRT_CORE_MICROFACET_H
-#include "stdafx.h"
 
 // core/microfacet.h*
 #include "pbrt.h"

@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_CURVE_H
 #define PBRT_SHAPES_CURVE_H
-#include "stdafx.h"
 
 // shapes/curve.h*
 #include "shape.h"

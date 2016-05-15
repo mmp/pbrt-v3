@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_SOBOLMATRICES_H
 #define PBRT_CORE_SOBOLMATRICES_H
-#include "stdafx.h"
 
 // core/sobolmatrices.h*
 #include "pbrt.h"

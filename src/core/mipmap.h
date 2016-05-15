@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_MIPMAP_H
 #define PBRT_CORE_MIPMAP_H
-#include "stdafx.h"
 
 // core/mipmap.h*
 #include "pbrt.h"

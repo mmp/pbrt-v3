@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // lights/diffuse.cpp*
 #include "lights/diffuse.h"

@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_CAMERA_H
 #define PBRT_CORE_CAMERA_H
-#include "stdafx.h"
 
 // core/camera.h*
 #include "pbrt.h"

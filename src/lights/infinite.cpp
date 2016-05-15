@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // lights/infinite.cpp*
 #include "lights/infinite.h"

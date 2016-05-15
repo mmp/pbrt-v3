@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // textures/imagemap.cpp*
 #include "textures/imagemap.h"

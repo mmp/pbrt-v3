@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SAMPLERS_RANDOM_H
 #define PBRT_SAMPLERS_RANDOM_H
-#include "stdafx.h"
 
 // samplers/random.h*
 #include "sampler.h"

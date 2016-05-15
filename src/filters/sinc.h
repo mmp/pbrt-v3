@@ -37,7 +37,6 @@
 
 #ifndef PBRT_FILTERS_SINC_H
 #define PBRT_FILTERS_SINC_H
-#include "stdafx.h"
 
 // filters/sinc.h*
 #include "filter.h"

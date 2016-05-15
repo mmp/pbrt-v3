@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // cameras/perspective.cpp*
 #include "cameras/perspective.h"

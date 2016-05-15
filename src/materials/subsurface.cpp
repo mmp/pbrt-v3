@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/subsurface.cpp*
 #include "materials/subsurface.h"

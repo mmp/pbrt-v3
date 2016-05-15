@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // accelerators/bvh.cpp*
 #include "accelerators/bvh.h"

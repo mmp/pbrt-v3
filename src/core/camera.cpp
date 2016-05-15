@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/camera.cpp*
 #include "camera.h"

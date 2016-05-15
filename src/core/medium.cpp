@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/medium.cpp*
 #include "medium.h"

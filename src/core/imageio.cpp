@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/imageio.cpp*
 #include "imageio.h"

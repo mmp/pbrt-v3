@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/fileutil.cpp*
 #include "fileutil.h"

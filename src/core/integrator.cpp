@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/integrator.cpp*
 #include "integrator.h"

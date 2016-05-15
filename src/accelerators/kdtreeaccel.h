@@ -37,7 +37,6 @@
 
 #ifndef PBRT_ACCELERATORS_KDTREEACCEL_H
 #define PBRT_ACCELERATORS_KDTREEACCEL_H
-#include "stdafx.h"
 
 // accelerators/kdtreeaccel.h*
 #include "pbrt.h"

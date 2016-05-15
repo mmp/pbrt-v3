@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_PRIMITIVE_H
 #define PBRT_CORE_PRIMITIVE_H
-#include "stdafx.h"
 
 // core/primitive.h*
 #include "pbrt.h"

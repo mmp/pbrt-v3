@@ -37,7 +37,6 @@
 
 #ifndef PBRT_INTEGRATORS_MLT_H
 #define PBRT_INTEGRATORS_MLT_H
-#include "stdafx.h"
 
 // integrators/mlt.h*
 #include "pbrt.h"

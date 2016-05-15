@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // main/pbrt.cpp*
 #include "pbrt.h"

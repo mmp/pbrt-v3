@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // integrators/whitted.cpp*
 #include "integrators/whitted.h"

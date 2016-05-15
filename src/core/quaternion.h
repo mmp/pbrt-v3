@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_QUATERNION_H
 #define PBRT_CORE_QUATERNION_H
-#include "stdafx.h"
 
 // core/quaternion.h*
 #include "pbrt.h"

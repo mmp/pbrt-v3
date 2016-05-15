@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_HEIGHTFIELD_H
 #define PBRT_SHAPES_HEIGHTFIELD_H
-#include "stdafx.h"
 
 // shapes/heightfield.h*
 #include "shape.h"

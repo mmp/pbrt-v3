@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/light.cpp*
 #include "light.h"

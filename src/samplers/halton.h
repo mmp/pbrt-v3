@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SAMPLERS_HALTON_H
 #define PBRT_SAMPLERS_HALTON_H
-#include "stdafx.h"
 
 // samplers/halton.h*
 #include "sampler.h"

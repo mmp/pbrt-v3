@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_PORT_H
 #define PBRT_CORE_PORT_H
-#include "stdafx.h"
 
 #if defined(_WIN32) || defined(_WIN64)
   #define PBRT_IS_WINDOWS

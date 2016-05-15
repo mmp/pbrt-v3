@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // integrators/volpath.cpp*
 #include "integrators/volpath.h"

@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_TRIANGLE_H
 #define PBRT_SHAPES_TRIANGLE_H
-#include "stdafx.h"
 
 // shapes/triangle.h*
 #include "shape.h"

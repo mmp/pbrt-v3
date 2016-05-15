@@ -37,7 +37,6 @@
 
 #ifndef PBRT_INTEGRATORS_WHITTED_H
 #define PBRT_INTEGRATORS_WHITTED_H
-#include "stdafx.h"
 
 // integrators/whitted.h*
 #include "pbrt.h"

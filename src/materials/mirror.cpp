@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/mirror.cpp*
 #include "materials/mirror.h"

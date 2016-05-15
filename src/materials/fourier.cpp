@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/fourier.cpp*
 #include "materials/fourier.h"

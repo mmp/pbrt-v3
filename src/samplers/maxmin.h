@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SAMPLERS_MAXMIN_H
 #define PBRT_SAMPLERS_MAXMIN_H
-#include "stdafx.h"
 
 // samplers/maxmin.h*
 #include "sampler.h"

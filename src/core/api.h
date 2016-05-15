@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_API_H
 #define PBRT_CORE_API_H
-#include "stdafx.h"
 
 // core/api.h*
 #include "pbrt.h"

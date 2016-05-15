@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // textures/bilerp.cpp*
 #include "textures/bilerp.h"

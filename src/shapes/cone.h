@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_CONE_H
 #define PBRT_SHAPES_CONE_H
-#include "stdafx.h"
 
 // shapes/cone.h*
 #include "shape.h"

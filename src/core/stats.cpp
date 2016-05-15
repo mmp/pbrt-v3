@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/stats.cpp*
 #include "stats.h"

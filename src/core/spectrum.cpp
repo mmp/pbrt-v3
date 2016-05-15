@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/spectrum.cpp*
 #include "spectrum.h"

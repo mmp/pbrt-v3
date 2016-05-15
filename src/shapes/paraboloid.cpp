@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/paraboloid.cpp*
 #include "shapes/paraboloid.h"

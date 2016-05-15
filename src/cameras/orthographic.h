@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CAMERAS_ORTHOGRAPHIC_H
 #define PBRT_CAMERAS_ORTHOGRAPHIC_H
-#include "stdafx.h"
 
 // cameras/orthographic.h*
 #include "pbrt.h"

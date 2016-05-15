@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_MATERIAL_H
 #define PBRT_CORE_MATERIAL_H
-#include "stdafx.h"
 
 // core/material.h*
 #include "pbrt.h"

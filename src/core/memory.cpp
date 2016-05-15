@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/memory.cpp*
 #include "memory.h"

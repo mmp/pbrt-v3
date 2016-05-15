@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_HYPERBOLOID_H
 #define PBRT_SHAPES_HYPERBOLOID_H
-#include "stdafx.h"
 
 // shapes/hyperboloid.h*
 #include "shape.h"

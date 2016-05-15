@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // textures/mix.cpp*
 #include "textures/mix.h"

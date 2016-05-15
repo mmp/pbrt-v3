@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // textures/marble.cpp*
 #include "textures/marble.h"

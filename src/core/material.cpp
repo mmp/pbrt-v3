@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/material.cpp*
 #include "material.h"

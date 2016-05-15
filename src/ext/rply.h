@@ -5,7 +5,6 @@
 
 #ifndef PBRT_EXT_RPLY_H
 #define PBRT_EXT_RPLY_H
-#include "stdafx.h"
 
 // ext/rply.h*
 /* ----------------------------------------------------------------------

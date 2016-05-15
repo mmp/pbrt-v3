@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_NURBS_H
 #define PBRT_SHAPES_NURBS_H
-#include "stdafx.h"
 
 // shapes/nurbs.h*
 #include "pbrt.h"

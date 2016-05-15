@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_MARBLE_H
 #define PBRT_TEXTURES_MARBLE_H
-#include "stdafx.h"
 
 // textures/marble.h*
 #include "pbrt.h"

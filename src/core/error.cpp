@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/error.cpp*
 #include "error.h"

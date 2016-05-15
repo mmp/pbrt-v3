@@ -37,7 +37,6 @@
 
 #ifndef PBRT_INTEGRATORS_SPPM_H
 #define PBRT_INTEGRATORS_SPPM_H
-#include "stdafx.h"
 
 // integrators/sppm.h*
 #include "pbrt.h"

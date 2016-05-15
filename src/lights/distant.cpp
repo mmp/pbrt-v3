@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // lights/distant.cpp*
 #include "lights/distant.h"

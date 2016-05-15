@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_RNG_H
 #define PBRT_CORE_RNG_H
-#include "stdafx.h"
 
 // core/rng.h*
 #include "pbrt.h"

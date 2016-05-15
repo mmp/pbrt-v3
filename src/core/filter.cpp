@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/filter.cpp*
 #include "filter.h"

@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SAMPLERS_SOBOL_H
 #define PBRT_SAMPLERS_SOBOL_H
-#include "stdafx.h"
 
 // samplers/sobol.h*
 #include "sampler.h"

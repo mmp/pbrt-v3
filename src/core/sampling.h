@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_SAMPLING_H
 #define PBRT_CORE_SAMPLING_H
-#include "stdafx.h"
 
 // core/sampling.h*
 #include "pbrt.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/texture.cpp*
 #include "texture.h"

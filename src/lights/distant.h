@@ -37,7 +37,6 @@
 
 #ifndef PBRT_LIGHTS_DISTANT_H
 #define PBRT_LIGHTS_DISTANT_H
-#include "stdafx.h"
 
 // lights/distant.h*
 #include "pbrt.h"

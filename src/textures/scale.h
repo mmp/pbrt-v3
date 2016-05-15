@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_SCALE_H
 #define PBRT_TEXTURES_SCALE_H
-#include "stdafx.h"
 
 // textures/scale.h*
 #include "pbrt.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // cameras/realistic.cpp*
 #include "cameras/realistic.h"

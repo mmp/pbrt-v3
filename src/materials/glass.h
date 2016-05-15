@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_GLASS_H
 #define PBRT_MATERIALS_GLASS_H
-#include "stdafx.h"
 
 // materials/glass.h*
 #include "pbrt.h"

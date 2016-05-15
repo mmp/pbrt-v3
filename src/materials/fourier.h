@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_FOURIER_H
 #define PBRT_MATERIALS_FOURIER_H
-#include "stdafx.h"
 
 // materials/fourier.h*
 #include "pbrt.h"

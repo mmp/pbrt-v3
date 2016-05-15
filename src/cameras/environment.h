@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CAMERAS_ENVIRONMENT_H
 #define PBRT_CAMERAS_ENVIRONMENT_H
-#include "stdafx.h"
 
 // cameras/environment.h*
 #include "camera.h"

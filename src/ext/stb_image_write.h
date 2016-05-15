@@ -5,7 +5,6 @@
 
 #ifndef PBRT_EXT_STB_IMAGE_WRITE_H
 #define PBRT_EXT_STB_IMAGE_WRITE_H
-#include "stdafx.h"
 
 // ext/stb_image_write.h*
 /* stbiw-0.92 - public domain - http://nothings.org/stb/stb_image_write.h

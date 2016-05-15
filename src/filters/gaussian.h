@@ -37,7 +37,6 @@
 
 #ifndef PBRT_FILTERS_GAUSSIAN_H
 #define PBRT_FILTERS_GAUSSIAN_H
-#include "stdafx.h"
 
 // filters/gaussian.h*
 #include "filter.h"

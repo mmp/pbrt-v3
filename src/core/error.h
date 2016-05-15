@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_ERROR_H
 #define PBRT_CORE_ERROR_H
-#include "stdafx.h"
 
 // core/error.h*
 #include "pbrt.h"

@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_FBM_H
 #define PBRT_TEXTURES_FBM_H
-#include "stdafx.h"
 
 // textures/fbm.h*
 #include "pbrt.h"

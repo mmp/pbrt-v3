@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_SPHERE_H
 #define PBRT_SHAPES_SPHERE_H
-#include "stdafx.h"
 
 // shapes/sphere.h*
 #include "shape.h"

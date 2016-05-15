@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/parser.cpp*
 #include "parser.h"

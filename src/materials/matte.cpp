@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/matte.cpp*
 #include "materials/matte.h"

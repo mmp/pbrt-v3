@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_LIGHT_H
 #define PBRT_CORE_LIGHT_H
-#include "stdafx.h"
 
 // core/light.h*
 #include "pbrt.h"

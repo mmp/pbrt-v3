@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_TRANSFORM_H
 #define PBRT_CORE_TRANSFORM_H
-#include "stdafx.h"
 
 // core/transform.h*
 #include "pbrt.h"

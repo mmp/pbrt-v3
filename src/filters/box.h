@@ -37,7 +37,6 @@
 
 #ifndef PBRT_FILTERS_BOX_H
 #define PBRT_FILTERS_BOX_H
-#include "stdafx.h"
 
 // filters/box.h*
 #include "filter.h"

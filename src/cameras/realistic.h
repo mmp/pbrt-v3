@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CAMERAS_REALISTIC_H
 #define PBRT_CAMERAS_REALISTIC_H
-#include "stdafx.h"
 
 // cameras/realistic.h*
 #include "pbrt.h"

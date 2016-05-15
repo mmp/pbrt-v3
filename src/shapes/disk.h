@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_DISK_H
 #define PBRT_SHAPES_DISK_H
-#include "stdafx.h"
 
 // shapes/disk.h*
 #include "shape.h"

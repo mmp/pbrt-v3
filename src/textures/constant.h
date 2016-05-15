@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_CONSTANT_H
 #define PBRT_TEXTURES_CONSTANT_H
-#include "stdafx.h"
 
 // textures/constant.h*
 #include "pbrt.h"

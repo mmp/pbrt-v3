@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/cylinder.cpp*
 #include "shapes/cylinder.h"

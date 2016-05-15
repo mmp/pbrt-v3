@@ -5,7 +5,6 @@
 
 #ifndef PBRT_EXT_TARGA_H
 #define PBRT_EXT_TARGA_H
-#include "stdafx.h"
 
 // ext/targa.h*
 /* ---------------------------------------------------------------------------

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/translucent.cpp*
 #include "materials/translucent.h"

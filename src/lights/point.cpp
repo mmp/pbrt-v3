@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // lights/point.cpp*
 #include "lights/point.h"

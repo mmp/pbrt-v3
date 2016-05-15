@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_IMAGEIO_H
 #define PBRT_CORE_IMAGEIO_H
-#include "stdafx.h"
 
 // core/imageio.h*
 #include "pbrt.h"

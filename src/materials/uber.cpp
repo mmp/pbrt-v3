@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/uber.cpp*
 #include "materials/uber.h"

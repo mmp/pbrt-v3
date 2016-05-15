@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_GEOMETRY_H
 #define PBRT_CORE_GEOMETRY_H
-#include "stdafx.h"
 
 // core/geometry.h*
 #include "pbrt.h"

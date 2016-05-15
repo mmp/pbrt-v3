@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_PARALLEL_H
 #define PBRT_CORE_PARALLEL_H
-#include "stdafx.h"
 
 // core/parallel.h*
 #include "pbrt.h"

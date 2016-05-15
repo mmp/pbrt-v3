@@ -37,7 +37,6 @@
 
 #ifndef PBRT_FILTERS_MITCHELL_H
 #define PBRT_FILTERS_MITCHELL_H
-#include "stdafx.h"
 
 // filters/mitchell.h*
 #include "filter.h"

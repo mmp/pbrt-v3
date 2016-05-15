@@ -37,7 +37,6 @@
 
 #ifndef PBRT_LIGHTS_PROJECTION_H
 #define PBRT_LIGHTS_PROJECTION_H
-#include "stdafx.h"
 
 // lights/projection.h*
 #include "pbrt.h"

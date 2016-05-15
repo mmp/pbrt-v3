@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // integrators/directlighting.cpp*
 #include "integrators/directlighting.h"

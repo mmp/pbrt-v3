@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_FILM_H
 #define PBRT_CORE_FILM_H
-#include "stdafx.h"
 
 // core/film.h*
 #include "pbrt.h"

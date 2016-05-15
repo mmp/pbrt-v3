@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // samplers/sobol.cpp*
 #include "samplers/sobol.h"

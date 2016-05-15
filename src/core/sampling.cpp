@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/sampling.cpp*
 #include "sampling.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/paramset.cpp*
 #include "paramset.h"

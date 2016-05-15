@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/efloat.cpp*
 #include "efloat.h"

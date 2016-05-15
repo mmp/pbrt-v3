@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_PROGRESSREPORTER_H
 #define PBRT_CORE_PROGRESSREPORTER_H
-#include "stdafx.h"
 
 // core/progressreporter.h*
 #include "pbrt.h"

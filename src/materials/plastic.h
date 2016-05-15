@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_PLASTIC_H
 #define PBRT_MATERIALS_PLASTIC_H
-#include "stdafx.h"
 
 // materials/plastic.h*
 #include "pbrt.h"

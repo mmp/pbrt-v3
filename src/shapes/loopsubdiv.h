@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_LOOPSUBDIV_H
 #define PBRT_SHAPES_LOOPSUBDIV_H
-#include "stdafx.h"
 
 // shapes/loopsubdiv.h*
 #include "shape.h"

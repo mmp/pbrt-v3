@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/scene.cpp*
 #include "scene.h"

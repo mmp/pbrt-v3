@@ -37,7 +37,6 @@
 
 #ifndef PBRT_LIGHTS_DIFFUSE_H
 #define PBRT_LIGHTS_DIFFUSE_H
-#include "stdafx.h"
 
 // lights/diffuse.h*
 #include "pbrt.h"

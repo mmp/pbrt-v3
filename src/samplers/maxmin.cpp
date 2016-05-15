@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // samplers/maxmin.cpp*
 #include "samplers/maxmin.h"

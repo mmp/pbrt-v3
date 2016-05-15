@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_DOTS_H
 #define PBRT_TEXTURES_DOTS_H
-#include "stdafx.h"
 
 // textures/dots.h*
 #include "pbrt.h"

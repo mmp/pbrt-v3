@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // samplers/stratified.cpp*
 #include "samplers/stratified.h"

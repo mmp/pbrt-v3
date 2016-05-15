@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/floatfile.cpp*
 #include "floatfile.h"

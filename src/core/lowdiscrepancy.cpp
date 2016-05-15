@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/lowdiscrepancy.cpp*
 #include "lowdiscrepancy.h"

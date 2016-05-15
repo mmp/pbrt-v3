@@ -37,7 +37,6 @@
 
 #ifndef PBRT_LIGHTS_INFINITE_H
 #define PBRT_LIGHTS_INFINITE_H
-#include "stdafx.h"
 
 // lights/infinite.h*
 #include "pbrt.h"

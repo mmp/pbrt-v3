@@ -37,7 +37,6 @@
 
 #ifndef PBRT_FILTERS_TRIANGLE_H
 #define PBRT_FILTERS_TRIANGLE_H
-#include "stdafx.h"
 
 // filters/triangle.h*
 #include "filter.h"

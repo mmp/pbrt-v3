@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/plymesh.cpp*
 #include "shapes/triangle.h"

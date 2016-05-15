@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // integrators/mlt.cpp*
 #include "integrators/mlt.h"

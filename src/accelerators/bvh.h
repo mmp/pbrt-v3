@@ -37,7 +37,6 @@
 
 #ifndef PBRT_ACCELERATORS_BVH_H
 #define PBRT_ACCELERATORS_BVH_H
-#include "stdafx.h"
 
 // accelerators/bvh.h*
 #include "pbrt.h"

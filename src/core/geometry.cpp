@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/geometry.cpp*
 #include "geometry.h"

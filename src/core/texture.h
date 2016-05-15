@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_TEXTURE_H
 #define PBRT_CORE_TEXTURE_H
-#include "stdafx.h"
 
 // core/texture.h*
 #include "pbrt.h"

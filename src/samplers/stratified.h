@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SAMPLERS_STRATIFIED_H
 #define PBRT_SAMPLERS_STRATIFIED_H
-#include "stdafx.h"
 
 // samplers/stratified.h*
 #include "sampler.h"

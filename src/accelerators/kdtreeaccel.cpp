@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // accelerators/kdtreeaccel.cpp*
 #include "accelerators/kdtreeaccel.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/cone.cpp*
 #include "shapes/cone.h"

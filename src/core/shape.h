@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_SHAPE_H
 #define PBRT_CORE_SHAPE_H
-#include "stdafx.h"
 
 // core/shape.h*
 #include "pbrt.h"

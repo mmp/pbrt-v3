@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/curve.cpp*
 #include "shapes/curve.h"

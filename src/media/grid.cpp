@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // media/grid.cpp*
 #include "media/grid.h"

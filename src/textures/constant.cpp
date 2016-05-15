@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // textures/constant.cpp*
 #include "textures/constant.h"

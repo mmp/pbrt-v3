@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_PBRT_H
 #define PBRT_CORE_PBRT_H
-#include "stdafx.h"
 
 // core/pbrt.h*
 #include "port.h"

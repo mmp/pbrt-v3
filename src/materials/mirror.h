@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_MIRROR_H
 #define PBRT_MATERIALS_MIRROR_H
-#include "stdafx.h"
 
 // materials/mirror.h*
 #include "pbrt.h"

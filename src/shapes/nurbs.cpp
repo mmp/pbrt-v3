@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/nurbs.cpp*
 #include "shapes/nurbs.h"

@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_METAL_H
 #define PBRT_MATERIALS_METAL_H
-#include "stdafx.h"
 
 // materials/metal.h*
 #include "pbrt.h"

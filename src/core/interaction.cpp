@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/interaction.cpp*
 #include "interaction.h"

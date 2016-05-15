@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_INTERACTION_H
 #define PBRT_CORE_INTERACTION_H
-#include "stdafx.h"
 
 // core/interaction.h*
 #include "pbrt.h"

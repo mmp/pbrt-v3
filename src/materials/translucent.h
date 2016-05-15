@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_TRANSLUCENT_H
 #define PBRT_MATERIALS_TRANSLUCENT_H
-#include "stdafx.h"
 
 // materials/translucent.h*
 #include "pbrt.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/microfacet.cpp*
 #include "microfacet.h"

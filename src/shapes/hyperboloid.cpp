@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/hyperboloid.cpp*
 #include "shapes/hyperboloid.h"

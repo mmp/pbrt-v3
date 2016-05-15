@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_MIX_H
 #define PBRT_TEXTURES_MIX_H
-#include "stdafx.h"
 
 // textures/mix.h*
 #include "pbrt.h"

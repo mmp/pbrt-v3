@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_MATTE_H
 #define PBRT_MATERIALS_MATTE_H
-#include "stdafx.h"
 
 // materials/matte.h*
 #include "pbrt.h"

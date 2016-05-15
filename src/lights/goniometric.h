@@ -37,7 +37,6 @@
 
 #ifndef PBRT_LIGHTS_GONIOMETRIC_H
 #define PBRT_LIGHTS_GONIOMETRIC_H
-#include "stdafx.h"
 
 // lights/goniometric.h*
 #include "pbrt.h"

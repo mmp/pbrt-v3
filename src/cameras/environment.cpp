@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // cameras/environment.cpp*
 #include "cameras/environment.h"

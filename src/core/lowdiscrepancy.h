@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_LOWDISCREPANCY_H
 #define PBRT_CORE_LOWDISCREPANCY_H
-#include "stdafx.h"
 
 // core/lowdiscrepancy.h*
 #include "pbrt.h"

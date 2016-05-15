@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/triangle.cpp*
 #include "shapes/triangle.h"

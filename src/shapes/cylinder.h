@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_CYLINDER_H
 #define PBRT_SHAPES_CYLINDER_H
-#include "stdafx.h"
 
 // shapes/cylinder.h*
 #include "shape.h"

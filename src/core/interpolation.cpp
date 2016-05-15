@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/interpolation.cpp*
 #include "interpolation.h"

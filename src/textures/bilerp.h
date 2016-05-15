@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_BILERP_H
 #define PBRT_TEXTURES_BILERP_H
-#include "stdafx.h"
 
 // textures/bilerp.h*
 #include "pbrt.h"

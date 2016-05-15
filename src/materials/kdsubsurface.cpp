@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/kdsubsurface.cpp*
 #include "materials/kdsubsurface.h"

@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_PARAMSET_H
 #define PBRT_CORE_PARAMSET_H
-#include "stdafx.h"
 
 // core/paramset.h*
 #include "pbrt.h"

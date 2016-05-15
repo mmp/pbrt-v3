@@ -37,7 +37,6 @@
 
 #ifndef PBRT_INTEGRATORS_DIRECTLIGHTING_H
 #define PBRT_INTEGRATORS_DIRECTLIGHTING_H
-#include "stdafx.h"
 
 // integrators/directlighting.h*
 #include "pbrt.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // lights/goniometric.cpp*
 #include "lights/goniometric.h"

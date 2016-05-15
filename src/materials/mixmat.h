@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_MIXMAT_H
 #define PBRT_MATERIALS_MIXMAT_H
-#include "stdafx.h"
 
 // materials/mixmat.h*
 #include "pbrt.h"

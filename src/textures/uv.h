@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_UV_H
 #define PBRT_TEXTURES_UV_H
-#include "stdafx.h"
 
 // textures/uv.h*
 #include "pbrt.h"

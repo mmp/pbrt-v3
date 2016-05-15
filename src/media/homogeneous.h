@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MEDIA_HOMOGENEOUS_H
 #define PBRT_MEDIA_HOMOGENEOUS_H
-#include "stdafx.h"
 
 // media/homogeneous.h*
 #include "medium.h"

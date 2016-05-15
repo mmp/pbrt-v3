@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // filters/gaussian.cpp*
 #include "filters/gaussian.h"

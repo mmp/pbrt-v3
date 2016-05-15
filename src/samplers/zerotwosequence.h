@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SAMPLERS_ZEROTWOSEQUENCE_H
 #define PBRT_SAMPLERS_ZEROTWOSEQUENCE_H
-#include "stdafx.h"
 
 // samplers/zerotwosequence.h*
 #include "sampler.h"

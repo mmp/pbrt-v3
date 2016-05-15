@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/loopsubdiv.cpp*
 #include "shapes/loopsubdiv.h"

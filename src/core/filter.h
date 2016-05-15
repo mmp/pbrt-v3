@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_FILTER_H
 #define PBRT_CORE_FILTER_H
-#include "stdafx.h"
 
 // core/filter.h*
 #include "pbrt.h"

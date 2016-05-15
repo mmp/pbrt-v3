@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MEDIA_GRID_H
 #define PBRT_MEDIA_GRID_H
-#include "stdafx.h"
 
 // media/grid.h*
 #include "medium.h"

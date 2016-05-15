@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_UBER_H
 #define PBRT_MATERIALS_UBER_H
-#include "stdafx.h"
 
 // materials/uber.h*
 #include "pbrt.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // media/homogeneous.cpp*
 #include "media/homogeneous.h"

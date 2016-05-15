@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/substrate.cpp*
 #include "materials/substrate.h"

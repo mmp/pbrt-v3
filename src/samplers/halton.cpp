@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // samplers/halton.cpp*
 #include "samplers/halton.h"

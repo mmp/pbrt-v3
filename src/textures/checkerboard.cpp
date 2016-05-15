@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // textures/checkerboard.cpp*
 #include "textures/checkerboard.h"

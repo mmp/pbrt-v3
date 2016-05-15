@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // filters/mitchell.cpp*
 #include "filters/mitchell.h"

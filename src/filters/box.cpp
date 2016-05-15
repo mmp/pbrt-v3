@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // filters/box.cpp*
 #include "filters/box.h"

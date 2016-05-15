@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // textures/uv.cpp*
 #include "textures/uv.h"

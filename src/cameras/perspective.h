@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CAMERAS_PERSPECTIVE_H
 #define PBRT_CAMERAS_PERSPECTIVE_H
-#include "stdafx.h"
 
 // cameras/perspective.h*
 #include "pbrt.h"

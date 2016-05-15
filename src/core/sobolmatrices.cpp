@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/sobolmatrices.cpp*
 // Copyright (c) 2012 Leonhard Gruenschloss (leonhard@gruenschloss.org)

@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_KDSUBSURFACE_H
 #define PBRT_MATERIALS_KDSUBSURFACE_H
-#include "stdafx.h"
 
 // materials/kdsubsurface.h*
 #include "pbrt.h"

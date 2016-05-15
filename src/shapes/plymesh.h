@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_PLYMESH_H
 #define PBRT_SHAPES_PLYMESH_H
-#include "stdafx.h"
 
 // shapes/plymesh.h*
 #include "shapes/triangle.h"

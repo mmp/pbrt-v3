@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/disk.cpp*
 #include "shapes/disk.h"

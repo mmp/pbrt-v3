@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_INTEGRATOR_H
 #define PBRT_CORE_INTEGRATOR_H
-#include "stdafx.h"
 
 // core/integrator.h*
 #include "pbrt.h"

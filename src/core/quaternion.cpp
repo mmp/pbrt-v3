@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/quaternion.cpp*
 #include "quaternion.h"

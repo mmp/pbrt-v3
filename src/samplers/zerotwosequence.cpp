@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // samplers/zerotwosequence.cpp*
 #include "samplers/zerotwosequence.h"

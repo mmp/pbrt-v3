@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_STATS_H
 #define PBRT_CORE_STATS_H
-#include "stdafx.h"
 
 // core/stats.h*
 #include "pbrt.h"

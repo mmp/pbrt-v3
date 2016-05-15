@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // integrators/bdpt.cpp*
 #include "integrators/bdpt.h"

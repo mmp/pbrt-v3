@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // samplers/random.cpp*
 #include "samplers/random.h"

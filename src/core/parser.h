@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_PARSER_H
 #define PBRT_CORE_PARSER_H
-#include "stdafx.h"
 
 // core/parser.h*
 #include "pbrt.h"

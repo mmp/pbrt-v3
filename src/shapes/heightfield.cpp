@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/heightfield.cpp*
 #include "shapes/heightfield.h"

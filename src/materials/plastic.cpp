@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // materials/plastic.cpp*
 #include "materials/plastic.h"

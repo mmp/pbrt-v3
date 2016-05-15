@@ -37,7 +37,6 @@
 
 #ifndef PBRT_SHAPES_PARABOLOID_H
 #define PBRT_SHAPES_PARABOLOID_H
-#include "stdafx.h"
 
 // shapes/paraboloid.h*
 #include "shape.h"

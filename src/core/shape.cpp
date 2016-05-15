@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/shape.cpp*
 #include "shape.h"

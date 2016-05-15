@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/progressreporter.cpp*
 #include "progressreporter.h"

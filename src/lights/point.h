@@ -37,7 +37,6 @@
 
 #ifndef PBRT_LIGHTS_POINT_H
 #define PBRT_LIGHTS_POINT_H
-#include "stdafx.h"
 
 // lights/point.h*
 #include "pbrt.h"

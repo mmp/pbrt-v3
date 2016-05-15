@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_IMAGEMAP_H
 #define PBRT_TEXTURES_IMAGEMAP_H
-#include "stdafx.h"
 
 // textures/imagemap.h*
 #include "pbrt.h"

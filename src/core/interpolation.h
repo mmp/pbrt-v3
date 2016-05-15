@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_INTERPOLATION_H
 #define PBRT_CORE_INTERPOLATION_H
-#include "stdafx.h"
 
 // core/interpolation.h*
 #include "pbrt.h"

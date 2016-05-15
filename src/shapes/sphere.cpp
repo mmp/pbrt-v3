@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // shapes/sphere.cpp*
 #include "shapes/sphere.h"

@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // integrators/sppm.cpp*
 #include "integrators/sppm.h"

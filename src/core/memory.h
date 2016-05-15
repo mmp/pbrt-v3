@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_MEMORY_H
 #define PBRT_CORE_MEMORY_H
-#include "stdafx.h"
 
 // core/memory.h*
 #include "pbrt.h"

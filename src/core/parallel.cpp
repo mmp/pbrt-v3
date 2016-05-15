@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/parallel.cpp*
 #include "parallel.h"

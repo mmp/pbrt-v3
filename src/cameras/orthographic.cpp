@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // cameras/orthographic.cpp*
 #include "cameras/orthographic.h"

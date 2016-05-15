@@ -37,7 +37,6 @@
 
 #ifndef PBRT_MATERIALS_SUBSURFACE_H
 #define PBRT_MATERIALS_SUBSURFACE_H
-#include "stdafx.h"
 
 // materials/subsurface.h*
 #include "pbrt.h"

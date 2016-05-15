@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/transform.cpp*
 #include "transform.h"

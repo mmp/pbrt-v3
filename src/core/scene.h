@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_SCENE_H
 #define PBRT_CORE_SCENE_H
-#include "stdafx.h"
 
 // core/scene.h*
 #include "pbrt.h"

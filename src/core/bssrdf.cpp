@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/bssrdf.cpp*
 #include "bssrdf.h"

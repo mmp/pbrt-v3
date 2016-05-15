@@ -37,7 +37,6 @@
 
 #ifndef PBRT_TEXTURES_WINDY_H
 #define PBRT_TEXTURES_WINDY_H
-#include "stdafx.h"
 
 // textures/windy.h*
 #include "pbrt.h"

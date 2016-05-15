@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_FLOATFILE_H
 #define PBRT_CORE_FLOATFILE_H
-#include "stdafx.h"
 
 // core/floatfile.h*
 #include "pbrt.h"

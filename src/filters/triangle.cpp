@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // filters/triangle.cpp*
 #include "filters/triangle.h"

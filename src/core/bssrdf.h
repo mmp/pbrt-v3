@@ -37,7 +37,6 @@
 
 #ifndef PBRT_CORE_BSSRDF_H
 #define PBRT_CORE_BSSRDF_H
-#include "stdafx.h"
 
 // core/bssrdf.h*
 #include "interaction.h"

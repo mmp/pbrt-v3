@@ -37,7 +37,6 @@
 
 #ifndef PBRT_INTEGRATORS_VOLPATH_H
 #define PBRT_INTEGRATORS_VOLPATH_H
-#include "stdafx.h"
 
 // integrators/volpath.h*
 #include "pbrt.h"

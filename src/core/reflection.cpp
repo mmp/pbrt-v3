@@ -30,7 +30,6 @@
 
  */
 
-#include "stdafx.h"
 
 // core/reflection.cpp*
 #include "reflection.h"
