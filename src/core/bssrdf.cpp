@@ -74,20 +74,19 @@ Float BeamDiffusionMS(Float sigma_s, Float sigma_a, Float g, Float eta,
     Float sigmap_t = sigma_a + sigmap_s;
     Float rhop = sigmap_s / sigmap_t;
 
-    // Compute non-classical diffusion coefficient $D_\roman{G}$ using Equation
-    // $(\ref{eq:diffusion-coefficient-grosjean})$
+    // Compute non-classical diffusion coefficient $D_\roman{G}$ using
+    // Equation (15.24)
     Float D_g = (2 * sigma_a + sigmap_s) / (3 * sigmap_t * sigmap_t);
 
     // Compute effective transport coefficient $\sigmatr$ based on $D_\roman{G}$
     Float sigma_tr = std::sqrt(sigma_a / D_g);
 
     // Determine linear extrapolation distance $\depthextrapolation$ using
-    // Equation $(\ref{eq:dipole-boundary-condition})$
+    // Equation (15.28)
     Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
     Float ze = -2 * D_g * (1 + 3 * fm2) / (1 - 2 * fm1);
 
-    // Determine exitance scale factors using Equations
-    // $(\ref{eq:kp-exitance-phi})$ and $(\ref{eq:kp-exitance-e})$
+    // Determine exitance scale factors using Equations (15.31) and (15.32)
     Float cPhi = .25f * (1 - 2 * fm1), cE = .5f * (1 - 3 * fm2);
     for (int i = 0; i < nSamples; ++i) {
         // Sample real point source depth $\depthreal$
@@ -98,13 +97,12 @@ Float BeamDiffusionMS(Float sigma_s, Float sigma_a, Float g, Float eta,
         Float zv = -zr + 2 * ze;
         Float dr = std::sqrt(r * r + zr * zr), dv = std::sqrt(r * r + zv * zv);
 
-        // Compute dipole fluence rate $\dipole(r)$ using Equation
-        // $(\ref{eq:diffusion-dipole})$
+        // Compute dipole fluence rate $\dipole(r)$ using Equation (15.27)
         Float phiD = Inv4Pi / D_g * (std::exp(-sigma_tr * dr) / dr -
                                      std::exp(-sigma_tr * dv) / dv);
 
         // Compute dipole vector irradiance $-\N{}\cdot\dipoleE(r)$ using
-        // Equation $(\ref{eq:diffusion-dipole-vector-irradiance-normal})$
+        // Equation (15.27)
         Float EDn = Inv4Pi * (zr * (1 + sigma_tr * dr) *
                                   std::exp(-sigma_tr * dr) / (dr * dr * dr) -
                               zv * (1 + sigma_tr * dv) *

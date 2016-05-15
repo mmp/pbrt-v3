@@ -320,11 +320,11 @@ Float InvertCatmullRom(int n, const Float *x, const Float *values, Float u) {
         // Compute powers of _t_
         Float t2 = t * t, t3 = t2 * t;
 
-        // Set _Fhat_ using Equation (\ref{eq:cubicspline-as-basisfunctions})
+        // Set _Fhat_ using Equation (8.27)
         Fhat = (2 * t3 - 3 * t2 + 1) * f0 + (-2 * t3 + 3 * t2) * f1 +
                (t3 - 2 * t2 + t) * d0 + (t3 - t2) * d1;
 
-        // Set _fhat_ using Equation (\ref{eq:cubicspline-derivative})
+        // Set _fhat_ using Equation (not present)
         fhat = (6 * t2 - 6 * t) * f0 + (-6 * t2 + 6 * t) * f1 +
                (3 * t2 - 4 * t + 1) * d0 + (3 * t2 - 2 * t) * d1;
 
