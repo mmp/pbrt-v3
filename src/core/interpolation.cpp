@@ -374,7 +374,7 @@ Float SampleFourier(const Float *ak, const Float *recip, int m, Float u,
 
         // Initialize sine and cosine iterates
         double cosPhi = std::cos(phi);
-        double sinPhi = std::sqrt(1 - cosPhi * cosPhi);
+        double sinPhi = std::sqrt(std::max(0., 1 - cosPhi * cosPhi));
         double cosPhiPrev = cosPhi, cosPhiCur = 1;
         double sinPhiPrev = -sinPhi, sinPhiCur = 0;
 

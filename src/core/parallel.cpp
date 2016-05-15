@@ -131,7 +131,7 @@ static void workerThreadFunc(int tIndex) {
 }
 
 // Parallel Definitions
-void ParallelFor(const std::function<void(int64_t)> &func, int64_t count,
+void ParallelFor(std::function<void(int64_t)> func, int64_t count,
                  int chunkSize) {
     // Run iterations immediately if not using threads or if _count_ is small
     if (PbrtOptions.nThreads == 1 || count < chunkSize) {
@@ -148,7 +148,8 @@ void ParallelFor(const std::function<void(int64_t)> &func, int64_t count,
     }
 
     // Create and enqueue _ParallelForLoop_ for this loop
-    ParallelForLoop loop(func, count, chunkSize, CurrentProfilerState());
+    ParallelForLoop loop(std::move(func), count, chunkSize,
+                         CurrentProfilerState());
     workListMutex.lock();
     loop.next = workList;
     workList = &loop;

@@ -67,7 +67,7 @@ class GridDensityMedium : public Medium {
         Float maxDensity = 0;
         for (int i = 0; i < nx * ny * nz; ++i)
             maxDensity = std::max(maxDensity, density[i]);
-        invMaxDensity = 1 / (maxDensity * sigma_t);
+        invMaxDensity = 1 / maxDensity;
     }
 
     Float Density(const Point3f &p) const;
