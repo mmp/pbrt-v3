@@ -1165,7 +1165,8 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
             if (graphicsState.areaLight != "") {
                 area = MakeAreaLight(graphicsState.areaLight, curTransform[0],
                                      mi, graphicsState.areaLightParams, s);
-                areaLights.push_back(area);
+                if (area)
+                    areaLights.push_back(area);
             }
             prims.push_back(
                 std::make_shared<GeometricPrimitive>(s, mtl, area, mi));
