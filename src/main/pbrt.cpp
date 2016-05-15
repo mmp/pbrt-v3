@@ -72,6 +72,9 @@ int main(int argc, char *argv[]) {
     if (!options.quiet && !options.cat && !options.toPly) {
         printf("pbrt version 3 (built %s at %s) [Detected %d cores]\n",
                __DATE__, __TIME__, NumSystemCores());
+#ifndef NDEBUG
+        printf("*** DEBUG BUILD ***\n");
+#endif // !NDEBUG
         printf(
             "Copyright (c)1998-2015 Matt Pharr, Greg Humphreys, and Wenzel "
             "Jakob.\n");
