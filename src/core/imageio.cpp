@@ -30,14 +30,12 @@
 
  */
 
-
 // core/imageio.cpp*
 #include "imageio.h"
 #include <string.h>
 #include "spectrum.h"
 #include "ext/targa.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "ext/stb_image_write.h"
+#include "ext/lodepng.h"
 
 #include <ImfRgba.h>
 #include <ImfRgbaFile.h>
@@ -52,6 +50,7 @@ static void WriteImageTGA(const std::string &name, const uint8_t *pixels,
                           int xRes, int yRes, int totalXRes, int totalYRes,
                           int xOffset, int yOffset);
 static RGBSpectrum *ReadImageTGA(const std::string &name, int *w, int *h);
+static RGBSpectrum *ReadImagePNG(const std::string &name, int *w, int *h);
 static bool WriteImagePFM(const std::string &filename, const Float *rgb,
                           int xres, int yres);
 static RGBSpectrum *ReadImagePFM(const std::string &filename, int *xres,
@@ -66,6 +65,9 @@ std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
     else if (HasExtension(name, ".tga"))
         return std::unique_ptr<RGBSpectrum[]>(
             ReadImageTGA(name, &resolution->x, &resolution->y));
+    else if (HasExtension(name, ".png"))
+        return std::unique_ptr<RGBSpectrum[]>(
+            ReadImagePNG(name, &resolution->x, &resolution->y));
     else if (HasExtension(name, ".pfm"))
         return std::unique_ptr<RGBSpectrum[]>(
             ReadImagePFM(name, &resolution->x, &resolution->y));
@@ -109,12 +111,16 @@ void WriteImage(const std::string &name, const Float *rgb,
 
         if (HasExtension(name, ".tga"))
             WriteImageTGA(
-                name, rgb8.get(), outputBounds.pMax.x - outputBounds.pMin.x,
-                outputBounds.pMax.y - outputBounds.pMin.y, totalResolution.x,
+                name, rgb8.get(), resolution.x,
+                resolution.y, totalResolution.x,
                 totalResolution.y, outputBounds.pMin.x, outputBounds.pMin.y);
-        else if (stbi_write_png(name.c_str(), resolution.x, resolution.y, 3,
-                                rgb8.get(), 3 * resolution.x) == 0)
-            Error("Error writing PNG \"%s\"", name.c_str());
+        else {
+            unsigned int error = lodepng_encode24_file(
+                name.c_str(), rgb8.get(), resolution.x, resolution.y);
+            if (error != 0)
+                Error("Error writing PNG \"%s\": %s", name.c_str(),
+                      lodepng_error_text(error));
+        }
     } else {
         Error("Can't determine image file type from suffix of filename \"%s\"",
               name.c_str());
@@ -238,6 +244,35 @@ static RGBSpectrum *ReadImageTGA(const std::string &name, int *width,
     tga_free_buffers(&img);
     Info("Read TGA image %s (%d x %d)", name.c_str(), *width, *height);
 
+    return ret;
+}
+
+static RGBSpectrum *ReadImagePNG(const std::string &name, int *width,
+                                 int *height) {
+    unsigned char *rgb;
+    unsigned w, h;
+    unsigned int error = lodepng_decode24_file(&rgb, &w, &h, name.c_str());
+    if (error != 0) {
+        Error("Error reading PNG \"%s\": %s", name.c_str(),
+              lodepng_error_text(error));
+        return nullptr;
+    }
+    *width = w;
+    *height = h;
+
+    RGBSpectrum *ret = new RGBSpectrum[*width * *height];
+    unsigned char *src = rgb;
+    for (int y = h - 1; y >= 0; --y) {
+        for (int x = 0; x < w; ++x, src += 3) {
+            Float c[3];
+            c[0] = src[0] / 255.f;
+            c[1] = src[1] / 255.f;
+            c[2] = src[2] / 255.f;
+            ret[y * *width + x] = RGBSpectrum::FromRGB(c);
+        }
+    }
+
+    free(rgb);
     return ret;
 }
 
