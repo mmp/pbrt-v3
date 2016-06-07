@@ -107,8 +107,8 @@ static void workerThreadFunc(int tIndex) {
             // Run loop indices in _[indexStart, indexEnd)_
             lock.unlock();
             for (int64_t index = indexStart; index < indexEnd; ++index) {
-                int oldState = profilerState;
-                profilerState = loop.profilerState;
+                int oldState = ProfilerState;
+                ProfilerState = loop.profilerState;
                 if (loop.func1D) {
                     loop.func1D(index);
                 }
@@ -117,7 +117,7 @@ static void workerThreadFunc(int tIndex) {
                     Assert(loop.func2D);
                     loop.func2D(Point2i(index % loop.nX, index / loop.nX));
                 }
-                profilerState = oldState;
+                ProfilerState = oldState;
             }
             lock.lock();
 
@@ -175,8 +175,8 @@ void ParallelFor(std::function<void(int64_t)> func, int64_t count,
         // Run loop indices in _[indexStart, indexEnd)_
         lock.unlock();
         for (int64_t index = indexStart; index < indexEnd; ++index) {
-            int oldState = profilerState;
-            profilerState = loop.profilerState;
+            int oldState = ProfilerState;
+            ProfilerState = loop.profilerState;
             if (loop.func1D) {
                 loop.func1D(index);
             }
@@ -185,7 +185,7 @@ void ParallelFor(std::function<void(int64_t)> func, int64_t count,
                 Assert(loop.func2D);
                 loop.func2D(Point2i(index % loop.nX, index / loop.nX));
             }
-            profilerState = oldState;
+            ProfilerState = oldState;
         }
         lock.lock();
 
@@ -248,8 +248,8 @@ void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
         // Run loop indices in _[indexStart, indexEnd)_
         lock.unlock();
         for (int64_t index = indexStart; index < indexEnd; ++index) {
-            int oldState = profilerState;
-            profilerState = loop.profilerState;
+            int oldState = ProfilerState;
+            ProfilerState = loop.profilerState;
             if (loop.func1D) {
                 loop.func1D(index);
             }
@@ -258,7 +258,7 @@ void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
                 Assert(loop.func2D);
                 loop.func2D(Point2i(index % loop.nX, index / loop.nX));
             }
-            profilerState = oldState;
+            ProfilerState = oldState;
         }
         lock.lock();
 

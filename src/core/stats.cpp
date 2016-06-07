@@ -158,7 +158,7 @@ void StatsAccumulator::Print(FILE *dest) {
 }
 
 static PBRT_CONSTEXPR int NumProfEvents = (int)Prof::NumProfEvents;
-PBRT_THREAD_LOCAL uint32_t profilerState;
+PBRT_THREAD_LOCAL uint32_t ProfilerState;
 
 #ifdef PBRT_IS_OSX
 #include <execinfo.h>
@@ -194,7 +194,7 @@ static void ReportProfileSample(int, siginfo_t *, void *) {
     // Print stack trace if context is unknown
 #if 0 && defined(PBRT_IS_OSX)
     static std::atomic<int> foo(20);
-    if (profilerState == 0 && --foo == 0) {
+    if (ProfilerState == 0 && --foo == 0) {
         void* callstack[128];
         int i, frames = backtrace(callstack, 128);
         char** strs = backtrace_symbols(callstack, frames);
@@ -206,7 +206,7 @@ static void ReportProfileSample(int, siginfo_t *, void *) {
     }
 #endif
 #endif
-    if (profileSamples) profileSamples[profilerState]++;
+    if (profileSamples) profileSamples[ProfilerState]++;
 }
 
 #endif  // !PBRT_IS_WINDOWS

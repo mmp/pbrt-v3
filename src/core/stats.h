@@ -175,18 +175,18 @@ static const char *ProfNames[] = {
     "MIPMap::Lookup() (EWA)",
 };
 
-extern PBRT_THREAD_LOCAL uint32_t profilerState;
-inline uint32_t CurrentProfilerState() { return profilerState; }
+extern PBRT_THREAD_LOCAL uint32_t ProfilerState;
+inline uint32_t CurrentProfilerState() { return ProfilerState; }
 class ProfilePhase {
   public:
     // ProfilePhase Public Methods
     ProfilePhase(Prof p) {
         categoryBit = (1 << (int)p);
-        reset = (profilerState & categoryBit) == 0;
-        profilerState |= categoryBit;
+        reset = (ProfilerState & categoryBit) == 0;
+        ProfilerState |= categoryBit;
     }
     ~ProfilePhase() {
-        if (reset) profilerState &= ~categoryBit;
+        if (reset) ProfilerState &= ~categoryBit;
     }
     ProfilePhase(const ProfilePhase &) = delete;
     ProfilePhase &operator=(const ProfilePhase &) = delete;
