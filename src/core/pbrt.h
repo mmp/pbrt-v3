@@ -60,6 +60,7 @@
 #endif
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 // Platform-specific definitions
 #include <stdint.h>
