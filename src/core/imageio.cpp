@@ -227,7 +227,7 @@ static RGBSpectrum *ReadImageTGA(const std::string &name, int *width,
     // TGA pixels are in BGRA format.
     RGBSpectrum *ret = new RGBSpectrum[*width * *height];
     RGBSpectrum *dst = ret;
-    for (int y = *height - 1; y >= 0; y--)
+    for (int y = 0; y < *height; y++)
         for (int x = 0; x < *width; x++) {
             uint8_t *src = tga_find_pixel(&img, x, y);
             if (tga_is_mono(&img))
@@ -262,7 +262,7 @@ static RGBSpectrum *ReadImagePNG(const std::string &name, int *width,
 
     RGBSpectrum *ret = new RGBSpectrum[*width * *height];
     unsigned char *src = rgb;
-    for (int y = h - 1; y >= 0; --y) {
+    for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x, src += 3) {
             Float c[3];
             c[0] = src[0] / 255.f;
@@ -370,7 +370,12 @@ static RGBSpectrum *ReadImagePFM(const std::string &filename, int *xres,
     // read the data
     nFloats = nChannels * width * height;
     data = new float[nFloats];
-    if (fread(data, sizeof(float), nFloats, fp) != nFloats) goto fail;
+    // Flip in Y, as P*M has the origin at the lower left.
+    for (int y = height - 1; y >= 0; --y) {
+        if (fread(&data[y * nChannels * width], sizeof(float),
+                  nChannels * width, fp) != nChannels * width)
+            goto fail;
+    }
 
     // apply endian conversian and scale if appropriate
     fileLittleEndian = (scale < 0.f);

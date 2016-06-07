@@ -5,7 +5,7 @@
 #include "spectrum.h"
 #include "imageio.h"
 
-static void TestRoundTrip(const char *fn, bool gamma, bool flipy) {
+static void TestRoundTrip(const char *fn, bool gamma) {
     Point2i res(16, 29);
     std::vector<Float> pixels(3 * res[0] * res[1]);
     for (int y = 0; y < res[1]; ++y)
@@ -26,11 +26,7 @@ static void TestRoundTrip(const char *fn, bool gamma, bool flipy) {
     for (int y = 0; y < res[1]; ++y)
         for (int x = 0; x < res[0]; ++x) {
             Float rgb[3];
-            if (flipy)
-                // flip in y :-(
-                readPixels[(res[1] - 1 - y) * res[0] + x].ToRGB(rgb);
-            else
-                readPixels[y * res[0] + x].ToRGB(rgb);
+            readPixels[y * res[0] + x].ToRGB(rgb);
 
             for (int c = 0; c < 3; ++c) {
                 if (gamma)
@@ -76,10 +72,10 @@ static void TestRoundTrip(const char *fn, bool gamma, bool flipy) {
         }
 }
 
-TEST(ImageIO, RoundTripEXR) { TestRoundTrip("out.exr", false, false); }
+TEST(ImageIO, RoundTripEXR) { TestRoundTrip("out.exr", false); }
 
-TEST(ImageIO, RoundTripPFM) { TestRoundTrip("out.pfm", false, true); }
+TEST(ImageIO, RoundTripPFM) { TestRoundTrip("out.pfm", false); }
 
-TEST(ImageIO, RoundTripTGA) { TestRoundTrip("out.tga", true, true); }
+TEST(ImageIO, RoundTripTGA) { TestRoundTrip("out.tga", true); }
 
-TEST(ImageIO, RoundTripPNG) { TestRoundTrip("out.png", true, true); }
+TEST(ImageIO, RoundTripPNG) { TestRoundTrip("out.png", true); }

@@ -58,6 +58,15 @@ MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
     // Create _MIPMap_ for _filename_
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> texels = ReadImage(filename, &resolution);
+    // Flip image in y; texture coordinate space has (0,0) at the lower
+    // left corner.
+    for (int y = 0; y < resolution.y / 2; ++y)
+        for (int x = 0; x < resolution.x; ++x) {
+            int o1 = y * resolution.x + x;
+            int o2 = (resolution.y - 1 - y) * resolution.x + x;
+            std::swap(texels[o1], texels[o2]);
+        }
+
     MIPMap<Tmemory> *mipmap = nullptr;
     if (texels) {
         // Convert texels to type _Tmemory_ and create _MIPMap_
