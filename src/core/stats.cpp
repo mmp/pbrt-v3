@@ -80,22 +80,20 @@ void StatsAccumulator::Print(FILE *dest) {
     fprintf(dest, "Statistics:\n");
     std::map<std::string, std::vector<std::string>> toPrint;
 
-    char buf[512];
     for (auto &counter : counters) {
         if (counter.second == 0) continue;
         std::string category, title;
         getCategoryAndTitle(counter.first, &category, &title);
-        sprintf(buf, "%-42s               %12" PRIu64, title.c_str(),
-                counter.second);
-        toPrint[category].push_back(buf);
+        toPrint[category].push_back(StringPrintf(
+            "%-42s               %12" PRIu64, title.c_str(), counter.second));
     }
     for (auto &counter : memoryCounters) {
         if (counter.second == 0) continue;
         std::string category, title;
         getCategoryAndTitle(counter.first, &category, &title);
         double mib = (double)counter.second / (1024. * 1024.);
-        sprintf(buf, "%-42s                  %9.2f MiB", title.c_str(), mib);
-        toPrint[category].push_back(buf);
+        toPrint[category].push_back(StringPrintf(
+            "%-42s                  %9.2f MiB", title.c_str(), mib));
     }
     for (auto &distributionSum : intDistributionSums) {
         const std::string &name = distributionSum.first;
@@ -104,11 +102,11 @@ void StatsAccumulator::Print(FILE *dest) {
         getCategoryAndTitle(name, &category, &title);
         double avg = (double)distributionSum.second /
                      (double)intDistributionCounts[name];
-        sprintf(buf, "%-42s                      %.3f avg [range %" PRIu64
-                     " - %" PRIu64 "]",
-                title.c_str(), avg, intDistributionMins[name],
-                intDistributionMaxs[name]);
-        toPrint[category].push_back(buf);
+        toPrint[category].push_back(StringPrintf(
+            "%-42s                      %.3f avg [range %" PRIu64
+            " - %" PRIu64 "]",
+            title.c_str(), avg, intDistributionMins[name],
+            intDistributionMaxs[name]));
     }
     for (auto &distributionSum : floatDistributionSums) {
         const std::string &name = distributionSum.first;
@@ -117,10 +115,10 @@ void StatsAccumulator::Print(FILE *dest) {
         getCategoryAndTitle(name, &category, &title);
         double avg = (double)distributionSum.second /
                      (double)floatDistributionCounts[name];
-        sprintf(buf, "%-42s                      %.3f avg [range %f - %f]",
-                title.c_str(), avg, floatDistributionMins[name],
-                floatDistributionMaxs[name]);
-        toPrint[category].push_back(buf);
+        toPrint[category].push_back(StringPrintf(
+            "%-42s                      %.3f avg [range %f - %f]",
+            title.c_str(), avg, floatDistributionMins[name],
+            floatDistributionMaxs[name]));
     }
     for (auto &percentage : percentages) {
         if (percentage.second.second == 0) continue;
@@ -128,9 +126,9 @@ void StatsAccumulator::Print(FILE *dest) {
         int64_t denom = percentage.second.second;
         std::string category, title;
         getCategoryAndTitle(percentage.first, &category, &title);
-        sprintf(buf, "%-42s%12" PRIu64 " / %12" PRIu64 " (%.2f%%)",
-                title.c_str(), num, denom, (100.f * num) / denom);
-        toPrint[category].push_back(buf);
+        toPrint[category].push_back(StringPrintf(
+            "%-42s%12" PRIu64 " / %12" PRIu64 " (%.2f%%)",
+            title.c_str(), num, denom, (100.f * num) / denom));
     }
     for (auto &ratio : ratios) {
         if (ratio.second.second == 0) continue;
@@ -138,9 +136,9 @@ void StatsAccumulator::Print(FILE *dest) {
         int64_t denom = ratio.second.second;
         std::string category, title;
         getCategoryAndTitle(ratio.first, &category, &title);
-        sprintf(buf, "%-42s%12" PRIu64 " / %12" PRIu64 " (%.2fx)",
-                title.c_str(), num, denom, (double)num / (double)denom);
-        toPrint[category].push_back(buf);
+        toPrint[category].push_back(StringPrintf(
+            "%-42s%12" PRIu64 " / %12" PRIu64 " (%.2fx)",
+            title.c_str(), num, denom, (double)num / (double)denom));
     }
     for (auto &timer : timers) {
         if (timer.second == 0) continue;
@@ -148,8 +146,8 @@ void StatsAccumulator::Print(FILE *dest) {
         double seconds = (double)ns / 1e9;
         std::string category, title;
         getCategoryAndTitle(timer.first, &category, &title);
-        sprintf(buf, "%-42s                  %9.3f s", title.c_str(), seconds);
-        toPrint[category].push_back(buf);
+        toPrint[category].push_back(StringPrintf(
+            "%-42s                  %9.3f s", title.c_str(), seconds));
     }
 
     for (auto &categories : toPrint) {

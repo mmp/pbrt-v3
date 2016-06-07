@@ -478,12 +478,7 @@ std::string ParamSet::ToString() const {
     size_t i;
     int j;
     std::string typeString;
-    const int bufLen = 48 * 1024 * 1024;
-    static char *buf = new char[bufLen];
-    char *bufEnd = buf + bufLen;
     for (i = 0; i < ints.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<int>> &item = ints[i];
         typeString = "integer ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -494,13 +489,10 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "%d ", item->values[j]);
-        ret += buf;
+            ret += StringPrintf("%d ", item->values[j]);
         ret += std::string("] ");
     }
     for (i = 0; i < bools.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<bool>> &item = bools[i];
         typeString = "bool ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -511,14 +503,10 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "\"%s\" ",
-                             item->values[j] ? "true" : "false");
-        ret += buf;
+            ret += StringPrintf("\"%s\" ", item->values[j] ? "true" : "false");
         ret += std::string("] ");
     }
     for (i = 0; i < floats.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<Float>> &item = floats[i];
         typeString = "float ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -529,13 +517,10 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "%.8g ", item->values[j]);
-        ret += buf;
+            ret += StringPrintf("%.8g ", item->values[j]);
         ret += std::string("] ");
     }
     for (i = 0; i < point2fs.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<Point2f>> &item = point2fs[i];
         typeString = "point2 ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -546,14 +531,11 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g ",
-                             item->values[j].x, item->values[j].y);
-        ret += buf;
+            ret += StringPrintf("%.8g %.8g ", item->values[j].x,
+                                item->values[j].y);
         ret += std::string("] ");
     }
     for (i = 0; i < vector2fs.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<Vector2f>> &item = vector2fs[i];
         typeString = "vector2 ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -564,14 +546,11 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g ",
-                             item->values[j].x, item->values[j].y);
-        ret += buf;
+            ret += StringPrintf("%.8g %.8g ", item->values[j].x,
+                                item->values[j].y);
         ret += std::string("] ");
     }
     for (i = 0; i < point3fs.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<Point3f>> &item = point3fs[i];
         typeString = "point3 ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -582,15 +561,11 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g %.8g ",
-                             item->values[j].x, item->values[j].y,
-                             item->values[j].z);
-        ret += buf;
+            ret += StringPrintf("%.8g %.8g %.8g ", item->values[j].x,
+                                item->values[j].y, item->values[j].z);
         ret += std::string("] ");
     }
     for (i = 0; i < vector3fs.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<Vector3f>> &item = vector3fs[i];
         typeString = "vector3 ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -601,15 +576,11 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g %.8g ",
-                             item->values[j].x, item->values[j].y,
-                             item->values[j].z);
-        ret += buf;
+            ret += StringPrintf("%.8g %.8g %.8g ", item->values[j].x,
+                                item->values[j].y, item->values[j].z);
         ret += std::string("] ");
     }
     for (i = 0; i < normals.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<Normal3f>> &item = normals[i];
         typeString = "normal ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -620,15 +591,11 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g %.8g ",
-                             item->values[j].x, item->values[j].y,
-                             item->values[j].z);
-        ret += buf;
+            ret += StringPrintf("%.8g %.8g %.8g ", item->values[j].x,
+                                item->values[j].y, item->values[j].z);
         ret += std::string("] ");
     }
     for (i = 0; i < strings.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<std::string>> &item = strings[i];
         typeString = "string ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -639,14 +606,10 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "\"%s\" ",
-                             item->values[j].c_str());
-        ret += buf;
+            ret += StringPrintf("\"%s\" ", item->values[j].c_str());
         ret += std::string("] ");
     }
     for (i = 0; i < textures.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<std::string>> &item = textures[i];
         typeString = "texture ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -657,14 +620,10 @@ std::string ParamSet::ToString() const {
         ret += std::string("\"");
         ret += std::string(" [");
         for (j = 0; j < nPrint; ++j)
-            bufp += snprintf(bufp, bufEnd - bufp, "\"%s\" ",
-                             item->values[j].c_str());
-        ret += buf;
+            ret += StringPrintf("\"%s\" ", item->values[j].c_str());
         ret += std::string("] ");
     }
     for (i = 0; i < spectra.size(); ++i) {
-        char *bufp = buf;
-        *bufp = '\0';
         const std::shared_ptr<ParamSetItem<Spectrum>> &item = spectra[i];
         typeString = "color ";
         // Print _ParamSetItem_ declaration, determine how many to print
@@ -677,10 +636,8 @@ std::string ParamSet::ToString() const {
         for (j = 0; j < nPrint; ++j) {
             Float rgb[3];
             item->values[j].ToRGB(rgb);
-            bufp += snprintf(bufp, bufEnd - bufp, "%.8g %.8g %.8g ", rgb[0],
-                             rgb[1], rgb[2]);
+            ret += StringPrintf("%.8g %.8g %.8g ", rgb[0], rgb[1], rgb[2]);
         }
-        ret += buf;
         ret += std::string("] ");
     }
     return ret;

@@ -302,12 +302,11 @@ std::pair<bool, std::string> Chi2Test(const Float* frequencies,
                    actual bug. Therefore, the criterion here is a bit more
                    lenient. */
 
-                char result[256];
-                sprintf(result,
+                std::string result = StringPrintf(
                         "Encountered %f samples in a c with expected "
                         "frequency 0. Rejecting the null hypothesis!",
                         frequencies[c.index]);
-                return std::make_pair(false, std::string(result));
+                return std::make_pair(false, result);
             }
         } else if (expFrequencies[c.index] < minExpFrequency) {
             /* Pool cells with low expected frequencies */
@@ -339,9 +338,9 @@ std::pair<bool, std::string> Chi2Test(const Float* frequencies,
     dof -= 1;
 
     if (dof <= 0) {
-        char result[256];
-        sprintf(result, "The number of degrees of freedom %d is too low!", dof);
-        return std::make_pair(false, std::string(result));
+        std::string result = StringPrintf(
+              "The number of degrees of freedom %d is too low!", dof);
+        return std::make_pair(false, result);
     }
 
     /* Probability of obtaining a test statistic at least
@@ -357,12 +356,11 @@ std::pair<bool, std::string> Chi2Test(const Float* frequencies,
     Float alpha = 1.0f - std::pow(1.0f - significanceLevel, 1.0f / numTests);
 
     if (pval < alpha || !std::isfinite(pval)) {
-        char result[512];
-        sprintf(result,
+      std::string result = StringPrintf(
                 "Rejected the null hypothesis (p-value = %f, "
                 "significance level = %f",
                 pval, alpha);
-        return std::make_pair(false, std::string(result));
+        return std::make_pair(false, result);
     } else {
         return std::make_pair(true, std::string(""));
     }
@@ -419,10 +417,10 @@ void TestBSDF(void (*createBSDF)(BSDF*, MemoryArena&),
         IntegrateFrequencyTable(bsdf, wo, sampleCount, thetaRes, phiRes,
                                 expFrequencies);
 
-        char filename[256];
-        snprintf(filename, sizeof(filename), "/tmp/chi2test_%s_%03i.m",
-                 description, ++index);
-        DumpTables(frequencies, expFrequencies, thetaRes, phiRes, filename);
+        std::string filename = StringPrintf("/tmp/chi2test_%s_%03i.m",
+                                            description, ++index);
+        DumpTables(frequencies, expFrequencies, thetaRes, phiRes,
+                   filename.c_str());
 
         auto result =
             Chi2Test(frequencies, expFrequencies, thetaRes, phiRes, sampleCount,

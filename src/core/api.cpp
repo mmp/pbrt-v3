@@ -319,10 +319,9 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
     else if (name == "trianglemesh") {
         if (PbrtOptions.toPly) {
             static int count = 1;
-            char fn[128];
             const char *plyPrefix =
                 getenv("PLY_PREFIX") ? getenv("PLY_PREFIX") : "mesh";
-            sprintf(fn, "%s_%05d.ply", plyPrefix, count++);
+            std::string fn = StringPrintf("%s_%05d.ply", plyPrefix, count++);
 
             int nvi, npi, nuvi, nsi, nni;
             const int *vi = paramSet.FindInt("indices", &nvi);
@@ -344,11 +343,11 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
             const Normal3f *N = paramSet.FindNormal3f("N", &nni);
             const Vector3f *S = paramSet.FindVector3f("S", &nsi);
 
-            if (!WritePlyFile(fn, nvi / 3, vi, npi, P, S, N, uvs))
-                Error("Unable to write PLY file \"%s\"", fn);
+            if (!WritePlyFile(fn.c_str(), nvi / 3, vi, npi, P, S, N, uvs))
+                Error("Unable to write PLY file \"%s\"", fn.c_str());
 
             printf("%*sShape \"plymesh\" \"string filename\" \"%s\" ",
-                   catIndentCount, "", fn);
+                   catIndentCount, "", fn.c_str());
 
             std::string alphaTex = paramSet.FindTexture("alpha");
             if (alphaTex != "")

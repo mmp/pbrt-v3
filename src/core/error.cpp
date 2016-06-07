@@ -48,6 +48,18 @@ const char *findWordEnd(const char *buf) {
 }
 
 // Error Reporting Functions
+template<typename ... Args>
+static std::string StringVaprintf(const std::string &fmt, va_list args) {
+    // Figure out how much space we need to allocate; add an extra
+    // character for '\0'.
+    size_t size = vsnprintf(nullptr, 0, fmt.c_str(), args) + 1;
+    std::string str;
+    str.resize(size);
+    vsnprintf(&str[0], size, fmt.c_str(), args);
+    str.pop_back();  // remove trailing NUL
+    return str;
+}
+
 static void processError(const char *format, va_list args,
                          const char *errorType, int disposition) {
     // Report error
@@ -63,9 +75,7 @@ static void processError(const char *format, va_list args,
     if (line_num != 0) {
         extern std::string current_file;
         errorString += current_file;
-        char buf[16];
-        sprintf(buf, "(%d): ", line_num);
-        errorString += buf;
+        errorString += StringPrintf("(%d): ", line_num);
     }
 
     // PBRT_ERROR_CONTINUE, PBRT_ERROR_ABORT
@@ -75,18 +85,9 @@ static void processError(const char *format, va_list args,
     errorString += ": ";
     int column = errorString.size();
 
-#if !defined(PBRT_IS_WINDOWS)
-    char *errorBuf;
-    if (vasprintf(&errorBuf, format, args) == -1) {
-        fprintf(stderr, "vasprintf() unable to allocate memory!\n");
-        abort();
-    }
-#else
-    char errorBuf[2048];
-    vsnprintf_s(errorBuf, sizeof(errorBuf), _TRUNCATE, format, args);
-#endif
+    std::string message = StringVaprintf(format, args);
 
-    const char *msgPos = errorBuf;
+    const char *msgPos = message.c_str();
     while (true) {
         while (*msgPos != '\0' && isspace(*msgPos)) ++msgPos;
         if (*msgPos == '\0') break;
@@ -114,7 +115,6 @@ static void processError(const char *format, va_list args,
 #endif
     }
 #if !defined(PBRT_IS_WINDOWS)
-    free(errorBuf);
 #endif
 }
 

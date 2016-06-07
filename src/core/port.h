@@ -96,8 +96,4 @@
   #define PBRT_HAVE_ALIGNAS
 #endif
 
-#ifdef PBRT_IS_MSVC2013
-  #define snprintf _snprintf
-#endif
-
 #endif // PBRT_CORE_PORT_H

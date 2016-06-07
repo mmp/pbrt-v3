@@ -300,9 +300,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
                 int t = depth + 2 - s;
                 if (t == 0 || (s == 1 && t == 1)) continue;
 
-                char filename[32];
-                snprintf(filename, sizeof(filename),
-                         "bdpt_d%02i_s%02i_t%02i.exr", depth, s, t);
+                std::string filename =
+                    StringPrintf("bdpt_d%02i_s%02i_t%02i.exr", depth, s, t);
 
                 weightFilms[BufferIndex(s, t)] = std::unique_ptr<Film>(new Film(
                     film->fullResolution,
