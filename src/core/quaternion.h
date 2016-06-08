@@ -95,6 +95,12 @@ struct Quaternion {
     Transform ToTransform() const;
     Quaternion(const Transform &t);
 
+    friend std::ostream &operator<<(std::ostream &os, const Quaternion &q) {
+        os << StringPrintf("[%.10f, %.10f, %.10f, %.10f]", q.v.x, q.v.y, q.v.z,
+                           q.w);
+        return os;
+    }
+
     // Quaternion Public Data
     Vector3f v;
     Float w;

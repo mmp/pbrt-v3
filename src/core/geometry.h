@@ -75,10 +75,6 @@ class Vector2 {
         return *this;
     }
 #endif  // !NDEBUG
-    friend std::ostream &operator<<(std::ostream &os, const Vector2<T> &v) {
-        os << "[" << v.x << ", " << v.y << "]";
-        return os;
-    }
 
     Vector2<T> operator+(const Vector2<T> &v) const {
         Assert(!v.HasNaNs());
@@ -151,6 +147,18 @@ class Vector2 {
 };
 
 template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const Vector2<T> &v) {
+    os << "[ " << v.x << ", " << v.y << " ]";
+    return os;
+}
+
+template <>
+inline std::ostream &operator<<(std::ostream &os, const Vector2<Float> &v) {
+    os << StringPrintf("[ %.10f, %.10f ]", v.x, v.y);
+    return os;
+}
+
+template <typename T>
 class Vector3 {
   public:
     // Vector3 Public Methods
@@ -188,10 +196,6 @@ class Vector3 {
         return *this;
     }
 #endif  // !NDEBUG
-    friend std::ostream &operator<<(std::ostream &os, const Vector3<T> &v) {
-        os << "[" << v.x << ", " << v.y << ", " << v.z << "]";
-        return os;
-    }
     Vector3<T> operator+(const Vector3<T> &v) const {
         Assert(!v.HasNaNs());
         return Vector3(x + v.x, y + v.y, z + v.z);
@@ -257,6 +261,18 @@ class Vector3 {
     T x, y, z;
 };
 
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const Vector3<T> &v) {
+    os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
+    return os;
+}
+
+template <>
+inline std::ostream &operator<<(std::ostream &os, const Vector3<Float> &v) {
+    os << StringPrintf("[ %.10f, %.10f, %.10f ]", v.x, v.y, v.z);
+    return os;
+}
+
 typedef Vector2<Float> Vector2f;
 typedef Vector2<int> Vector2i;
 typedef Vector3<Float> Vector3f;
@@ -304,11 +320,6 @@ class Point2 {
         return *this;
     }
 #endif  // !NDEBUG
-    friend std::ostream &operator<<(std::ostream &os, const Point2<T> &p) {
-        os << "[" << p.x << ", " << p.y << "]";
-        return os;
-    }
-
     Point2<T> operator+(const Vector2<T> &v) const {
         Assert(!v.HasNaNs());
         return Point2<T>(x + v.x, y + v.y);
@@ -388,6 +399,18 @@ class Point2 {
 };
 
 template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const Point2<T> &v) {
+    os << "[ " << v.x << ", " << v.y << " ]";
+    return os;
+}
+
+template <>
+inline std::ostream &operator<<(std::ostream &os, const Point2<Float> &v) {
+    os << StringPrintf("[ %.10f, %.10f ]", v.x, v.y);
+    return os;
+}
+
+template <typename T>
 class Point3 {
   public:
     // Point3 Public Methods
@@ -418,10 +441,6 @@ class Point3 {
         return *this;
     }
 #endif  // !NDEBUG
-    friend std::ostream &operator<<(std::ostream &os, const Point3<T> &p) {
-        os << "[" << p.x << ", " << p.y << ", " << p.z << "]";
-        return os;
-    }
     Point3<T> operator+(const Vector3<T> &v) const {
         Assert(!v.HasNaNs());
         return Point3<T>(x + v.x, y + v.y, z + v.z);
@@ -509,6 +528,18 @@ class Point3 {
     T x, y, z;
 };
 
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const Point3<T> &v) {
+    os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
+    return os;
+}
+
+template <>
+inline std::ostream &operator<<(std::ostream &os, const Point3<Float> &v) {
+    os << StringPrintf("[ %.10f, %.10f, %.10f ]", v.x, v.y, v.z);
+    return os;
+}
+
 typedef Point2<Float> Point2f;
 typedef Point2<int> Point2i;
 typedef Point3<Float> Point3f;
@@ -594,10 +625,6 @@ class Normal3 {
         return *this;
     }
 #endif  // !NDEBUG
-    friend std::ostream &operator<<(std::ostream &os, const Normal3<T> &v) {
-        os << "[" << v.x << ", " << v.y << ", " << v.z << "]";
-        return os;
-    }
     explicit Normal3<T>(const Vector3<T> &v) : x(v.x), y(v.y), z(v.z) {
         Assert(!v.HasNaNs());
     }
@@ -625,6 +652,18 @@ class Normal3 {
     // Normal3 Public Data
     T x, y, z;
 };
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const Normal3<T> &v) {
+    os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
+    return os;
+}
+
+template <>
+inline std::ostream &operator<<(std::ostream &os, const Normal3<Float> &v) {
+    os << StringPrintf("[ %.10f, %.10f, %.10f ]", v.x, v.y, v.z);
+    return os;
+}
 
 typedef Normal3<Float> Normal3f;
 
@@ -688,6 +727,10 @@ class Bounds2 {
     void BoundingSphere(Point2<T> *c, Float *rad) const {
         *c = (pMin + pMax) / 2;
         *rad = Inside(*c, *this) ? Distance(*c, pMax) : 0;
+    }
+    friend std::ostream &operator<<(std::ostream &os, const Bounds2<T> &b) {
+        os << "[ " << b.pMin << " - " << b.pMax << " ]";
+        return os;
     }
 
     // Bounds2 Public Data
@@ -766,6 +809,10 @@ class Bounds3 {
                     Float *hitt1 = nullptr) const;
     inline bool IntersectP(const Ray &ray, const Vector3f &invDir,
                            const int dirIsNeg[3]) const;
+    friend std::ostream &operator<<(std::ostream &os, const Bounds3<T> &b) {
+        os << "[ " << b.pMin << " - " << b.pMax << " ]";
+        return os;
+    }
 
     // Bounds3 Public Data
     Point3<T> pMin, pMax;
@@ -855,6 +902,13 @@ class RayDifferential : public Ray {
         ryOrigin = o + (ryOrigin - o) * s;
         rxDirection = d + (rxDirection - d) * s;
         ryDirection = d + (ryDirection - d) * s;
+    }
+    friend std::ostream &operator<<(std::ostream &os, const RayDifferential &r) {
+        os << "[ " << (Ray &)r << " has differentials: " <<
+            (r.hasDifferentials ? "true" : "false") << ", xo = " << r.rxOrigin <<
+            ", xd = " << r.rxDirection << ", yo = " << r.ryOrigin << ", yd = " <<
+            r.ryDirection;
+        return os;
     }
 
     // RayDifferential Public Data

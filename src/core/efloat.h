@@ -187,6 +187,15 @@ class EFloat {
         return *this;
     }
 
+    friend std::ostream &operator<<(std::ostream &os, const EFloat &ef) {
+        os << StringPrintf("v=%.10f (%a) - [%.10f, %.10f]",
+                           ef.v, ef.v, ef.low, ef.high);
+#ifndef NDEBUG
+        os << StringPrintf(", precise=%.30Lf", ef.vPrecise);
+#endif // !NDEBUG
+        return os;
+    }
+
   private:
     // EFloat Private Data
     float v, low, high;

@@ -89,6 +89,21 @@ struct Matrix4x4 {
         return r;
     }
     friend Matrix4x4 Inverse(const Matrix4x4 &);
+
+    friend std::ostream &operator<<(std::ostream &os, const Matrix4x4 &m) {
+        // clang-format off
+        os << StringPrintf("[ [ %.10f, %.10f, %.10f, %.10f ] "
+                           "[ %.10f, %.10f, %.10f, %.10f ] "
+                           "[ %.10f, %.10f, %.10f, %.10f ] "
+                           "[ %.10f, %.10f, %.10f, %.10f ] ]",
+                           m.m[0][0], m.m[0][1], m.m[0][2], m.m[0][3],
+                           m.m[1][0], m.m[1][1], m.m[1][2], m.m[1][3],
+                           m.m[2][0], m.m[2][1], m.m[2][2], m.m[2][3],
+                           m.m[3][0], m.m[3][1], m.m[3][2], m.m[3][3]);
+        // clang-format on
+        return os;
+    }
+
     Float m[4][4];
 };
 
@@ -174,6 +189,11 @@ class Transform {
     inline Ray operator()(const Ray &r, const Vector3f &oErrorIn,
                           const Vector3f &dErrorIn, Vector3f *oErrorOut,
                           Vector3f *dErrorOut) const;
+
+    friend std::ostream &operator<<(std::ostream &os, const Transform &t) {
+        os << "t=" << t.m << ", inv=" << t.mInv;
+        return os;
+    }
 
   private:
     // Transform Private Data
