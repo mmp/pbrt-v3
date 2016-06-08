@@ -110,10 +110,9 @@ void WriteImage(const std::string &name, const Float *rgb,
         }
 
         if (HasExtension(name, ".tga"))
-            WriteImageTGA(
-                name, rgb8.get(), resolution.x,
-                resolution.y, totalResolution.x,
-                totalResolution.y, outputBounds.pMin.x, outputBounds.pMin.y);
+            WriteImageTGA(name, rgb8.get(), resolution.x, resolution.y,
+                          totalResolution.x, totalResolution.y,
+                          outputBounds.pMin.x, outputBounds.pMin.y);
         else {
             unsigned int error = lodepng_encode24_file(
                 name.c_str(), rgb8.get(), resolution.x, resolution.y);

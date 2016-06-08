@@ -30,7 +30,6 @@
 
  */
 
-
 // core/error.cpp*
 #include "error.h"
 #include "progressreporter.h"
@@ -48,7 +47,7 @@ const char *findWordEnd(const char *buf) {
 }
 
 // Error Reporting Functions
-template<typename ... Args>
+template <typename... Args>
 static std::string StringVaprintf(const std::string &fmt, va_list args) {
     // Figure out how much space we need to allocate; add an extra
     // character for '\0'.

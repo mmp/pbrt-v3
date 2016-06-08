@@ -30,7 +30,6 @@
 
  */
 
-
 // core/interpolation.cpp*
 #include "interpolation.h"
 
@@ -100,8 +99,8 @@ bool CatmullRomWeights(int size, const Float *nodes, Float x, int *offset,
     return true;
 }
 
-Float SampleCatmullRom(int n, const Float *x, const Float *f,
-                       const Float *F, Float u, Float *fval, Float *pdf) {
+Float SampleCatmullRom(int n, const Float *x, const Float *f, const Float *F,
+                       Float u, Float *fval, Float *pdf) {
     // Map _u_ to a spline interval by inverting _F_
     u *= F[n - 1];
     int i = FindInterval(n, [&](int i) { return F[i] <= u; });

@@ -30,7 +30,6 @@
 
  */
 
-
 // core/api.cpp*
 #include "api.h"
 #include "parallel.h"
@@ -1163,8 +1162,7 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
             if (graphicsState.areaLight != "") {
                 area = MakeAreaLight(graphicsState.areaLight, curTransform[0],
                                      mi, graphicsState.areaLightParams, s);
-                if (area)
-                    areaLights.push_back(area);
+                if (area) areaLights.push_back(area);
             }
             prims.push_back(
                 std::make_shared<GeometricPrimitive>(s, mtl, area, mi));
@@ -1323,8 +1321,8 @@ void pbrtObjectInstance(const std::string &name) {
     transformCache.Lookup(curTransform[0], &InstanceToWorld[0], nullptr);
     transformCache.Lookup(curTransform[1], &InstanceToWorld[1], nullptr);
     AnimatedTransform animatedInstanceToWorld(
-        InstanceToWorld[0], renderOptions->transformStartTime, InstanceToWorld[1],
-        renderOptions->transformEndTime);
+        InstanceToWorld[0], renderOptions->transformStartTime,
+        InstanceToWorld[1], renderOptions->transformEndTime);
     std::shared_ptr<Primitive> prim(
         std::make_shared<TransformedPrimitive>(in[0], animatedInstanceToWorld));
     renderOptions->primitives.push_back(prim);

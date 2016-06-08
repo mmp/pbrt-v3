@@ -352,7 +352,7 @@ inline int CountTrailingZeros(uint32_t v) {
 #endif
 }
 
-template<typename ... Args>
+template <typename... Args>
 std::string StringPrintf(const std::string &fmt, Args... args) {
     // Figure out how much space we need to allocate; add an extra
     // character for '\0'.
