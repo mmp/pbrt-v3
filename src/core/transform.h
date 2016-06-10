@@ -40,6 +40,7 @@
 
 // core/transform.h*
 #include "pbrt.h"
+#include "stringprint.h"
 #include "geometry.h"
 #include "quaternion.h"
 
@@ -92,10 +93,10 @@ struct Matrix4x4 {
 
     friend std::ostream &operator<<(std::ostream &os, const Matrix4x4 &m) {
         // clang-format off
-        os << StringPrintf("[ [ %.10f, %.10f, %.10f, %.10f ] "
-                           "[ %.10f, %.10f, %.10f, %.10f ] "
-                           "[ %.10f, %.10f, %.10f, %.10f ] "
-                           "[ %.10f, %.10f, %.10f, %.10f ] ]",
+        os << StringPrintf("[ [ %f, %f, %f, %f ] "
+                           "[ %f, %f, %f, %f ] "
+                           "[ %f, %f, %f, %f ] "
+                           "[ %f, %f, %f, %f ] ]",
                            m.m[0][0], m.m[0][1], m.m[0][2], m.m[0][3],
                            m.m[1][0], m.m[1][1], m.m[1][2], m.m[1][3],
                            m.m[2][0], m.m[2][1], m.m[2][2], m.m[2][3],

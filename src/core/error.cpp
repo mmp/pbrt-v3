@@ -32,6 +32,7 @@
 
 // core/error.cpp*
 #include "error.h"
+#include "stringprint.h"
 #include "progressreporter.h"
 
 // Error Reporting Includes

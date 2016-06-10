@@ -60,7 +60,6 @@
 #endif
 #include <assert.h>
 #include <string.h>
-#include <stdio.h>
 
 // Platform-specific definitions
 #include <stdint.h>
@@ -350,18 +349,6 @@ inline int CountTrailingZeros(uint32_t v) {
 #else
     return __builtin_ctz(v);
 #endif
-}
-
-template <typename... Args>
-std::string StringPrintf(const std::string &fmt, Args... args) {
-    // Figure out how much space we need to allocate; add an extra
-    // character for '\0'.
-    size_t size = snprintf(nullptr, 0, fmt.c_str(), args...) + 1;
-    std::string str;
-    str.resize(size);
-    snprintf(&str[0], size, fmt.c_str(), args...);
-    str.pop_back();  // remove trailing NUL
-    return str;
 }
 
 template <typename Predicate>

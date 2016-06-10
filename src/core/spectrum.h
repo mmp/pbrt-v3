@@ -40,6 +40,7 @@
 
 // core/spectrum.h*
 #include "pbrt.h"
+#include "stringprint.h"
 #include "parallel.h"
 
 // Spectrum Utility Declarations
@@ -222,7 +223,7 @@ class CoefficientSpectrum {
                                     const CoefficientSpectrum &s) {
         std::string str = "[ ";
         for (int i = 0; i < nSpectrumSamples; ++i) {
-            str += StringPrintf("%.10f", s.c[i]);
+            str += StringPrintf("%f", s.c[i]);
             if (i + 1 < nSpectrumSamples) str += ", ";
         }
         str += " ]";

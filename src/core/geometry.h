@@ -40,6 +40,7 @@
 
 // core/geometry.h*
 #include "pbrt.h"
+#include "stringprint.h"
 
 template <typename T>
 inline bool isNaN(const T x) {
@@ -154,7 +155,7 @@ inline std::ostream &operator<<(std::ostream &os, const Vector2<T> &v) {
 
 template <>
 inline std::ostream &operator<<(std::ostream &os, const Vector2<Float> &v) {
-    os << StringPrintf("[ %.10f, %.10f ]", v.x, v.y);
+    os << StringPrintf("[ %f, %f ]", v.x, v.y);
     return os;
 }
 
@@ -269,7 +270,7 @@ inline std::ostream &operator<<(std::ostream &os, const Vector3<T> &v) {
 
 template <>
 inline std::ostream &operator<<(std::ostream &os, const Vector3<Float> &v) {
-    os << StringPrintf("[ %.10f, %.10f, %.10f ]", v.x, v.y, v.z);
+    os << StringPrintf("[ %f, %f, %f ]", v.x, v.y, v.z);
     return os;
 }
 
@@ -406,7 +407,7 @@ inline std::ostream &operator<<(std::ostream &os, const Point2<T> &v) {
 
 template <>
 inline std::ostream &operator<<(std::ostream &os, const Point2<Float> &v) {
-    os << StringPrintf("[ %.10f, %.10f ]", v.x, v.y);
+    os << StringPrintf("[ %f, %f ]", v.x, v.y);
     return os;
 }
 
@@ -536,7 +537,7 @@ inline std::ostream &operator<<(std::ostream &os, const Point3<T> &v) {
 
 template <>
 inline std::ostream &operator<<(std::ostream &os, const Point3<Float> &v) {
-    os << StringPrintf("[ %.10f, %.10f, %.10f ]", v.x, v.y, v.z);
+    os << StringPrintf("[ %f, %f, %f ]", v.x, v.y, v.z);
     return os;
 }
 
@@ -661,7 +662,7 @@ inline std::ostream &operator<<(std::ostream &os, const Normal3<T> &v) {
 
 template <>
 inline std::ostream &operator<<(std::ostream &os, const Normal3<Float> &v) {
-    os << StringPrintf("[ %.10f, %.10f, %.10f ]", v.x, v.y, v.z);
+    os << StringPrintf("[ %f, %f, %f ]", v.x, v.y, v.z);
     return os;
 }
 

@@ -32,6 +32,7 @@
 
 // core/stats.cpp*
 #include "stats.h"
+#include "stringprint.h"
 #include <algorithm>
 #include <mutex>
 #include <cinttypes>

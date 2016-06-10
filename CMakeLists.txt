@@ -202,6 +202,7 @@ SET ( PBRT_CORE_HEADERS
   src/core/sobolmatrices.h
   src/core/spectrum.h
   src/core/stats.h
+  src/core/stringprint.h
   src/core/texture.h
   src/core/transform.h
   )

@@ -40,6 +40,7 @@
 
 // core/efloat.h*
 #include "pbrt.h"
+#include "stringprint.h"
 
 // EFloat Declarations
 class EFloat {
@@ -188,7 +189,7 @@ class EFloat {
     }
 
     friend std::ostream &operator<<(std::ostream &os, const EFloat &ef) {
-        os << StringPrintf("v=%.10f (%a) - [%.10f, %.10f]",
+        os << StringPrintf("v=%f (%a) - [%f, %f]",
                            ef.v, ef.v, ef.low, ef.high);
 #ifndef NDEBUG
         os << StringPrintf(", precise=%.30Lf", ef.vPrecise);
