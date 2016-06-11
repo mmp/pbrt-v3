@@ -52,10 +52,12 @@ template<typename ... Args>
 static std::string StringVaprintf(const std::string &fmt, va_list args) {
     // Figure out how much space we need to allocate; add an extra
     // character for '\0'.
+    va_list argsCopy;
+    va_copy(argsCopy, args);
     size_t size = vsnprintf(nullptr, 0, fmt.c_str(), args) + 1;
     std::string str;
     str.resize(size);
-    vsnprintf(&str[0], size, fmt.c_str(), args);
+    vsnprintf(&str[0], size, fmt.c_str(), argsCopy);
     str.pop_back();  // remove trailing NUL
     return str;
 }
