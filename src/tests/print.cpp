@@ -66,7 +66,7 @@ TEST(OperatorLeftShiftPrint, Basics) {
     {
         std::ostringstream os;
         Quaternion q;
-        q.v = {1.25, -8.3, 14.75};
+        q.v = Vector3f(1.25, -8.3, 14.75);
         q.w = -0.5;
         os << q;
         EXPECT_EQ(
