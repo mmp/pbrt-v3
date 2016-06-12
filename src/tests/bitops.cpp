@@ -1,7 +1,7 @@
 
+#include "tests/gtest/gtest.h"
 #include <stdint.h>
 #include "pbrt.h"
-#include "tests/gtest/gtest.h"
 
 TEST(Log2, Basics) {
     for (int i = 0; i < 32; ++i) {
