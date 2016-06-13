@@ -209,7 +209,7 @@ Float MISWeight(const Scene &scene, Vertex *lightVertices,
     if (s + t == 2) return 1;
     Float sumRi = 0;
     // Define helper function _remap0_ that deals with Dirac delta functions
-    auto remap0 = [](float f) -> float { return f != 0 ? f : 1; };
+    auto remap0 = [](Float f) -> Float { return f != 0 ? f : 1; };
 
     // Temporarily update vertex properties for current strategy
 
