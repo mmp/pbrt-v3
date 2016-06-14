@@ -243,7 +243,8 @@ struct Vertex {
     }
     bool IsInfiniteLight() const {
         return type == VertexType::Light &&
-               (!ei.light || ei.light->flags & (int)LightFlags::Infinite);
+               (!ei.light || ei.light->flags & (int)LightFlags::Infinite
+                          || ei.light->flags & (int)LightFlags::DeltaDirection);
     }
     Spectrum Le(const Scene &scene, const Vertex &v) const {
         if (!IsLight()) return Spectrum(0.f);
