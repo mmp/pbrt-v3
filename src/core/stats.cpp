@@ -212,8 +212,6 @@ static void ReportProfileSample(int, siginfo_t *, void *) {
 #endif  // !PBRT_IS_WINDOWS
 void ReportProfilerResults(FILE *dest) {
 #ifndef PBRT_IS_WINDOWS
-    fprintf(dest, "  Profile\n");
-
     uint64_t overallCount = 0;
     uint64_t eventCount[NumProfEvents] = {0};
     for (int i = 0; i < 1 << NumProfEvents; ++i) {
@@ -224,10 +222,12 @@ void ReportProfilerResults(FILE *dest) {
         }
     }
 
+    std::map<std::string, uint64_t> flatResults;
     std::map<std::string, uint64_t> hierarchicalResults;
     for (int i = 0; i < 1 << NumProfEvents; ++i) {
         uint64_t count = profileSamples[i].load();
         if (count == 0) continue;
+
         std::string s;
         for (int b = 0; b < NumProfEvents; ++b) {
             if (i & (1 << b)) {
@@ -241,7 +241,18 @@ void ReportProfilerResults(FILE *dest) {
         }
         if (s == "") s = "Startup and scene construction";
         hierarchicalResults[s] = count;
+
+        if (i == 0)
+            flatResults[s] += count;
+        else {
+            // We actually want 31 - count of leading zeros, but this does
+            // nicely.
+            int innerIndex = Log2Int(i);
+            flatResults[ProfNames[innerIndex]] += count;
+        }
     }
+
+    fprintf(dest, "  Profile\n");
     for (const auto &r : hierarchicalResults) {
         float pct = (100.f * r.second) / overallCount;
         int indent = 4;
@@ -251,6 +262,15 @@ void ReportProfilerResults(FILE *dest) {
         else
             indent += 2 * std::count(r.first.begin(), r.first.end(), '/');
         const char *toPrint = r.first.c_str() + slashIndex + 1;
+        fprintf(dest, "%*c%s%*c %5.2f %%\n", indent, ' ', toPrint,
+                std::max(0, int(67 - strlen(toPrint) - indent)), ' ', pct);
+    }
+
+    fprintf(dest, "  Profile (flattened)\n");
+    for (const auto &r : flatResults) {
+        float pct = (100.f * r.second) / overallCount;
+        int indent = 4;
+        const char *toPrint = r.first.c_str();
         fprintf(dest, "%*c%s%*c %5.2f %%\n", indent, ' ', toPrint,
                 std::max(0, int(67 - strlen(toPrint) - indent)), ' ', pct);
     }
