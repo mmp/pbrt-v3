@@ -14,6 +14,7 @@
 static void usage() {
     fprintf(stderr, "usage: hdrtoldr [options] <input.exr> <output.png>\n");
     fprintf(stderr, "Supported options:\n");
+    fprintf(stderr, "\t-flipy\n");
     fprintf(stderr, "\t-scale scale\n");
     fprintf(stderr, "\t-repeatpix [count]\n");
     exit(1);
@@ -23,6 +24,7 @@ int main(int argc, char *argv[]) {
     float scale = 1.f;
     int repeat = 1;
     float rp = 1;
+    bool flipy = false;
 
     int argNum = 1;
     while (argNum < argc && argv[argNum][0] == '-') {
@@ -32,7 +34,8 @@ int main(int argc, char *argv[]) {
         var = atof(argv[argNum + 1]);           \
         ++argNum;                               \
     }
-        if (false) {
+        if (!strcmp(argv[argNum], "-flipy")) {
+            flipy = true;
         }
         ARG("repeatpix", rp)
         ARG("scale", scale)
@@ -65,6 +68,14 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < res.x * res.y; ++i) image[i] *= scale;
+
+    if (flipy) {
+        for (int y = 0; y < res.y / 2; ++y) {
+            int yo = res.y - 1 - y;
+            for (int x = 0; x < res.x; ++x)
+                std::swap(image[y * res.x + x], image[yo * res.x + x]);
+        }
+    }
 
     WriteImage(outFile, (Float *)image.get(), Bounds2i(Point2i(0, 0), res),
                res);
