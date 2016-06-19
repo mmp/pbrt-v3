@@ -243,7 +243,8 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
 
 // API Macros
 #define VERIFY_INITIALIZED(func)                           \
-    if (currentApiState == APIState::Uninitialized) {      \
+    if (!(PbrtOptions.cat || PbrtOptions.toPly) &&           \
+        currentApiState == APIState::Uninitialized) {        \
         Error(                                             \
             "pbrtInit() must be before calling \"%s()\". " \
             "Ignoring.",                                   \
@@ -252,7 +253,8 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
     } else /* swallow trailing semicolon */
 #define VERIFY_OPTIONS(func)                             \
     VERIFY_INITIALIZED(func);                            \
-    if (currentApiState == APIState::WorldBlock) {       \
+    if (!(PbrtOptions.cat || PbrtOptions.toPly) &&       \
+        currentApiState == APIState::WorldBlock) {       \
         Error(                                           \
             "Options cannot be set inside world block; " \
             "\"%s\" not allowed.  Ignoring.",            \
@@ -261,7 +263,8 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
     } else /* swallow trailing semicolon */
 #define VERIFY_WORLD(func)                                   \
     VERIFY_INITIALIZED(func);                                \
-    if (currentApiState == APIState::OptionsBlock) {         \
+    if (!(PbrtOptions.cat || PbrtOptions.toPly) &&           \
+        currentApiState == APIState::OptionsBlock) {         \
         Error(                                               \
             "Scene description must be inside world block; " \
             "\"%s\" not allowed. Ignoring.",                 \
@@ -756,7 +759,7 @@ void pbrtTranslate(Float dx, Float dy, Float dz) {
     FOR_ACTIVE_TRANSFORMS(curTransform[i] = curTransform[i] *
                                             Translate(Vector3f(dx, dy, dz));)
     if (PbrtOptions.cat || PbrtOptions.toPly)
-        printf("%*sTranslate %.10f %.10f %.10f\n", catIndentCount, "", dx, dy,
+        printf("%*sTranslate %.9g %.9g %.9g\n", catIndentCount, "", dx, dy,
                dz);
 }
 
@@ -768,7 +771,7 @@ void pbrtTransform(Float tr[16]) {
             tr[6], tr[10], tr[14], tr[3], tr[7], tr[11], tr[15]));)
     if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sTransform [ ", catIndentCount, "");
-        for (int i = 0; i < 16; ++i) printf("%.10f ", tr[i]);
+        for (int i = 0; i < 16; ++i) printf("%.9g ", tr[i]);
         printf(" ]\n");
     }
 }
@@ -783,7 +786,7 @@ void pbrtConcatTransform(Float tr[16]) {
                                 tr[3], tr[7], tr[11], tr[15]));)
     if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sConcatTransform [ ", catIndentCount, "");
-        for (int i = 0; i < 16; ++i) printf("%.10f ", tr[i]);
+        for (int i = 0; i < 16; ++i) printf("%.9g ", tr[i]);
         printf(" ]\n");
     }
 }
@@ -794,7 +797,7 @@ void pbrtRotate(Float angle, Float dx, Float dy, Float dz) {
                               curTransform[i] *
                               Rotate(angle, Vector3f(dx, dy, dz));)
     if (PbrtOptions.cat || PbrtOptions.toPly)
-        printf("%*sRotate %.10f %.10f %.10f %.10f\n", catIndentCount, "", angle,
+        printf("%*sRotate %.9g %.9g %.9g %.9g\n", catIndentCount, "", angle,
                dx, dy, dz);
 }
 
@@ -803,7 +806,7 @@ void pbrtScale(Float sx, Float sy, Float sz) {
     FOR_ACTIVE_TRANSFORMS(curTransform[i] =
                               curTransform[i] * Scale(sx, sy, sz);)
     if (PbrtOptions.cat || PbrtOptions.toPly)
-        printf("%*sScale %.10f %.10f %.10f\n", catIndentCount, "", sx, sy, sz);
+        printf("%*sScale %.9g %.9g %.9g\n", catIndentCount, "", sx, sy, sz);
 }
 
 void pbrtLookAt(Float ex, Float ey, Float ez, Float lx, Float ly, Float lz,
@@ -814,8 +817,8 @@ void pbrtLookAt(Float ex, Float ey, Float ez, Float lx, Float ly, Float lz,
     FOR_ACTIVE_TRANSFORMS(curTransform[i] = curTransform[i] * lookAt;);
     if (PbrtOptions.cat || PbrtOptions.toPly)
         printf(
-            "%*sLookAt %.10f %.10f %.10f\n%*s%.10f %.10f %.10f\n"
-            "%*s%.10f %.10f %.10f\n",
+            "%*sLookAt %.9g %.9g %.9g\n%*s%.9g %.9g %.9g\n"
+            "%*s%.9g %.9g %.9g\n",
             catIndentCount, "", ex, ey, ez, catIndentCount + 8, "", lx, ly, lz,
             catIndentCount + 8, "", ux, uy, uz);
 }
@@ -862,7 +865,7 @@ void pbrtTransformTimes(Float start, Float end) {
     renderOptions->transformStartTime = start;
     renderOptions->transformEndTime = end;
     if (PbrtOptions.cat || PbrtOptions.toPly)
-        printf("%*sTransformTimes %.10f %.10f\n", catIndentCount, "", start,
+        printf("%*sTransformTimes %.9g %.9g\n", catIndentCount, "", start,
                end);
 }
 

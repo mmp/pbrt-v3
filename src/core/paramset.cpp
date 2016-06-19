@@ -651,7 +651,7 @@ static int print(Float f) {
     if ((int)f == f)
         return printf("%d ", (int)f);
     else
-        return printf("%.10f ", f);
+        return printf("%.9g ", f);
 }
 static int print(const Point2f &p) {
     int np = print(p.x);
