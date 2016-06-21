@@ -301,9 +301,15 @@ struct Vertex {
               const Vertex &next) const {
         if (type == VertexType::Light) return PdfLight(scene, next);
         // Compute directions to preceding and next vertex
-        Vector3f wp, wn = Normalize(next.p() - p());
-        if (prev)
-            wp = Normalize(prev->p() - p());
+        Vector3f wn = next.p() - p();
+        if (wn.LengthSquared() == 0) return 0;
+        wn = Normalize(wn);
+        Vector3f wp;
+        if (prev) {
+            wp = prev->p() - p();
+            if (wp.LengthSquared() == 0) return 0;
+            wp = Normalize(wp);
+        }
         else
             Assert(type == VertexType::Camera);
 
