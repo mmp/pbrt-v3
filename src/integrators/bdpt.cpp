@@ -53,9 +53,15 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
 // BDPT Utility Functions
 Float CorrectShadingNormal(const SurfaceInteraction &isect, const Vector3f &wo,
                            const Vector3f &wi, TransportMode mode) {
-    if (mode == TransportMode::Importance)
-        return (AbsDot(wo, isect.shading.n) * AbsDot(wi, isect.n)) /
-               (AbsDot(wo, isect.n) * AbsDot(wi, isect.shading.n));
+    if (mode == TransportMode::Importance) {
+        Float num = AbsDot(wo, isect.shading.n) * AbsDot(wi, isect.n);
+        Float denom = AbsDot(wo, isect.n) * AbsDot(wi, isect.shading.n);
+        if (denom == 0) {
+            Assert(num == 0);
+            return 0;
+        }
+        return num / denom;
+    }
     else
         return 1;
 }
@@ -408,6 +414,7 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
         // Interpret the camera subpath as a complete path
         const Vertex &pt = cameraVertices[t - 1];
         if (pt.IsLight()) L = pt.Le(scene, cameraVertices[t - 2]) * pt.beta;
+        Assert(!L.HasNaNs());
     } else if (t == 1) {
         // Sample a point on the camera and connect it to the light subpath
         const Vertex &qs = lightVertices[s - 1];
@@ -466,6 +473,7 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
     Float misWeight =
         L.IsBlack() ? 0.f : MISWeight(scene, lightVertices, cameraVertices,
                                       sampled, s, t, lightDistr);
+    Assert(!std::isnan(misWeight));
     L *= misWeight;
     if (misWeightPtr) *misWeightPtr = misWeight;
     return L;
