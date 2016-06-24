@@ -427,9 +427,12 @@ Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
             if (pdf > 0 && !Wi.IsBlack()) {
                 // Initialize dynamically sampled vertex and _L_ for $t=1$ case
                 sampled = Vertex::CreateCamera(&camera, vis.P1(), Wi / pdf);
-                L = qs.beta * qs.f(sampled) * vis.Tr(scene, sampler) *
-                    sampled.beta;
+                L = qs.beta * qs.f(sampled) * sampled.beta;
                 if (qs.IsOnSurface()) L *= AbsDot(wi, qs.ns());
+                Assert(!L.HasNaNs());
+                // Only check visibility after we know that the path would
+                // make a non-zero contribution.
+                if (!L.IsBlack()) L *= vis.Tr(scene, sampler);
             }
         }
     } else if (s == 1) {
