@@ -206,7 +206,9 @@ struct Vertex {
     }
     bool IsOnSurface() const { return ng() != Normal3f(); }
     Spectrum f(const Vertex &next) const {
-        Vector3f wi = Normalize(next.p() - p());
+        Vector3f wi = next.p() - p();
+        if (wi.LengthSquared() == 0) return 0.;
+        wi = Normalize(wi);
         switch (type) {
         case VertexType::Surface:
             return si.bsdf->f(si.wo, wi);
@@ -248,7 +250,9 @@ struct Vertex {
     }
     Spectrum Le(const Scene &scene, const Vertex &v) const {
         if (!IsLight()) return Spectrum(0.f);
-        Vector3f w = Normalize(v.p() - p());
+        Vector3f w = v.p() - p();
+        if (w.LengthSquared() == 0) return 0.;
+        w = Normalize(w);
         if (IsInfiniteLight()) {
             // Return emitted radiance for infinite light sources
             Spectrum Le(0.f);
@@ -356,7 +360,9 @@ struct Vertex {
     }
     Float PdfLightOrigin(const Scene &scene, const Vertex &v,
                          const Distribution1D &lightDistr) const {
-        Vector3f w = Normalize(v.p() - p());
+        Vector3f w = v.p() - p();
+        if (w.LengthSquared() == 0) return 0.;
+        w = Normalize(w);
         if (IsInfiniteLight()) {
             // Return solid angle density for infinite light sources
             return InfiniteLightDensity(scene, lightDistr, w);
