@@ -229,33 +229,6 @@ Spectrum FresnelBlend::f(const Vector3f &wo, const Vector3f &wi) const {
     return diffuse + specular;
 }
 
-Spectrum KajiyaKay::f(const Vector3f &wo, const Vector3f &wi) const {
-    Spectrum diffuse(0.f), specular(0.f);
-    if (!Ks.IsBlack()) {
-        // Compute specular Kajiya-Kay term
-        Vector3f wh = wi + wo;
-        if (!(wh.x == 0 && wh.y == 0 && wh.z == 0)) {
-            wh = Normalize(wh);
-#if 0
-            Float cosThetaH = Dot(wo, wh);
-            Float sinThetaH = std::sqrt(std::max((Float)0, (Float)1 - cosThetaH * cosThetaH));
-            Float cosThetaO = CosTheta(wo), sinThetaO = SinTheta(wo);
-            Float spec = std::pow(cosThetao * cosThetah + sinThetaO * sinThetaH,
-                                  exponent);
-#else
-            Float tdoth = wh.x;
-            Float spec = std::pow(
-                std::sqrt(std::max((Float)0, (Float)1 - tdoth * tdoth)),
-                exponent);
-#endif
-            specular = spec * Ks;
-        }
-    }
-    // Compute diffuse Kajiya-Kay term
-    diffuse = Kd * std::sqrt(std::max((Float)0., (Float)1. - wi.x * wi.x));
-    return (InvPi / AbsCosTheta(wi)) * (diffuse + specular);
-}
-
 Spectrum FourierBSDF::f(const Vector3f &wo, const Vector3f &wi) const {
     // Find the zenith angle cosines and azimuth difference angle
     Float muI = CosTheta(-wi), muO = CosTheta(wo);

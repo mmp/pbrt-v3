@@ -465,25 +465,6 @@ class FresnelBlend : public BxDF {
     MicrofacetDistribution *distribution;
 };
 
-class KajiyaKay : public BxDF {
-  public:
-    // KajiyaKay Public Methods
-    KajiyaKay(const Spectrum &kd, const Spectrum &ks, Float roughness)
-        : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE | BSDF_GLOSSY)),
-          Kd(kd),
-          Ks(ks) {
-        Float e = (Float)1. / roughness;
-        if (e > 10000.f || std::isnan(e)) e = 10000.f;
-        exponent = e;
-    }
-    Spectrum f(const Vector3f &wo, const Vector3f &wi) const;
-
-  private:
-    // KajiyaKay Private Data
-    Spectrum Kd, Ks;
-    Float exponent;
-};
-
 class FourierBSDF : public BxDF {
   public:
     // FourierBSDF Public Methods
