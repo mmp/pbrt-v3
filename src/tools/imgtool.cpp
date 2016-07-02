@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <ctype.h>
 #include "pbrt.h"
 #include "spectrum.h"
 #include "imageio.h"
@@ -54,7 +55,7 @@ int diff(int argc, char *argv[]) {
         } else if (!strcmp(argv[i], "-d")) {
             if (i + 1 == argc) usage("missing filename after -d option");
             ++i;
-            if (!isnumber(argv[i][0]) && argv[i][0] != '.')
+            if (!isdigit(argv[i][0]) && argv[i][0] != '.')
                 usage("argument after -d doesn't look like a number");
             tol = atof(argv[i]);
         } else
@@ -298,7 +299,7 @@ int convert(int argc, char *argv[]) {
     auto parseFloat = [&](const char *flag) -> Float {
         if (i + 1 == argc) usage("missing value after %s flag", flag);
         ++i;
-        if (!isnumber(argv[i][0]) && argv[i][0] != '.')
+        if (!isdigit(argv[i][0]) && argv[i][0] != '.')
             usage("non-numeric value found after %s", flag);
         Float value = atof(argv[i]);
         if (value == 0) usage("zero value for %s is invalid", flag);
@@ -307,7 +308,7 @@ int convert(int argc, char *argv[]) {
     auto parseInt = [&](const char *flag) -> int {
         if (i + 1 == argc) usage("missing value after %s flag", flag);
         ++i;
-        if (!isnumber(argv[i][0]))
+        if (!isdigit(argv[i][0]))
             usage("non-numeric value found after %s", flag);
         int value = atof(argv[i]);
         if (value == 0) usage("zero value for %s is invalid", flag);
