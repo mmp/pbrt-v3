@@ -262,16 +262,8 @@ ADD_EXECUTABLE ( bsdftest
   src/tools/bsdftest.cpp
   )
 
-ADD_EXECUTABLE ( exrdiff
-  src/tools/exrdiff.cpp
-  )
-
-ADD_EXECUTABLE ( exravg
-  src/tools/exravg.cpp
-  )
-
-ADD_EXECUTABLE ( hdrtoldr
-  src/tools/hdrtoldr.cpp
+ADD_EXECUTABLE ( imgtool
+  src/tools/imgtool.cpp
   )
 
 ADD_EXECUTABLE ( obj2pbrt
@@ -284,19 +276,7 @@ TARGET_LINK_LIBRARIES ( bsdftest
   ${OPENEXR_LIBS}
   )
 
-TARGET_LINK_LIBRARIES ( exrdiff
-  pbrt
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${OPENEXR_LIBS}
-  )
-
-TARGET_LINK_LIBRARIES ( exravg
-  pbrt
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${OPENEXR_LIBS}
-  )
-
-TARGET_LINK_LIBRARIES ( hdrtoldr
+TARGET_LINK_LIBRARIES ( imgtool
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
@@ -333,8 +313,7 @@ ADD_TEST ( pbrt_unit_test
 INSTALL ( TARGETS
   pbrt_exe
   bsdftest
-  exrdiff
-  hdrtoldr
+  imgtool
   obj2pbrt
   DESTINATION
   bin
