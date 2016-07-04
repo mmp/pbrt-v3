@@ -20,24 +20,26 @@ static void usage(const char *msg = nullptr, ...) {
         vfprintf(stderr, msg, args);
         fprintf(stderr, "\n");
     }
-    fprintf(stderr, "usage: imgtool <command> [options] <filenames...>\n");
-    fprintf(stderr, "imgtool commands: convert, diff, info\n");
-    fprintf(
-        stderr,
-        "\toptions for convert: -flipy, -scale scale, -repeatpix [count]\n");
-    fprintf(stderr,
-            "\t    -tonemap, -maxluminance [luminance value mapped to white by "
-            "tonemap]\n");
-    fprintf(stderr,
-            "\t    -bloomlevel [minimum RGB value for pixel for bloom]\n");
-    fprintf(stderr, "\t    -bloomscale [bloom image scale]\n");
-    fprintf(stderr,
-            "\t    -bloomswidth [width of Gaussian used to generate bloom "
-            "images]\n");
-    fprintf(
-        stderr,
-        "\t    -bloomiters [filtering iterations to generate bloom images]\n");
-    fprintf(stderr, "\toptions for diff: -o [outfile], -d [tolerance %%]\n");
+    fprintf(stderr, R"(usage: imgtool <command> [options] <filenames...>
+
+commands: convert, diff, info
+
+convert options:
+    --flipy
+    --scale scale
+    --repeatpix [count]
+    --tonemap
+    --maxluminance [luminance value mapped to white by tonemap]
+    --bloomlevel [minimum RGB value for pixel for bloom]
+    --bloomscale [bloom image scale]
+    --bloomswidth [width of Gaussian used to generate bloom images]
+    --bloomiters [filtering iterations to generate bloom images]
+
+diff options:
+    --outfile [outfile]
+    --difftol [tolerance %%]
+
+)");
     exit(1);
 }
 
@@ -48,23 +50,28 @@ int diff(int argc, char *argv[]) {
     int i;
     for (i = 0; i < argc; ++i) {
         if (argv[i][0] != '-') break;
-        if (!strcmp(argv[i], "-o")) {
-            if (i + 1 == argc) usage("missing filename after -o option");
+        if (!strcmp(argv[i], "--outfile") || !strcmp(argv[i], "-o")) {
+            if (i + 1 == argc)
+                usage("missing filename after %s option", argv[i]);
             outfile = argv[++i];
-        } else if (!strcmp(argv[i], "-d")) {
-            if (i + 1 == argc) usage("missing filename after -d option");
+        } else if (!strcmp(argv[i], "--difftol") || !strcmp(argv[i], "-d")) {
+            if (i + 1 == argc)
+                usage("missing filename after %s option", argv[i]);
             ++i;
             if (!isnumber(argv[i][0]) && argv[i][0] != '.')
-                usage("argument after -d doesn't look like a number");
+                usage("argument after %s doesn't look like a number",
+                      argv[i - 1]);
             tol = atof(argv[i]);
         } else
             usage("unknown \"diff\" option");
     }
 
-    if (i + 1 >= argc)
-        usage("missing second filename for \"diff\"");
-    else if (i >= argc)
+    if (i >= argc)
         usage("missing filenames for \"diff\"");
+    else if (i + 1 >= argc)
+        usage("missing second filename for \"diff\"");
+    else if (i + 2 < argc)
+        usage("excess filenames provided to \"diff\"");
 
     const char *filename[2] = {argv[i], argv[i + 1]};
     Point2i res[2];
@@ -399,7 +406,7 @@ int convert(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) usage();
+    if (argc < 2) usage();
 
     if (!strcmp(argv[1], "diff"))
         return diff(argc - 2, argv + 2);
