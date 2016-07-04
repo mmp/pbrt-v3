@@ -50,6 +50,7 @@ void PrintTo(const TestIntegrator &tr, ::std::ostream *os) {
 void CheckSceneAverage(const char *filename, float expected) {
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> image = ReadImage(filename, &resolution);
+    ASSERT_TRUE(image.get() != nullptr);
 
     float delta = .02;
     float sum = 0;
