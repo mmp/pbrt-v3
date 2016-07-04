@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <stdarg.h>
+#include <algorithm>
 #include "pbrt.h"
 #include "spectrum.h"
 #include "imageio.h"
@@ -22,7 +22,10 @@ static void usage(const char *msg = nullptr, ...) {
     }
     fprintf(stderr, R"(usage: imgtool <command> [options] <filenames...>
 
-commands: convert, diff, info
+commands: cat, convert, diff, info
+
+cat options:
+    --sort
 
 convert options:
     --flipy
@@ -41,6 +44,53 @@ diff options:
 
 )");
     exit(1);
+}
+
+int cat(int argc, char *argv[]) {
+    if (argc == 0) usage("no filenames provided to \"cat\"?");
+    bool sort = false;
+
+    for (int i = 0; i < argc; ++i) {
+        if (!strcmp(argv[i], "--sort")) {
+            sort = !sort;
+            continue;
+        }
+
+        Point2i res;
+        std::unique_ptr<RGBSpectrum[]> img = ReadImage(argv[i], &res);
+        if (!img) continue;
+        if (sort) {
+            std::vector<std::pair<int, RGBSpectrum>> sorted;
+            sorted.reserve(res.x * res.y);
+            for (int y = 0; y < res.y; ++y) {
+                for (int x = 0; x < res.x; ++x) {
+                    int offset = y * res.x + x;
+                    sorted.push_back({offset, img[offset]});
+                }
+            }
+            std::sort(sorted.begin(), sorted.end(),
+                      [](const std::pair<int, RGBSpectrum> &a,
+                         const std::pair<int, RGBSpectrum> &b) {
+                          return a.second.y() < b.second.y();
+                      });
+            for (const auto &v : sorted) {
+                Float rgb[3];
+                v.second.ToRGB(rgb);
+                printf("(%d, %d): (%.9g %.9g %.9g)\n", v.first / res.x,
+                       v.first % res.x, rgb[0], rgb[1], rgb[2]);
+            }
+        } else {
+            for (int y = 0; y < res.y; ++y) {
+                for (int x = 0; x < res.x; ++x) {
+                    Float rgb[3];
+                    img[y * res.x + x].ToRGB(rgb);
+                    printf("(%d, %d): (%.9g %.9g %.9g)\n", x, y, rgb[0], rgb[1],
+                           rgb[2]);
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 int diff(int argc, char *argv[]) {
@@ -414,6 +464,8 @@ int main(int argc, char *argv[]) {
         return info(argc - 2, argv + 2);
     else if (!strcmp(argv[1], "convert"))
         return convert(argc - 2, argv + 2);
+    else if (!strcmp(argv[1], "cat"))
+        return cat(argc - 2, argv + 2);
     else
         usage("unknown command \"%s\"", argv[1]);
 
