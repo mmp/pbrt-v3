@@ -103,13 +103,28 @@ Spectrum ScaledBxDF::Sample_f(const Vector3f &wo, Vector3f *wi,
     return scale * f;
 }
 
+std::string ScaledBxDF::ToString() const {
+    return std::string("[ ScaledBxDF bxdf: ") + bxdf->ToString() +
+           std::string(" scale: ") + scale.ToString() + std::string(" ]");
+}
+
 Fresnel::~Fresnel() {}
 Spectrum FresnelConductor::Evaluate(Float cosThetaI) const {
     return FrConductor(std::abs(cosThetaI), etaI, etaT, k);
 }
 
+std::string FresnelConductor::ToString() const {
+    return std::string("[ FresnelConductor etaI: ") + etaI.ToString() +
+           std::string(" etaT: ") + etaT.ToString() + std::string(" k: ") +
+           k.ToString() + std::string(" ]");
+}
+
 Spectrum FresnelDielectric::Evaluate(Float cosThetaI) const {
     return FrDielectric(cosThetaI, etaI, etaT);
+}
+
+std::string FresnelDielectric::ToString() const {
+    return StringPrintf("[ FrenselDielectric etaI: %f etaT: %f ]", etaI, etaT);
 }
 
 Spectrum SpecularReflection::Sample_f(const Vector3f &wo, Vector3f *wi,
@@ -119,6 +134,11 @@ Spectrum SpecularReflection::Sample_f(const Vector3f &wo, Vector3f *wi,
     *wi = Vector3f(-wo.x, -wo.y, wo.z);
     *pdf = 1;
     return fresnel->Evaluate(CosTheta(*wi)) * R / AbsCosTheta(*wi);
+}
+
+std::string SpecularReflection::ToString() const {
+    return std::string("[ SpecularReflection R: ") + R.ToString() +
+           std::string(" fresnel: ") + fresnel->ToString() + std::string(" ]");
 }
 
 Spectrum SpecularTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
@@ -139,13 +159,33 @@ Spectrum SpecularTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
     return ft / AbsCosTheta(*wi);
 }
 
+std::string SpecularTransmission::ToString() const {
+    return std::string("[ SpecularTransmission: T: ") + T.ToString() +
+           StringPrintf(" etaA: %f etaB: %f ", etaA, etaB) +
+           std::string(" fresnel: ") + fresnel.ToString() +
+           std::string(" mode : ") +
+           (mode == TransportMode::Radiance ? std::string("RADIANCE")
+                                            : std::string("IMPORTANCE")) +
+           std::string(" ]");
+}
+
 Spectrum LambertianReflection::f(const Vector3f &wo, const Vector3f &wi) const {
     return R * InvPi;
+}
+
+std::string LambertianReflection::ToString() const {
+    return std::string("[ LambertianReflection R: ") + R.ToString() +
+           std::string(" ]");
 }
 
 Spectrum LambertianTransmission::f(const Vector3f &wo,
                                    const Vector3f &wi) const {
     return T * InvPi;
+}
+
+std::string LambertianTransmission::ToString() const {
+    return std::string("[ LambertianTransmission T: ") + T.ToString() +
+           std::string(" ]");
 }
 
 Spectrum OrenNayar::f(const Vector3f &wo, const Vector3f &wi) const {
@@ -172,6 +212,11 @@ Spectrum OrenNayar::f(const Vector3f &wo, const Vector3f &wi) const {
     return R * InvPi * (A + B * maxCos * sinAlpha * tanBeta);
 }
 
+std::string OrenNayar::ToString() const {
+    return std::string("[ OrenNayar R: ") + R.ToString() +
+           StringPrintf(" A: %f B: %f ]", A, B);
+}
+
 Spectrum MicrofacetReflection::f(const Vector3f &wo, const Vector3f &wi) const {
     Float cosThetaO = AbsCosTheta(wo), cosThetaI = AbsCosTheta(wi);
     Vector3f wh = wi + wo;
@@ -182,6 +227,12 @@ Spectrum MicrofacetReflection::f(const Vector3f &wo, const Vector3f &wi) const {
     Spectrum F = fresnel->Evaluate(Dot(wi, wh));
     return R * distribution->D(wh) * distribution->G(wo, wi) * F /
            (4 * cosThetaI * cosThetaO);
+}
+
+std::string MicrofacetReflection::ToString() const {
+    return std::string("[ MicrofacetReflection R: ") + R.ToString() +
+           std::string(" distribution: ") + distribution->ToString() +
+           std::string(" fresnel: ") + fresnel->ToString() + std::string(" ]");
 }
 
 Spectrum MicrofacetTransmission::f(const Vector3f &wo,
@@ -208,6 +259,17 @@ Spectrum MicrofacetTransmission::f(const Vector3f &wo,
                     (cosThetaI * cosThetaO * sqrtDenom * sqrtDenom));
 }
 
+std::string MicrofacetTransmission::ToString() const {
+    return std::string("[ MicrofacetTransmission T: ") + T.ToString() +
+           std::string(" distribution: ") + distribution->ToString() +
+           StringPrintf(" etaA: %f etaB: %f", etaA, etaB) +
+           std::string(" fresnel: ") + fresnel.ToString() +
+           std::string(" mode : ") +
+           (mode == TransportMode::Radiance ? std::string("RADIANCE")
+                                            : std::string("IMPORTANCE")) +
+           std::string(" ]");
+}
+
 FresnelBlend::FresnelBlend(const Spectrum &Rd, const Spectrum &Rs,
                            MicrofacetDistribution *distribution)
     : BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
@@ -227,6 +289,13 @@ Spectrum FresnelBlend::f(const Vector3f &wo, const Vector3f &wi) const {
         (4 * AbsDot(wi, wh) * std::max(AbsCosTheta(wi), AbsCosTheta(wo))) *
         SchlickFresnel(Dot(wi, wh));
     return diffuse + specular;
+}
+
+std::string FresnelBlend::ToString() const {
+    return std::string("[ FresnelBlend Rd: ") + Rd.ToString() +
+           std::string(" Rs: ") + Rs.ToString() +
+           std::string(" distribution: ") + distribution->ToString() +
+           std::string(" ]");
 }
 
 Spectrum FourierBSDF::f(const Vector3f &wo, const Vector3f &wi) const {
@@ -283,6 +352,16 @@ Spectrum FourierBSDF::f(const Vector3f &wo, const Vector3f &wi) const {
         Float rgb[3] = {R * scale, G * scale, B * scale};
         return Spectrum::FromRGB(rgb).Clamp();
     }
+}
+
+std::string FourierBSDF::ToString() const {
+    return StringPrintf("[ FourierBSDF eta: %f mMax: %d nChannels: %d nMu: %d ",
+                        bsdfTable.eta, bsdfTable.mMax, bsdfTable.nChannels,
+                        bsdfTable.nMu) +
+           std::string(" mode : ") +
+           (mode == TransportMode::Radiance ? std::string("RADIANCE")
+                                            : std::string("IMPORTANCE")) +
+           std::string(" ]");
 }
 
 bool FourierBSDFTable::GetWeightsAndOffset(Float cosTheta, int *offset,
@@ -423,6 +502,17 @@ Spectrum FresnelSpecular::Sample_f(const Vector3f &wo, Vector3f *wi,
         *pdf = 1 - F;
         return ft / AbsCosTheta(*wi);
     }
+}
+
+std::string FresnelSpecular::ToString() const {
+    return std::string("[ FresnelSpecular R: ") + R.ToString() +
+           std::string(" T: ") + T.ToString() +
+           StringPrintf(" etaA: %f etaB: %f ", etaA, etaB) +
+           std::string(" fresnel: ") + fresnel.ToString() +
+           std::string(" mode : ") +
+           (mode == TransportMode::Radiance ? std::string("RADIANCE")
+                                            : std::string("IMPORTANCE")) +
+           std::string(" ]");
 }
 
 Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
@@ -668,4 +758,11 @@ Float BSDF::Pdf(const Vector3f &woWorld, const Vector3f &wiWorld,
         }
     Float v = matchingComps > 0 ? pdf / matchingComps : 0.f;
     return v;
+}
+
+std::string BSDF::ToString() const {
+    std::string s = StringPrintf("[ BSDF eta: %f nBxDFs: %d", eta, nBxDFs);
+    for (int i = 0; i < nBxDFs; ++i)
+        s += StringPrintf(" bxdfs[%d]: ", i) + bxdfs[i]->ToString();
+    return s + std::string(" ]");
 }

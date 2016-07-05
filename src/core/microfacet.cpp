@@ -30,7 +30,6 @@
 
  */
 
-
 // core/microfacet.cpp*
 #include "microfacet.h"
 #include "reflection.h"
@@ -140,7 +139,7 @@ static Vector3f BeckmannSample(const Vector3f &wi, Float alpha_x, Float alpha_y,
 }
 
 // MicrofacetDistribution Method Definitions
-MicrofacetDistribution::~MicrofacetDistribution() { }
+MicrofacetDistribution::~MicrofacetDistribution() {}
 
 Float BeckmannDistribution::D(const Vector3f &wh) const {
     Float tan2Theta = Tan2Theta(wh);
@@ -180,6 +179,16 @@ Float TrowbridgeReitzDistribution::Lambda(const Vector3f &w) const {
         std::sqrt(Cos2Phi(w) * alphax * alphax + Sin2Phi(w) * alphay * alphay);
     Float alpha2Tan2Theta = (alpha * absTanTheta) * (alpha * absTanTheta);
     return (-1 + std::sqrt(1.f + alpha2Tan2Theta)) / 2;
+}
+
+std::string BeckmannDistribution::ToString() const {
+    return StringPrintf("[ BeckmannDistribution alphax: %f alphay: %f ]",
+                        alphax, alphay);
+}
+
+std::string TrowbridgeReitzDistribution::ToString() const {
+    return StringPrintf("[ TrowbridgeReitzDistribution alphax: %f alphay: %f ]",
+                        alphax, alphay);
 }
 
 Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,
