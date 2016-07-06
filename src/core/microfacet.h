@@ -69,6 +69,12 @@ class MicrofacetDistribution {
     const bool sampleVisibleArea;
 };
 
+inline std::ostream &operator<<(std::ostream &os,
+                                const MicrofacetDistribution &md) {
+    os << md.ToString();
+    return os;
+}
+
 class BeckmannDistribution : public MicrofacetDistribution {
   public:
     // BeckmannDistribution Public Methods

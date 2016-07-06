@@ -763,6 +763,6 @@ Float BSDF::Pdf(const Vector3f &woWorld, const Vector3f &wiWorld,
 std::string BSDF::ToString() const {
     std::string s = StringPrintf("[ BSDF eta: %f nBxDFs: %d", eta, nBxDFs);
     for (int i = 0; i < nBxDFs; ++i)
-        s += StringPrintf(" bxdfs[%d]: ", i) + bxdfs[i]->ToString();
+        s += StringPrintf("\n  bxdfs[%d]: ", i) + bxdfs[i]->ToString();
     return s + std::string(" ]");
 }

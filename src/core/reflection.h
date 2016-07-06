@@ -199,6 +199,11 @@ class BSDF {
     friend class MixMaterial;
 };
 
+inline std::ostream &operator<<(std::ostream &os, const BSDF &bsdf) {
+    os << bsdf.ToString();
+    return os;
+}
+
 // BxDF Declarations
 class BxDF {
   public:
@@ -220,6 +225,11 @@ class BxDF {
     // BxDF Public Data
     const BxDFType type;
 };
+
+inline std::ostream &operator<<(std::ostream &os, const BxDF &bxdf) {
+    os << bxdf.ToString();
+    return os;
+}
 
 class ScaledBxDF : public BxDF {
   public:
@@ -251,6 +261,11 @@ class Fresnel {
     virtual Spectrum Evaluate(Float cosI) const = 0;
     virtual std::string ToString() const = 0;
 };
+
+inline std::ostream &operator<<(std::ostream &os, const Fresnel &f) {
+    os << f.ToString();
+    return os;
+}
 
 class FresnelConductor : public Fresnel {
   public:
