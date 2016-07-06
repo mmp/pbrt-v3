@@ -62,6 +62,7 @@ class Sampler {
     virtual bool StartNextSample();
     virtual std::unique_ptr<Sampler> Clone(int seed) = 0;
     virtual bool SetSampleNumber(int64_t sampleNum);
+    int64_t CurrentSampleNumber() const { return currentPixelSampleIndex; }
 
     // Sampler Public Data
     const int64_t samplesPerPixel;

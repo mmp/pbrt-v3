@@ -119,11 +119,22 @@ void Film::SetImage(const Spectrum *img) const {
 }
 
 void Film::AddSplat(const Point2f &p, const Spectrum &v) {
+    ProfilePhase pp(Prof::SplatFilm);
+
     if (v.HasNaNs()) {
-        Warning("Film ignoring splatted spectrum with NaN values");
+        Error("Ignoring splatted spectrum with NaN values at (%f, %f)",
+              p.x, p.y);
+        return;
+    } else if (v.y() < 0.) {
+        Error("Ignoring splatted spectrum with negative luminance %f at (%f, %f)",
+              v.y(), p.x, p.y);
+        return;
+    } else if (std::isinf(v.y())) {
+        Error("Ignoring splatted spectrum with infinite luminance at (%f, %f)",
+              p.x, p.y);
         return;
     }
-    ProfilePhase pp(Prof::SplatFilm);
+
     if (!InsideExclusive((Point2i)p, croppedPixelBounds)) return;
     Float xyz[3];
     v.ToXYZ(xyz);
