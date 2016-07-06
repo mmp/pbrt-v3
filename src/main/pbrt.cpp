@@ -59,10 +59,20 @@ int main(int argc, char *argv[]) {
             options.toPly = true;
         else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-help") ||
                  !strcmp(argv[i], "-h")) {
-            printf(
-                "usage: pbrt [--nthreads n] [--outfile filename] [--quick] "
-                "[--quiet] [--cat] [--toply] [--verbose] [--help] "
-                "<filename.pbrt...>\n");
+            printf(R"(usage: pbrt [<options>] <filename.pbrt...>
+  --cat                Print a reformatted version of the input file(s) to
+                       standard output. Does not render an image.
+  --help               Print this help text.
+  --nthreads <num>     Use specified number of threads for rendering.
+  --outfile <filename> Write the final image to the given filename.
+  --quick              Automatically reduce a number of quality settings to
+                       render more quickly.
+  --quiet              Suppress all text output other than error messages.
+  --toply              Print a reformatted version of the input file(s) to
+                       standard output and convert all triangle meshes to
+                       PLY files. Does not render an image.
+  --verbose            Print out more detailed logging information.
+)");
             return 0;
         } else
             filenames.push_back(argv[i]);
