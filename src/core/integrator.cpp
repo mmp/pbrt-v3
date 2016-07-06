@@ -244,6 +244,14 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ProfilePhase pp(Prof::StartPixel);
                     tileSampler->StartPixel(pixel);
                 }
+
+                // Do this check after the StartPixel() call; this keeps
+                // the usage of RNG values from (most) Samplers that use
+                // RNGs consistent, which improves reproducability /
+                // debugging.
+                if (!InsideExclusive(pixel, pixelBounds))
+                    continue;
+
                 do {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
