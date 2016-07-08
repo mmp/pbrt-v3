@@ -37,29 +37,11 @@
 #include "parser.h"
 #include "parallel.h"
 
-// main program
-int main(int argc, char *argv[]) {
-    Options options;
-    std::vector<std::string> filenames;
-    // Process command-line arguments
-    for (int i = 1; i < argc; ++i) {
-        if (!strcmp(argv[i], "--nthreads"))
-            options.nThreads = atoi(argv[++i]);
-        else if (!strcmp(argv[i], "--outfile"))
-            options.imageFile = argv[++i];
-        else if (!strcmp(argv[i], "--quick"))
-            options.quickRender = true;
-        else if (!strcmp(argv[i], "--quiet"))
-            options.quiet = true;
-        else if (!strcmp(argv[i], "--verbose"))
-            options.verbose = true;
-        else if (!strcmp(argv[i], "--cat"))
-            options.cat = true;
-        else if (!strcmp(argv[i], "--toply"))
-            options.toPly = true;
-        else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-help") ||
-                 !strcmp(argv[i], "-h")) {
-            printf(R"(usage: pbrt [<options>] <filename.pbrt...>
+static void usage(const char *msg = nullptr) {
+    if (msg)
+        fprintf(stderr, "pbrt: %s\n\n", msg);
+
+    fprintf(stderr, R"(usage: pbrt [<options>] <filename.pbrt...>
   --cat                Print a reformatted version of the input file(s) to
                        standard output. Does not render an image.
   --help               Print this help text.
@@ -73,7 +55,40 @@ int main(int argc, char *argv[]) {
                        PLY files. Does not render an image.
   --verbose            Print out more detailed logging information.
 )");
-            return 0;
+    exit(1);
+}
+
+// main program
+int main(int argc, char *argv[]) {
+    Options options;
+    std::vector<std::string> filenames;
+    // Process command-line arguments
+    for (int i = 1; i < argc; ++i) {
+        if (!strcmp(argv[i], "--nthreads") || !strcmp(argv[i], "-nthreads")) {
+            if (i + 1 == argc)
+                usage("missing value after --nthreads argument");
+            options.nThreads = atoi(argv[++i]);
+        } else if (!strncmp(argv[i], "--nthreads=", 11)) {
+            options.nThreads = atoi(&argv[i][11]);
+        } else if (!strcmp(argv[i], "--outfile") || !strcmp(argv[i], "-outfile")) {
+            if (i + 1 == argc)
+                usage("missing value after --outfile argument");
+            options.imageFile = argv[++i];
+        } else if (!strncmp(argv[i], "--outfile=", 10)) {
+            options.imageFile = &argv[i][10];
+        } else if (!strcmp(argv[i], "--quick") || !strcmp(argv[i], "-quick")) {
+            options.quickRender = true;
+        } else if (!strcmp(argv[i], "--quiet") || !strcmp(argv[i], "-quiet")) {
+            options.quiet = true;
+        } else if (!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-verbose")) {
+            options.verbose = true;
+        } else if (!strcmp(argv[i], "--cat") || !strcmp(argv[i], "-cat")) {
+            options.cat = true;
+        } else if (!strcmp(argv[i], "--toply") || !strcmp(argv[i], "-toply")) {
+            options.toPly = true;
+        } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-help") ||
+                   !strcmp(argv[i], "-h")) {
+            usage();
         } else
             filenames.push_back(argv[i]);
     }
