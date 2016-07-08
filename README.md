@@ -10,7 +10,7 @@ Rendering: From Theory to Implementation*, by [Matt
 Pharr](http://pharr.org/matt), Greg Humphreys, and [Wenzel Jakob](http://www.mitsuba-renderer.org/~wenzel/).  As before, the code is
 available under the BSD license.
 
-Although the new version of the book won't be released until mid-2016,
+Although the new version of the book won't be released until this Fall,
 we're making the source code available now so that interested users can
 look at the code, try out the system, and possibly help us out. (See [how
 you can help](#how-you-can-help) for more information about contributing.)
@@ -75,7 +75,7 @@ is finalized.)
 * Improved microfacet models: specular transmission through microfacets,
   and Heitz's improved importance sampling.
 * No external dependencies: thanks to
-[Sean Barrett's stb_image_write.h](https://github.com/nothings/stb),
+[Lode Vandevenne's lodepng](http://lodev.org/lodepng/),
 [Diego Nehab's rply](http://www.impa.br/~diego/software/rply),
 and [Emil Mikulic's TARGA library](http://dmr.ath.cx/gfx/targa/), no
   external libraries need to be compiled to build pbrt.
