@@ -1292,6 +1292,7 @@ bool LoadObj(std::vector<shape_t> &shapes,       // [output]
 #include <set>
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
 
 using namespace tinyobj;
 
