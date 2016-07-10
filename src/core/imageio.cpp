@@ -72,15 +72,11 @@ std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
         return std::unique_ptr<RGBSpectrum[]>(
             ReadImagePFM(name, &resolution->x, &resolution->y));
     Error(
-        "Unable to load image stored in format \"%s\" for filename \"%s\". "
-        "Returning a constant gray image instead.",
+        "Unable to load image stored in format \"%s\" for filename \"%s\".",
         strrchr(name.c_str(), '.') ? (strrchr(name.c_str(), '.') + 1)
                                    : "(unknown)",
         name.c_str());
-    RGBSpectrum *ret = new RGBSpectrum[1];
-    ret[0] = RGBSpectrum(0.5f);
-    resolution->x = resolution->y = 1;
-    return std::unique_ptr<RGBSpectrum[]>(ret);
+    return nullptr;
 }
 
 void WriteImage(const std::string &name, const Float *rgb,

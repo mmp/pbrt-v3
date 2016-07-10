@@ -119,12 +119,14 @@ class BDPTIntegrator : public Integrator {
     // BDPTIntegrator Public Methods
     BDPTIntegrator(std::shared_ptr<Sampler> sampler,
                    std::shared_ptr<const Camera> camera, int maxDepth,
-                   bool visualizeStrategies, bool visualizeWeights)
+                   bool visualizeStrategies, bool visualizeWeights,
+                   const Bounds2i &pixelBounds)
         : sampler(sampler),
           camera(camera),
           maxDepth(maxDepth),
           visualizeStrategies(visualizeStrategies),
-          visualizeWeights(visualizeWeights) {}
+          visualizeWeights(visualizeWeights),
+          pixelBounds(pixelBounds) {}
     void Render(const Scene &scene);
 
   private:
@@ -134,6 +136,7 @@ class BDPTIntegrator : public Integrator {
     const int maxDepth;
     const bool visualizeStrategies;
     const bool visualizeWeights;
+    const Bounds2i pixelBounds;
 };
 
 struct Vertex {
@@ -141,10 +144,10 @@ struct Vertex {
     VertexType type;
     Spectrum beta;
 #ifdef PBRT_IS_MSVC2013
-  struct {
+    struct {
 #else
-  union {
-#endif // PBRT_IS_MSVC2013
+    union {
+#endif  // PBRT_IS_MSVC2013
         EndpointInteraction ei;
         MediumInteraction mi;
         SurfaceInteraction si;
@@ -245,8 +248,8 @@ struct Vertex {
     }
     bool IsInfiniteLight() const {
         return type == VertexType::Light &&
-               (!ei.light || ei.light->flags & (int)LightFlags::Infinite
-                          || ei.light->flags & (int)LightFlags::DeltaDirection);
+               (!ei.light || ei.light->flags & (int)LightFlags::Infinite ||
+                ei.light->flags & (int)LightFlags::DeltaDirection);
     }
     Spectrum Le(const Scene &scene, const Vertex &v) const {
         if (!IsLight()) return Spectrum(0.f);
@@ -266,30 +269,46 @@ struct Vertex {
         }
     }
     friend std::ostream &operator<<(std::ostream &os, const Vertex &v) {
-        os << "Vertex[" << std::endl << "  type = ";
-        switch (v.type) {
+        return os << v.ToString();
+    }
+    std::string ToString() const {
+        std::string s = std::string("[Vertex type: ");
+        switch (type) {
         case VertexType::Camera:
-            os << "camera";
+            s += "camera";
             break;
         case VertexType::Light:
-            os << "light";
+            s += "light";
             break;
         case VertexType::Surface:
-            os << "surface";
+            s += "surface";
             break;
         case VertexType::Medium:
-            os << "medium";
+            s += "medium";
             break;
         }
-        os << "," << std::endl
-           << "  connectible = " << v.IsConnectible() << "," << std::endl
-           << "  p = " << v.p() << "," << std::endl
-           << "  n = " << v.ng() << "," << std::endl
-           << "  pdfFwd = " << v.pdfFwd << "," << std::endl
-           << "  pdfRev = " << v.pdfRev << "," << std::endl
-           << "  beta = " << v.beta << std::endl
-           << "]" << std::endl;
-        return os;
+        s += std::string(" connectible: ") +
+            std::string(IsConnectible() ? "true" : "false");
+        s += StringPrintf("\n  p: [ %f, %f, %f ] ng: [ %f, %f, %f ]", p().x, p().y,
+                          p().z, ng().x, ng().y, ng().z);
+        s += StringPrintf("\n  pdfFwd: %f pdfRev: %f beta: ", pdfFwd, pdfRev) +
+             beta.ToString();
+        switch (type) {
+        case VertexType::Camera:
+            // TODO
+            break;
+        case VertexType::Light:
+            // TODO
+            break;
+        case VertexType::Surface:
+            s += std::string("\n  bsdf: ") + si.bsdf->ToString();
+            break;
+        case VertexType::Medium:
+            s += std::string("\n  phase: ") + mi.phase->ToString();
+            break;
+        }
+        s += std::string(" ]");
+        return s;
     }
     Float ConvertDensity(Float pdf, const Vertex &next) const {
         // Return solid angle density if _next_ is an infinite area light
@@ -313,8 +332,7 @@ struct Vertex {
             wp = prev->p() - p();
             if (wp.LengthSquared() == 0) return 0;
             wp = Normalize(wp);
-        }
-        else
+        } else
             Assert(type == VertexType::Camera);
 
         // Compute directional density depending on the vertex types

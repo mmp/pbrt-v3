@@ -58,6 +58,15 @@ MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
     // Create _MIPMap_ for _filename_
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> texels = ReadImage(filename, &resolution);
+    if (!texels) {
+        Warning("Creating a constant grey texture to replace \"%s\".",
+                filename.c_str());
+        resolution.x = resolution.y = 1;
+        RGBSpectrum *rgb = new RGBSpectrum[1];
+        *rgb = RGBSpectrum(0.5f);
+        texels.reset(rgb);
+    }
+
     // Flip image in y; texture coordinate space has (0,0) at the lower
     // left corner.
     for (int y = 0; y < resolution.y / 2; ++y)

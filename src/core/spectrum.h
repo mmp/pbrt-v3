@@ -221,14 +221,16 @@ class CoefficientSpectrum {
     }
     friend std::ostream &operator<<(std::ostream &os,
                                     const CoefficientSpectrum &s) {
+        return os << s.ToString();
+    }
+    std::string ToString() const {
         std::string str = "[ ";
         for (int i = 0; i < nSpectrumSamples; ++i) {
-            str += StringPrintf("%f", s.c[i]);
+            str += StringPrintf("%f", c[i]);
             if (i + 1 < nSpectrumSamples) str += ", ";
         }
         str += " ]";
-        os << str;
-        return os;
+        return str;
     }
     CoefficientSpectrum Clamp(Float low = 0, Float high = Infinity) const {
         CoefficientSpectrum ret;

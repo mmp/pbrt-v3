@@ -75,8 +75,9 @@ class SamplerIntegrator : public Integrator {
   public:
     // SamplerIntegrator Public Methods
     SamplerIntegrator(std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler)
-        : camera(camera), sampler(sampler) {}
+                      std::shared_ptr<Sampler> sampler,
+                      const Bounds2i &pixelBounds)
+        : camera(camera), sampler(sampler), pixelBounds(pixelBounds) {}
     virtual void Preprocess(const Scene &scene, Sampler &sampler) {}
     void Render(const Scene &scene);
     virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
@@ -98,6 +99,7 @@ class SamplerIntegrator : public Integrator {
   private:
     // SamplerIntegrator Private Data
     std::shared_ptr<Sampler> sampler;
+    const Bounds2i pixelBounds;
 };
 
 #endif  // PBRT_CORE_INTEGRATOR_H

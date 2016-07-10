@@ -49,8 +49,9 @@ class VolPathIntegrator : public SamplerIntegrator {
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth) const;
     VolPathIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                      std::shared_ptr<Sampler> sampler)
-        : SamplerIntegrator(camera, sampler), maxDepth(maxDepth) {}
+                      std::shared_ptr<Sampler> sampler,
+                      const Bounds2i &pixelBounds)
+        : SamplerIntegrator(camera, sampler, pixelBounds), maxDepth(maxDepth) {}
 
   private:
     // VolPathIntegrator Private Data

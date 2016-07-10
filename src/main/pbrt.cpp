@@ -37,32 +37,58 @@
 #include "parser.h"
 #include "parallel.h"
 
+static void usage(const char *msg = nullptr) {
+    if (msg)
+        fprintf(stderr, "pbrt: %s\n\n", msg);
+
+    fprintf(stderr, R"(usage: pbrt [<options>] <filename.pbrt...>
+  --cat                Print a reformatted version of the input file(s) to
+                       standard output. Does not render an image.
+  --help               Print this help text.
+  --nthreads <num>     Use specified number of threads for rendering.
+  --outfile <filename> Write the final image to the given filename.
+  --quick              Automatically reduce a number of quality settings to
+                       render more quickly.
+  --quiet              Suppress all text output other than error messages.
+  --toply              Print a reformatted version of the input file(s) to
+                       standard output and convert all triangle meshes to
+                       PLY files. Does not render an image.
+  --verbose            Print out more detailed logging information.
+)");
+    exit(1);
+}
+
 // main program
 int main(int argc, char *argv[]) {
     Options options;
     std::vector<std::string> filenames;
     // Process command-line arguments
     for (int i = 1; i < argc; ++i) {
-        if (!strcmp(argv[i], "--ncores") || !strcmp(argv[i], "--nthreads"))
+        if (!strcmp(argv[i], "--nthreads") || !strcmp(argv[i], "-nthreads")) {
+            if (i + 1 == argc)
+                usage("missing value after --nthreads argument");
             options.nThreads = atoi(argv[++i]);
-        else if (!strcmp(argv[i], "--outfile"))
+        } else if (!strncmp(argv[i], "--nthreads=", 11)) {
+            options.nThreads = atoi(&argv[i][11]);
+        } else if (!strcmp(argv[i], "--outfile") || !strcmp(argv[i], "-outfile")) {
+            if (i + 1 == argc)
+                usage("missing value after --outfile argument");
             options.imageFile = argv[++i];
-        else if (!strcmp(argv[i], "--quick"))
+        } else if (!strncmp(argv[i], "--outfile=", 10)) {
+            options.imageFile = &argv[i][10];
+        } else if (!strcmp(argv[i], "--quick") || !strcmp(argv[i], "-quick")) {
             options.quickRender = true;
-        else if (!strcmp(argv[i], "--quiet"))
+        } else if (!strcmp(argv[i], "--quiet") || !strcmp(argv[i], "-quiet")) {
             options.quiet = true;
-        else if (!strcmp(argv[i], "--verbose"))
+        } else if (!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-verbose")) {
             options.verbose = true;
-        else if (!strcmp(argv[i], "--cat"))
+        } else if (!strcmp(argv[i], "--cat") || !strcmp(argv[i], "-cat")) {
             options.cat = true;
-        else if (!strcmp(argv[i], "--toply"))
+        } else if (!strcmp(argv[i], "--toply") || !strcmp(argv[i], "-toply")) {
             options.toPly = true;
-        else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
-            printf(
-                "usage: pbrt [--nthreads n] [--outfile filename] [--quick] "
-                "[--quiet] [--cat] [--toply] [--verbose] [--help] "
-                "<filename.pbrt> ...\n");
-            return 0;
+        } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-help") ||
+                   !strcmp(argv[i], "-h")) {
+            usage();
         } else
             filenames.push_back(argv[i]);
     }

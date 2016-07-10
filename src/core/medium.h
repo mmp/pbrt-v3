@@ -51,7 +51,13 @@ class PhaseFunction {
     virtual Float p(const Vector3f &wo, const Vector3f &wi) const = 0;
     virtual Float Sample_p(const Vector3f &wo, Vector3f *wi,
                            const Point2f &u) const = 0;
+    virtual std::string ToString() const = 0;
 };
+
+inline std::ostream &operator<<(std::ostream &os, const PhaseFunction &p) {
+    os << p.ToString();
+    return os;
+}
 
 bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
                                    Spectrum *sigma_s);
@@ -81,6 +87,9 @@ class HenyeyGreenstein : public PhaseFunction {
     Float p(const Vector3f &wo, const Vector3f &wi) const;
     Float Sample_p(const Vector3f &wo, Vector3f *wi,
                    const Point2f &sample) const;
+    std::string ToString() const {
+        return StringPrintf("[ HenyeyGreenstein g: %f ]", g);
+    }
 
   private:
     const Float g;

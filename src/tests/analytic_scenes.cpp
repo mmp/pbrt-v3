@@ -50,6 +50,7 @@ void PrintTo(const TestIntegrator &tr, ::std::ostream *os) {
 void CheckSceneAverage(const char *filename, float expected) {
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> image = ReadImage(filename, &resolution);
+    ASSERT_TRUE(image.get() != nullptr);
 
     float delta = .02;
     float sum = 0;
@@ -280,7 +281,8 @@ std::vector<TestIntegrator> GetIntegrators() {
                     0., 10., 45, film, nullptr);
 
             Integrator *integrator =
-                new PathIntegrator(8, camera, sampler.first);
+                new PathIntegrator(8, camera, sampler.first,
+                                   film->croppedPixelBounds);
             integrators.push_back({integrator, film,
                                    "Path, depth 8, Perspective, " +
                                        sampler.second + ", " +
@@ -299,7 +301,8 @@ std::vector<TestIntegrator> GetIntegrators() {
                     1., 0., 10., film, nullptr);
 
             Integrator *integrator =
-                new PathIntegrator(8, camera, sampler.first);
+                new PathIntegrator(8, camera, sampler.first,
+                                   film->croppedPixelBounds);
             integrators.push_back({integrator, film,
                                    "Path, depth 8, Ortho, " + sampler.second +
                                        ", " + scene.description,
@@ -318,7 +321,8 @@ std::vector<TestIntegrator> GetIntegrators() {
                     0., 10., 45, film, nullptr);
 
             Integrator *integrator =
-                new VolPathIntegrator(8, camera, sampler.first);
+                new VolPathIntegrator(8, camera, sampler.first,
+                                      film->croppedPixelBounds);
             integrators.push_back({integrator, film,
                                    "VolPath, depth 8, Perspective, " +
                                        sampler.second + ", " +
@@ -336,7 +340,8 @@ std::vector<TestIntegrator> GetIntegrators() {
                     1., 0., 10., film, nullptr);
 
             Integrator *integrator =
-                new VolPathIntegrator(8, camera, sampler.first);
+                new VolPathIntegrator(8, camera, sampler.first,
+                                      film->croppedPixelBounds);
             integrators.push_back({integrator, film,
                                    "VolPath, depth 8, Ortho, " +
                                        sampler.second + ", " +
@@ -356,7 +361,8 @@ std::vector<TestIntegrator> GetIntegrators() {
                     0., 10., 45, film, nullptr);
 
             Integrator *integrator =
-                new BDPTIntegrator(sampler.first, camera, 6, false, false);
+                new BDPTIntegrator(sampler.first, camera, 6, false, false,
+                                   film->croppedPixelBounds);
             integrators.push_back({integrator, film,
                                    "BDPT, depth 8, Perspective, " +
                                        sampler.second + ", " +

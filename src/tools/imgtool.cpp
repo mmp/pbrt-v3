@@ -6,9 +6,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <algorithm>
 #include "pbrt.h"
 #include "spectrum.h"
 #include "imageio.h"
@@ -21,25 +21,85 @@ static void usage(const char *msg = nullptr, ...) {
         vfprintf(stderr, msg, args);
         fprintf(stderr, "\n");
     }
-    fprintf(stderr, "usage: imgtool <command> [options] <filenames...>\n");
-    fprintf(stderr, "imgtool commands: convert, diff, info\n");
-    fprintf(
-        stderr,
-        "\toptions for convert: -flipy, -scale scale, -repeatpix [count]\n");
-    fprintf(stderr,
-            "\t    -tonemap, -maxluminance [luminance value mapped to white by "
-            "tonemap]\n");
-    fprintf(stderr,
-            "\t    -bloomlevel [minimum RGB value for pixel for bloom]\n");
-    fprintf(stderr, "\t    -bloomscale [bloom image scale]\n");
-    fprintf(stderr,
-            "\t    -bloomswidth [width of Gaussian used to generate bloom "
-            "images]\n");
-    fprintf(
-        stderr,
-        "\t    -bloomiters [filtering iterations to generate bloom images]\n");
-    fprintf(stderr, "\toptions for diff: -o [outfile], -d [tolerance %%]\n");
+    fprintf(stderr, R"(usage: imgtool <command> [options] <filenames...>
+
+commands: cat, convert, diff, info
+
+cat options:
+    --sort             Sort output by pixel luminance.
+
+convert options:
+    --bloomiters <n>   Number of filtering iterations used to generate the bloom
+                       image. Default: 5
+    --bloomlevel <n>   Minimum RGB value for a pixel for it to contribute to bloom.
+                       Default: Infinity (i.e., no bloom is applied)
+    --bloomscale <s>   Amount by which the bloom image is scaled before being
+                       added to the original image. Default: 0.3
+    --bloomswidth <w>  Width of Gaussian used to generate bloom images.
+                       Default: 15
+    --flipy            Flip the image along the y axis
+    --maxluminance <n> Luminance value mapped to white by tonemapping.
+                       Default: 1
+    --repeatpix <n>    Repeat each pixel value n times in both directions
+    --scale <scale>    Scale pixel values by given amount
+    --tonemap          Apply tonemapping to the image (Reinhard et al.'s
+                       photographic tone mapping operator)
+
+diff options:
+    --difftol <v>      Acceptable image difference percentage before differences
+                       are reported. Default: 0
+    --outfile <name>   Filename to use for saving an image that encodes the
+                       absolute value of per-pixel differences.
+
+)");
     exit(1);
+}
+
+int cat(int argc, char *argv[]) {
+    if (argc == 0) usage("no filenames provided to \"cat\"?");
+    bool sort = false;
+
+    for (int i = 0; i < argc; ++i) {
+        if (!strcmp(argv[i], "--sort") || !strcmp(argv[i], "-sort")) {
+            sort = !sort;
+            continue;
+        }
+
+        Point2i res;
+        std::unique_ptr<RGBSpectrum[]> img = ReadImage(argv[i], &res);
+        if (!img) continue;
+        if (sort) {
+            std::vector<std::pair<int, RGBSpectrum>> sorted;
+            sorted.reserve(res.x * res.y);
+            for (int y = 0; y < res.y; ++y) {
+                for (int x = 0; x < res.x; ++x) {
+                    int offset = y * res.x + x;
+                    sorted.push_back({offset, img[offset]});
+                }
+            }
+            std::sort(sorted.begin(), sorted.end(),
+                      [](const std::pair<int, RGBSpectrum> &a,
+                         const std::pair<int, RGBSpectrum> &b) {
+                          return a.second.y() < b.second.y();
+                      });
+            for (const auto &v : sorted) {
+                Float rgb[3];
+                v.second.ToRGB(rgb);
+                printf("(%d, %d): (%.9g %.9g %.9g)\n", v.first / res.x,
+                       v.first % res.x, rgb[0], rgb[1], rgb[2]);
+            }
+        } else {
+            for (int y = 0; y < res.y; ++y) {
+                for (int x = 0; x < res.x; ++x) {
+                    Float rgb[3];
+                    img[y * res.x + x].ToRGB(rgb);
+                    printf("(%d, %d): (%.9g %.9g %.9g)\n", x, y, rgb[0], rgb[1],
+                           rgb[2]);
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 int diff(int argc, char *argv[]) {
@@ -49,23 +109,33 @@ int diff(int argc, char *argv[]) {
     int i;
     for (i = 0; i < argc; ++i) {
         if (argv[i][0] != '-') break;
-        if (!strcmp(argv[i], "-o")) {
-            if (i + 1 == argc) usage("missing filename after -o option");
+        if (!strcmp(argv[i], "--outfile") || !strcmp(argv[i], "-outfile") ||
+            !strcmp(argv[i], "-o")) {
+            if (i + 1 == argc)
+                usage("missing filename after %s option", argv[i]);
             outfile = argv[++i];
-        } else if (!strcmp(argv[i], "-d")) {
-            if (i + 1 == argc) usage("missing filename after -d option");
+        } else if (!strncmp(argv[i], "--outfile=", 10)) {
+            outfile = &argv[i][10];
+        } else if (!strcmp(argv[i], "--difftol") ||
+                   !strcmp(argv[i], "-difftol") || !strcmp(argv[i], "-d")) {
+            if (i + 1 == argc)
+                usage("missing filename after %s option", argv[i]);
             ++i;
             if (!isdigit(argv[i][0]) && argv[i][0] != '.')
-                usage("argument after -d doesn't look like a number");
+                usage("argument after %s doesn't look like a number", argv[i]);
             tol = atof(argv[i]);
-        } else
+        } else if (!strncmp(argv[i], "--difftol=", 10))
+            tol = atof(&argv[i][10]);
+        else
             usage("unknown \"diff\" option");
     }
 
-    if (i + 1 >= argc)
-        usage("missing second filename for \"diff\"");
-    else if (i >= argc)
+    if (i >= argc)
         usage("missing filenames for \"diff\"");
+    else if (i + 1 >= argc)
+        usage("missing second filename for \"diff\"");
+    else if (i + 2 < argc)
+        usage("excess filenames provided to \"diff\"");
 
     const char *filename[2] = {argv[i], argv[i + 1]};
     Point2i res[2];
@@ -296,47 +366,55 @@ int convert(int argc, char *argv[]) {
     Float maxY = 1.;
 
     int i;
-    auto parseFloat = [&](const char *flag) -> Float {
-        if (i + 1 == argc) usage("missing value after %s flag", flag);
-        ++i;
-        if (!isdigit(argv[i][0]) && argv[i][0] != '.')
-            usage("non-numeric value found after %s", flag);
-        Float value = atof(argv[i]);
-        if (value == 0) usage("zero value for %s is invalid", flag);
-        return value;
-    };
-    auto parseInt = [&](const char *flag) -> int {
-        if (i + 1 == argc) usage("missing value after %s flag", flag);
-        ++i;
-        if (!isdigit(argv[i][0]))
-            usage("non-numeric value found after %s", flag);
-        int value = atof(argv[i]);
-        if (value == 0) usage("zero value for %s is invalid", flag);
-        return value;
+    auto parseArg = [&]() -> std::pair<std::string, double> {
+        const char *ptr = argv[i];
+        // Skip over a leading dash or two.
+        Assert(*ptr == '-');
+        ++ptr;
+        if (*ptr == '-') ++ptr;
+
+        // Copy the flag name to the string.
+        std::string flag;
+        while (*ptr && *ptr != '=') flag += *ptr++;
+
+        if (!*ptr && i + 1 == argc)
+            usage("missing value after %s flag", argv[i]);
+        const char *value = (*ptr == '=') ? (ptr + 1) : argv[++i];
+        return {flag, atof(value)};
     };
 
+    std::pair<std::string, double> arg;
     for (i = 0; i < argc; ++i) {
         if (argv[i][0] != '-') break;
-        if (!strcmp(argv[i], "-flipy"))
+        if (!strcmp(argv[i], "--flipy") || !strcmp(argv[i], "-flipy"))
             flipy = !flipy;
-        else if (!strcmp(argv[i], "-tonemap"))
+        else if (!strcmp(argv[i], "--tonemap") || !strcmp(argv[i], "-tonemap"))
             tonemap = !tonemap;
-        else if (!strcmp(argv[i], "-maxluminance"))
-            maxY = parseFloat("-maxluminance");
-        else if (!strcmp(argv[i], "-repeatpix"))
-            repeat = parseInt("-repeatpix");
-        else if (!strcmp(argv[i], "-scale"))
-            scale = parseFloat("-scale");
-        else if (!strcmp(argv[i], "-bloomlevel"))
-            bloomLevel = parseFloat("-bloomlevel");
-        else if (!strcmp(argv[i], "-bloomwidth"))
-            bloomWidth = parseInt("-bloomwidth");
-        else if (!strcmp(argv[i], "-bloomscale"))
-            bloomScale = parseFloat("-bloomscale");
-        else if (!strcmp(argv[i], "-bloomiters"))
-            bloomIters = parseInt("-bloomiters");
-        else
-            usage();
+        else {
+            std::pair<std::string, double> arg = parseArg();
+            if (std::get<0>(arg) == "maxluminance") {
+                maxY = std::get<1>(arg);
+                if (maxY <= 0)
+                    usage("--maxluminance value must be greater than zero");
+            } else if (std::get<0>(arg) == "repeatpix") {
+                repeat = int(std::get<1>(arg));
+                if (repeat <= 0)
+                    usage("--repeatpix value must be greater than zero");
+            } else if (std::get<0>(arg) == "scale") {
+                scale = std::get<1>(arg);
+                if (scale == 0)
+                    usage("--scale value must be non-zero");
+            } else if (std::get<0>(arg) == "bloomlevel")
+                bloomLevel = std::get<1>(arg);
+            else if (std::get<0>(arg) == "bloomwidth")
+                bloomWidth = int(std::get<1>(arg));
+            else if (std::get<0>(arg) == "bloomscale")
+                bloomScale = std::get<1>(arg);
+            else if (std::get<0>(arg) == "bloomiters")
+                bloomIters = int(std::get<1>(arg));
+            else
+                usage();
+        }
     }
 
     if (i + 1 >= argc)
@@ -400,7 +478,7 @@ int convert(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) usage();
+    if (argc < 2) usage();
 
     if (!strcmp(argv[1], "diff"))
         return diff(argc - 2, argv + 2);
@@ -408,6 +486,8 @@ int main(int argc, char *argv[]) {
         return info(argc - 2, argv + 2);
     else if (!strcmp(argv[1], "convert"))
         return convert(argc - 2, argv + 2);
+    else if (!strcmp(argv[1], "cat"))
+        return cat(argc - 2, argv + 2);
     else
         usage("unknown command \"%s\"", argv[1]);
 

@@ -30,7 +30,6 @@
 
  */
 
-
 // core/integrator.cpp*
 #include "integrator.h"
 #include "scene.h"
@@ -245,6 +244,14 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ProfilePhase pp(Prof::StartPixel);
                     tileSampler->StartPixel(pixel);
                 }
+
+                // Do this check after the StartPixel() call; this keeps
+                // the usage of RNG values from (most) Samplers that use
+                // RNGs consistent, which improves reproducability /
+                // debugging.
+                if (!InsideExclusive(pixel, pixelBounds))
+                    continue;
+
                 do {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
@@ -266,18 +273,23 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     if (L.HasNaNs()) {
                         Error(
                             "Not-a-number radiance value returned "
-                            "for image sample.  Setting to black.");
+                            "for pixel (%d, %d), sample %d. Setting to black.",
+                            pixel.x, pixel.y,
+                            (int)tileSampler->CurrentSampleNumber());
                         L = Spectrum(0.f);
                     } else if (L.y() < -1e-5) {
                         Error(
                             "Negative luminance value, %f, returned "
-                            "for image sample.  Setting to black.",
-                            L.y());
+                            "for pixel (%d, %d), sample %d. Setting to black.",
+                            L.y(), pixel.x, pixel.y,
+                            (int)tileSampler->CurrentSampleNumber());
                         L = Spectrum(0.f);
                     } else if (std::isinf(L.y())) {
                         Error(
                             "Infinite luminance value returned "
-                            "for image sample.  Setting to black.");
+                            "for pixel (%d, %d), sample %d. Setting to black.",
+                            pixel.x, pixel.y,
+                            (int)tileSampler->CurrentSampleNumber());
                         L = Spectrum(0.f);
                     }
 

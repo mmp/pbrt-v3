@@ -54,10 +54,12 @@ inline void stringPrintfRecursive(std::string *s, const char *fmt) {
     // No args left; make sure there aren't any extra formatting
     // specifiers.
     while (*c) {
-        if (*c == '%') Assert(c[1] == '%');
-        ++c;
+        if (*c == '%') {
+            Assert(c[1] == '%');
+            ++c;
+        }
+        *s += *c++;
     }
-    *s += fmt;
 }
 
 // 1. Copy from fmt to *s, up to the next formatting directive.

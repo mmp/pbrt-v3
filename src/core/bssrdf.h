@@ -160,6 +160,7 @@ class SeparableBSSRDFAdapter : public BxDF {
             f *= bssrdf->eta * bssrdf->eta;
         return f;
     }
+    std::string ToString() const { return "[ SeparableBSSRDFAdapter ]"; }
 
   private:
     const SeparableBSSRDF *bssrdf;
