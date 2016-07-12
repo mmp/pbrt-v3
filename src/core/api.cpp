@@ -232,7 +232,7 @@ static std::vector<GraphicsState> pushedGraphicsStates;
 static std::vector<TransformSet> pushedTransforms;
 static std::vector<uint32_t> pushedActiveTransformBits;
 static TransformCache transformCache;
-static int catIndentCount = 0;
+int catIndentCount = 0;
 
 // API Forward Declarations
 std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
@@ -972,8 +972,7 @@ void pbrtWorldBegin() {
     activeTransformBits = AllTransformsBits;
     namedCoordinateSystems["world"] = curTransform;
     if (PbrtOptions.cat || PbrtOptions.toPly)
-        printf(
-            "\n#############################################\nWorldBegin\n\n");
+        printf("\n\nWorldBegin\n\n");
 }
 
 void pbrtAttributeBegin() {

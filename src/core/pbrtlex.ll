@@ -117,9 +117,9 @@ NUMBER [-+]?([0-9]+|(([0-9]+\.[0-9]*)|(\.[0-9]+)))([eE][-+]?[0-9]+)?
 IDENT [a-zA-Z_][a-zA-Z_0-9]*
 %x STR COMMENT INCL INCL_FILE
 %%
-"#" { BEGIN COMMENT; }
-<COMMENT>. /* eat it up */
-<COMMENT>\n { line_num++; BEGIN INITIAL; }
+"#" { BEGIN COMMENT; extern int catIndentCount; if (PbrtOptions.cat || PbrtOptions.toPly) printf("%*s#", catIndentCount, ""); }
+<COMMENT>. { /* eat it up */ if (PbrtOptions.cat || PbrtOptions.toPly) putchar(yytext[0]); }
+<COMMENT>\n { line_num++; if (PbrtOptions.cat || PbrtOptions.toPly) putchar('\n'); BEGIN INITIAL; }
 Accelerator             { return ACCELERATOR; }
 ActiveTransform         { return ACTIVETRANSFORM; }
 All                     { return ALL; }
