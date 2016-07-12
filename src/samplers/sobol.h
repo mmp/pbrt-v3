@@ -51,7 +51,7 @@ class SobolSampler : public GlobalSampler {
           sampleBounds(sampleBounds) {
         if (!IsPowerOf2(samplesPerPixel))
             Warning("Non power-of-two sample count rounded up to %" PRId64
-                    "for SobolSampler.",
+                    " for SobolSampler.",
                     samplesPerPixel);
         resolution = RoundUpPow2(
             std::max(sampleBounds.Diagonal().x, sampleBounds.Diagonal().y));
