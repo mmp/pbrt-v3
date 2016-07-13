@@ -4,14 +4,15 @@
 // Various useful operations on images.
 //
 
+#include <ctype.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <ctype.h>
 #include <algorithm>
+#include "fileutil.h"
+#include "imageio.h"
 #include "pbrt.h"
 #include "spectrum.h"
-#include "imageio.h"
 
 static void usage(const char *msg = nullptr, ...) {
     if (msg) {
@@ -23,9 +24,12 @@ static void usage(const char *msg = nullptr, ...) {
     }
     fprintf(stderr, R"(usage: imgtool <command> [options] <filenames...>
 
-commands: cat, convert, diff, info
+commands: assemble, cat, convert, diff, info
 
-cat options:
+assemble option:
+    --outflie          Output image filename.
+
+cat option:
     --sort             Sort output by pixel luminance.
 
 convert options:
@@ -53,6 +57,103 @@ diff options:
 
 )");
     exit(1);
+}
+
+int assemble(int argc, char *argv[]) {
+    if (argc == 0) usage("no filenames provided to \"assemble\"?");
+    const char *outfile = nullptr;
+    std::vector<const char *> infiles;
+    for (int i = 0; i < argc; ++i) {
+        if (!strcmp(argv[i], "--outfile") || !strcmp(argv[i], "-outfile")) {
+            if (i + 1 == argc)
+                usage("missing filename for %s parameter", argv[i]);
+            outfile = argv[++i];
+        } else if (!strncmp(argv[i], "--outfile=", 10)) {
+            outfile = &argv[i][10];
+        } else
+            infiles.push_back(argv[i]);
+    }
+
+    if (!outfile) usage("--outfile not provided for \"assemble\"");
+
+    std::unique_ptr<RGBSpectrum[]> fullImg;
+    std::vector<bool> seenPixel;
+    int seenMultiple = 0;
+    Point2i fullRes;
+    Bounds2i displayWindow;
+    for (const char *file : infiles) {
+        if (!HasExtension(file, ".exr"))
+            usage(
+                "only EXR images include the image bounding boxes that "
+                "\"assemble\" needs.");
+
+        Bounds2i dataWindow, dspw;
+        Point2i res;
+        std::unique_ptr<RGBSpectrum[]> img(
+            ReadImageEXR(file, &res.x, &res.y, &dataWindow, &dspw));
+        if (!img) continue;
+
+        if (!fullImg) {
+            // First image read.
+            fullRes = Point2i(dspw.pMax - dspw.pMin);
+            fullImg.reset(new RGBSpectrum[fullRes.x * fullRes.y]);
+            seenPixel.resize(fullRes.x * fullRes.y);
+            displayWindow = dspw;
+        } else {
+            // Make sure that this image's info is compatible with the
+            // first image's.
+            if (dspw != displayWindow) {
+                fprintf(stderr,
+                        "%s: displayWindow (%d,%d) - (%d,%d) in EXR file "
+                        "doesn't match the displayWindow of first EXR file "
+                        "(%d,%d) - (%d,%d). "
+                        "Ignoring this file.\n",
+                        file, dspw.pMin.x, dspw.pMin.y, dspw.pMax.x,
+                        dspw.pMax.y, displayWindow.pMin.x, displayWindow.pMin.y,
+                        displayWindow.pMax.x, displayWindow.pMax.y);
+                continue;
+            }
+            if (Union(dataWindow, displayWindow) != displayWindow) {
+                fprintf(stderr,
+                        "%s: dataWindow (%d,%d) - (%d,%d) in EXR file isn't "
+                        "inside the displayWindow of first EXR file (%d,%d) - "
+                        "(%d,%d). "
+                        "Ignoring this file.\n",
+                        file, dataWindow.pMin.x, dataWindow.pMin.y,
+                        dataWindow.pMax.x, dataWindow.pMax.y,
+                        displayWindow.pMin.x, displayWindow.pMin.y,
+                        displayWindow.pMax.x, displayWindow.pMax.y);
+                continue;
+            }
+        }
+
+        // Copy pixels.
+        for (int y = 0; y < res.y; ++y)
+            for (int x = 0; x < res.x; ++x) {
+                int fullOffset = (y + dataWindow.pMin.y) * fullRes.x +
+                                 (x + dataWindow.pMin.x);
+                fullImg[fullOffset] = img[y * res.x + x];
+                if (seenPixel[fullOffset]) ++seenMultiple;
+                seenPixel[fullOffset] = true;
+            }
+    }
+
+    int unseenPixels = 0;
+    for (int y = 0; y < fullRes.y; ++y)
+        for (int x = 0; x < fullRes.x; ++x)
+            if (!seenPixel[y * fullRes.x + x]) ++unseenPixels;
+
+    if (seenMultiple > 0)
+        fprintf(stderr, "%s: %d pixels present in multiple images.\n", outfile,
+                seenMultiple);
+    if (unseenPixels > 0)
+        fprintf(stderr, "%s: %d pixels not present in any images.\n", outfile,
+                unseenPixels);
+
+    // TODO: fix yet another bad cast here.
+    WriteImage(outfile, (Float *)fullImg.get(), displayWindow, fullRes);
+
+    return 0;
 }
 
 int cat(int argc, char *argv[]) {
@@ -402,8 +503,7 @@ int convert(int argc, char *argv[]) {
                     usage("--repeatpix value must be greater than zero");
             } else if (std::get<0>(arg) == "scale") {
                 scale = std::get<1>(arg);
-                if (scale == 0)
-                    usage("--scale value must be non-zero");
+                if (scale == 0) usage("--scale value must be non-zero");
             } else if (std::get<0>(arg) == "bloomlevel")
                 bloomLevel = std::get<1>(arg);
             else if (std::get<0>(arg) == "bloomwidth")
@@ -480,7 +580,9 @@ int convert(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     if (argc < 2) usage();
 
-    if (!strcmp(argv[1], "diff"))
+    if (!strcmp(argv[1], "assemble"))
+        return assemble(argc - 2, argv + 2);
+    else if (!strcmp(argv[1], "diff"))
         return diff(argc - 2, argv + 2);
     else if (!strcmp(argv[1], "info"))
         return info(argc - 2, argv + 2);

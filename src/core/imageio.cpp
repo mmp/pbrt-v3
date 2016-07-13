@@ -32,17 +32,15 @@
 
 // core/imageio.cpp*
 #include "imageio.h"
-#include "spectrum.h"
-#include "fileutil.h"
-#include "ext/targa.h"
 #include "ext/lodepng.h"
+#include "ext/targa.h"
+#include "fileutil.h"
+#include "spectrum.h"
 
 #include <ImfRgba.h>
 #include <ImfRgbaFile.h>
 
 // ImageIO Local Declarations
-static RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
-                                 int *height);
 static void WriteImageEXR(const std::string &name, const Float *pixels,
                           int xRes, int yRes, int totalXRes, int totalYRes,
                           int xOffset, int yOffset);
@@ -71,11 +69,10 @@ std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
     else if (HasExtension(name, ".pfm"))
         return std::unique_ptr<RGBSpectrum[]>(
             ReadImagePFM(name, &resolution->x, &resolution->y));
-    Error(
-        "Unable to load image stored in format \"%s\" for filename \"%s\".",
-        strrchr(name.c_str(), '.') ? (strrchr(name.c_str(), '.') + 1)
-                                   : "(unknown)",
-        name.c_str());
+    Error("Unable to load image stored in format \"%s\" for filename \"%s\".",
+          strrchr(name.c_str(), '.') ? (strrchr(name.c_str(), '.') + 1)
+                                     : "(unknown)",
+          name.c_str());
     return nullptr;
 }
 
@@ -122,15 +119,26 @@ void WriteImage(const std::string &name, const Float *rgb,
     }
 }
 
-static RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
-                                 int *height) {
+RGBSpectrum *ReadImageEXR(const std::string &name, int *width, int *height,
+                          Bounds2i *dataWindow, Bounds2i *displayWindow) {
     using namespace Imf;
     using namespace Imath;
     try {
         RgbaInputFile file(name.c_str());
         Box2i dw = file.dataWindow();
+
+        // OpenEXR uses inclusive pixel bounds; adjust to non-inclusive
+        // (the convention pbrt uses) in the values returned.
+        if (dataWindow)
+            *dataWindow = {{dw.min.x, dw.min.y}, {dw.max.x + 1, dw.max.y + 1}};
+        if (displayWindow) {
+            Box2i dispw = file.displayWindow();
+            *displayWindow = {{dispw.min.x, dispw.min.y},
+                              {dispw.max.x + 1, dispw.max.y + 1}};
+        }
         *width = dw.max.x - dw.min.x + 1;
         *height = dw.max.y - dw.min.y + 1;
+
         std::vector<Rgba> pixels(*width * *height);
         file.setFrameBuffer(&pixels[0] - dw.min.x - dw.min.y * *width, 1,
                             *width);
@@ -160,6 +168,7 @@ static void WriteImageEXR(const std::string &name, const Float *pixels,
     for (int i = 0; i < xRes * yRes; ++i)
         hrgba[i] = Rgba(pixels[3 * i], pixels[3 * i + 1], pixels[3 * i + 2]);
 
+    // OpenEXR uses inclusive pixel bounds.
     Box2i displayWindow(V2i(0, 0), V2i(totalXRes - 1, totalYRes - 1));
     Box2i dataWindow(V2i(xOffset, yOffset),
                      V2i(xOffset + xRes - 1, yOffset + yRes - 1));
