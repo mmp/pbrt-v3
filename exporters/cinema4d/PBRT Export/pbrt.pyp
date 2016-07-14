@@ -479,7 +479,8 @@ EPSILON = 0.00001
 def ManageTexture(filename, doc, directory = None, textureList = None):
     filePath = GenerateTexturePath(doc.GetDocumentPath(), filename)
     if not os.path.isfile(filePath):
-        raise ValueError(filename + ' not found!')
+        logger.warning(filename + ' not found!')
+        return filename
 
     if directory:
         # make sure dir really only contains the folder
@@ -523,26 +524,25 @@ def makePbrtAttribute(attrib, val, transform=True):
 def makePbrtTexture(filename, texAbbrev, texType='spectrum', useGamma=True):
     extension = os.path.splitext(filename)[1]
     gamma = 1.0 if extension != '.exr' else 2.2
-    if extension == '.exr' or extension == '.tga' or extension == '.pfm':
-        bumpTextureName = os.path.splitext(os.path.basename(filename))[0] + '_' + texAbbrev
-        bumTextureString = 'Texture "' + bumpTextureName + '" "' + texType + '" "imagemap" "string filename" "' + filename.replace('\\','\\\\') + '"'
-        if not c4d.utils.CompareFloatTolerant(gamma, 1.0):
-            bumTextureString += ' ' + makePbrtAttributeFloat('gamma', gamma)
-        return bumpTextureName, bumTextureString
-    else:
-        raise RuntimeError('Texture file "' + os.path.basename(filename) + '" uses unsupported texture file format')
+    if not (extension == '.exr' or extension == '.tga' or extension == '.pfm' or extension == '.png'):
+        logger.warning('Texture file "' + os.path.basename(filename) + '" uses unsupported texture file format')
+    bumpTextureName = os.path.splitext(os.path.basename(filename))[0] + '_' + texAbbrev
+    bumTextureString = 'Texture "' + bumpTextureName + '" "' + texType + '" "imagemap" "string filename" "' + filename.replace('\\','\\\\') + '"'
+    if not c4d.utils.CompareFloatTolerant(gamma, 1.0):
+        bumTextureString += ' ' + makePbrtAttributeFloat('gamma', gamma)
+    return bumpTextureName, bumTextureString
 
 #
 # export the given object as a polygon object
 # since in pbrt an object can only have a single object, this may actually export as
 # several pbrt objects
 #
-def ExportPolygonObject(pbrt, obj, indent=""):
+def ExportPolygonObject(pbrtGeometry, pbrtMaterials, exportedMaterials, obj, indent=""):
     if obj.GetType() != c4d.Opolygon:
         raise TypeError("Expected a BaseObject of type Opolygon!")
 
     doc = obj.GetDocument()
-    pbrtDir = os.path.dirname(os.path.abspath(pbrt.name))
+    pbrtDir = os.path.dirname(os.path.abspath(pbrtGeometry.name))
     
     #
     # TODO:
@@ -610,145 +610,149 @@ def ExportPolygonObject(pbrt, obj, indent=""):
         alphaTextureName = None
         material = textureTag.GetMaterial()
         if material:
-
             # DEBUG
             #print material.GetName()
 
-            if material.GetType() != c4d.Mmaterial:
-                logger.warning("Unidentified material type encountered and ignored!")
-                continue
+#            if material.GetType() != c4d.Mmaterial and material.GetType() != c4d.BaseMaterial:
+#                logger.warning(material.GetName())
+#                logger.warning("Unidentified material type encountered and ignored!")
+#                logger.warning(material)
+#                continue
         
-            pbrt.write(indent + 'AttributeBegin\n')
+            pbrtGeometry.write(indent + 'AttributeBegin\n')
             indent += "\t"
+            pbrtGeometry.write(indent + 'NamedMaterial "' + str(material.GetName()) + '"\n')
             innerAttributeBlock = True
 
             # translate material
-            baseColor = c4d.Vector(0, 0, 0)
-            colorTextureName = None
-            if material[c4d.MATERIAL_USE_COLOR]:
-                baseColor = material[c4d.MATERIAL_COLOR_COLOR] * material[c4d.MATERIAL_COLOR_BRIGHTNESS]
-                colorShader = material[c4d.MATERIAL_COLOR_SHADER]
-                if colorShader and colorShader.GetType() == c4d.Xbitmap:
-                    try:
-                        colorTextureFile = ManageTexture(colorShader[c4d.BITMAPSHADER_FILENAME], doc, pbrtDir, None)
-                        colorTextureName, colorTextureString = makePbrtTexture(colorTextureFile, 'color')
-                    except (RuntimeError, ValueError) as err:
-                        logger.error(err)
-                    else:
-                        pbrt.write(indent + colorTextureString + '\n')
+            if not material.GetName() in exportedMaterials:
+                exportedMaterials[material.GetName()] = 1
+                baseColor = c4d.Vector(0, 0, 0)
+                colorTextureName = None
+                if material[c4d.MATERIAL_USE_COLOR]:
+                    baseColor = material[c4d.MATERIAL_COLOR_COLOR] * material[c4d.MATERIAL_COLOR_BRIGHTNESS]
+                    colorShader = material[c4d.MATERIAL_COLOR_SHADER]
+                    if colorShader and colorShader.GetType() == c4d.Xbitmap:
+                        try:
+                            colorTextureFile = ManageTexture(colorShader[c4d.BITMAPSHADER_FILENAME], doc, pbrtDir, None)
+                            colorTextureName, colorTextureString = makePbrtTexture(colorTextureFile, 'color')
+                        except (RuntimeError, ValueError) as err:
+                            logger.error(err)
+                        else:
+                            pbrtMaterials.write(colorTextureString + '\n')
             
-            alphaTextureName = None
-            if material[c4d.MATERIAL_USE_ALPHA]:
-                alphaShader = material[c4d.MATERIAL_ALPHA_SHADER]
-                if alphaShader and alphaShader.GetType() == c4d.Xbitmap:
-                    try:
-                        alphaTextureFile = ManageTexture(alphaShader[c4d.BITMAPSHADER_FILENAME], doc, pbrtDir, None)
-                        # alpha is stored as linear by default so we ignore gamma here
-                        alphaTextureName, alphaTextureString = makePbrtTexture(alphaTextureFile, 'alpha', 'float', False)
-                    except (RuntimeError, ValueError) as err:
-                        logger.error(err)
-                    else:
-                        pbrt.write(indent + alphaTextureString + '\n')
+                alphaTextureName = None
+                if material[c4d.MATERIAL_USE_ALPHA]:
+                    alphaShader = material[c4d.MATERIAL_ALPHA_SHADER]
+                    if alphaShader and alphaShader.GetType() == c4d.Xbitmap:
+                        try:
+                            alphaTextureFile = ManageTexture(alphaShader[c4d.BITMAPSHADER_FILENAME], doc, pbrtDir, None)
+                            # alpha is stored as linear by default so we ignore gamma here
+                            alphaTextureName, alphaTextureString = makePbrtTexture(alphaTextureFile, 'alpha', 'float', False)
+                        except (RuntimeError, ValueError) as err:
+                            logger.error(err)
+                        else:
+                            pbrtMaterials.write(alphaTextureString + '\n')
 
-            bumpTextureName = None
-            if material[c4d.MATERIAL_USE_BUMP]:
-                bumpShader = material[c4d.MATERIAL_BUMP_SHADER]
-                if bumpShader and bumpShader.GetType() == c4d.Xbitmap:
-                    try:
-                        bumpTextureFile = ManageTexture(bumpShader[c4d.BITMAPSHADER_FILENAME], doc, pbrtDir, None)
-                        bumpTextureName, bumpTextureString = makePbrtTexture(bumpTextureFile, 'bump', 'float', False)
-                    except (RuntimeError, ValueError) as err:
-                        logger.error(err)
-                    else:
-                        pbrt.write(indent + bumpTextureString + '\n')
+                bumpTextureName = None
+                if material[c4d.MATERIAL_USE_BUMP]:
+                    bumpShader = material[c4d.MATERIAL_BUMP_SHADER]
+                    if bumpShader and bumpShader.GetType() == c4d.Xbitmap:
+                        try:
+                            bumpTextureFile = ManageTexture(bumpShader[c4d.BITMAPSHADER_FILENAME], doc, pbrtDir, None)
+                            bumpTextureName, bumpTextureString = makePbrtTexture(bumpTextureFile, 'bump', 'float', False)
+                        except (RuntimeError, ValueError) as err:
+                            logger.error(err)
+                        else:
+                            pbrtMaterials.write(bumpTextureString + '\n')
 
-            glossyColor = c4d.Vector(0.0)
-            reflectivityColor = c4d.Vector(0.0)
-            roughness = 0.1
-            ior = 1.333
-            specularTextureName = None
-            if material[c4d.MATERIAL_USE_REFLECTION]:
-                reflectDataId = c4d.REFLECTION_LAYER_LAYER_DATA + c4d.REFLECTION_LAYER_LAYER_SIZE *  4 # 4 = default layer id
-                roughness = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS]
-                specularColor = material[reflectDataId + c4d.REFLECTION_LAYER_COLOR_COLOR]
-                specularColorBrightness = material[reflectDataId + c4d.REFLECTION_LAYER_COLOR_BRIGHTNESS]
-                specularStrength = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR]
+                glossyColor = c4d.Vector(0.0)
+                reflectivityColor = c4d.Vector(0.0)
+                roughness = 0.1
+                ior = 1.333
+                specularTextureName = None
+                if material[c4d.MATERIAL_USE_REFLECTION]:
+                    reflectDataId = c4d.REFLECTION_LAYER_LAYER_DATA + c4d.REFLECTION_LAYER_LAYER_SIZE *  4 # 4 = default layer id
+                    roughness = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_VALUE_ROUGHNESS]
+                    specularColor = material[reflectDataId + c4d.REFLECTION_LAYER_COLOR_COLOR]
+                    specularColorBrightness = material[reflectDataId + c4d.REFLECTION_LAYER_COLOR_BRIGHTNESS]
+                    specularStrength = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR]
 
-                reflectType = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION]
-                reflectionStrength = 0.25
-                if reflectType == c4d.REFLECTION_DISTRIBUTION_GGX:
-                    reflectionStrength = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION]
-                    if material[reflectDataId + c4d.REFLECTION_LAYER_FRESNEL_MODE] == c4d.REFLECTION_FRESNEL_DIELECTRIC:
-                        ior = material[reflectDataId + c4d.REFLECTION_LAYER_FRESNEL_VALUE_IOR]
-                elif reflectType == c4d.REFLECTION_DISTRIBUTION_SPECULAR_BLINN:
-                    reflectionStrength = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR]
+                    reflectType = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_DISTRIBUTION]
+                    reflectionStrength = 0.25
+                    if reflectType == c4d.REFLECTION_DISTRIBUTION_GGX:
+                        reflectionStrength = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_VALUE_REFLECTION]
+                        if material[reflectDataId + c4d.REFLECTION_LAYER_FRESNEL_MODE] == c4d.REFLECTION_FRESNEL_DIELECTRIC:
+                            ior = material[reflectDataId + c4d.REFLECTION_LAYER_FRESNEL_VALUE_IOR]
+                    elif reflectType == c4d.REFLECTION_DISTRIBUTION_SPECULAR_BLINN:
+                        reflectionStrength = material[reflectDataId + c4d.REFLECTION_LAYER_MAIN_VALUE_SPECULAR]
 
-                glossyColor = specularColor * specularColorBrightness * specularStrength
-                reflectivityColor = specularColor * specularColorBrightness * reflectionStrength
+                    glossyColor = specularColor * specularColorBrightness * specularStrength
+                    reflectivityColor = specularColor * specularColorBrightness * reflectionStrength
 
-                specularColorShader = material[reflectDataId + c4d.REFLECTION_LAYER_COLOR_TEXTURE]
-                if specularColorShader is not None and specularColorShader.GetType() == c4d.Xbitmap:
-                    specularTextureFile = ManageTexture(specularColorShader[c4d.BITMAPSHADER_FILENAME], doc, pbrtDir, None)
-                    try:
-                        specularTextureName, specularTextureString = makePbrtTexture(specularTextureFile, 'specular')
-                    except RuntimeError as err:
-                        logger.error(err)
-                    else:
-                        pbrt.write(indent + specularTextureString + '\n')
+                    specularColorShader = material[reflectDataId + c4d.REFLECTION_LAYER_COLOR_TEXTURE]
+                    if specularColorShader is not None and specularColorShader.GetType() == c4d.Xbitmap:
+                        specularTextureFile = ManageTexture(specularColorShader[c4d.BITMAPSHADER_FILENAME], doc, pbrtDir, None)
+                        try:
+                            specularTextureName, specularTextureString = makePbrtTexture(specularTextureFile, 'specular')
+                        except RuntimeError as err:
+                            logger.error(err)
+                        else:
+                            pbrtMaterials.write(specularTextureString + '\n')
 
-            useTranslucency = False
-            if material[c4d.MATERIAL_USE_LUMINANCE]:
-                luminanceShader = material[c4d.MATERIAL_LUMINANCE_SHADER]
-                if luminanceShader is not None:
-                    if luminanceShader.GetType() == c4d.Xfusion:
-                        if luminanceShader[c4d.SLA_FUSION_BASE_CHANNEL] is not None:
-                            if luminanceShader[c4d.SLA_FUSION_BASE_CHANNEL].GetType() == c4d.Xtranslucency:
-                                useTranslucency = True
-                    elif luminanceShader.GetType() == c4d.Xlayer:
-                        shader = luminanceShader.GetDown()
-                        while shader != None:
-                            if shader.GetType() == c4d.Xtranslucency:
-                                useTranslucency = True
-                                break
-                            shader = shader.GetNext()
+                useTranslucency = False
+                if material[c4d.MATERIAL_USE_LUMINANCE]:
+                    luminanceShader = material[c4d.MATERIAL_LUMINANCE_SHADER]
+                    if luminanceShader is not None:
+                        if luminanceShader.GetType() == c4d.Xfusion:
+                            if luminanceShader[c4d.SLA_FUSION_BASE_CHANNEL] is not None:
+                                if luminanceShader[c4d.SLA_FUSION_BASE_CHANNEL].GetType() == c4d.Xtranslucency:
+                                    useTranslucency = True
+                        elif luminanceShader.GetType() == c4d.Xlayer:
+                            shader = luminanceShader.GetDown()
+                            while shader != None:
+                                if shader.GetType() == c4d.Xtranslucency:
+                                    useTranslucency = True
+                                    break
+                                shader = shader.GetNext()
 
-            opacityColor = c4d.Vector(1.0)
-            if material[c4d.MATERIAL_USE_TRANSPARENCY]:
-                opacityColor = (material[c4d.MATERIAL_TRANSPARENCY_COLOR] * material[c4d.MATERIAL_TRANSPARENCY_BRIGHTNESS])
-            transmissivityColor = c4d.Vector(1.0) - opacityColor
+                opacityColor = c4d.Vector(1.0)
+                if material[c4d.MATERIAL_USE_TRANSPARENCY]:
+                    opacityColor = (material[c4d.MATERIAL_TRANSPARENCY_COLOR] * material[c4d.MATERIAL_TRANSPARENCY_BRIGHTNESS])
+                transmissivityColor = c4d.Vector(1.0) - opacityColor
 
-            # create named material if material is translucent so we can reference it from Mix material
-            if useTranslucency:
-                prefix = 'MakeNamedMaterial "' + material.GetName().lower() + '_front" "string type"'
-            else:
-                prefix = 'Material'
+                # create named material if material is translucent so we can reference it from Mix material
+                if useTranslucency:
+                    prefix = 'MakeNamedMaterial "' + material.GetName() + '_front" "string type"'
+                else:
+                    prefix = 'MakeNamedMaterial "' + material.GetName() + '" "string type"'
 
-            if not c4d.utils.CompareFloatTolerant(transmissivityColor.GetLength(), 0.0):
-                pbrt.write(indent + prefix +' "glass" ' + makePbrtAttributeFloat('index', ior))
-                pbrt.write(' ' + makePbrtAttribute('Kr', reflectivityColor if specularTextureName is None else specularTextureName))
-                pbrt.write(' ' + makePbrtAttribute('Kt', transmissivityColor, False))
-            else:
-                pbrt.write(indent + prefix +' "uber" ' + makePbrtAttributeFloat('index', ior))
-                pbrt.write(' ' + makePbrtAttribute('Kd', baseColor if colorTextureName is None else colorTextureName))
-                pbrt.write(' ' + makePbrtAttribute('Ks', glossyColor if specularTextureName is None else specularTextureName))
-                pbrt.write(' ' + makePbrtAttribute('Kr', reflectivityColor if specularTextureName is None else specularTextureName))
-                pbrt.write(' ' + makePbrtAttributeFloat('roughness', roughness))
-                #pbrt.write(' ' + makePbrtAttributeColor('opacity', opacityColor, False))
+                if not c4d.utils.CompareFloatTolerant(transmissivityColor.GetLength(), 0.0):
+                    pbrtMaterials.write(prefix +' "glass" ' + makePbrtAttributeFloat('index', ior))
+                    pbrtMaterials.write(' ' + makePbrtAttribute('Kr', reflectivityColor if specularTextureName is None else specularTextureName))
+                    pbrtMaterials.write(' ' + makePbrtAttribute('Kt', transmissivityColor, False))
+                else:
+                    pbrtMaterials.write(prefix +' "uber" ' + makePbrtAttributeFloat('index', ior))
+                    pbrtMaterials.write(' ' + makePbrtAttribute('Kd', baseColor if colorTextureName is None else colorTextureName))
+                    pbrtMaterials.write(' ' + makePbrtAttribute('Ks', glossyColor if specularTextureName is None else specularTextureName))
+                    pbrtMaterials.write(' ' + makePbrtAttribute('Kr', reflectivityColor if specularTextureName is None else specularTextureName))
+                    pbrtMaterials.write(' ' + makePbrtAttributeFloat('roughness', roughness))
+                    #pbrtMaterials.write(' ' + makePbrtAttributeColor('opacity', opacityColor, False))
 
-            if useTranslucency:
-                # create translucent material
-                pbrt.write('\n')
-                pbrt.write(indent + 'MakeNamedMaterial "' + material.GetName().lower() + '_back" "string type" "translucent" "rgb reflect" [0.0 0.0 0.0] "rgb transmit" [1.0 1.0 1.0] ')
-                pbrt.write(' ' + makePbrtAttribute('Kd', baseColor if colorTextureName is None else colorTextureName))
-                # create mix material
-                pbrt.write('\n')
-                pbrt.write(indent + 'Material "mix" "color amount" [0.4 0.4 0.4] "string namedmaterial1" "' + material.GetName().lower() + '_front" "string namedmaterial2" "' + material.GetName().lower() + '_back"')
+                if useTranslucency:
+                    # create translucent material
+                    pbrtMaterials.write('\n')
+                    pbrtMaterials.write('MakeNamedMaterial "' + material.GetName() + '_back" "string type" "translucent" "rgb reflect" [0.0 0.0 0.0] "rgb transmit" [1.0 1.0 1.0] ')
+                    pbrtMaterials.write(' ' + makePbrtAttribute('Kd', baseColor if colorTextureName is None else colorTextureName))
+                    # create mix material
+                    pbrtMaterials.write('\n')
+                    pbrtMaterials.write('Material "mix" "color amount" [0.4 0.4 0.4] "string namedmaterial1" "' + material.GetName() + '_front" "string namedmaterial2" "' + material.GetName() + '_back"')
 
-            # all materials take a texture that can be used to specify a bump map
-            # (commented this line because it produces a warning when used with mixed material and duplicated it instead whereever it s used)
-            if bumpTextureName:
-               pbrt.write(' ' + makePbrtAttribute('bumpmap', bumpTextureName))
-            pbrt.write('\n')
+                # all materials take a texture that can be used to specify a bump map
+                # (commented this line because it produces a warning when used with mixed material and duplicated it instead whereever it s used)
+                if bumpTextureName:
+                   pbrtMaterials.write(' ' + makePbrtAttribute('bumpmap', bumpTextureName))
+                pbrtMaterials.write('\n')
 
         # these are the point, uv, normal and index lists to be filled 
         # and written to the upcoming triangle mesh
@@ -825,38 +829,39 @@ def ExportPolygonObject(pbrt, obj, indent=""):
 
                 indices.append(newIndexA)
 
-        pbrt.write(indent + 'Shape "trianglemesh"  "integer indices" [')
-        # write indices
-        for index in indices:
-            pbrt.write(str(index) + ' ')
-        # write points
-        pbrt.write('] "point P" [')
-        #for point in obj.GetAllPoints():
-        for point in points:
-            pbrt.write(str(point.x) + ' ' + str(point.y) + ' ' + str(point.z) + ' ')
-        # write uv coordinates, apply texture tag scaling settings
-        if uvs:
-            offsetx = textureTag[c4d.TEXTURETAG_OFFSETX]
-            offsety = textureTag[c4d.TEXTURETAG_OFFSETY]
-            lengthx = textureTag[c4d.TEXTURETAG_LENGTHX]
-            lengthy = textureTag[c4d.TEXTURETAG_LENGTHY]
-            pbrt.write('] "float uv" [')
-            for uv in uvs:
-                pbrt.write(str((uv.x - offsetx) / lengthx) + ' ' + str((-uv.y + offsety) / lengthy) + ' ')
-        # write normals
-        if normals:
-            pbrt.write('] "normal N" [')
-            for normal in normals:
-                pbrt.write(str(normal.x) + ' ' + str(normal.y) + ' ' + str(normal.z) + ' ')
-        # close array
-        pbrt.write(']')
-        if alphaTextureName:
-            pbrt.write('"texture alpha" "' + alphaTextureName + '"')
-        pbrt.write('\n')
+        if len(indices) > 0:
+            pbrtGeometry.write(indent + 'Shape "trianglemesh"  "integer indices" [')
+            # write indices
+            for index in indices:
+                pbrtGeometry.write(str(index) + ' ')
+            # write points
+            pbrtGeometry.write('] "point P" [')
+            #for point in obj.GetAllPoints():
+            for point in points:
+                pbrtGeometry.write(str(point.x) + ' ' + str(point.y) + ' ' + str(point.z) + ' ')
+            # write uv coordinates, apply texture tag scaling settings
+            if uvs:
+                offsetx = textureTag[c4d.TEXTURETAG_OFFSETX]
+                offsety = textureTag[c4d.TEXTURETAG_OFFSETY]
+                lengthx = textureTag[c4d.TEXTURETAG_LENGTHX]
+                lengthy = textureTag[c4d.TEXTURETAG_LENGTHY]
+                pbrtGeometry.write('] "float uv" [')
+                for uv in uvs:
+                    pbrtGeometry.write(str((uv.x - offsetx) / lengthx) + ' ' + str((-uv.y + offsety) / lengthy) + ' ')
+            # write normals
+            if normals:
+                pbrtGeometry.write('] "normal N" [')
+                for normal in normals:
+                    pbrtGeometry.write(str(normal.x) + ' ' + str(normal.y) + ' ' + str(normal.z) + ' ')
+            # close array
+            pbrtGeometry.write(']')
+            if alphaTextureName:
+                pbrtGeometry.write('"texture alpha" "' + alphaTextureName + '"')
+            pbrtGeometry.write('\n')
 
         if innerAttributeBlock:
             indent = indent[0:-1]
-            pbrt.write(indent + 'AttributeEnd\n')
+            pbrtGeometry.write(indent + 'AttributeEnd\n')
 
         if touchedPolygons.GetCount() == obj.GetPolygonCount():
             break
@@ -873,49 +878,49 @@ def ExportPolygonObject(pbrt, obj, indent=""):
 # this is important when writing object trees which are instanced and therefore don't take
 # upstream visibility settings into account
 #
-def WalkObjectTree(pbrt, obj, functionToCall, namedObjects = [], indent = "", rootObj = None):
+def WalkObjectTree(pbrtGeometry, pbrtMaterials, obj, exportedMaterials, functionToCall, namedObjects = [], indent = "", rootObj = None):
     if type(obj) != c4d.documents.BaseDocument:
         # call the function that does the actual thing
         # when this function returns False, no further traversal into children should be done
-        result = functionToCall(pbrt, obj, namedObjects, indent, rootObj)
+        result = functionToCall(pbrtGeometry, pbrtMaterials, obj, exportedMaterials, namedObjects, indent, rootObj)
         if result:
             cache = obj.GetDeformCache()
             if cache == None:
                 cache = obj.GetCache()
             while cache:
-                pbrt.write(indent + "AttributeBegin\n")
+                pbrtGeometry.write(indent + "AttributeBegin\n")
                 indent += "\t"
-                pbrt.write(indent + "# " + cache.GetName() + "\n")
+                pbrtGeometry.write(indent + "# " + cache.GetName() + "\n")
                 ml = cache.GetMl()
                 if ml != c4d.Matrix():
-                    pbrt.write(indent + 'ConcatTransform [' + str(ml.v1.x) + ' ' + str(ml.v1.y) + ' ' + str(ml.v1.z) + ' 0  ' + str(ml.v2.x) + ' ' + str(ml.v2.y) + ' ' + str(ml.v2.z) + ' 0  ' + str(ml.v3.x) + ' ' + str(ml.v3.y) + ' ' + str(ml.v3.z) + ' 0  ' + str(ml.off.x) +  ' ' + str(ml.off.y) + ' ' + str(ml.off.z) + ' 1]\n')
-                WalkObjectTree(pbrt, cache, functionToCall, namedObjects, indent, rootObj)
+                    pbrtGeometry.write(indent + 'ConcatTransform [' + str(ml.v1.x) + ' ' + str(ml.v1.y) + ' ' + str(ml.v1.z) + ' 0  ' + str(ml.v2.x) + ' ' + str(ml.v2.y) + ' ' + str(ml.v2.z) + ' 0  ' + str(ml.v3.x) + ' ' + str(ml.v3.y) + ' ' + str(ml.v3.z) + ' 0  ' + str(ml.off.x) +  ' ' + str(ml.off.y) + ' ' + str(ml.off.z) + ' 1]\n')
+                WalkObjectTree(pbrtGeometry, pbrtMaterials, cache, exportedMaterials, functionToCall, namedObjects, indent, rootObj)
                 indent = indent[0:-1]
-                pbrt.write(indent + "AttributeEnd\n")
+                pbrtGeometry.write(indent + "AttributeEnd\n")
                 cache = cache.GetNext()
         
             for child in obj.GetChildren():
-                pbrt.write(indent + "AttributeBegin\n")
+                pbrtGeometry.write(indent + "AttributeBegin\n")
                 indent += "\t"
-                pbrt.write(indent + "# " + child.GetName() + "\n")
+                pbrtGeometry.write(indent + "# " + child.GetName() + "\n")
                 ml = child.GetMl()
                 if ml != c4d.Matrix():
-                    pbrt.write(indent + 'ConcatTransform [' + str(ml.v1.x) + ' ' + str(ml.v1.y) + ' ' + str(ml.v1.z) + ' 0  ' + str(ml.v2.x) + ' ' + str(ml.v2.y) + ' ' + str(ml.v2.z) + ' 0  ' + str(ml.v3.x) + ' ' + str(ml.v3.y) + ' ' + str(ml.v3.z) + ' 0  ' + str(ml.off.x) +  ' ' + str(ml.off.y) + ' ' + str(ml.off.z) + ' 1]\n')
-                WalkObjectTree(pbrt, child, functionToCall, namedObjects, indent, rootObj)
+                    pbrtGeometry.write(indent + 'ConcatTransform [' + str(ml.v1.x) + ' ' + str(ml.v1.y) + ' ' + str(ml.v1.z) + ' 0  ' + str(ml.v2.x) + ' ' + str(ml.v2.y) + ' ' + str(ml.v2.z) + ' 0  ' + str(ml.v3.x) + ' ' + str(ml.v3.y) + ' ' + str(ml.v3.z) + ' 0  ' + str(ml.off.x) +  ' ' + str(ml.off.y) + ' ' + str(ml.off.z) + ' 1]\n')
+                WalkObjectTree(pbrtGeometry, pbrtMaterials, child, exportedMaterials, functionToCall, namedObjects, indent, rootObj)
                 indent = indent[0:-1]
-                pbrt.write(indent + "AttributeEnd\n")
+                pbrtGeometry.write(indent + "AttributeEnd\n")
 
     else:
         for o in obj.GetObjects():
-            pbrt.write(indent + "AttributeBegin\n")
+            pbrtGeometry.write(indent + "AttributeBegin\n")
             indent += "\t"
-            pbrt.write(indent + "# " + o.GetName() + "\n")
+            pbrtGeometry.write(indent + "# " + o.GetName() + "\n")
             ml = o.GetMl()
             if ml != c4d.Matrix():
-                pbrt.write(indent + 'ConcatTransform [' + str(ml.v1.x) + ' ' + str(ml.v1.y) + ' ' + str(ml.v1.z) + ' 0  ' + str(ml.v2.x) + ' ' + str(ml.v2.y) + ' ' + str(ml.v2.z) + ' 0  ' + str(ml.v3.x) + ' ' + str(ml.v3.y) + ' ' + str(ml.v3.z) + ' 0  ' + str(ml.off.x) +  ' ' + str(ml.off.y) + ' ' + str(ml.off.z) + ' 1]\n')
-            WalkObjectTree(pbrt, o, functionToCall, namedObjects, indent, rootObj)
+                pbrtGeometry.write(indent + 'ConcatTransform [' + str(ml.v1.x) + ' ' + str(ml.v1.y) + ' ' + str(ml.v1.z) + ' 0  ' + str(ml.v2.x) + ' ' + str(ml.v2.y) + ' ' + str(ml.v2.z) + ' 0  ' + str(ml.v3.x) + ' ' + str(ml.v3.y) + ' ' + str(ml.v3.z) + ' 0  ' + str(ml.off.x) +  ' ' + str(ml.off.y) + ' ' + str(ml.off.z) + ' 1]\n')
+            WalkObjectTree(pbrtGeometry, pbrtMaterials, o, exportedMaterials, functionToCall, namedObjects, indent, rootObj)
             indent = indent[0:-1]
-            pbrt.write(indent + "AttributeEnd\n")
+            pbrtGeometry.write(indent + "AttributeEnd\n")
 
 def IsProcessRunning():
     global g_thread
@@ -1018,8 +1023,10 @@ class PbrtThread(c4d.threading.C4DThread):
         else:
             pbrtFilename = os.path.join(tempfile.gettempdir(), os.path.splitext(docFilename)[0] + ".pbrt")
 
-        pbrtContentFilename = os.path.splitext(pbrtFilename)[0] + '_geometry' + os.path.splitext(pbrtFilename)[1]
         pbrt = open(pbrtFilename, 'w')
+
+        pbrtMaterialsFilename = os.path.splitext(pbrtFilename)[0] + '_materials' + os.path.splitext(pbrtFilename)[1]
+        pbrtGeometryFilename = os.path.splitext(pbrtFilename)[0] + '_geometry' + os.path.splitext(pbrtFilename)[1]
             
         #
         # output scene options that are derived from the camera/viewport
@@ -1064,7 +1071,6 @@ class PbrtThread(c4d.threading.C4DThread):
         #
         # output scene options that are derived from the render settings
         #
-        pbrt.write('PixelFilter "mitchell" "float xwidth" [2] "float ywidth" [2]\n')
         pbrt.write('Sampler "halton" "integer pixelsamples" [' + str(data.GetInt32(IDC_PBRT_SAMPLES)) + ']\n')
         
         # generate a temporary location and filename for the output image
@@ -1104,7 +1110,7 @@ class PbrtThread(c4d.threading.C4DThread):
         define an export function to be passed to WalkObjectTree as callback
         TODO: should identify (physical) sky objects, bake them to a texture and define them as a light source
         """
-        def MyExportFunction(pbrt, obj, namedObjects = [], indent="", rootObj=None):
+        def MyExportFunction(pbrtGeometry, pbrtMaterials, obj, exportedMaterials, namedObjects = [], indent="", rootObj=None):
             # walk through all the possible reasons to not export this object
             # if a reason is found, still return true, because this doesn't mean the subtree shouldn't be traversed
             if not obj.GetDeformMode():
@@ -1121,13 +1127,13 @@ class PbrtThread(c4d.threading.C4DThread):
                 if not obj.GetBit(c4d.BIT_CONTROLOBJECT) and not obj.GetBit(c4d.BIT_IGNOREDRAW):
                     namedObject = FindNamedObject(obj.GetDataInstance().GetObjectLink(c4d.INSTANCEOBJECT_LINK), namedObjects)
                     if namedObject:
-                        pbrt.write(indent + 'ObjectInstance "' + namedObject[1] + '"\n')
+                        pbrtGeometry.write(indent + 'ObjectInstance "' + namedObject[1] + '"\n')
                 # if this object has been inserted as an object instance, we return False to notify WalkObjectTree that it should not traverse the hierarchy below this object
                 return False
             elif FindNamedObject(obj, namedObjects):
                 namedObject = FindNamedObject(obj, namedObjects)
                 if namedObject:
-                    pbrt.write(indent + 'ObjectInstance "' + namedObject[1] + '"\n')
+                    pbrtGeometry.write(indent + 'ObjectInstance "' + namedObject[1] + '"\n')
                 # if this object has been inserted as an object instance, we return False to notify WalkObjectTree that it should not traverse the hierarchy below this object
                 return False
 
@@ -1146,14 +1152,14 @@ class PbrtThread(c4d.threading.C4DThread):
                 #lightBrightness *= 100
                 if obj[c4d.LIGHT_TYPE] == c4d.LIGHT_TYPE_OMNI:
                     lightScale = obj[c4d.LIGHT_DETAILS_OUTERRADIUS] * globalLightScale
-                    pbrt.write(indent + 'LightSource "point" "rgb I" [' + str(lightColor.x * lightBrightness) + ' ' + str(lightColor.y * lightBrightness) + ' ' + str(lightColor.z * lightBrightness) + '] "point from" [0 0 0] "rgb scale" [' + str(lightScale) + ' ' + str(lightScale) + ' ' + str(lightScale) + '] \n')
+                    pbrtGeometry.write(indent + 'LightSource "point" "rgb I" [' + str(lightColor.x * lightBrightness) + ' ' + str(lightColor.y * lightBrightness) + ' ' + str(lightColor.z * lightBrightness) + '] "point from" [0 0 0] "rgb scale" [' + str(lightScale) + ' ' + str(lightScale) + ' ' + str(lightScale) + '] \n')
                 elif obj[c4d.LIGHT_TYPE] == c4d.LIGHT_TYPE_SPOT:
                     pass
                 elif obj[c4d.LIGHT_TYPE] == c4d.LIGHT_TYPE_DISTANT:
-                    pbrt.write(indent + 'LightSource "distant" "rgb L" [' + str(lightColor.x * lightBrightness) + ' ' + str(lightColor.y * lightBrightness) + ' ' + str(lightColor.z * lightBrightness) + '] "point from" [0 0 0] "point to" [0 0 1]')
+                    pbrtGeometry.write(indent + 'LightSource "distant" "rgb L" [' + str(lightColor.x * lightBrightness) + ' ' + str(lightColor.y * lightBrightness) + ' ' + str(lightColor.z * lightBrightness) + '] "point from" [0 0 0] "point to" [0 0 1]')
                     if not c4d.utils.CompareFloatTolerant(globalLightScale, 1.0):
-                        pbrt.write(' ' + makePbrtAttributeColor('scale', c4d.Vector(globalLightScale), False))
-                    pbrt.write('\n')
+                        pbrtGeometry.write(' ' + makePbrtAttributeColor('scale', c4d.Vector(globalLightScale), False))
+                    pbrtGeometry.write('\n')
                 else:
                     logger.warning("Light Source " + obj.GetName() + " ignored due to unknown Light Type Setting!")
 
@@ -1197,14 +1203,14 @@ class PbrtThread(c4d.threading.C4DThread):
                             c4d.SpecialEventAdd(MSG_PBRT_BAKETEXTURE)
 
                             # rotate the light so it matches the CINEMA 4D Physical Sky environment
-                            pbrt.write(indent + 'Rotate 90 -1 0 0\n')
-                            pbrt.write(indent + 'Scale 1 -1 1\n')
+                            pbrtGeometry.write(indent + 'Rotate 90 -1 0 0\n')
+                            pbrtGeometry.write(indent + 'Scale 1 -1 1\n')
 
                             # write the infinite light to the scene
-                            pbrt.write(indent + 'LightSource "infinite" "string mapname" ["' + os.path.basename(g_bakeTextureFile) +  '"] "color L" [1 1 1] "integer nsamples" [128]')
+                            pbrtGeometry.write(indent + 'LightSource "infinite" "string mapname" ["' + os.path.basename(g_bakeTextureFile) +  '"] "color L" [1 1 1] "integer nsamples" [128]')
                             if not c4d.utils.CompareFloatTolerant(globalLightScale, 1.0):
-                                pbrt.write(' ' + makePbrtAttributeColor('scale', c4d.Vector(globalLightScale), False))
-                            pbrt.write('\n')
+                                pbrtGeometry.write(' ' + makePbrtAttributeColor('scale', c4d.Vector(globalLightScale), False))
+                            pbrtGeometry.write('\n')
                         else:
                             logger.error("Unable to merge environment bake template!")
 
@@ -1214,7 +1220,7 @@ class PbrtThread(c4d.threading.C4DThread):
             elif obj.GetType() == c4d.Opolygon:
                 # this is a regular polygon object, export as such
                 logger.debug("Exporting Polygon Object: " + obj.GetName())
-                ExportPolygonObject(pbrt, obj, indent)
+                ExportPolygonObject(pbrtGeometry, pbrtMaterials, exportedMaterials, obj, indent)
 
             return True
 
@@ -1241,16 +1247,19 @@ class PbrtThread(c4d.threading.C4DThread):
                         namedObjects.append([instancedObject, objectName])
 
         # create separate file for content
-        pbrtContent = open(pbrtContentFilename, 'w')
+        pbrtMaterials = open(pbrtMaterialsFilename, 'w')
+        pbrtGeometry = open(pbrtGeometryFilename, 'w')
+        exportedMaterials = dict()
         for namedObject in namedObjects:
-            pbrtContent.write('ObjectBegin "' + namedObject[1] + '"\n')
+            pbrtGeometry.write('ObjectBegin "' + namedObject[1] + '"\n')
             logger.info("Exporting " + namedObject[0].GetName() + " as Instance...")
-            WalkObjectTree(pbrtContent, namedObject[0], MyExportFunction, indent=indent, rootObj=namedObject[0])
-            pbrtContent.write('ObjectEnd\n')
+            WalkObjectTree(pbrtGeometry, pbrtMaterials, namedObject[0], exportedMaterials, MyExportFunction, indent=indent, rootObj=namedObject[0])
+            pbrtGeometry.write('ObjectEnd\n')
 
         # main scene export run
-        WalkObjectTree(pbrtContent, doc, MyExportFunction, namedObjects)
-        pbrtContent.close()
+        WalkObjectTree(pbrtGeometry, pbrtMaterials, doc, exportedMaterials, MyExportFunction, namedObjects)
+        pbrtMaterials.close()
+        pbrtGeometry.close()
 
         # in case of no light sources in the scene and the corresponding option being set,
         # export default light
@@ -1262,7 +1271,8 @@ class PbrtThread(c4d.threading.C4DThread):
                 pbrt.write(' ' + makePbrtAttributeColor('scale', c4d.Vector(globalLightScale), False))
             pbrt.write('\n')
 
-        pbrt.write(indent + 'Include "' + os.path.basename(pbrtContentFilename) + '"\n');
+        pbrt.write(indent + 'Include "' + os.path.basename(pbrtMaterialsFilename) + '"\n');
+        pbrt.write(indent + 'Include "' + os.path.basename(pbrtGeometryFilename) + '"\n');
 
         """
         pbrt.write('AttributeBegin\n')
