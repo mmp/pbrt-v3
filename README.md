@@ -18,9 +18,15 @@ The initial release of the source code doesn't include updated
 documentation (and the book isn't out yet!), so you should only try it out
 if you're comfortable digging into source code.
 
-Some [example scenes are available for
-download](http://mmp.storage.googleapis.com/pbrt/pbrt-v3-scenes.tar.bz2). (Updated
-26 Nov 2015).
+Nearly 2GB of example scenes are available for download. (Many are new and
+weren't available with previous versions of pbrt.) We're trying an
+experiment and making them available via git. Run:
+```
+$ git clone git://git.pbrt.org/pbrt-v3-scenes
+```
+to get them. We will update this repository as more scenes become
+available. (See the `README.md.html file` in the scene distribution for
+more information about the scenes and preview images.)
 
 The [pbrt website](http://pbrt.org) has  general information about
 both *Physically Based Rendering* as well as pbrt-v2, the previous version
@@ -65,13 +71,8 @@ is finalized.)
   et al's [A Comprehensive Framework for Rendering Layered
   Materials](http://www.cs.cornell.edu/projects/layered-sg14/). (See an
   example in the `scenes/dragons` example scene).
-  * New versions of the BSDF files it uses can be generated with a visual
-    layer editor provided in a [special branch of the Mitsuba renderer](https://www.mitsuba-renderer.org/repos/mitsuba.git/files/layered-0.5.1).
-    To compile this branch, install PyQt (matching your system’s
-    Python Version) and compile Mitsuba with the -DDOUBLE_PRECISION flag
-    (see the documentation for details on building Mitsuba). After sourcing
-    the ’setpath.sh’ script on a terminal, enter the ‘editor’ directory and
-    run ‘main.py’ to launch the visual layer editor.
+  * New versions of the BSDF files it uses can be generated with 
+    [layerlab](https://github.com/wjakob/layerlab).
 * Improved microfacet models: specular transmission through microfacets,
   and Heitz's improved importance sampling.
 * No external dependencies: thanks to
@@ -147,27 +148,3 @@ The following specific implementations were removed:
   * Use any other sampler.
 * Renderer: all
   * Use "Integrator", as described above.
-
-How You Can Help
-----------------
-
-pbrt has benefited immensely both from its users who have extended it in
-interesting ways and found bugs as well as from the many sharp-eyed readers
-of the book over the years.  If you're interested in helping out with the
-third edition, some areas where we'd appreciate help are below.  We'll
-happily acknowledge contributors in the book's preface; we'll send a signed
-copy of the book to folks who make significant contributions.
-
-* Finding bugs: though we've tried to test thoroughly,
-there are certainly bugs in the code, and we'd like to find them before
-they are published in the book! The
-[pbrt-v3 issue tracker](https://github.com/mmp/pbrt-v3/issues) is the best
-place to report anything suspicious you find.  Useful things to do include:
-  * Running various scenes through the renderer and checking the results.
-  * Using static code analysis tools (e.g. MSVC's /analyze) on the code
-  * Using dynamic tools like valgrind, Address Sanitizer, Thread Sanitizer,
-    etc. when rendering various scenes.
-* Portability: the system has been developed on Linux and OS X using x86
-CPUs. It should be widely portable to other OSes and CPUs, but the only way
-to get those details right is for people to try it and let us know which
-targets don't currently work.
