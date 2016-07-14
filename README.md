@@ -7,8 +7,9 @@ pbrt, Version 3
 This repository holds the source code to the new version of pbrt that will
 be described in the forthcoming third edition of *Physically Based
 Rendering: From Theory to Implementation*, by [Matt
-Pharr](http://pharr.org/matt), Greg Humphreys, and [Wenzel Jakob](http://www.mitsuba-renderer.org/~wenzel/).  As before, the code is
-available under the BSD license.
+Pharr](http://pharr.org/matt), [Wenzel
+Jakob](http://www.mitsuba-renderer.org/~wenzel/), and Greg Humphreys.  As
+before, the code is available under the BSD license.
 
 Although the new version of the book won't be released until this Fall,
 we're making the source code available now so that interested users can
@@ -18,7 +19,7 @@ The initial release of the source code doesn't include updated
 documentation (and the book isn't out yet!), so you should only try it out
 if you're comfortable digging into source code.
 
-Nearly 2GB of example scenes are available for download. (Many are new and
+Over 4GB of example scenes are available for download. (Many are new and
 weren't available with previous versions of pbrt.) We're trying an
 experiment and making them available via git. Run:
 ```
