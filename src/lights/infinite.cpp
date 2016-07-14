@@ -159,8 +159,7 @@ Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
 void InfiniteAreaLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
                                Float *pdfDir) const {
     Vector3f d = -WorldToLight(ray.d);
-    Float theta = std::acos(Clamp(d.z, -1, 1)), phi = std::atan2(d.y, d.x);
-    if (phi < 0) phi += 2 * Pi;
+    Float theta = SphericalTheta(d), phi = SphericalPhi(d);
     Point2f uv(phi * Inv2Pi, theta * InvPi);
     Float mapPdf = distribution->Pdf(uv);
     *pdfDir = mapPdf / (2 * Pi * Pi * std::sin(theta));
