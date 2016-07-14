@@ -30,12 +30,11 @@
 
  */
 
-
 // lights/infinite.cpp*
 #include "lights/infinite.h"
-#include "sampling.h"
-#include "paramset.h"
 #include "imageio.h"
+#include "paramset.h"
+#include "sampling.h"
 
 // InfiniteAreaLight Method Definitions
 InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
@@ -62,17 +61,20 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
     // Initialize sampling PDFs for infinite area light
 
     // Compute scalar-valued image _img_ from environment map
-    int width = Lmap->Width(), height = Lmap->Height();
+    int width = 2 * Lmap->Width(), height = 2 * Lmap->Height();
     std::unique_ptr<Float[]> img(new Float[width * height]);
-    for (int v = 0; v < height; ++v) {
-        Float vp = (Float)v / (Float)height;
-        Float sinTheta = std::sin(Pi * Float(v + .5f) / Float(height));
-        for (int u = 0; u < width; ++u) {
-            Float up = (Float)u / (Float)width;
-            img[u + v * width] = Lmap->Lookup(Point2f(up, vp)).y();
-            img[u + v * width] *= sinTheta;
-        }
-    }
+    float fwidth = 0.5f / std::min(width, height);
+    ParallelFor(
+        [&](int64_t v) {
+            Float vp = (v + .5f) / (Float)height;
+            Float sinTheta = std::sin(Pi * (v + .5f) / height);
+            for (int u = 0; u < width; ++u) {
+                Float up = (u + .5f) / (Float)width;
+                img[u + v * width] = Lmap->Lookup(Point2f(up, vp), fwidth).y();
+                img[u + v * width] *= sinTheta;
+            }
+        },
+        height, 32);
 
     // Compute sampling distributions for rows and columns of image
     distribution.reset(new Distribution2D(img.get(), width, height));
@@ -96,8 +98,6 @@ Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
     Point2f uv = distribution->SampleContinuous(u, &mapPdf);
-    uv[0] -= (Float)0.5 / Lmap->Width();
-    uv[1] -= (Float)0.5 / Lmap->Height();
     if (mapPdf == 0) return Spectrum(0.f);
 
     // Convert infinite light sample point to direction
@@ -135,8 +135,6 @@ Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
     Point2f uv = distribution->SampleContinuous(u, &mapPdf);
-    uv[0] -= (Float)0.5 / Lmap->Width();
-    uv[1] -= (Float)0.5 / Lmap->Height();
     if (mapPdf == 0) return Spectrum(0.f);
     Float theta = uv[1] * Pi, phi = uv[0] * 2.f * Pi;
     Float cosTheta = std::cos(theta), sinTheta = std::sin(theta);
