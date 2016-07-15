@@ -568,6 +568,17 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
     *wi = -Vector3f(norm * (cosPhi * wo.x - sinPhi * wo.y),
                     norm * (sinPhi * wo.x + cosPhi * wo.y), muI);
 
+    // Mathematically, wi will be normalized (if wo was). However, in
+    // practice, floating-point rounding error can cause some error to
+    // accumulate in the computed value of wi here. This can be
+    // catastrophic: if the ray intersects an object with the FourierBSDF
+    // again and the wo (based on such a wi) is nearly perpendicular to the
+    // surface, then the wi computed at the next intersection can end up
+    // being substantially (like 4x) longer than normalized, which leads to
+    // all sorts of errors, including negative spectral values. Therefore,
+    // we normalize again here.
+    *wi = Normalize(*wi);
+
     // Evaluate remaining Fourier expansions for angle $\phi$
     Float scale = muI != 0 ? (1 / std::abs(muI)) : (Float)0;
     if (mode == TransportMode::Radiance && muI * muO > 0) {
