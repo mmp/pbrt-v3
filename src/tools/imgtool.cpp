@@ -523,7 +523,6 @@ int convert(int argc, char *argv[]) {
         usage("missing filenames for \"convert\"");
 
     const char *inFilename = argv[i], *outFilename = argv[i + 1];
-    const char *filename[2] = {argv[i], argv[i + 1]};
     Point2i res;
     std::unique_ptr<RGBSpectrum[]> image(ReadImage(inFilename, &res));
     if (!image) {
