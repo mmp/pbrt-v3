@@ -44,7 +44,7 @@
 // Random Number Declarations
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
 static const double DoubleOneMinusEpsilon = 0.99999999999999989;
-static const float FloatOneMinusEpsilon = 0.99999994
+static const float FloatOneMinusEpsilon = 0.99999994;
 #else
 static const double DoubleOneMinusEpsilon = 0x1.fffffffffffffp-1;
 static const float FloatOneMinusEpsilon = 0x1.fffffep-1;
