@@ -208,6 +208,7 @@ SET ( PBRT_CORE_HEADERS
   )
 
 FILE ( GLOB PBRT_SOURCE
+  src/ext/*.c
   src/ext/*.cpp
   src/accelerators/*.cpp
   src/cameras/*.cpp

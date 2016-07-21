@@ -13,6 +13,10 @@
 #include "imageio.h"
 #include "pbrt.h"
 #include "spectrum.h"
+#include "parallel.h"
+extern "C" {
+#include "ext/ArHosekSkyModel.h"
+}
 
 static void usage(const char *msg = nullptr, ...) {
     if (msg) {
@@ -24,7 +28,7 @@ static void usage(const char *msg = nullptr, ...) {
     }
     fprintf(stderr, R"(usage: imgtool <command> [options] <filenames...>
 
-commands: assemble, cat, convert, diff, info
+commands: assemble, cat, convert, diff, info, makesky
 
 assemble option:
     --outflie          Output image filename.
@@ -55,8 +59,120 @@ diff options:
     --outfile <name>   Filename to use for saving an image that encodes the
                        absolute value of per-pixel differences.
 
+makesky options:
+    --albedo <a>       Albedo of ground-plane (range 0-1). Default: 0.5
+    --elevation <e>    Elevation of the sun in degrees (range 0-90). Default: 10
+    --outfile <name>   Filename to store latitude-longitude environment map in.
+                       Default: "sky.exr"
+    --turbidity <t>    Atmospheric turbidity (range 1.7-10). Default: 3
+    --resolution <r>   Vertical resolution of generated environment map.
+                       (Horizontal resolution is twice this value.)
+                       Default: 2048
+
 )");
     exit(1);
+}
+
+int makesky(int argc, char *argv[]) {
+    const char *outfile = "sky.exr";
+    float albedo = 0.5;
+    float turbidity = 3.;
+    float elevation = Radians(10);
+    int resolution = 2048;
+
+    int i;
+    auto parseArg = [&]() -> std::pair<std::string, double> {
+        const char *ptr = argv[i];
+        // Skip over a leading dash or two.
+        Assert(*ptr == '-');
+        ++ptr;
+        if (*ptr == '-') ++ptr;
+
+        // Copy the flag name to the string.
+        std::string flag;
+        while (*ptr && *ptr != '=') flag += *ptr++;
+
+        if (!*ptr && i + 1 == argc)
+            usage("missing value after %s flag", argv[i]);
+        const char *value = (*ptr == '=') ? (ptr + 1) : argv[++i];
+        return {flag, atof(value)};
+    };
+
+    for (i = 0; i < argc; ++i) {
+        if (!strcmp(argv[i], "--outfile") || !strcmp(argv[i], "-outfile")) {
+            if (i + 1 == argc)
+                usage("missing filename for %s parameter", argv[i]);
+            outfile = argv[++i];
+        } else if (!strncmp(argv[i], "--outfile=", 10)) {
+            outfile = &argv[i][10];
+        } else {
+            auto arg = parseArg();
+            if (std::get<0>(arg) == "albedo") {
+                albedo = std::get<1>(arg);
+                if (albedo < 0. || albedo > 1.)
+                    usage("--albedo must be between 0 and 1");
+            } else if (std::get<0>(arg) == "turbidity") {
+                turbidity = std::get<1>(arg);
+                if (turbidity < 1.7 || turbidity > 10.)
+                    usage("--turbidity must be between 1.7 and 10.");
+            } else if (std::get<0>(arg) == "elevation") {
+                elevation = std::get<1>(arg);
+                if (elevation < 0. || elevation > 90.)
+                    usage("--elevation must be between 0. and 90.");
+                elevation = Radians(elevation);
+            } else if (std::get<0>(arg) == "resolution") {
+                resolution = int(std::get<1>(arg));
+                if (resolution < 1) usage("--resolution must be >= 1");
+            } else
+                usage();
+        }
+    }
+
+    constexpr int num_channels = 9;
+    // Three wavelengths around red, three around green, and three around blue.
+    double lambda[num_channels] = {630, 680, 710, 500, 530, 560, 460, 480, 490};
+
+    ArHosekSkyModelState *skymodel_state[num_channels];
+    for (int i = 0; i < num_channels; ++i) {
+        skymodel_state[i] =
+            arhosekskymodelstate_alloc_init(elevation, turbidity, albedo);
+    }
+
+    // Vector pointing at the sun. Note that elevation is measured from the
+    // horizon--not the zenith, as it is elsewhere in pbrt.
+    Vector3f sunDir(0., std::sin(elevation), std::cos(elevation));
+
+    int nTheta = resolution, nPhi = 2 * nTheta;
+    std::vector<Float> img(3 * nTheta * nPhi, 0.f);
+    ParallelFor([&](int64_t t) {
+        Float theta = float(t + 0.5) / nTheta * Pi;
+        if (theta > Pi / 2.) return;
+        for (int p = 0; p < nPhi; ++p) {
+            Float phi = float(p + 0.5) / nPhi * 2. * Pi;
+
+            // Vector corresponding to the direction for this pixel.
+            Vector3f v(std::cos(phi) * std::sin(theta), std::cos(theta),
+                       std::sin(phi) * std::sin(theta));
+            // Compute the angle between the pixel's direction and the sun
+            // direction.
+            Float gamma = std::acos(Clamp(Dot(v, sunDir), -1, 1));
+            Assert(gamma >= 0 && gamma <= Pi);
+
+            for (int c = 0; c < num_channels; ++c) {
+                float val = arhosekskymodel_solar_radiance(
+                    skymodel_state[c], theta, gamma, lambda[c]);
+                // For each of red, green, and blue, average the three
+                // values for the three wavelengths for the color.
+                // TODO: do a better spectral->RGB conversion.
+                img[3 * (t * nPhi + p) + c / 3] += val / 3.f;
+            }
+        }
+    }, nTheta, 32);
+
+    WriteImage(outfile, (Float *)&img[0], Bounds2i({0, 0}, {nPhi, nTheta}),
+               {nPhi, nTheta});
+    TerminateWorkerThreads();
+    return 0;
 }
 
 int assemble(int argc, char *argv[]) {
@@ -581,14 +697,16 @@ int main(int argc, char *argv[]) {
 
     if (!strcmp(argv[1], "assemble"))
         return assemble(argc - 2, argv + 2);
+    else if (!strcmp(argv[1], "cat"))
+        return cat(argc - 2, argv + 2);
+    else if (!strcmp(argv[1], "convert"))
+        return convert(argc - 2, argv + 2);
     else if (!strcmp(argv[1], "diff"))
         return diff(argc - 2, argv + 2);
     else if (!strcmp(argv[1], "info"))
         return info(argc - 2, argv + 2);
-    else if (!strcmp(argv[1], "convert"))
-        return convert(argc - 2, argv + 2);
-    else if (!strcmp(argv[1], "cat"))
-        return cat(argc - 2, argv + 2);
+    else if (!strcmp(argv[1], "makesky"))
+        return makesky(argc - 2, argv + 2);
     else
         usage("unknown command \"%s\"", argv[1]);
 
