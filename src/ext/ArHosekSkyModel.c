@@ -616,7 +616,8 @@ ArHosekSkyModelState  * arhosek_rgb_skymodelstate_alloc_init(
     state->albedo       = albedo;
     state->elevation    = elevation;
 
-    for( unsigned int channel = 0; channel < 3; ++channel )
+    unsigned int channel;
+    for( channel = 0; channel < 3; ++channel )
     {
         ArHosekSkyModel_CookConfiguration(
             datasetsRGB[channel], 
