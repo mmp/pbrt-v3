@@ -699,6 +699,16 @@ double arhosekskymodel_solar_radiance_internal2(
         );
             
     
+    // sun distance to diameter ratio, squared
+
+    const double sol_rad_sin = sin(state->solar_radius);
+    const double ar2 = 1 / ( sol_rad_sin * sol_rad_sin );
+    const double singamma = sin(gamma);
+    double sc2 = 1.0 - ar2 * singamma * singamma;
+    if (sc2 < 0.0 ) sc2 = 0.0;
+    double sampleCosine = sqrt (sc2);
+    if (sampleCosine == 0.) return 0.;
+
     int     turb_low  = (int) state->turbidity - 1;
     double  turb_frac = state->turbidity - (double) (turb_low + 1);
     
@@ -758,14 +768,6 @@ double arhosekskymodel_solar_radiance_internal2(
               (1.0 - wl_frac) * limbDarkeningDatasets[wl_low  ][i]
             +        wl_frac  * limbDarkeningDatasets[wl_low+1][i];
     
-    // sun distance to diameter ratio, squared
-
-    const double sol_rad_sin = sin(state->solar_radius);
-    const double ar2 = 1 / ( sol_rad_sin * sol_rad_sin );
-    const double singamma = sin(gamma);
-    double sc2 = 1.0 - ar2 * singamma * singamma;
-    if (sc2 < 0.0 ) sc2 = 0.0;
-    double sampleCosine = sqrt (sc2);
     
     //   The following will be improved in future versions of the model:
     //   here, we directly use fitted 5th order polynomials provided by the
