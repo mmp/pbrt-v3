@@ -163,8 +163,8 @@ void ArHosekSkyModel_CookConfiguration(
 
     elev_matrix = dataset + ( 9 * 6 * (int_turbidity-1) );
     
-    
-    for( unsigned int i = 0; i < 9; ++i )
+    unsigned int i;
+    for( i = 0; i < 9; ++i )
     {
         //(1-t).^3* A1 + 3*(1-t).^2.*t * A2 + 3*(1-t) .* t .^ 2 * A3 + t.^3 * A4;
         config[i] = 
@@ -179,7 +179,7 @@ void ArHosekSkyModel_CookConfiguration(
 
     // alb 1 low turb
     elev_matrix = dataset + (9*6*10 + 9*6*(int_turbidity-1));
-    for(unsigned int i = 0; i < 9; ++i)
+    for( i = 0; i < 9; ++i)
     {
         //(1-t).^3* A1 + 3*(1-t).^2.*t * A2 + 3*(1-t) .* t .^ 2 * A3 + t.^3 * A4;
         config[i] += 
@@ -197,7 +197,7 @@ void ArHosekSkyModel_CookConfiguration(
 
     // alb 0 high turb
     elev_matrix = dataset + (9*6*(int_turbidity));
-    for(unsigned int i = 0; i < 9; ++i)
+    for( i = 0; i < 9; ++i)
     {
         //(1-t).^3* A1 + 3*(1-t).^2.*t * A2 + 3*(1-t) .* t .^ 2 * A3 + t.^3 * A4;
         config[i] += 
@@ -212,7 +212,7 @@ void ArHosekSkyModel_CookConfiguration(
 
     // alb 1 high turb
     elev_matrix = dataset + (9*6*10 + 9*6*(int_turbidity));
-    for(unsigned int i = 0; i < 9; ++i)
+    for( i = 0; i < 9; ++i)
     {
         //(1-t).^3* A1 + 3*(1-t).^2.*t * A2 + 3*(1-t) .* t .^ 2 * A3 + t.^3 * A4;
         config[i] += 
@@ -318,7 +318,8 @@ ArHosekSkyModelState  * arhosekskymodelstate_alloc_init(
     state->albedo       = ground_albedo;
     state->elevation    = solar_elevation;
 
-    for( unsigned int wl = 0; wl < 11; ++wl )
+    unsigned int wl;
+    for( wl = 0; wl < 11; ++wl )
     {
         ArHosekSkyModel_CookConfiguration(
             datasets[wl], 
@@ -413,7 +414,8 @@ ArHosekSkyModelState  * arhosekskymodelstate_alienworld_alloc_init(
     state->albedo       = ground_albedo;
     state->elevation    = solar_elevation;
     
-    for( unsigned int wl = 0; wl < 11; ++wl )
+    unsigned int wl;
+    for( wl = 0; wl < 11; ++wl )
     {
         //   Basic init as for the normal scenario
         
@@ -467,7 +469,8 @@ ArHosekSkyModelState  * arhosekskymodelstate_alienworld_alloc_init(
     
     double  correctionFactor = 0.0;
     
-    for ( unsigned int i = 2; i < 11; i++ )
+    unsigned int i;
+    for ( i = 2; i < 11; i++ )
     {
         correctionFactor +=
             state->emission_correction_factor_sun[i];
@@ -499,7 +502,7 @@ ArHosekSkyModelState  * arhosekskymodelstate_alienworld_alloc_init(
     //   uniform fashion across wavebands. If we did that, the sky colour would
     //   be wrong.
     
-    for ( unsigned int i = 0; i < 11; i++ )
+    for ( i = 0; i < 11; i++ )
     {
         state->emission_correction_factor_sky[i] =
               solar_intensity
@@ -576,7 +579,8 @@ ArHosekSkyModelState  * arhosek_xyz_skymodelstate_alloc_init(
     state->albedo       = albedo;
     state->elevation    = elevation;
     
-    for( unsigned int channel = 0; channel < 3; ++channel )
+    unsigned int channel;
+    for( channel = 0; channel < 3; ++channel )
     {
         ArHosekSkyModel_CookConfiguration(
             datasetsXYZ[channel], 
@@ -675,7 +679,8 @@ double arhosekskymodel_sr_internal(
     const double x = elevation - break_x;
     double x_exp = 1.0;
 
-    for (int i = 0; i < order; ++i)
+    int i;
+    for (i = 0; i < order; ++i)
     {
         res += x_exp * *coefs--;
         x_exp *= x;
@@ -763,7 +768,8 @@ double arhosekskymodel_solar_radiance_internal2(
 
     double ldCoefficient[6];
     
-    for ( int i = 0; i < 6; i++ )
+    int i;
+    for ( i = 0; i < 6; i++ )
         ldCoefficient[i] =
               (1.0 - wl_frac) * limbDarkeningDatasets[wl_low  ][i]
             +        wl_frac  * limbDarkeningDatasets[wl_low+1][i];
