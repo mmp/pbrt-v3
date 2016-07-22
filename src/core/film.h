@@ -57,13 +57,14 @@ class Film {
     // Film Public Methods
     Film(const Point2i &resolution, const Bounds2f &cropWindow,
          std::unique_ptr<Filter> filter, Float diagonal,
-         const std::string &filename, Float scale);
+         const std::string &filename, Float scale,
+         Float maxSampleLuminance = Infinity);
     Bounds2i GetSampleBounds() const;
     Bounds2f GetPhysicalExtent() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
     void MergeFilmTile(std::unique_ptr<FilmTile> tile);
     void SetImage(const Spectrum *img) const;
-    void AddSplat(const Point2f &p, const Spectrum &v);
+    void AddSplat(const Point2f &p, Spectrum v);
     void WriteImage(Float splatScale = 1);
     void Clear();
 
@@ -88,6 +89,7 @@ class Film {
     Float filterTable[filterTableWidth * filterTableWidth];
     std::mutex mutex;
     const Float scale;
+    const Float maxSampleLuminance;
 
     // Film Private Methods
     Pixel &GetPixel(const Point2i &p) {
@@ -103,16 +105,20 @@ class FilmTile {
   public:
     // FilmTile Public Methods
     FilmTile(const Bounds2i &pixelBounds, const Vector2f &filterRadius,
-             const Float *filterTable, int filterTableSize)
+             const Float *filterTable, int filterTableSize,
+             Float maxSampleLuminance)
         : pixelBounds(pixelBounds),
           filterRadius(filterRadius),
           invFilterRadius(1 / filterRadius.x, 1 / filterRadius.y),
           filterTable(filterTable),
-          filterTableSize(filterTableSize) {
+          filterTableSize(filterTableSize),
+          maxSampleLuminance(maxSampleLuminance) {
         pixels = std::vector<FilmTilePixel>(std::max(0, pixelBounds.Area()));
     }
-    void AddSample(const Point2f &pFilm, const Spectrum &L,
+    void AddSample(const Point2f &pFilm, Spectrum L,
                    Float sampleWeight = 1.) {
+        if (L.y() > maxSampleLuminance)
+            L *= maxSampleLuminance / L.y();
         // Compute sample's raster bounds
         Point2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
         Point2i p0 = (Point2i)Ceil(pFilmDiscrete - filterRadius);
@@ -172,6 +178,7 @@ class FilmTile {
     const Float *filterTable;
     const int filterTableSize;
     std::vector<FilmTilePixel> pixels;
+    const Float maxSampleLuminance;
     friend class Film;
 };
 
