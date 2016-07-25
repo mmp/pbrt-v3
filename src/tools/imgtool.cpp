@@ -359,11 +359,11 @@ int diff(int argc, char *argv[]) {
     std::unique_ptr<RGBSpectrum[]> imgs[2] = {ReadImage(filename[0], &res[0]),
                                               ReadImage(filename[1], &res[1])};
     if (!imgs[0]) {
-        fprintf(stderr, "%s: unable to read image", filename[0]);
+        fprintf(stderr, "%s: unable to read image\n", filename[0]);
         return 1;
     }
     if (!imgs[1]) {
-        fprintf(stderr, "%s: unable to read image", filename[1]);
+        fprintf(stderr, "%s: unable to read image\n", filename[1]);
         return 1;
     }
     if (res[0] != res[1]) {
@@ -642,7 +642,7 @@ int convert(int argc, char *argv[]) {
     Point2i res;
     std::unique_ptr<RGBSpectrum[]> image(ReadImage(inFilename, &res));
     if (!image) {
-        fprintf(stderr, "%s: unable to read image", inFilename);
+        fprintf(stderr, "%s: unable to read image\n", inFilename);
         return 1;
     }
 
