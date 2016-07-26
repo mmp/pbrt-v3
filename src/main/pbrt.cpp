@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
         } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-help") ||
                    !strcmp(argv[i], "-h")) {
             usage();
+            return 0;
         } else
             filenames.push_back(argv[i]);
     }
