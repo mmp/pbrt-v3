@@ -45,6 +45,9 @@ convert options:
                        added to the original image. Default: 0.3
     --bloomswidth <w>  Width of Gaussian used to generate bloom images.
                        Default: 15
+    --despike <v>      For any pixels with a luminance value greater than <v>,
+                       replace the pixel with the median of the 3x3 neighboring
+                       pixels. Default: infinity (i.e., disabled).
     --flipy            Flip the image along the y axis
     --maxluminance <n> Luminance value mapped to white by tonemapping.
                        Default: 1
@@ -581,6 +584,7 @@ int convert(int argc, char *argv[]) {
     int bloomIters = 5;
     bool tonemap = false;
     Float maxY = 1.;
+    Float despikeLimit = Infinity;
 
     int i;
     auto parseArg = [&]() -> std::pair<std::string, double> {
@@ -628,6 +632,8 @@ int convert(int argc, char *argv[]) {
                 bloomScale = std::get<1>(arg);
             else if (std::get<0>(arg) == "bloomiters")
                 bloomIters = int(std::get<1>(arg));
+            else if (std::get<0>(arg) == "despike")
+                despikeLimit = std::get<1>(arg);
             else
                 usage();
         }
@@ -647,6 +653,44 @@ int convert(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < res.x * res.y; ++i) image[i] *= scale;
+
+    if (despikeLimit < Infinity) {
+        std::unique_ptr<RGBSpectrum[]> filteredImg(
+            new RGBSpectrum[res.x * res.y]);
+        int despikeCount = 0;
+        for (int y = 0; y < res.y; ++y) {
+            for (int x = 0; x < res.x; ++x) {
+                if (image[y * res.x + x].y() < despikeLimit) {
+                    filteredImg[y * res.x + x] = image[y * res.x + x];
+                    continue;
+                }
+
+                // Copy all of the valid neighbor pixels into neighbors[].
+                ++despikeCount;
+                int validNeighbors = 0;
+                RGBSpectrum neighbors[9];
+                for (int dy = -1; dy <= 1; ++dy) {
+                    if (y + dy < 0 || y + dy >= res.y) continue;
+                    for (int dx = -1; dx <= 1; ++dx) {
+                        if (x + dx < 0 || x + dx > res.x) continue;
+                        int offset = (y + dy) * res.x + x + dx;
+                        neighbors[validNeighbors++] = image[offset];
+                    }
+                }
+
+                // Find the median of the neighbors, sorted by luminance.
+                int mid = validNeighbors / 2;
+                std::nth_element(
+                    &neighbors[0], &neighbors[mid], &neighbors[validNeighbors],
+                    [](const RGBSpectrum &a, const RGBSpectrum &b) -> bool {
+                        return a.y() < b.y();
+                    });
+                filteredImg[y * res.x + x] = neighbors[mid];
+            }
+        }
+        std::swap(image, filteredImg);
+        fprintf(stderr, "%s: despiked %d pixels\n", inFilename, despikeCount);
+    }
 
     if (bloomLevel < Infinity)
         image = bloom(std::move(image), res, bloomLevel, bloomWidth, bloomScale,
