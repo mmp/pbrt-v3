@@ -103,6 +103,10 @@ Spectrum ScaledBxDF::Sample_f(const Vector3f &wo, Vector3f *wi,
     return scale * f;
 }
 
+Float ScaledBxDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
+    return bxdf->Pdf(wo, wi);
+}
+
 std::string ScaledBxDF::ToString() const {
     return std::string("[ ScaledBxDF bxdf: ") + bxdf->ToString() +
            std::string(" scale: ") + scale.ToString() + std::string(" ]");

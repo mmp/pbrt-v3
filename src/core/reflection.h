@@ -219,7 +219,7 @@ class BxDF {
                          const Point2f *samples) const;
     virtual Spectrum rho(int nSamples, const Point2f *samples1,
                          const Point2f *samples2) const;
-    virtual Float Pdf(const Vector3f &wi, const Vector3f &wo) const;
+    virtual Float Pdf(const Vector3f &wo, const Vector3f &wi) const;
     virtual std::string ToString() const = 0;
 
     // BxDF Public Data
@@ -247,6 +247,7 @@ class ScaledBxDF : public BxDF {
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const;
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
                       Float *pdf, BxDFType *sampledType) const;
+    Float Pdf(const Vector3f &wo, const Vector3f &wi) const;
     std::string ToString() const;
 
   private:
@@ -487,7 +488,7 @@ class FresnelBlend : public BxDF {
     }
     Spectrum Sample_f(const Vector3f &wi, Vector3f *sampled_f, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
-    Float Pdf(const Vector3f &wi, const Vector3f &wo) const;
+    Float Pdf(const Vector3f &wo, const Vector3f &wi) const;
     std::string ToString() const;
 
   private:
@@ -506,7 +507,7 @@ class FourierBSDF : public BxDF {
           mode(mode) {}
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
-    Float Pdf(const Vector3f &wi, const Vector3f &wo) const;
+    Float Pdf(const Vector3f &wo, const Vector3f &wi) const;
     std::string ToString() const;
 
   private:
