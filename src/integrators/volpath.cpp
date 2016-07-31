@@ -30,15 +30,14 @@
 
  */
 
-
 // integrators/volpath.cpp*
 #include "integrators/volpath.h"
-#include "scene.h"
-#include "interaction.h"
-#include "paramset.h"
 #include "bssrdf.h"
 #include "camera.h"
 #include "film.h"
+#include "interaction.h"
+#include "paramset.h"
+#include "scene.h"
 #include "stats.h"
 
 STAT_FLOAT_DISTRIBUTION("Integrator/Path length", pathLength);
@@ -149,7 +148,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         }
 
         // Possibly terminate the path with Russian roulette
-        if (bounces > 3) {
+        if (beta.y() < rrThreshold && bounces > 3) {
             Float q = std::max((Float).05, 1 - beta.y());
             if (sampler.Get1D() < q) break;
             beta /= 1 - q;
@@ -178,5 +177,7 @@ VolPathIntegrator *CreateVolPathIntegrator(
                 Error("Degenerate \"pixelbounds\" specified.");
         }
     }
-    return new VolPathIntegrator(maxDepth, camera, sampler, pixelBounds);
+    Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
+    return new VolPathIntegrator(maxDepth, camera, sampler, pixelBounds,
+                                 rrThreshold);
 }
