@@ -34,6 +34,7 @@
 #include "error.h"
 #include "stringprint.h"
 #include "progressreporter.h"
+#include <mutex>
 
 // Error Reporting Includes
 #include <stdarg.h>
@@ -107,7 +108,14 @@ static void processError(const char *format, va_list args,
         ++column;
     }
 
-    fprintf(stderr, "%s\n", errorString.c_str());
+    // Print the error message (but not more than one time).
+    static std::string lastError;
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+    if (errorString != lastError) {
+        fprintf(stderr, "%s\n", errorString.c_str());
+        lastError = errorString;
+    }
 
     if (disposition == PBRT_ERROR_ABORT) {
 #if defined(PBRT_IS_WINDOWS)
@@ -116,8 +124,6 @@ static void processError(const char *format, va_list args,
         abort();
 #endif
     }
-#if !defined(PBRT_IS_WINDOWS)
-#endif
 }
 
 void Info(const char *format, ...) {
