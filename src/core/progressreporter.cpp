@@ -128,7 +128,7 @@ int TerminalWidth() {
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     if (h == INVALID_HANDLE_VALUE || !h) {
         fprintf(stderr, "GetStdHandle() call failed");
-        return 80;
+        return 8192;
     }
     CONSOLE_SCREEN_BUFFER_INFO bufferInfo = {0};
     GetConsoleScreenBufferInfo(h, &bufferInfo);
@@ -145,7 +145,7 @@ int TerminalWidth() {
                         errno);
             }
         }
-        return 80;
+        return 8192;
     }
     return w.ws_col;
 #endif  // PBRT_IS_WINDOWS
