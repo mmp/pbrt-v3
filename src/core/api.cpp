@@ -1228,9 +1228,12 @@ std::shared_ptr<Material> GraphicsState::CreateMaterial(
     const ParamSet &params) {
     TextureParams mp(params, materialParams, floatTextures, spectrumTextures);
     std::shared_ptr<Material> mtl;
-    if (currentNamedMaterial != "" &&
-        namedMaterials.find(currentNamedMaterial) != namedMaterials.end())
-        mtl = namedMaterials[graphicsState.currentNamedMaterial];
+    if (currentNamedMaterial != "") {
+        if (namedMaterials.find(currentNamedMaterial) != namedMaterials.end())
+            mtl = namedMaterials[graphicsState.currentNamedMaterial];
+        else
+            Error("Named material \"%s\" not defined.", currentNamedMaterial.c_str());
+    }
     if (!mtl) mtl = MakeMaterial(material, mp);
     if (!mtl && material != "" && material != "none")
         mtl = MakeMaterial("matte", mp);
