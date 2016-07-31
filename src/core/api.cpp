@@ -1089,15 +1089,20 @@ void pbrtMakeNamedMaterial(const std::string &name, const ParamSet &params) {
     WARN_IF_ANIMATED_TRANSFORM("MakeNamedMaterial");
     if (matName == "")
         Error("No parameter string \"type\" found in MakeNamedMaterial");
-    else {
-        std::shared_ptr<Material> mtl = MakeMaterial(matName, mp);
-        if (mtl) graphicsState.namedMaterials[name] = mtl;
-    }
+
     if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sMakeNamedMaterial \"%s\" ", catIndentCount, "",
                name.c_str());
         params.Print(catIndentCount);
         printf("\n");
+    } else {
+        std::shared_ptr<Material> mtl = MakeMaterial(matName, mp);
+        if (mtl) {
+            if (graphicsState.namedMaterials.find(name) !=
+                graphicsState.namedMaterials.end())
+                Warning("Named material \"%s\" redefined.", name.c_str());
+            graphicsState.namedMaterials[name] = mtl;
+        }
     }
 }
 
