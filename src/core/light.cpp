@@ -35,9 +35,30 @@
 #include "light.h"
 #include "scene.h"
 #include "sampling.h"
+#include "stats.h"
 #include "paramset.h"
 
+STAT_COUNTER("Scene/Lights", numLights);
+STAT_COUNTER("Scene/AreaLights", numAreaLights);
+
 // Light Method Definitions
+Light::Light(int flags, const Transform &LightToWorld,
+             const MediumInterface &mediumInterface, int nSamples)
+    : flags(flags),
+      nSamples(std::max(1, nSamples)),
+      mediumInterface(mediumInterface),
+      LightToWorld(LightToWorld),
+      WorldToLight(Inverse(LightToWorld)) {
+    ++numLights;
+    // Warn if light has transformation with non-uniform scale
+    if (WorldToLight.HasScale())
+        Warning(
+            "Scaling detected in world to light transformation! "
+            "The system has numerous assumptions, implicit and explicit, "
+            "that this transform will have no scale factors in it. "
+            "Proceed at your own risk; your image may have errors.");
+}
+
 Light::~Light() {}
 
 bool VisibilityTester::Unoccluded(const Scene &scene) const {
@@ -65,3 +86,9 @@ Spectrum VisibilityTester::Tr(const Scene &scene, Sampler &sampler) const {
 }
 
 Spectrum Light::Le(const RayDifferential &ray) const { return Spectrum(0.f); }
+
+AreaLight::AreaLight(const Transform &LightToWorld, const MediumInterface &medium,
+                     int nSamples)
+    : Light((int)LightFlags::Area, LightToWorld, medium, nSamples) {
+    ++numAreaLights;
+}

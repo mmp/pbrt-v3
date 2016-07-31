@@ -62,21 +62,7 @@ class Light {
     // Light Interface
     virtual ~Light();
     Light(int flags, const Transform &LightToWorld,
-          const MediumInterface &mediumInterface, int nSamples = 1)
-        : flags(flags),
-          nSamples(std::max(1, nSamples)),
-          mediumInterface(mediumInterface),
-          LightToWorld(LightToWorld),
-          WorldToLight(Inverse(LightToWorld)) {
-        // Warn if light has transformation with non-uniform scale
-        if (WorldToLight.HasScale())
-            Warning(
-                "Scaling detected in world to light transformation!\n"
-                "The system has numerous assumptions, implicit and explicit,\n"
-                "that this transform will have no scale factors in it.\n"
-                "Proceed at your own risk; your image may have errors or\n"
-                "the system may crash as a result of this.");
-    }
+          const MediumInterface &mediumInterface, int nSamples = 1);
     virtual Spectrum Sample_Li(const Interaction &ref, const Point2f &u,
                                Vector3f *wi, Float *pdf,
                                VisibilityTester *vis) const = 0;
@@ -119,8 +105,7 @@ class AreaLight : public Light {
   public:
     // AreaLight Interface
     AreaLight(const Transform &LightToWorld, const MediumInterface &medium,
-              int nSamples)
-        : Light((int)LightFlags::Area, LightToWorld, medium, nSamples) {}
+              int nSamples);
     virtual Spectrum L(const Interaction &intr, const Vector3f &w) const = 0;
 };
 
