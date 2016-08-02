@@ -172,6 +172,7 @@ struct RenderOptions {
     std::vector<std::shared_ptr<Primitive>> primitives;
     std::map<std::string, std::vector<std::shared_ptr<Primitive>>> instances;
     std::vector<std::shared_ptr<Primitive>> *currentInstance = nullptr;
+    bool haveScatteringMedia = false;
 };
 
 struct GraphicsState {
@@ -953,6 +954,7 @@ void pbrtMediumInterface(const std::string &insideName,
     VERIFY_INITIALIZED("MediumInterface");
     graphicsState.currentInsideMedium = insideName;
     graphicsState.currentOutsideMedium = outsideName;
+    renderOptions->haveScatteringMedia = true;
     if (PbrtOptions.cat || PbrtOptions.toPly)
         printf("%*sMediumInterface \"%s\" \"%s\"\n", catIndentCount, "",
                insideName.c_str(), outsideName.c_str());
@@ -1415,6 +1417,14 @@ Integrator *RenderOptions::MakeIntegrator() const {
     } else {
         Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
         return nullptr;
+    }
+
+    if (renderOptions->haveScatteringMedia && IntegratorName != "volpath" &&
+        IntegratorName != "bdpt" && IntegratorName != "mlt") {
+        Warning(
+            "Scene has scattering media but \"%s\" integrator doesn't support "
+            "volume scattering. Consider using \"volpath\", \"bdpt\", or "
+            "\"mlt\".", IntegratorName.c_str());
     }
 
     IntegratorParams.ReportUnused();
