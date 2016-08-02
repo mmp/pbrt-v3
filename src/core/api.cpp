@@ -615,13 +615,6 @@ std::shared_ptr<AreaLight> MakeAreaLight(const std::string &name,
     return area;
 }
 
-Integrator *MakeIntegrator(const std::string &name, const ParamSet &paramSet) {
-    Integrator *si = nullptr;
-
-    paramSet.ReportUnused();
-    return si;
-}
-
 std::shared_ptr<Primitive> MakeAccelerator(
     const std::string &name,
     const std::vector<std::shared_ptr<Primitive>> &prims,
