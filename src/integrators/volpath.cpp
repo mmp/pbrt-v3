@@ -45,6 +45,15 @@ STAT_COUNTER("Integrator/Volume interactions", volumeInteractions);
 STAT_COUNTER("Integrator/Surface interactions", surfaceInteractions);
 
 // VolPathIntegrator Method Definitions
+void VolPathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
+    if (scene.lights.size() > 16) {
+        Warning(
+            "Scene has %d light sources. You may see better results with the "
+            "\"bdpt\" integrator, which handles large numbers of lights better "
+            "than \"volpath\".", int(scene.lights.size()));
+    }
+}
+
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena,
                                int depth) const {
