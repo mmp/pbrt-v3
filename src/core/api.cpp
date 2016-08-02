@@ -442,8 +442,10 @@ std::shared_ptr<Material> MakeMaterial(const std::string &name,
         material = CreateKdSubsurfaceMaterial(mp);
     else if (name == "fourier")
         material = CreateFourierMaterial(mp);
-    else
-        Warning("Material \"%s\" unknown.", name.c_str());
+    else {
+        Warning("Material \"%s\" unknown. Using \"matte\".", name.c_str());
+        material = CreateMatteMaterial(mp);
+    }
 
     if ((name == "subsurface" || name == "kdsubsurface") &&
         (renderOptions->IntegratorName != "path" &&
@@ -1092,12 +1094,10 @@ void pbrtMakeNamedMaterial(const std::string &name, const ParamSet &params) {
         printf("\n");
     } else {
         std::shared_ptr<Material> mtl = MakeMaterial(matName, mp);
-        if (mtl) {
-            if (graphicsState.namedMaterials.find(name) !=
-                graphicsState.namedMaterials.end())
-                Warning("Named material \"%s\" redefined.", name.c_str());
-            graphicsState.namedMaterials[name] = mtl;
-        }
+        if (graphicsState.namedMaterials.find(name) !=
+            graphicsState.namedMaterials.end())
+            Warning("Named material \"%s\" redefined.", name.c_str());
+        graphicsState.namedMaterials[name] = mtl;
     }
 }
 
@@ -1231,12 +1231,16 @@ std::shared_ptr<Material> GraphicsState::CreateMaterial(
     if (currentNamedMaterial != "") {
         if (namedMaterials.find(currentNamedMaterial) != namedMaterials.end())
             mtl = namedMaterials[graphicsState.currentNamedMaterial];
-        else
-            Error("Named material \"%s\" not defined.", currentNamedMaterial.c_str());
+        else {
+            Error("Named material \"%s\" not defined. Using \"matte\".",
+                  currentNamedMaterial.c_str());
+            mtl = MakeMaterial("matte", mp);
+        }
+    } else {
+        mtl = MakeMaterial(material, mp);
+        if (!mtl && material != "" && material != "none")
+            mtl = MakeMaterial("matte", mp);
     }
-    if (!mtl) mtl = MakeMaterial(material, mp);
-    if (!mtl && material != "" && material != "none")
-        mtl = MakeMaterial("matte", mp);
     return mtl;
 }
 
