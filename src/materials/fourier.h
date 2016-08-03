@@ -43,6 +43,7 @@
 #include "material.h"
 #include "reflection.h"
 #include "interpolation.h"
+#include <map>
 
 // FourierMaterial Declarations
 class FourierMaterial : public Material {
@@ -56,8 +57,9 @@ class FourierMaterial : public Material {
 
   private:
     // FourierMaterial Private Data
-    FourierBSDFTable bsdfTable;
+    FourierBSDFTable *bsdfTable;
     std::shared_ptr<Texture<Float>> bumpMap;
+    static std::map<std::string, std::unique_ptr<FourierBSDFTable>> loadedBSDFs;
 };
 
 FourierMaterial *CreateFourierMaterial(const TextureParams &mp);
