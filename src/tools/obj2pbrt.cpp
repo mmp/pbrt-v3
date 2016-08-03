@@ -1469,7 +1469,7 @@ int main(int argc, char *argv[]) {
                     int objIndex = mesh.indices[3 * i + v];
                     if (indexRemap.find(objIndex) == indexRemap.end()) {
                         // First time we've seen this index.
-                        indexRemap[objIndex] = (int)indexRemap.size();
+                        indexRemap.insert(std::make_pair(objIndex, (int)indexRemap.size()));
 
                         // Emit the position, normal, and uv (if available) for
                         // this
