@@ -1431,22 +1431,26 @@ int main(int argc, char *argv[]) {
 
         // Now emit the chunks of the mesh for each material
         for (int id : materialIds) {
-            const material_t &mtl = materials[id];
+            if (id == -1) {
+                fprintf(f, "# Material unspecified in OBJ file\n");
+            } else {
+                const material_t &mtl = materials[id];
 
-            std::map<std::string, std::string>::const_iterator iter;
-            for (iter = mtl.unknown_parameter.begin();
-                 iter != mtl.unknown_parameter.end(); ++iter)
-                fprintf(stderr, "Unknown parameter: %s = %s\n",
-                        iter->first.c_str(), iter->second.c_str());
+                std::map<std::string, std::string>::const_iterator iter;
+                for (iter = mtl.unknown_parameter.begin();
+                     iter != mtl.unknown_parameter.end(); ++iter)
+                  fprintf(stderr, "Unknown parameter: %s = %s\n",
+                          iter->first.c_str(), iter->second.c_str());
 
-            if (mtl.emission[0] > 0 || mtl.emission[1] > 0 ||
-                mtl.emission[2] > 0) {
-                fprintf(f, "AreaLightSource \"area\" \"rgb L\" [ %f %f %f ]\n",
-                        mtl.emission[0], mtl.emission[1], mtl.emission[2]);
-                ++numAreaLights;
+                if (mtl.emission[0] > 0 || mtl.emission[1] > 0 ||
+                    mtl.emission[2] > 0) {
+                  fprintf(f, "AreaLightSource \"area\" \"rgb L\" [ %f %f %f ]\n",
+                          mtl.emission[0], mtl.emission[1], mtl.emission[2]);
+                  ++numAreaLights;
+                }
+
+                fprintf(f, "NamedMaterial \"%s\"\n", mtl.name.c_str());
             }
-
-            fprintf(f, "NamedMaterial \"%s\"\n", mtl.name.c_str());
 
             // Now emit all the faces that have the matching material id.
             std::string P, N, st, indices;
