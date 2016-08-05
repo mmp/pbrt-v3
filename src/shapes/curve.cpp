@@ -152,7 +152,7 @@ bool Curve::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Float eps =
         std::max(common->width[0], common->width[1]) * .05f;  // width / 20
 #define LOG4(x) (std::log(x) * 0.7213475108f)
-    Float fr0 = LOG4(1.41421356237f * 12.f * L0 / (8.f * eps));
+    Float fr0 = LOG4(1.41421356237f * 6.f * L0 / (8.f * eps));
 #undef LOG4
     int r0 = (int)std::round(fr0);
     int maxDepth = Clamp(r0, 0, 10);
