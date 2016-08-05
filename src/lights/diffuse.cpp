@@ -39,12 +39,17 @@
 DiffuseAreaLight::DiffuseAreaLight(const Transform &LightToWorld,
                                    const MediumInterface &mediumInterface,
                                    const Spectrum &Lemit, int nSamples,
-                                   const std::shared_ptr<Shape> &shape)
+                                   const std::shared_ptr<Shape> &shape,
+                                   bool twoSided)
     : AreaLight(LightToWorld, mediumInterface, nSamples),
       Lemit(Lemit),
       shape(shape),
+      twoSided(twoSided),
       area(shape->Area()) {}
-Spectrum DiffuseAreaLight::Power() const { return Lemit * area * Pi; }
+
+Spectrum DiffuseAreaLight::Power() const {
+    return (twoSided ? 2 : 1) * Lemit * area * Pi;
+}
 
 Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                      Vector3f *wi, Float *pdf,
@@ -72,8 +77,25 @@ Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     *nLight = pShape.n;
 
     // Sample a cosine-weighted outgoing direction _w_ for area light
-    Vector3f w = CosineSampleHemisphere(u2);
-    *pdfDir = CosineHemispherePdf(w.z);
+    Vector3f w;
+    if (twoSided) {
+        Point2f u = u2;
+        // Choose a side to sample and then remap u[0] to [0,1] before
+        // applying cosine-weighted hemisphere sampling for the chosen side.
+        if (u[0] < .5) {
+            u[0] = std::min(u[0] * 2, OneMinusEpsilon);
+            w = CosineSampleHemisphere(u);
+        } else {
+            u[0] = std::min((u[0] - .5f) * 2, OneMinusEpsilon);
+            w = CosineSampleHemisphere(u);
+            w.z *= -1;
+        }
+        *pdfDir = 0.5f * CosineHemispherePdf(std::abs(w.z));
+    } else {
+        w = CosineSampleHemisphere(u2);
+        *pdfDir = CosineHemispherePdf(w.z);
+    }
+
     Vector3f v1, v2, n(pShape.n);
     CoordinateSystem(n, &v1, &v2);
     w = w.x * v1 + w.y * v2 + w.z * n;
@@ -86,7 +108,8 @@ void DiffuseAreaLight::Pdf_Le(const Ray &ray, const Normal3f &n, Float *pdfPos,
     Interaction it(ray.o, n, Vector3f(), Vector3f(n), ray.time,
                    mediumInterface);
     *pdfPos = shape->Pdf(it);
-    *pdfDir = CosineHemispherePdf(Dot(n, ray.d));
+    *pdfDir = twoSided ? (.5 * CosineHemispherePdf(AbsDot(n, ray.d)))
+                       : CosineHemispherePdf(Dot(n, ray.d));
 }
 
 std::shared_ptr<AreaLight> CreateDiffuseAreaLight(
@@ -95,7 +118,8 @@ std::shared_ptr<AreaLight> CreateDiffuseAreaLight(
     Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
     Spectrum sc = paramSet.FindOneSpectrum("scale", Spectrum(1.0));
     int nSamples = paramSet.FindOneInt("nsamples", 1);
+    bool twoSided = paramSet.FindOneBool("twosided", false);
     if (PbrtOptions.quickRender) nSamples = std::max(1, nSamples / 4);
     return std::make_shared<DiffuseAreaLight>(light2world, medium, L * sc,
-                                              nSamples, shape);
+                                              nSamples, shape, twoSided);
 }
