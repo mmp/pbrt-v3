@@ -52,7 +52,11 @@ class Scene {
         : lights(lights), aggregate(aggregate) {
         // Scene Constructor Implementation
         worldBound = aggregate->WorldBound();
-        for (const auto &light : lights) light->Preprocess(*this);
+        for (const auto &light : lights) {
+            light->Preprocess(*this);
+            if (light->flags & (int)LightFlags::Infinite)
+                infiniteLights.push_back(light);
+        }
     }
     const Bounds3f &WorldBound() const { return worldBound; }
     bool Intersect(const Ray &ray, SurfaceInteraction *isect) const;
@@ -62,6 +66,9 @@ class Scene {
 
     // Scene Public Data
     std::vector<std::shared_ptr<Light>> lights;
+    // Store infinite light sources separately for cases where we only want
+    // to loop over them.
+    std::vector<std::shared_ptr<Light>> infiniteLights;
 
   private:
     // Scene Private Data

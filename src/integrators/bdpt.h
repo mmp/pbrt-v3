@@ -259,7 +259,7 @@ struct Vertex {
         if (IsInfiniteLight()) {
             // Return emitted radiance for infinite light sources
             Spectrum Le(0.f);
-            for (const auto &light : scene.lights)
+            for (const auto &light : scene.infiniteLights)
                 Le += light->Le(Ray(p(), -w));
             return Le;
         } else {

@@ -74,7 +74,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             if (foundIntersection)
                 L += beta * isect.Le(-ray.d);
             else
-                for (const auto &light : scene.lights)
+                for (const auto &light : scene.infiniteLights)
                     L += beta * light->Le(ray);
         }
 
