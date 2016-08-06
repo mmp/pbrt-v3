@@ -123,6 +123,7 @@ void MLTSampler::StartStream(int index) {
 // MLT Method Definitions
 Spectrum MLTIntegrator::L(const Scene &scene, MemoryArena &arena,
                           const std::unique_ptr<Distribution1D> &lightDistr,
+                          const std::unordered_map<const Light *, size_t> &lightToIndex,
                           MLTSampler &sampler, int depth, Point2f *pRaster) {
     sampler.StartStream(cameraStreamIndex);
     // Determine the number of available strategies and pick a specific one
@@ -149,13 +150,13 @@ Spectrum MLTIntegrator::L(const Scene &scene, MemoryArena &arena,
     sampler.StartStream(lightStreamIndex);
     Vertex *lightVertices = arena.Alloc<Vertex>(s);
     if (GenerateLightSubpath(scene, sampler, arena, s, cameraVertices[0].time(),
-                             *lightDistr, lightVertices) != s)
+                             *lightDistr, lightToIndex, lightVertices) != s)
         return Spectrum(0.f);
 
     // Execute connection strategy and return the radiance estimate
     sampler.StartStream(connectionStreamIndex);
     return ConnectBDPT(scene, lightVertices, cameraVertices, s, t, *lightDistr,
-                       *camera, sampler, pRaster) *
+                       lightToIndex, *camera, sampler, pRaster) *
            nStrategies;
 }
 
@@ -163,6 +164,15 @@ void MLTIntegrator::Render(const Scene &scene) {
     ProfilePhase p(Prof::IntegratorRender);
     std::unique_ptr<Distribution1D> lightDistr =
         ComputeLightPowerDistribution(scene);
+
+    // Compute a reverse mapping from light pointers to offsets into the
+    // scene lights vector (and, equivalently, offsets into
+    // lightDistr). Added after book text was finalized; this is critical
+    // to reasonable performance with 100s+ of light sources.
+    std::unordered_map<const Light *, size_t> lightToIndex;
+    for (size_t i = 0; i < scene.lights.size(); ++i)
+        lightToIndex[scene.lights[i].get()] = i;
+
     // Generate bootstrap samples and compute normalization constant $b$
     int nBootstrapSamples = nBootstrap * (maxDepth + 1);
     std::vector<Float> bootstrapWeights(nBootstrapSamples, 0);
@@ -180,7 +190,7 @@ void MLTIntegrator::Render(const Scene &scene) {
                                    largeStepProbability, nSampleStreams);
                 Point2f pRaster;
                 bootstrapWeights[rngIndex] =
-                    L(scene, arena, lightDistr, sampler, depth, &pRaster).y();
+                    L(scene, arena, lightDistr, lightToIndex, sampler, depth, &pRaster).y();
                 arena.Reset();
             }
             if ((i + 1 % 256) == 0) progress.Update();
@@ -216,14 +226,14 @@ void MLTIntegrator::Render(const Scene &scene) {
                                largeStepProbability, nSampleStreams);
             Point2f pCurrent;
             Spectrum LCurrent =
-                L(scene, arena, lightDistr, sampler, depth, &pCurrent);
+                L(scene, arena, lightDistr, lightToIndex, sampler, depth, &pCurrent);
 
             // Run the Markov chain for _nChainMutations_ steps
             for (int64_t j = 0; j < nChainMutations; ++j) {
                 sampler.StartIteration();
                 Point2f pProposed;
                 Spectrum LProposed =
-                    L(scene, arena, lightDistr, sampler, depth, &pProposed);
+                    L(scene, arena, lightDistr, lightToIndex, sampler, depth, &pProposed);
                 // Compute acceptance probability for proposed sample
                 Float accept = std::min((Float)1, LProposed.y() / LCurrent.y());
 
