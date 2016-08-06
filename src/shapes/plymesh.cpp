@@ -259,32 +259,6 @@ std::vector<std::shared_ptr<Shape>> CreatePLYMesh(
     } else if (params.FindOneFloat("shadowalpha", 1.f) == 0.f)
         shadowAlphaTex.reset(new ConstantTexture<Float>(0.f));
 
-    bool discardDegenerateUVs =
-        params.FindOneBool("discarddegenerateUVs", false);
-    if (discardDegenerateUVs && context.uv && context.n) {
-        // if there are normals, check for bad uv's that
-        // give degenerate mappings; discard them if so
-        const int *vp = context.indices;
-        const Point3f *P = context.p;
-        const Point2f *uv = context.uv;
-
-        for (int i = 0; i < context.indexCtr; i += 3, vp += 3) {
-            Float area =
-                .5f * Cross(P[vp[0]] - P[vp[1]], P[vp[2]] - P[vp[1]]).Length();
-            if (area < 1e-7) continue;  // ignore degenerate tris.
-            if ((uv[vp[0]].x == uv[vp[1]].x && uv[vp[0]].y == uv[vp[1]].y) ||
-                (uv[vp[1]].x == uv[vp[2]].x && uv[vp[1]].y == uv[vp[2]].y) ||
-                (uv[vp[2]].x == uv[vp[0]].x && uv[vp[2]].y == uv[vp[0]].y)) {
-                Warning(
-                    "Degenerate uv coordinates in triangle mesh.  Discarding "
-                    "all uv.");
-                delete[] context.uv;
-                context.uv = nullptr;
-                break;
-            }
-        }
-    }
-
     return CreateTriangleMesh(o2w, w2o, reverseOrientation,
                               context.indexCtr / 3, context.indices,
                               vertexCount, context.p, nullptr, context.n,

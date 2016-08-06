@@ -284,14 +284,15 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     Vector2f duv02 = uv[0] - uv[2], duv12 = uv[1] - uv[2];
     Vector3f dp02 = p0 - p2, dp12 = p1 - p2;
     Float determinant = duv02[0] * duv12[1] - duv02[1] * duv12[0];
-    if (determinant == 0) {
-        // Handle zero determinant for triangle partial derivative matrix
-        CoordinateSystem(Normalize(Cross(p2 - p0, p1 - p0)), &dpdu, &dpdv);
-    } else {
+    bool degenerateUV = std::abs(determinant) < 1e-8;
+    if (!degenerateUV) {
         Float invdet = 1 / determinant;
         dpdu = (duv12[1] * dp02 - duv02[1] * dp12) * invdet;
         dpdv = (-duv12[0] * dp02 + duv02[0] * dp12) * invdet;
     }
+    if (degenerateUV || Cross(dpdu, dpdv).LengthSquared() == 0)
+        // Handle zero determinant for triangle partial derivative matrix
+        CoordinateSystem(Normalize(Cross(p2 - p0, p1 - p0)), &dpdu, &dpdv);
 
     // Compute error bounds for triangle intersection
     Float xAbsSum =
@@ -363,7 +364,8 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
             Normal3f dn1 = mesh->n[v[0]] - mesh->n[v[2]];
             Normal3f dn2 = mesh->n[v[1]] - mesh->n[v[2]];
             Float determinant = duv02[0] * duv12[1] - duv02[1] * duv12[0];
-            if (determinant == 0)
+            bool degenerateUV = std::abs(determinant) < 1e-8;
+            if (degenerateUV)
                 dndu = dndv = Normal3f(0, 0, 0);
             else {
                 Float invDet = 1 / determinant;
@@ -500,14 +502,15 @@ bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
         Vector2f duv02 = uv[0] - uv[2], duv12 = uv[1] - uv[2];
         Vector3f dp02 = p0 - p2, dp12 = p1 - p2;
         Float determinant = duv02[0] * duv12[1] - duv02[1] * duv12[0];
-        if (determinant == 0) {
-            // Handle zero determinant for triangle partial derivative matrix
-            CoordinateSystem(Normalize(Cross(p2 - p0, p1 - p0)), &dpdu, &dpdv);
-        } else {
+        bool degenerateUV = std::abs(determinant) < 1e-8;
+        if (!degenerateUV) {
             Float invdet = 1 / determinant;
             dpdu = (duv12[1] * dp02 - duv02[1] * dp12) * invdet;
             dpdv = (-duv12[0] * dp02 + duv02[0] * dp12) * invdet;
         }
+        if (degenerateUV || Cross(dpdu, dpdv).LengthSquared() == 0)
+            // Handle zero determinant for triangle partial derivative matrix
+            CoordinateSystem(Normalize(Cross(p2 - p0, p1 - p0)), &dpdu, &dpdv);
 
         // Interpolate $(u,v)$ parametric coordinates and hit point
         Point3f pHit = b0 * p0 + b1 * p1 + b2 * p2;
@@ -577,8 +580,6 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
             uvs = &tempUVs[0];
         }
     }
-    bool discardDegenerateUVs =
-        params.FindOneBool("discarddegenerateUVs", false);
     if (uvs) {
         if (nuvi < npi) {
             Error(
@@ -610,28 +611,6 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
     if (N && nni != npi) {
         Error("Number of \"N\"s for triangle mesh must match \"P\"s");
         N = nullptr;
-    }
-    if (discardDegenerateUVs && uvs && N) {
-        // if there are normals, check for bad uv's that
-        // give degenerate mappings; discard them if so
-        const int *vp = vi;
-        for (int i = 0; i < nvi; i += 3, vp += 3) {
-            Float area =
-                .5f * Cross(P[vp[0]] - P[vp[1]], P[vp[2]] - P[vp[1]]).Length();
-            if (area < 1e-7) continue;  // ignore degenerate tris.
-            if ((uvs[vp[0]].x == uvs[vp[1]].x &&
-                 uvs[vp[0]].y == uvs[vp[1]].y) ||
-                (uvs[vp[1]].x == uvs[vp[2]].x &&
-                 uvs[vp[1]].y == uvs[vp[2]].y) ||
-                (uvs[vp[2]].x == uvs[vp[0]].x &&
-                 uvs[vp[2]].y == uvs[vp[0]].y)) {
-                Warning(
-                    "Degenerate uv coordinates in triangle mesh.  Discarding "
-                    "all uvs.");
-                uvs = nullptr;
-                break;
-            }
-        }
     }
     for (int i = 0; i < nvi; ++i)
         if (vi[i] >= npi) {
