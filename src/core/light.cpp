@@ -50,13 +50,6 @@ Light::Light(int flags, const Transform &LightToWorld,
       LightToWorld(LightToWorld),
       WorldToLight(Inverse(LightToWorld)) {
     ++numLights;
-    // Warn if light has transformation with non-uniform scale
-    if (WorldToLight.HasScale())
-        Warning(
-            "Scaling detected in world to light transformation! "
-            "The system has numerous assumptions, implicit and explicit, "
-            "that this transform will have no scale factors in it. "
-            "Proceed at your own risk; your image may have errors.");
 }
 
 Light::~Light() {}
