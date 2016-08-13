@@ -51,6 +51,11 @@ convert options:
     --flipy            Flip the image along the y axis
     --maxluminance <n> Luminance value mapped to white by tonemapping.
                        Default: 1
+    --preservecolors   By default, out-of-gammut colors have each component
+                       clamped to [0,1] when written to non-HDR formats. With
+                       this option enabled, such colors are scaled by their
+                       maximum component, which preserves the relative ratio
+                       between RGB components.
     --repeatpix <n>    Repeat each pixel value n times in both directions
     --scale <scale>    Scale pixel values by given amount
     --tonemap          Apply tonemapping to the image (Reinhard et al.'s
@@ -585,6 +590,7 @@ int convert(int argc, char *argv[]) {
     bool tonemap = false;
     Float maxY = 1.;
     Float despikeLimit = Infinity;
+    bool preserveColors = false;
 
     int i;
     auto parseArg = [&]() -> std::pair<std::string, double> {
@@ -611,6 +617,8 @@ int convert(int argc, char *argv[]) {
             flipy = !flipy;
         else if (!strcmp(argv[i], "--tonemap") || !strcmp(argv[i], "-tonemap"))
             tonemap = !tonemap;
+        else if (!strcmp(argv[i], "--preservecolors") || !strcmp(argv[i], "-preservecolors"))
+            preserveColors = !preserveColors;
         else {
             std::pair<std::string, double> arg = parseArg();
             if (std::get<0>(arg) == "maxluminance") {
@@ -702,6 +710,20 @@ int convert(int argc, char *argv[]) {
             // Reinhard et al. photographic tone mapping operator.
             Float scale = (1 + y / (maxY * maxY)) / (1 + y);
             image[i] *= scale;
+        }
+    }
+
+    if (preserveColors) {
+        for (int i = 0; i < res.x * res.y; ++i) {
+            Float rgb[3];
+            image[i].ToRGB(rgb);
+            Float m = std::max(rgb[0], std::max(rgb[1], rgb[2]));
+            if (m > 1) {
+                rgb[0] /= m;
+                rgb[1] /= m;
+                rgb[2] /= m;
+                image[i] = Spectrum::FromRGB(rgb);
+            }
         }
     }
 
