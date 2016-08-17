@@ -46,7 +46,8 @@
 // Statistics Local Variables
 std::vector<std::function<void(StatsAccumulator &)>> *StatRegisterer::funcs;
 static StatsAccumulator statsAccumulator;
-static std::unique_ptr<std::atomic<uint64_t>[]> profileSamples;
+static std::atomic<uint64_t> *profileSamples;
+
 #ifndef PBRT_IS_WINDOWS
 static void ReportProfileSample(int, siginfo_t *, void *);
 #endif  // !PBRT_IS_WINDOWS
@@ -167,7 +168,7 @@ void InitProfiler() {
     static_assert(NumProfEvents == sizeof(ProfNames) / sizeof(ProfNames[0]),
                   "ProfNames[] array and Prof enumerant have different "
                   "number of entries!");
-    profileSamples.reset(new std::atomic<uint64_t>[1 << NumProfEvents]);
+    profileSamples = new std::atomic<uint64_t>[1 << NumProfEvents];
     for (int i = 0; i < (1 << NumProfEvents); ++i) profileSamples[i] = 0;
 // Set timer to periodically interrupt the system for profiling
 #ifndef PBRT_IS_WINDOWS
@@ -197,8 +198,6 @@ void CleanupProfiler() {
 
     if (setitimer(ITIMER_PROF, &timer, NULL) != 0)
         Error("Timer could not be disabled");
-
-    profileSamples.reset(nullptr);
 #endif // !PBRT_IS_WINDOWS
 }
 
@@ -220,7 +219,8 @@ static void ReportProfileSample(int, siginfo_t *, void *) {
     }
 #endif
 #endif
-    if (profileSamples) profileSamples[ProfilerState]++;
+    Assert(profileSamples != nullptr);
+    profileSamples[ProfilerState]++;
 }
 
 #endif  // !PBRT_IS_WINDOWS
