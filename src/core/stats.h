@@ -199,6 +199,7 @@ class ProfilePhase {
 
 void InitProfiler();
 void ReportProfilerResults(FILE *dest);
+void CleanupProfiler();
 
 // Statistics Macros
 #define STAT_COUNTER(title, var)                           \

@@ -188,6 +188,20 @@ void InitProfiler() {
 #endif
 }
 
+void CleanupProfiler() {
+#ifndef PBRT_IS_WINDOWS
+    static struct itimerval timer;
+    timer.it_interval.tv_sec = 0;
+    timer.it_interval.tv_usec = 0;
+    timer.it_value = timer.it_interval;
+
+    if (setitimer(ITIMER_PROF, &timer, NULL) != 0)
+        Error("Timer could not be disabled");
+
+    profileSamples.reset(nullptr);
+#endif // !PBRT_IS_WINDOWS
+}
+
 #ifndef PBRT_IS_WINDOWS
 static void ReportProfileSample(int, siginfo_t *, void *) {
 #if 0

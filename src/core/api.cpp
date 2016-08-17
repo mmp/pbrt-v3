@@ -741,6 +741,7 @@ void pbrtCleanup() {
     currentApiState = APIState::Uninitialized;
     TerminateWorkerThreads();
     renderOptions.reset(nullptr);
+    CleanupProfiler();
 }
 
 void pbrtIdentity() {
