@@ -335,8 +335,6 @@ void BDPTIntegrator::Render(const Scene &scene) {
                 camera->film->GetFilmTile(tileBounds);
             for (Point2i pPixel : tileBounds) {
                 tileSampler->StartPixel(pPixel);
-                if (!InsideExclusive(pPixel, pixelBounds))
-                    continue;
                 do {
                     // Generate a single sample using BDPT
                     Point2f pFilm = (Point2f)pPixel + tileSampler->Get2D();
@@ -497,21 +495,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
             "maxdepth to 5");
         maxDepth = 5;
     }
-    int np;
-    const int *pb = params.FindInt("pixelbounds", &np);
-    Bounds2i pixelBounds = camera->film->croppedPixelBounds;
-    if (pb) {
-        if (np != 4)
-            Error("Expected four values for \"pixelbounds\" parameter. Got %d.",
-                  np);
-        else {
-            pixelBounds = Intersect(pixelBounds,
-                                    Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
-            if (pixelBounds.Area() == 0)
-                Error("Degenerate \"pixelbounds\" specified.");
-        }
-    }
 
     return new BDPTIntegrator(sampler, camera, maxDepth, visualizeStrategies,
-                              visualizeWeights, pixelBounds);
+                              visualizeWeights);
 }

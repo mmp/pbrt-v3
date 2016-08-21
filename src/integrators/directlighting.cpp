@@ -35,8 +35,6 @@
 #include "integrators/directlighting.h"
 #include "interaction.h"
 #include "paramset.h"
-#include "camera.h"
-#include "film.h"
 #include "stats.h"
 
 // DirectLightingIntegrator Method Definitions
@@ -110,20 +108,5 @@ DirectLightingIntegrator *CreateDirectLightingIntegrator(
             st.c_str());
         strategy = LightStrategy::UniformSampleAll;
     }
-    int np;
-    const int *pb = params.FindInt("pixelbounds", &np);
-    Bounds2i pixelBounds = camera->film->croppedPixelBounds;
-    if (pb) {
-        if (np != 4)
-            Error("Expected four values for \"pixelbounds\" parameter. Got %d.",
-                  np);
-        else {
-            pixelBounds = Intersect(pixelBounds,
-                                    Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
-            if (pixelBounds.Area() == 0)
-                Error("Degenerate \"pixelbounds\" specified.");
-        }
-    }
-    return new DirectLightingIntegrator(strategy, maxDepth, camera, sampler,
-                                        pixelBounds);
+    return new DirectLightingIntegrator(strategy, maxDepth, camera, sampler);
 }
