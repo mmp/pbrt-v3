@@ -30,15 +30,16 @@
 
  */
 
+
 // integrators/bdpt.cpp*
 #include "integrators/bdpt.h"
 #include "film.h"
-#include "filters/box.h"
+#include "sampler.h"
 #include "integrator.h"
+#include "stats.h"
+#include "filters/box.h"
 #include "paramset.h"
 #include "progressreporter.h"
-#include "sampler.h"
-#include "stats.h"
 
 STAT_TIMER("Time/Rendering", renderingTime);
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
@@ -60,7 +61,8 @@ Float CorrectShadingNormal(const SurfaceInteraction &isect, const Vector3f &wo,
             return 0;
         }
         return num / denom;
-    } else
+    }
+    else
         return 1;
 }
 
@@ -87,11 +89,9 @@ int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
            1;
 }
 
-int GenerateLightSubpath(
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int maxDepth,
-    Float time, const Distribution1D &lightDistr,
-    const std::unordered_map<const Light *, size_t> &lightToIndex,
-    Vertex *path) {
+int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
+                         MemoryArena &arena, int maxDepth, Float time,
+                         const Distribution1D &lightDistr, Vertex *path) {
     if (maxDepth == 0) return 0;
     // Sample initial ray for light subpath
     Float lightPdf;
@@ -105,8 +105,7 @@ int GenerateLightSubpath(
     if (pdfPos == 0 || pdfDir == 0 || Le.IsBlack()) return 0;
 
     // Generate first vertex on light subpath and start random walk
-    path[0] =
-        Vertex::CreateLight(light.get(), ray, nLight, Le, pdfPos * lightPdf);
+    path[0] = Vertex::CreateLight(light.get(), ray, nLight, Le, pdfPos * lightPdf);
     Spectrum beta = Le * AbsDot(nLight, ray.d) / (lightPdf * pdfPos * pdfDir);
     int nVertices =
         RandomWalk(scene, ray, sampler, arena, beta, pdfDir, maxDepth - 1,
@@ -122,8 +121,7 @@ int GenerateLightSubpath(
         }
 
         // Set spatial density of _path[0]_ for infinite area light
-        path[0].pdfFwd =
-            InfiniteLightDensity(scene, lightDistr, lightToIndex, ray.d);
+        path[0].pdfFwd = InfiniteLightDensity(scene, lightDistr, ray.d);
     }
     return nVertices + 1;
 }
@@ -213,8 +211,7 @@ Spectrum G(const Scene &scene, Sampler &sampler, const Vertex &v0,
 
 Float MISWeight(const Scene &scene, Vertex *lightVertices,
                 Vertex *cameraVertices, Vertex &sampled, int s, int t,
-                const Distribution1D &lightPdf,
-                const std::unordered_map<const Light *, size_t> &lightToIndex) {
+                const Distribution1D &lightPdf) {
     if (s + t == 2) return 1;
     Float sumRi = 0;
     // Define helper function _remap0_ that deals with Dirac delta functions
@@ -243,9 +240,9 @@ Float MISWeight(const Scene &scene, Vertex *lightVertices,
     // Update reverse density of vertex $\pt{}_{t-1}$
     ScopedAssignment<Float> a4;
     if (pt)
-        a4 = {&pt->pdfRev, s > 0 ? qs->Pdf(scene, qsMinus, *pt)
-                                 : pt->PdfLightOrigin(scene, *ptMinus, lightPdf,
-                                                      lightToIndex)};
+        a4 = {&pt->pdfRev, s > 0
+                               ? qs->Pdf(scene, qsMinus, *pt)
+                               : pt->PdfLightOrigin(scene, *ptMinus, lightPdf)};
 
     // Update reverse density of vertex $\pt{}_{t-2}$
     ScopedAssignment<Float> a5;
@@ -290,14 +287,6 @@ void BDPTIntegrator::Render(const Scene &scene) {
     // Compute _lightDistr_ for sampling lights proportional to power
     std::unique_ptr<Distribution1D> lightDistr =
         ComputeLightPowerDistribution(scene);
-
-    // Compute a reverse mapping from light pointers to offsets into the
-    // scene lights vector (and, equivalently, offsets into
-    // lightDistr). Added after book text was finalized; this is critical
-    // to reasonable performance with 100s+ of light sources.
-    std::unordered_map<const Light *, size_t> lightToIndex;
-    for (size_t i = 0; i < scene.lights.size(); ++i)
-        lightToIndex[scene.lights[i].get()] = i;
 
     // Partition the image into tiles
     Film *film = camera->film;
@@ -360,8 +349,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
                         pFilm, cameraVertices);
                     int nLight = GenerateLightSubpath(
                         scene, *tileSampler, arena, maxDepth + 1,
-                        cameraVertices[0].time(), *lightDistr, lightToIndex,
-                        lightVertices);
+                        cameraVertices[0].time(), *lightDistr, lightVertices);
 
                     // Execute all BDPT connection strategies
                     Spectrum L(0.f);
@@ -377,8 +365,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
                             Float misWeight = 0.f;
                             Spectrum Lpath = ConnectBDPT(
                                 scene, lightVertices, cameraVertices, s, t,
-                                *lightDistr, lightToIndex, *camera, *tileSampler,
-                                &pFilmNew, &misWeight);
+                                *lightDistr, *camera, *tileSampler, &pFilmNew,
+                                &misWeight);
                             if (visualizeStrategies || visualizeWeights) {
                                 Spectrum value;
                                 if (visualizeStrategies)
@@ -413,12 +401,10 @@ void BDPTIntegrator::Render(const Scene &scene) {
     }
 }
 
-Spectrum ConnectBDPT(
-    const Scene &scene, Vertex *lightVertices, Vertex *cameraVertices, int s,
-    int t, const Distribution1D &lightDistr,
-    const std::unordered_map<const Light *, size_t> &lightToIndex,
-    const Camera &camera, Sampler &sampler, Point2f *pRaster,
-    Float *misWeightPtr) {
+Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
+                     Vertex *cameraVertices, int s, int t,
+                     const Distribution1D &lightDistr, const Camera &camera,
+                     Sampler &sampler, Point2f *pRaster, Float *misWeightPtr) {
     Spectrum L(0.f);
     // Ignore invalid connections related to infinite area lights
     if (t > 1 && s != 0 && cameraVertices[t - 1].type == VertexType::Light)
@@ -468,8 +454,7 @@ Spectrum ConnectBDPT(
                 EndpointInteraction ei(vis.P1(), light.get());
                 sampled =
                     Vertex::CreateLight(ei, lightWeight / (pdf * lightPdf), 0);
-                sampled.pdfFwd =
-                    sampled.PdfLightOrigin(scene, pt, lightDistr, lightToIndex);
+                sampled.pdfFwd = sampled.PdfLightOrigin(scene, pt, lightDistr);
                 L = pt.beta * pt.f(sampled) * sampled.beta;
                 if (pt.IsOnSurface()) L *= AbsDot(wi, pt.ns());
                 // Only check visibility if the path would carry radiance.
@@ -492,7 +477,7 @@ Spectrum ConnectBDPT(
     // Compute MIS weight for connection strategy
     Float misWeight =
         L.IsBlack() ? 0.f : MISWeight(scene, lightVertices, cameraVertices,
-                                      sampled, s, t, lightDistr, lightToIndex);
+                                      sampled, s, t, lightDistr);
     Assert(!std::isnan(misWeight));
     L *= misWeight;
     if (misWeightPtr) *misWeightPtr = misWeight;

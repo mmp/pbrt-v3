@@ -39,15 +39,14 @@
 #define PBRT_INTEGRATORS_BDPT_H
 
 // integrators/bdpt.h*
-#include <unordered_map>
-#include "camera.h"
+#include "pbrt.h"
 #include "integrator.h"
 #include "interaction.h"
 #include "light.h"
-#include "pbrt.h"
-#include "reflection.h"
-#include "sampling.h"
 #include "scene.h"
+#include "reflection.h"
+#include "camera.h"
+#include "sampling.h"
 
 // EndpointInteraction Declarations
 struct EndpointInteraction : Interaction {
@@ -103,16 +102,14 @@ class ScopedAssignment {
     Type *target, backup;
 };
 
-inline Float InfiniteLightDensity(
-    const Scene &scene, const Distribution1D &lightDistr,
-    const std::unordered_map<const Light *, size_t> &lightToDistrIndex,
-    const Vector3f &w) {
+inline Float InfiniteLightDensity(const Scene &scene,
+                                  const Distribution1D &lightDistr,
+                                  const Vector3f &w) {
     Float pdf = 0;
-    for (const auto &light : scene.infiniteLights) {
-        Assert(lightToDistrIndex.find(light.get()) != lightToDistrIndex.end());
-        size_t index = lightToDistrIndex.find(light.get())->second;
-        pdf += light->Pdf_Li(Interaction(), -w) * lightDistr.func[index];
-    }
+    for (size_t i = 0; i < scene.lights.size(); ++i)
+        if (scene.lights[i]->flags & (int)LightFlags::Infinite)
+            pdf +=
+                scene.lights[i]->Pdf_Li(Interaction(), -w) * lightDistr.func[i];
     return pdf / (lightDistr.funcInt * lightDistr.Count());
 }
 
@@ -380,16 +377,13 @@ struct Vertex {
         return pdf;
     }
     Float PdfLightOrigin(const Scene &scene, const Vertex &v,
-                         const Distribution1D &lightDistr,
-                         const std::unordered_map<const Light *, size_t>
-                             &lightToDistrIndex) const {
+                         const Distribution1D &lightDistr) const {
         Vector3f w = v.p() - p();
         if (w.LengthSquared() == 0) return 0.;
         w = Normalize(w);
         if (IsInfiniteLight()) {
             // Return solid angle density for infinite light sources
-            return InfiniteLightDensity(scene, lightDistr, lightToDistrIndex,
-                                        w);
+            return InfiniteLightDensity(scene, lightDistr, w);
         } else {
             // Return solid angle density for non-infinite light sources
             Float pdfPos, pdfDir, pdfChoice = 0;
@@ -402,10 +396,13 @@ struct Vertex {
             Assert(light != nullptr);
 
             // Compute the discrete probability of sampling _light_, _pdfChoice_
-            Assert(lightToDistrIndex.find(light) != lightToDistrIndex.end());
-            size_t index = lightToDistrIndex.find(light)->second;
-            pdfChoice = lightDistr.DiscretePDF(index);
-
+            for (size_t i = 0; i < scene.lights.size(); ++i) {
+                if (scene.lights[i].get() == light) {
+                    pdfChoice = lightDistr.DiscretePDF(i);
+                    break;
+                }
+            }
+            Assert(pdfChoice != 0);
             light->Pdf_Le(Ray(p(), w, time()), ng(), &pdfPos, &pdfDir);
             return pdfPos * pdfChoice;
         }
@@ -417,17 +414,14 @@ extern int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
                                  const Camera &camera, const Point2f &pFilm,
                                  Vertex *path);
 
-extern int GenerateLightSubpath(
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int maxDepth,
-    Float time, const Distribution1D &lightDistr,
-    const std::unordered_map<const Light *, size_t> &lightToIndex,
-    Vertex *path);
-Spectrum ConnectBDPT(
-    const Scene &scene, Vertex *lightVertices, Vertex *cameraVertices, int s,
-    int t, const Distribution1D &lightDistr,
-    const std::unordered_map<const Light *, size_t> &lightToIndex,
-    const Camera &camera, Sampler &sampler, Point2f *pRaster,
-    Float *misWeight = nullptr);
+extern int GenerateLightSubpath(const Scene &scene, Sampler &sampler,
+                                MemoryArena &arena, int maxDepth, Float time,
+                                const Distribution1D &lightDistr, Vertex *path);
+Spectrum ConnectBDPT(const Scene &scene, Vertex *lightVertices,
+                     Vertex *cameraVertices, int s, int t,
+                     const Distribution1D &lightDistr, const Camera &camera,
+                     Sampler &sampler, Point2f *pRaster,
+                     Float *misWeight = nullptr);
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera);
