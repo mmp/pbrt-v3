@@ -39,13 +39,12 @@
 // Film Method Definitions
 Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
            std::unique_ptr<Filter> filt, Float diagonal,
-           const std::string &filename, Float scale, Float maxSampleLuminance)
+           const std::string &filename, Float scale)
     : fullResolution(resolution),
       diagonal(diagonal * .001),
       filter(std::move(filt)),
       filename(filename),
-      scale(scale),
-      maxSampleLuminance(maxSampleLuminance) {
+      scale(scale) {
     // Compute film image bounds
     croppedPixelBounds =
         Bounds2i(Point2i(std::ceil(fullResolution.x * cropWindow.pMin.x),
@@ -92,8 +91,7 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
                  Point2i(1, 1);
     Bounds2i tilePixelBounds = Intersect(Bounds2i(p0, p1), croppedPixelBounds);
     return std::unique_ptr<FilmTile>(new FilmTile(
-        tilePixelBounds, filter->radius, filterTable, filterTableWidth,
-        maxSampleLuminance));
+        tilePixelBounds, filter->radius, filterTable, filterTableWidth));
 }
 
 void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
@@ -120,7 +118,7 @@ void Film::SetImage(const Spectrum *img) const {
     }
 }
 
-void Film::AddSplat(const Point2f &p, Spectrum v) {
+void Film::AddSplat(const Point2f &p, const Spectrum &v) {
     ProfilePhase pp(Prof::SplatFilm);
 
     if (v.HasNaNs()) {
@@ -138,8 +136,6 @@ void Film::AddSplat(const Point2f &p, Spectrum v) {
     }
 
     if (!InsideExclusive((Point2i)p, croppedPixelBounds)) return;
-    if (v.y() > maxSampleLuminance)
-        v *= maxSampleLuminance / v.y();
     Float xyz[3];
     v.ToXYZ(xyz);
     Pixel &pixel = GetPixel((Point2i)p);
@@ -219,8 +215,7 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
 
     Float scale = params.FindOneFloat("scale", 1.);
     Float diagonal = params.FindOneFloat("diagonal", 35.);
-    Float maxSampleLuminance = params.FindOneFloat("maxsampleluminance",
-                                                   Infinity);
+
     return new Film(Point2i(xres, yres), crop, std::move(filter), diagonal,
-                    filename, scale, maxSampleLuminance);
+                    filename, scale);
 }
