@@ -19,6 +19,18 @@ The initial release of the source code doesn't include updated
 documentation (and the book isn't out yet!), so you should only try it out
 if you're comfortable digging into source code.
 
+Resources
+---------
+
+Two branches of the source code are available:
+
+* book: this branch corresponds as closely as possible to the code in the
+  printed version of the book--bug fixes are the only reason for divergence
+  between the two. 
+* master: this branch includes all of the bug fixes in the "book" branch as
+  well as some new features that cause the small divergences from the code
+  printed in the book.
+
 Over 4GB of example scenes are available for download. (Many are new and
 weren't available with previous versions of pbrt.) We're trying an
 experiment and making them available via git. Run:
