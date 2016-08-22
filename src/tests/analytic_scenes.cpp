@@ -421,6 +421,11 @@ TEST_P(RenderTest, RadianceMatches) {
     const TestIntegrator &tr = GetParam();
     tr.integrator->Render(*tr.scene.scene);
     CheckSceneAverage("test.exr", tr.scene.expected);
+    // The SpatialLightDistribution class keeps a per-thread cache that
+    // must be cleared out between test runs. In turn, this means that we
+    // must delete the Integrator here in order to make sure that its
+    // destructor runs. (This is ugly and should be fixed in a better way.)
+    delete tr.integrator;
 
     pbrtCleanup();
 }
