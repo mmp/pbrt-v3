@@ -46,12 +46,8 @@ STAT_COUNTER("Integrator/Surface interactions", surfaceInteractions);
 
 // VolPathIntegrator Method Definitions
 void VolPathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
-    if (scene.lights.size() > 16) {
-        Warning(
-            "Scene has %d light sources. You may see better results with the "
-            "\"bdpt\" integrator, which handles large numbers of lights better "
-            "than \"volpath\".", int(scene.lights.size()));
-    }
+    lightDistribution = CreateLightSampleDistribution(lightSampleStrategy,
+                                                      scene);
 }
 
 Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
@@ -79,7 +75,10 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
             ++volumeInteractions;
             // Handle scattering at point in medium for volumetric path tracer
-            L += beta * UniformSampleOneLight(mi, scene, arena, sampler, true);
+            const Distribution1D *lightDistrib =
+                lightDistribution->Lookup(mi.p);
+            L += beta * UniformSampleOneLight(mi, scene, arena, sampler, true,
+                                              lightDistrib);
 
             Vector3f wo = -ray.d, wi;
             mi.phase->Sample_p(wo, &wi, sampler.Get2D());
@@ -111,8 +110,11 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
             // Sample illumination from lights to find attenuated path
             // contribution
+            const Distribution1D *lightDistrib =
+                lightDistribution->Lookup(isect.p);
             L += beta *
-                 UniformSampleOneLight(isect, scene, arena, sampler, true);
+                UniformSampleOneLight(isect, scene, arena, sampler, true,
+                                      lightDistrib);
 
             // Sample BSDF to get new path direction
             Vector3f wo = -ray.d, wi;
@@ -141,7 +143,8 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 // Account for the attenuated direct subsurface scattering
                 // component
                 L += beta *
-                     UniformSampleOneLight(pi, scene, arena, sampler, true);
+                     UniformSampleOneLight(pi, scene, arena, sampler, true,
+                                           lightDistribution->Lookup(pi.p));
 
                 // Account for the indirect subsurface scattering component
                 Spectrum f = pi.bsdf->Sample_f(pi.wo, &wi, sampler.Get2D(),
@@ -187,6 +190,8 @@ VolPathIntegrator *CreateVolPathIntegrator(
         }
     }
     Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
+    std::string lightStrategy = params.FindOneString("lightsamplestrategy",
+                                                     "spatial");
     return new VolPathIntegrator(maxDepth, camera, sampler, pixelBounds,
-                                 rrThreshold);
+                                 rrThreshold, lightStrategy);
 }

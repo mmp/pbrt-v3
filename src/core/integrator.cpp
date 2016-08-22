@@ -82,17 +82,25 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
 
 Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                                MemoryArena &arena, Sampler &sampler,
-                               bool handleMedia) {
+                               bool handleMedia, const Distribution1D *lightDistrib) {
     ProfilePhase p(Prof::DirectLighting);
     // Randomly choose a single light to sample, _light_
     int nLights = int(scene.lights.size());
     if (nLights == 0) return Spectrum(0.f);
-    int lightNum = std::min((int)(sampler.Get1D() * nLights), nLights - 1);
+    int lightNum;
+    Float lightPdf;
+    if (lightDistrib) {
+        lightNum = lightDistrib->SampleDiscrete(sampler.Get1D(), &lightPdf);
+        if (lightPdf == 0) return Spectrum(0.f);
+    } else {
+        lightNum = std::min((int)(sampler.Get1D() * nLights), nLights - 1);
+        lightPdf = Float(1) / nLights;
+    }
     const std::shared_ptr<Light> &light = scene.lights[lightNum];
     Point2f uLight = sampler.Get2D();
     Point2f uScattering = sampler.Get2D();
-    return (Float)nLights * EstimateDirect(it, uScattering, *light, uLight,
-                                           scene, sampler, arena, handleMedia);
+    return EstimateDirect(it, uScattering, *light, uLight,
+                          scene, sampler, arena, handleMedia) / lightPdf;
 }
 
 Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,

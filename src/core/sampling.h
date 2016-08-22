@@ -78,7 +78,7 @@ struct Distribution1D {
         Assert(!std::isnan(du));
 
         // Compute PDF for sampled offset
-        if (pdf) *pdf = func[offset] / funcInt;
+        if (pdf) *pdf = (funcInt > 0) ? func[offset] / funcInt : 0;
 
         // Return $x\in{}[0,1)$ corresponding to sample
         return (offset + du) / Count();
@@ -88,7 +88,7 @@ struct Distribution1D {
         // Find surrounding CDF segments and _offset_
         int offset = FindInterval(cdf.size(),
                                   [&](int index) { return cdf[index] <= u; });
-        if (pdf) *pdf = func[offset] / (funcInt * Count());
+        if (pdf) *pdf = (funcInt > 0) ? func[offset] / (funcInt * Count()) : 0;
         if (uRemapped)
             *uRemapped = (u - cdf[offset]) / (cdf[offset + 1] - cdf[offset]);
         if (uRemapped) Assert(*uRemapped >= 0.f && *uRemapped <= 1.f);

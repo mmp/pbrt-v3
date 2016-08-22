@@ -35,6 +35,7 @@
 #include "film.h"
 #include "filters/box.h"
 #include "integrator.h"
+#include "lightdistrib.h"
 #include "paramset.h"
 #include "progressreporter.h"
 #include "sampler.h"
@@ -287,9 +288,15 @@ inline int BufferIndex(int s, int t) {
 
 void BDPTIntegrator::Render(const Scene &scene) {
     ProfilePhase p(Prof::IntegratorRender);
-    // Compute _lightDistr_ for sampling lights proportional to power
-    std::unique_ptr<Distribution1D> lightDistr =
-        ComputeLightPowerDistribution(scene);
+
+    // We'll generally use a SpatialLightDistribution for the sampling
+    // distribution for choosing the light at the start of a light path,
+    // using the first visible point from the camera as the lookup
+    // point. For cases where the camera ray doesn't intersect anything,
+    // we'll fall back to sampling based on light power.
+    std::unique_ptr<LightDistribution> defaultLightDistrib =
+        CreateLightSampleDistribution(lightSampleStrategy, scene);
+    PowerLightDistribution powerLightDistrib(scene);
 
     // Compute a reverse mapping from light pointers to offsets into the
     // scene lights vector (and, equivalently, offsets into
@@ -352,12 +359,18 @@ void BDPTIntegrator::Render(const Scene &scene) {
                     // Generate a single sample using BDPT
                     Point2f pFilm = (Point2f)pPixel + tileSampler->Get2D();
 
-                    // Trace the camera and light subpaths
+                    // Trace the camera subpath
                     Vertex *cameraVertices = arena.Alloc<Vertex>(maxDepth + 2);
                     Vertex *lightVertices = arena.Alloc<Vertex>(maxDepth + 1);
                     int nCamera = GenerateCameraSubpath(
                         scene, *tileSampler, arena, maxDepth + 2, *camera,
                         pFilm, cameraVertices);
+                    // Get a distribution for sampling the light at the start
+                    // of the light subpath.
+                    const Distribution1D *lightDistr = (nCamera >= 2) ?
+                        defaultLightDistrib->Lookup(cameraVertices[1].p()) :
+                        powerLightDistrib.Lookup(cameraVertices[0].p());
+                    // Now trace the light subpath
                     int nLight = GenerateLightSubpath(
                         scene, *tileSampler, arena, maxDepth + 1,
                         cameraVertices[0].time(), *lightDistr, lightToIndex,
@@ -527,6 +540,8 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
         }
     }
 
+    std::string lightStrategy = params.FindOneString("lightsamplestrategy",
+                                                     "spatial");
     return new BDPTIntegrator(sampler, camera, maxDepth, visualizeStrategies,
-                              visualizeWeights, pixelBounds);
+                              visualizeWeights, pixelBounds, lightStrategy);
 }

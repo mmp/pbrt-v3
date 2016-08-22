@@ -139,6 +139,7 @@ SET ( PBRT_CORE_SOURCE
   src/core/interaction.cpp
   src/core/interpolation.cpp
   src/core/light.cpp
+  src/core/lightdistrib.cpp
   src/core/lowdiscrepancy.cpp
   src/core/material.cpp
   src/core/medium.cpp

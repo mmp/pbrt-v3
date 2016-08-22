@@ -123,13 +123,15 @@ class BDPTIntegrator : public Integrator {
     BDPTIntegrator(std::shared_ptr<Sampler> sampler,
                    std::shared_ptr<const Camera> camera, int maxDepth,
                    bool visualizeStrategies, bool visualizeWeights,
-                   const Bounds2i &pixelBounds)
+                   const Bounds2i &pixelBounds,
+                   const std::string &lightSampleStrategy = "spatial")
         : sampler(sampler),
           camera(camera),
           maxDepth(maxDepth),
           visualizeStrategies(visualizeStrategies),
           visualizeWeights(visualizeWeights),
-          pixelBounds(pixelBounds) {}
+          pixelBounds(pixelBounds),
+          lightSampleStrategy(lightSampleStrategy) {}
     void Render(const Scene &scene);
 
   private:
@@ -140,6 +142,7 @@ class BDPTIntegrator : public Integrator {
     const bool visualizeStrategies;
     const bool visualizeWeights;
     const Bounds2i pixelBounds;
+    const std::string lightSampleStrategy;
 };
 
 struct Vertex {
