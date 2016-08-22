@@ -314,7 +314,7 @@ inline int Log2Int(uint32_t v) {
 }
 
 template <typename T>
-inline constexpr bool IsPowerOf2(T v) {
+inline PBRT_CONSTEXPR bool IsPowerOf2(T v) {
     return v && !(v & (v - 1));
 }
 
