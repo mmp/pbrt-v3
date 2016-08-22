@@ -541,7 +541,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
     }
 
     std::string lightStrategy = params.FindOneString("lightsamplestrategy",
-                                                     "spatial");
+                                                     "power");
     return new BDPTIntegrator(sampler, camera, maxDepth, visualizeStrategies,
                               visualizeWeights, pixelBounds, lightStrategy);
 }

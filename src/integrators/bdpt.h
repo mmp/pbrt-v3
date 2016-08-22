@@ -124,7 +124,7 @@ class BDPTIntegrator : public Integrator {
                    std::shared_ptr<const Camera> camera, int maxDepth,
                    bool visualizeStrategies, bool visualizeWeights,
                    const Bounds2i &pixelBounds,
-                   const std::string &lightSampleStrategy = "spatial")
+                   const std::string &lightSampleStrategy = "power")
         : sampler(sampler),
           camera(camera),
           maxDepth(maxDepth),
