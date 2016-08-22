@@ -583,7 +583,7 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
     if (uvs) {
         if (nuvi < npi) {
             Error(
-                "Not enough of \"uv\"s for triangle mesh.  Expencted %d, "
+                "Not enough of \"uv\"s for triangle mesh.  Expected %d, "
                 "found %d.  Discarding.",
                 npi, nuvi);
             uvs = nullptr;
