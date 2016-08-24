@@ -117,8 +117,10 @@ class SpatialLightDistribution : public LightDistribution {
 
   private:
     static const int nBuckets = 32;
+#ifndef PBRT_IS_MSVC2013
     static_assert(IsPowerOf2(nBuckets),
                   "nBuckets must be an exact power of two");
+#endif // !PBRT_IS_MSVC2013
 
     const Scene &scene;
     int nVoxels[3];
