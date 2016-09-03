@@ -84,28 +84,6 @@ STAT_COUNTER("SpatialLightDistribution/Distributions created", nCreated);
 STAT_INT_DISTRIBUTION("SpatialLightDistribution/Hash bucket load",
                       hashBucketLoad);
 
-// For efficiency, we keep a per-thread cache of computed light
-// distributions; we can look up values from this without locking or other
-// coordination across threads.
-using LocalBucketHash =
-    std::unordered_map<Point3i, Distribution1D *, Point3iHash>;
-
-static PBRT_THREAD_LOCAL LocalBucketHash *localVoxelDistribution;
-
-// In order to be able to clean up at the end of rendering, pointers to all
-// of these per-thread pointers are also stored in localDistributions. This
-// makes it possible to clear out the caches when the SpatialLightDistribution
-// destructor runs.
-//
-// FIXME: this design means that we can't really have multiple
-// SpatialLightDistributions existing and an use concurrently (and thus,
-// can't have multiple Integrators around).  One way to fix this would be
-// to make localVoxelDistribution a SpatialLightDistribution member
-// variable, but I believe that compiler support for thread_local member
-// variables is currently not universally solid.
-static std::mutex localDistributionsMutex;
-static std::vector<LocalBucketHash **> localDistributions;
-
 SpatialLightDistribution::SpatialLightDistribution(const Scene &scene,
                                                    int maxVoxels)
     : scene(scene) {
@@ -117,6 +95,11 @@ SpatialLightDistribution::SpatialLightDistribution(const Scene &scene,
     Float bmax = diag[b.MaximumExtent()];
     for (int i = 0; i < 3; ++i)
         nVoxels[i] = std::max(1, int(std::round(diag[i] / bmax * maxVoxels)));
+
+    // It's important to pre-size the localVoxelDistributions vector, to
+    // avoid race conditions with one thread resizing the vector while
+    // another is reading from it.
+    localVoxelDistributions.resize(NumSystemCores());
 }
 
 SpatialLightDistribution::~SpatialLightDistribution() {
@@ -126,14 +109,6 @@ SpatialLightDistribution::~SpatialLightDistribution() {
     // before statistics are reported (which is currently the case at least).
     for (size_t i = 0; i < nBuckets; ++i)
         ReportValue(hashBucketLoad, voxelDistribution[i].size());
-
-    // Free and null-out all of the per-thread distribution caches.
-    std::lock_guard<std::mutex> lock(localDistributionsMutex);
-    for (LocalBucketHash **h : localDistributions) {
-        delete *h;
-        *h = nullptr;
-    }
-    localDistributions.clear();
 }
 
 const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
@@ -146,10 +121,11 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     for (int i = 0; i < 3; ++i) pi[i] = int(offset[i] * nVoxels[i]);
 
     // Create the per-thread cache of sampling distributions if needed.
+    LocalBucketHash *localVoxelDistribution =
+        localVoxelDistributions[ThreadIndex].get();
     if (!localVoxelDistribution) {
         localVoxelDistribution = new LocalBucketHash;
-        std::lock_guard<std::mutex> lock(localDistributionsMutex);
-        localDistributions.push_back(&localVoxelDistribution);
+        localVoxelDistributions[ThreadIndex].reset(localVoxelDistribution);
     }
     else {
         // Otherwise see if we have a sampling distribution for the voxel

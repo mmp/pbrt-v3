@@ -138,6 +138,13 @@ class SpatialLightDistribution : public LightDistribution {
         std::unordered_map<Point3i, std::unique_ptr<Distribution1D>,
                            Point3iHash>;
     mutable BucketHash voxelDistribution[nBuckets];
+
+    // For efficiency, we keep a per-thread cache of computed light
+    // distributions; we can look up values from this without locking or other
+    // coordination across threads.
+    using LocalBucketHash =
+        std::unordered_map<Point3i, Distribution1D *, Point3iHash>;
+    mutable std::vector<std::unique_ptr<LocalBucketHash>> localVoxelDistributions;
 };
 
 #endif  // PBRT_CORE_LIGHTDISTRIB_H
