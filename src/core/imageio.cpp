@@ -287,15 +287,25 @@ static RGBSpectrum *ReadImagePNG(const std::string &name, int *width,
  */
 
 static bool hostLittleEndian =
-#if defined(__LITTLE_ENDIAN__) || defined(__i386__) || defined(__x86_64__) || \
-    defined(WIN32)
+#if defined(__BYTE_ORDER__)
+  #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     true
-#elif defined(__BIG_ENDIAN__)
+  #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     false
-#elif defined(__sparc) || defined(__sparc__)
-    false
+  #else
+    #error "__BYTE_ORDER__ defined but has unexpected value"
+  #endif
 #else
-#error "Can't detect machine endian-ness at compile-time."
+  #if defined(__LITTLE_ENDIAN__) || defined(__i386__) || defined(__x86_64__) || \
+      defined(WIN32)
+    true
+  #elif defined(__BIG_ENDIAN__)
+    false
+  #elif defined(__sparc) || defined(__sparc__)
+    false
+  #else
+    #error "Can't detect machine endian-ness at compile-time."
+  #endif
 #endif
     ;
 
