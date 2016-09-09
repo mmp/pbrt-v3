@@ -135,8 +135,17 @@ bool Curve::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     cpObj[3] = BlossomBezier(common->cpObj, uMax, uMax, uMax);
 
     // Project curve control points to plane perpendicular to ray
-    Vector3f dx, dy;
-    CoordinateSystem(ray.d, &dx, &dy);
+
+    // Be careful to set the "up" direction passed to LookAt() to equal the
+    // vector from the first to the last control points.  In turn, this
+    // helps orient the curve to be roughly parallel to the x axis in the
+    // ray coordinate system.
+    //
+    // In turn (especially for curves that are approaching stright lines),
+    // we get curve bounds with minimal extent in y, which in turn lets us
+    // early out more quickly in recursiveIntersect().
+    Vector3f dx = Cross(ray.d, cpObj[3] - cpObj[0]);
+
     Transform objectToRay = LookAt(ray.o, ray.o + ray.d, dx);
     Point3f cp[4] = {objectToRay(cpObj[0]), objectToRay(cpObj[1]),
                      objectToRay(cpObj[2]), objectToRay(cpObj[3])};
