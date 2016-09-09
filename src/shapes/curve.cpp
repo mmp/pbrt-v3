@@ -413,7 +413,7 @@ std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,
         }
     }
 
-    int sd = params.FindOneFloat("splitdepth", 2);
+    int sd = params.FindOneFloat("splitdepth", 3);
 
     if (type == CurveType::Ribbon && !n) {
         Error(
