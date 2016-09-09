@@ -185,8 +185,10 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
         Float uMid = 0.5f * (u0 + u1);
         Point3f cpSplit[7];
         SubdivideBezier(cp, cpSplit);
+        // Single '|' below is intentional; we don't want short-circuit
+        // evaluation here.
         return (recursiveIntersect(ray, tHit, isect, &cpSplit[0], rayToObject,
-                                   u0, uMid, depth - 1) ||
+                                   u0, uMid, depth - 1) |
                 recursiveIntersect(ray, tHit, isect, &cpSplit[3], rayToObject,
                                    uMid, u1, depth - 1));
     } else {
