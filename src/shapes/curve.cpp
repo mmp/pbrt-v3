@@ -158,12 +158,19 @@ bool Curve::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
                     std::max(std::abs(cp[i].x - 2 * cp[i + 1].x + cp[i + 2].x),
                              std::abs(cp[i].y - 2 * cp[i + 1].y + cp[i + 2].y)),
                     std::abs(cp[i].z - 2 * cp[i + 1].z + cp[i + 2].z)));
+
     Float eps =
         std::max(common->width[0], common->width[1]) * .05f;  // width / 20
-#define LOG4(x) (std::log(x) * 0.7213475108f)
-    Float fr0 = LOG4(1.41421356237f * 6.f * L0 / (8.f * eps));
-#undef LOG4
-    int r0 = (int)std::round(fr0);
+    auto Log2 = [](Float v) -> int {
+        if (v < 1) return 0;
+        uint32_t bits = FloatToBits(v);
+        // https://graphics.stanford.edu/~seander/bithacks.html#IntegerLog
+        // (With an additional add so get round-to-nearest rather than
+        // round down.)
+        return (bits >> 23) - 127 + (bits & (1 << 22) ? 1 : 0);
+    };
+    // Compute log base 4 by dividing log2 in half.
+    int r0 = Log2(1.41421356237f * 6.f * L0 / (8.f * eps)) / 2;
     int maxDepth = Clamp(r0, 0, 10);
     ReportValue(refinementLevel, maxDepth);
 
