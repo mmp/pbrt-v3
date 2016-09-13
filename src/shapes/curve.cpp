@@ -145,6 +145,14 @@ bool Curve::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     // we get curve bounds with minimal extent in y, which in turn lets us
     // early out more quickly in recursiveIntersect().
     Vector3f dx = Cross(ray.d, cpObj[3] - cpObj[0]);
+    if (dx.LengthSquared() == 0) {
+        // If the ray and the vector between the first and last control
+        // points are parallel, dx will be zero.  Generate an arbitrary xy
+        // orientation for the ray coordinate system so that intersection
+        // tests can proceeed in this unusual case.
+        Vector3f dy;
+        CoordinateSystem(ray.d, &dx, &dy);
+    }
 
     Transform objectToRay = LookAt(ray.o, ray.o + ray.d, dx);
     Point3f cp[4] = {objectToRay(cpObj[0]), objectToRay(cpObj[1]),
