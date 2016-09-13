@@ -57,7 +57,7 @@ Float CorrectShadingNormal(const SurfaceInteraction &isect, const Vector3f &wo,
         Float num = AbsDot(wo, isect.shading.n) * AbsDot(wi, isect.n);
         Float denom = AbsDot(wo, isect.n) * AbsDot(wi, isect.shading.n);
         if (denom == 0) {
-            Assert(num == 0);
+            CHECK_EQ(num, 0);
             return 0;
         }
         return num / denom;
@@ -83,6 +83,8 @@ int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
     Float pdfPos, pdfDir;
     path[0] = Vertex::CreateCamera(&camera, ray, beta);
     camera.Pdf_We(ray, &pdfPos, &pdfDir);
+    VLOG(2) << "Starting camera subpath. Ray: " << ray << ", beta " << beta
+            << ", pdfPos " << pdfPos << ", pdfDir " << pdfDir;
     return RandomWalk(scene, ray, sampler, arena, beta, pdfDir, maxDepth - 1,
                       TransportMode::Radiance, path + 1) +
            1;
@@ -109,6 +111,8 @@ int GenerateLightSubpath(
     path[0] =
         Vertex::CreateLight(light.get(), ray, nLight, Le, pdfPos * lightPdf);
     Spectrum beta = Le * AbsDot(nLight, ray.d) / (lightPdf * pdfPos * pdfDir);
+    VLOG(2) << "Starting light subpath. Ray: " << ray << ", Le " << Le <<
+        ", beta " << beta << ", pdfPos " << pdfPos << ", pdfDir " << pdfDir;
     int nVertices =
         RandomWalk(scene, ray, sampler, arena, beta, pdfDir, maxDepth - 1,
                    TransportMode::Importance, path + 1);
@@ -140,6 +144,8 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
         // Attempt to create the next subpath vertex in _path_
         MediumInteraction mi;
 
+        VLOG(2) << "Random walk. Bounces " << bounces << ", beta " << beta <<
+            ", pdfFwd " << pdfFwd << ", pdfRev " << pdfRev;
         // Trace a ray and sample the medium, if any
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
@@ -184,14 +190,18 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             BxDFType type;
             Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdfFwd,
                                               BSDF_ALL, &type);
+            VLOG(2) << "Random walk sampled dir " << wi << " f: " << f <<
+                ", pdfFwd: " << pdfFwd;
             if (f.IsBlack() || pdfFwd == 0.f) break;
             beta *= f * AbsDot(wi, isect.shading.n) / pdfFwd;
+            VLOG(2) << "Random walk beta now " << beta;
             pdfRev = isect.bsdf->Pdf(wi, wo, BSDF_ALL);
             if (type & BSDF_SPECULAR) {
                 vertex.delta = true;
                 pdfRev = pdfFwd = 0;
             }
             beta *= CorrectShadingNormal(isect, wo, wi, mode);
+            VLOG(2) << "Random walk beta after shading normal correction " << beta;
             ray = isect.SpawnRay(wi);
         }
 
@@ -392,6 +402,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
                                 scene, lightVertices, cameraVertices, s, t,
                                 *lightDistr, lightToIndex, *camera, *tileSampler,
                                 &pFilmNew, &misWeight);
+                            VLOG(2) << "Connect bdpt s: " << s <<", t: " << t <<
+                                ", Lpath: " << Lpath << ", misWeight: " << misWeight;
                             if (visualizeStrategies || visualizeWeights) {
                                 Spectrum value;
                                 if (visualizeStrategies)
@@ -407,6 +419,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
                                 film->AddSplat(pFilmNew, Lpath);
                         }
                     }
+                    VLOG(2) << "Add film sample pFilm: " << pFilm << ", L: " << L <<
+                        ", (y: " << L.y() << ")";
                     filmTile->AddSample(pFilm, L);
                     arena.Reset();
                 } while (tileSampler->StartNextSample());
@@ -443,7 +457,7 @@ Spectrum ConnectBDPT(
         // Interpret the camera subpath as a complete path
         const Vertex &pt = cameraVertices[t - 1];
         if (pt.IsLight()) L = pt.Le(scene, cameraVertices[t - 2]) * pt.beta;
-        Assert(!L.HasNaNs());
+        DCHECK(!L.HasNaNs());
     } else if (t == 1) {
         // Sample a point on the camera and connect it to the light subpath
         const Vertex &qs = lightVertices[s - 1];
@@ -458,7 +472,7 @@ Spectrum ConnectBDPT(
                 sampled = Vertex::CreateCamera(&camera, vis.P1(), Wi / pdf);
                 L = qs.beta * qs.f(sampled) * sampled.beta;
                 if (qs.IsOnSurface()) L *= AbsDot(wi, qs.ns());
-                Assert(!L.HasNaNs());
+                DCHECK(!L.HasNaNs());
                 // Only check visibility after we know that the path would
                 // make a non-zero contribution.
                 if (!L.IsBlack()) L *= vis.Tr(scene, sampler);
@@ -494,6 +508,9 @@ Spectrum ConnectBDPT(
         const Vertex &qs = lightVertices[s - 1], &pt = cameraVertices[t - 1];
         if (qs.IsConnectible() && pt.IsConnectible()) {
             L = qs.beta * qs.f(pt) * pt.f(qs) * pt.beta;
+            VLOG(2) << "General connect s: " << s << ", t: " << t <<
+                " qs: " << qs << ", pt: " << pt << ", qs.f(pt): " << qs.f(pt) <<
+                ", pt.f(qs): " << pt.f(qs);
             if (!L.IsBlack()) L *= G(scene, sampler, qs, pt);
         }
     }
@@ -506,7 +523,7 @@ Spectrum ConnectBDPT(
     Float misWeight =
         L.IsBlack() ? 0.f : MISWeight(scene, lightVertices, cameraVertices,
                                       sampled, s, t, lightDistr, lightToIndex);
-    Assert(!std::isnan(misWeight));
+    DCHECK(!std::isnan(misWeight));
     L *= misWeight;
     if (misWeightPtr) *misWeightPtr = misWeight;
     return L;

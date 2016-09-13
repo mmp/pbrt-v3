@@ -92,7 +92,7 @@ int makesky(int argc, char *argv[]) {
     auto parseArg = [&]() -> std::pair<std::string, double> {
         const char *ptr = argv[i];
         // Skip over a leading dash or two.
-        Assert(*ptr == '-');
+        CHECK_EQ(*ptr, '-');
         ++ptr;
         if (*ptr == '-') ++ptr;
 
@@ -164,7 +164,7 @@ int makesky(int argc, char *argv[]) {
             // Compute the angle between the pixel's direction and the sun
             // direction.
             Float gamma = std::acos(Clamp(Dot(v, sunDir), -1, 1));
-            Assert(gamma >= 0 && gamma <= Pi);
+            CHECK(gamma >= 0 && gamma <= Pi);
 
             for (int c = 0; c < num_channels; ++c) {
                 float val = arhosekskymodel_solar_radiance(
@@ -596,7 +596,7 @@ int convert(int argc, char *argv[]) {
     auto parseArg = [&]() -> std::pair<std::string, double> {
         const char *ptr = argv[i];
         // Skip over a leading dash or two.
-        Assert(*ptr == '-');
+        CHECK_EQ(*ptr, '-');
         ++ptr;
         if (*ptr == '-') ++ptr;
 

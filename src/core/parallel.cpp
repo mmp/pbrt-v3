@@ -82,6 +82,7 @@ class ParallelForLoop {
 
 static std::condition_variable workListCondition;
 static void workerThreadFunc(int tIndex) {
+    LOG(INFO) << "Started execution in worker thread " << tIndex;
     ThreadIndex = tIndex;
     std::unique_lock<std::mutex> lock(workListMutex);
     while (!shutdownThreads) {
@@ -114,7 +115,7 @@ static void workerThreadFunc(int tIndex) {
                 }
                 // Handle other types of loops
                 else {
-                    Assert(loop.func2D);
+                    CHECK(loop.func2D);
                     loop.func2D(Point2i(index % loop.nX, index / loop.nX));
                 }
                 ProfilerState = oldState;
@@ -128,6 +129,7 @@ static void workerThreadFunc(int tIndex) {
     }
     // Report thread statistics at worker thread exit
     ReportThreadStats();
+    LOG(INFO) << "Exiting worker thread " << tIndex;
 }
 
 // Parallel Definitions
@@ -141,7 +143,7 @@ void ParallelFor(std::function<void(int64_t)> func, int64_t count,
 
     // Launch worker threads if needed
     if (threads.size() == 0) {
-        Assert(PbrtOptions.nThreads != 1);
+        CHECK_NE(PbrtOptions.nThreads, 1);
         ThreadIndex = 0;
         for (int i = 0; i < NumSystemCores() - 1; ++i)
             threads.push_back(std::thread(workerThreadFunc, i + 1));
@@ -182,7 +184,7 @@ void ParallelFor(std::function<void(int64_t)> func, int64_t count,
             }
             // Handle other types of loops
             else {
-                Assert(loop.func2D);
+                CHECK(loop.func2D);
                 loop.func2D(Point2i(index % loop.nX, index / loop.nX));
             }
             ProfilerState = oldState;
@@ -199,7 +201,7 @@ int MaxThreadIndex() {
     if (PbrtOptions.nThreads != 1) {
         // Launch worker threads if needed
         if (threads.size() == 0) {
-            Assert(PbrtOptions.nThreads != 1);
+            CHECK_NE(PbrtOptions.nThreads, 1);
             ThreadIndex = 0;
             for (int i = 0; i < NumSystemCores() - 1; ++i)
                 threads.push_back(std::thread(workerThreadFunc, i + 1));
@@ -216,7 +218,7 @@ void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
     }
     // Launch worker threads if needed
     if (threads.size() == 0) {
-        Assert(PbrtOptions.nThreads != 1);
+        CHECK_NE(PbrtOptions.nThreads, 1);
         ThreadIndex = 0;
         for (int i = 0; i < NumSystemCores() - 1; ++i)
             threads.push_back(std::thread(workerThreadFunc, i + 1));
@@ -255,7 +257,7 @@ void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
             }
             // Handle other types of loops
             else {
-                Assert(loop.func2D);
+                CHECK(loop.func2D);
                 loop.func2D(Point2i(index % loop.nX, index / loop.nX));
             }
             ProfilerState = oldState;

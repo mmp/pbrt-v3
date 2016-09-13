@@ -124,11 +124,13 @@ PBRT_CONSTEXPR int AllTransformsBits = (1 << MaxTransforms) - 1;
 struct TransformSet {
     // TransformSet Public Methods
     Transform &operator[](int i) {
-        Assert(i >= 0 && i < MaxTransforms);
+        CHECK_GE(i, 0);
+        CHECK_LT(i, MaxTransforms);
         return t[i];
     }
     const Transform &operator[](int i) const {
-        Assert(i >= 0 && i < MaxTransforms);
+        CHECK_GE(i, 0);
+        CHECK_LT(i, MaxTransforms);
         return t[i];
     }
     friend TransformSet Inverse(const TransformSet &ts) {
@@ -638,7 +640,8 @@ Camera *MakeCamera(const std::string &name, const ParamSet &paramSet,
                    Float transformEnd, Film *film) {
     Camera *camera = nullptr;
     MediumInterface mediumInterface = graphicsState.CreateMediumInterface();
-    Assert(MaxTransforms == 2);
+    static_assert(MaxTransforms == 2,
+                  "TransformCache assumes only two transforms");
     Transform *cam2world[2];
     transformCache.Lookup(cam2worldSet[0], &cam2world[0], nullptr);
     transformCache.Lookup(cam2worldSet[1], &cam2world[1], nullptr);
@@ -1041,7 +1044,7 @@ void pbrtTexture(const std::string &name, const std::string &type,
         // Create _Float_ texture and store in _floatTextures_
         if (graphicsState.floatTextures.find(name) !=
             graphicsState.floatTextures.end())
-            Info("Texture \"%s\" being redefined", name.c_str());
+            Warning("Texture \"%s\" being redefined", name.c_str());
         WARN_IF_ANIMATED_TRANSFORM("Texture");
         std::shared_ptr<Texture<Float>> ft =
             MakeFloatTexture(texname, curTransform[0], tp);
@@ -1050,7 +1053,7 @@ void pbrtTexture(const std::string &name, const std::string &type,
         // Create _color_ texture and store in _spectrumTextures_
         if (graphicsState.spectrumTextures.find(name) !=
             graphicsState.spectrumTextures.end())
-            Info("Texture \"%s\" being redefined", name.c_str());
+            Warning("Texture \"%s\" being redefined", name.c_str());
         WARN_IF_ANIMATED_TRANSFORM("Texture");
         std::shared_ptr<Texture<Spectrum>> st =
             MakeSpectrumTexture(texname, curTransform[0], tp);
@@ -1195,7 +1198,8 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         // Create single _TransformedPrimitive_ for _prims_
 
         // Get _animatedObjectToWorld_ transform for shape
-        Assert(MaxTransforms == 2);
+        static_assert(MaxTransforms == 2,
+                      "TransformCache assumes only two transforms");
         Transform *ObjToWorld[2];
         transformCache.Lookup(curTransform[0], &ObjToWorld[0], nullptr);
         transformCache.Lookup(curTransform[1], &ObjToWorld[1], nullptr);
@@ -1325,7 +1329,8 @@ void pbrtObjectInstance(const std::string &name) {
         in.erase(in.begin(), in.end());
         in.push_back(accel);
     }
-    Assert(MaxTransforms == 2);
+    static_assert(MaxTransforms == 2,
+                  "TransformCache assumes only two transforms");
     // Create _animatedInstanceToWorld_ transform for instance
     Transform *InstanceToWorld[2];
     transformCache.Lookup(curTransform[0], &InstanceToWorld[0], nullptr);

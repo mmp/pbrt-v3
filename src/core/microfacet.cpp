@@ -109,10 +109,10 @@ static void BeckmannSample11(Float cosThetaI, Float U1, Float U2,
     /* Simulate Y component */
     *slope_y = ErfInv(2.0f * std::max(U2, (Float)1e-6f) - 1.0f);
 
-    Assert(!std::isinf(*slope_x));
-    Assert(!std::isnan(*slope_x));
-    Assert(!std::isinf(*slope_y));
-    Assert(!std::isnan(*slope_y));
+    CHECK(!std::isinf(*slope_x));
+    CHECK(!std::isnan(*slope_x));
+    CHECK(!std::isinf(*slope_y));
+    CHECK(!std::isnan(*slope_y));
 }
 
 static Vector3f BeckmannSample(const Vector3f &wi, Float alpha_x, Float alpha_y,
@@ -261,9 +261,6 @@ static void TrowbridgeReitzSample11(Float cosTheta, Float U1, Float U2,
     Float slope_x_2 = B * tmp + D;
     *slope_x = (A < 0 || slope_x_2 > 1.f / tanTheta) ? slope_x_1 : slope_x_2;
 
-    Assert(!std::isinf(*slope_x));
-    Assert(!std::isnan(*slope_x));
-
     // sample slope_y
     Float S;
     if (U2 > 0.5f) {
@@ -278,8 +275,8 @@ static void TrowbridgeReitzSample11(Float cosTheta, Float U1, Float U2,
         (U2 * (U2 * (U2 * 0.093073f + 0.309420f) - 1.000000f) + 0.597999f);
     *slope_y = S * z * std::sqrt(1.f + *slope_x * *slope_x);
 
-    Assert(!std::isinf(*slope_y));
-    Assert(!std::isnan(*slope_y));
+    CHECK(!std::isinf(*slope_y));
+    CHECK(!std::isnan(*slope_y));
 }
 
 static Vector3f TrowbridgeReitzSample(const Vector3f &wi, Float alpha_x,

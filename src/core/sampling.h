@@ -73,9 +73,11 @@ struct Distribution1D {
         if (off) *off = offset;
         // Compute offset along CDF segment
         Float du = u - cdf[offset];
-        if ((cdf[offset + 1] - cdf[offset]) > 0)
+        if ((cdf[offset + 1] - cdf[offset]) > 0) {
+            CHECK_GT(cdf[offset + 1], cdf[offset]);
             du /= (cdf[offset + 1] - cdf[offset]);
-        Assert(!std::isnan(du));
+        }
+        DCHECK(!std::isnan(du));
 
         // Compute PDF for sampled offset
         if (pdf) *pdf = (funcInt > 0) ? func[offset] / funcInt : 0;
@@ -91,11 +93,11 @@ struct Distribution1D {
         if (pdf) *pdf = (funcInt > 0) ? func[offset] / (funcInt * Count()) : 0;
         if (uRemapped)
             *uRemapped = (u - cdf[offset]) / (cdf[offset + 1] - cdf[offset]);
-        if (uRemapped) Assert(*uRemapped >= 0.f && *uRemapped <= 1.f);
+        if (uRemapped) CHECK(*uRemapped >= 0.f && *uRemapped <= 1.f);
         return offset;
     }
     Float DiscretePDF(int index) const {
-        Assert(index >= 0 && index < Count());
+        CHECK(index >= 0 && index < Count());
         return func[index] / (funcInt * Count());
     }
 

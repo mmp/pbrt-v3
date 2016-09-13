@@ -103,9 +103,9 @@ class TransformedPrimitive : public Primitive {
     void ComputeScatteringFunctions(SurfaceInteraction *isect,
                                     MemoryArena &arena, TransportMode mode,
                                     bool allowMultipleLobes) const {
-        Severe(
+        LOG(FATAL) <<
             "TransformedPrimitive::ComputeScatteringFunctions() shouldn't be "
-            "called");
+            "called";
     }
     Bounds3f WorldBound() const {
         return PrimitiveToWorld.MotionBounds(primitive->WorldBound());

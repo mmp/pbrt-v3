@@ -14,7 +14,14 @@ endif()
 if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/openexr/OpenEXR")
   message(FATAL_ERROR "The OpenEXR submodule directory is missing! "
     "You probably did not clone the project with --recursive. It is possible to recover "
-    "by calling \"git submodule update --init --recursive\"")
+    "by running \"git submodule update --init --recursive\"")
+endif()
+
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/glog")
+  message(FATAL_ERROR "The glog submodule directory is missing! "
+    "You probably did not clone the project with --recursive, or first checked out "
+    "pbrt before it was added. It is possible to recover by running "
+    "\"git submodule update --init --recursive\"")
 endif()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
@@ -122,6 +129,14 @@ INCLUDE_DIRECTORIES (
 )
 
 SET(OPENEXR_LIBS IlmImf Imath Half)
+
+SET(WITH_GFLAGS OFF)
+ADD_SUBDIRECTORY(src/ext/glog)
+SET_PROPERTY(TARGET glog PROPERTY FOLDER "dependencies")
+INCLUDE_DIRECTORIES (
+  src/ext/glog/src
+  ${CMAKE_BINARY_DIR}/src/ext/glog
+)
 
 SET ( PBRT_CORE_SOURCE
   src/core/api.cpp
@@ -256,6 +271,7 @@ TARGET_LINK_LIBRARIES ( pbrt_exe
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
+  glog
   )
 
 # Tools
@@ -275,12 +291,14 @@ TARGET_LINK_LIBRARIES ( bsdftest
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
+  glog
   )
 
 TARGET_LINK_LIBRARIES ( imgtool
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
+  glog
   )
 
 TARGET_LINK_LIBRARIES ( obj2pbrt
@@ -303,6 +321,7 @@ TARGET_LINK_LIBRARIES ( pbrt_test
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
+  glog
   )
 
 ADD_TEST ( pbrt_unit_test

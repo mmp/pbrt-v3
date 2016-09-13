@@ -160,10 +160,12 @@ class EFloat {
     inline void Check() const {
         if (!std::isinf(low) && !std::isnan(low) && !std::isinf(high) &&
             !std::isnan(high))
-            Assert(low <= high);
+            CHECK_LE(low, high);
 #ifndef NDEBUG
-        if (!std::isinf(v) && !std::isnan(v))
-            Assert(LowerBound() <= vPrecise && vPrecise <= UpperBound());
+        if (!std::isinf(v) && !std::isnan(v)) {
+            CHECK_LE(LowerBound(), vPrecise);
+            CHECK_LE(vPrecise, UpperBound());
+        }
 #endif
     }
     EFloat(const EFloat &ef) {

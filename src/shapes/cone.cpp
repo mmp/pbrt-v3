@@ -198,7 +198,7 @@ Float Cone::Area() const {
 }
 
 Interaction Cone::Sample(const Point2f &u) const {
-    Severe("Cone::Sample not implemented.");
+    LOG(FATAL) << "Cone::Sample not implemented.";
     return Interaction();
 }
 

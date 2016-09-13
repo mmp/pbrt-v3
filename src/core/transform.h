@@ -223,7 +223,7 @@ inline Point3<T> Transform::operator()(const Point3<T> &p) const {
     T yp = m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z + m.m[1][3];
     T zp = m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z + m.m[2][3];
     T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
-    Assert(wp != 0);
+    CHECK_NE(wp, 0);
     if (wp == 1)
         return Point3<T>(xp, yp, zp);
     else
@@ -290,7 +290,7 @@ inline Point3<T> Transform::operator()(const Point3<T> &p,
     T zAbsSum = (std::abs(m.m[2][0] * x) + std::abs(m.m[2][1] * y) +
                  std::abs(m.m[2][2] * z) + std::abs(m.m[2][3]));
     *pError = gamma(3) * Vector3<T>(xAbsSum, yAbsSum, zAbsSum);
-    Assert(wp != 0);
+    CHECK_NE(wp, 0);
     if (wp == 1)
         return Point3<T>(xp, yp, zp);
     else
@@ -324,7 +324,7 @@ inline Point3<T> Transform::operator()(const Point3<T> &pt,
              std::abs(m.m[2][2]) * ptError.z) +
         gamma(3) * (std::abs(m.m[2][0] * x) + std::abs(m.m[2][1] * y) +
                     std::abs(m.m[2][2] * z) + std::abs(m.m[2][3]));
-    Assert(wp != 0);
+    CHECK_NE(wp, 0);
     if (wp == 1.)
         return Point3<T>(xp, yp, zp);
     else

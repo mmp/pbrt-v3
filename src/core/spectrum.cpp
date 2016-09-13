@@ -56,8 +56,8 @@ void SortSpectrumSamples(Float *lambda, Float *vals, int n) {
 
 Float AverageSpectrumSamples(const Float *lambda, const Float *vals, int n,
                              Float lambdaStart, Float lambdaEnd) {
-    for (int i = 0; i < n - 1; ++i) Assert(lambda[i + 1] > lambda[i]);
-    Assert(lambdaStart < lambdaEnd);
+    for (int i = 0; i < n - 1; ++i) CHECK_GT(lambda[i + 1], lambda[i]);
+    CHECK_LT(lambdaStart, lambdaEnd);
     // Handle cases with out-of-bounds range or single sample only
     if (lambdaEnd <= lambda[0]) return vals[0];
     if (lambdaStart >= lambda[n - 1]) return vals[n - 1];
@@ -71,7 +71,7 @@ Float AverageSpectrumSamples(const Float *lambda, const Float *vals, int n,
     // Advance to first relevant wavelength segment
     int i = 0;
     while (lambdaStart > lambda[i + 1]) ++i;
-    Assert(i + 1 < n);
+    CHECK_LT(i + 1, n);
 
     // Loop over wavelength sample segments and add contributions
     auto interp = [lambda, vals](Float w, int i) {
@@ -176,11 +176,11 @@ SampledSpectrum::SampledSpectrum(const RGBSpectrum &r, SpectrumType t) {
 
 Float InterpolateSpectrumSamples(const Float *lambda, const Float *vals, int n,
                                  Float l) {
-    for (int i = 0; i < n - 1; ++i) Assert(lambda[i + 1] > lambda[i]);
+    for (int i = 0; i < n - 1; ++i) CHECK_GT(lambda[i + 1], lambda[i]);
     if (l <= lambda[0]) return vals[0];
     if (l >= lambda[n - 1]) return vals[n - 1];
     int offset = FindInterval(n, [&](int index) { return lambda[index] <= l; });
-    Assert(l >= lambda[offset] && l <= lambda[offset + 1]);
+    CHECK(l >= lambda[offset] && l <= lambda[offset + 1]);
     Float t = (l - lambda[offset]) / (lambda[offset + 1] - lambda[offset]);
     return Lerp(t, vals[offset], vals[offset + 1]);
 }
@@ -948,7 +948,7 @@ void Blackbody(const Float *lambda, int n, Float T, Float *Le) {
         Float lambda5 = (l * l) * (l * l) * l;
         Le[i] = (2 * h * c * c) /
                 (lambda5 * (std::exp((h * c) / (l * kb * T)) - 1));
-        Assert(!std::isnan(Le[i]));
+        CHECK(!std::isnan(Le[i]));
     }
 }
 

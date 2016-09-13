@@ -93,7 +93,7 @@ class Film {
 
     // Film Private Methods
     Pixel &GetPixel(const Point2i &p) {
-        Assert(InsideExclusive(p, croppedPixelBounds));
+        CHECK(InsideExclusive(p, croppedPixelBounds));
         int width = croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x;
         int offset = (p.x - croppedPixelBounds.pMin.x) +
                      (p.y - croppedPixelBounds.pMin.y) * width;
@@ -156,14 +156,14 @@ class FilmTile {
         }
     }
     FilmTilePixel &GetPixel(const Point2i &p) {
-        Assert(InsideExclusive(p, pixelBounds));
+        CHECK(InsideExclusive(p, pixelBounds));
         int width = pixelBounds.pMax.x - pixelBounds.pMin.x;
         int offset =
             (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;
         return pixels[offset];
     }
     const FilmTilePixel &GetPixel(const Point2i &p) const {
-        Assert(InsideExclusive(p, pixelBounds));
+        CHECK(InsideExclusive(p, pixelBounds));
         int width = pixelBounds.pMax.x - pixelBounds.pMin.x;
         int offset =
             (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;

@@ -64,8 +64,8 @@ class HaltonSampler : public GlobalSampler {
     // HaltonSampler Private Methods
     const uint16_t *PermutationForDimension(int dim) const {
         if (dim >= PrimeTableSize)
-            Severe("HaltonSampler can only sample %d dimensions.",
-                   PrimeTableSize);
+            LOG(FATAL) << StringPrintf("HaltonSampler can only sample %d "
+                                       "dimensions.", PrimeTableSize);
         return &radicalInversePermutations[PrimeSums[dim]];
     }
 };

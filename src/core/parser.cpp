@@ -43,6 +43,8 @@ bool ParseFile(const std::string &filename) {
     extern int line_num;
     extern int yydebug;
 
+    LOG(INFO) << "Starting to parse input file " << filename;
+
     if (getenv("PBRT_YYDEBUG") != nullptr) yydebug = 1;
 
     if (filename == "-")
@@ -60,5 +62,6 @@ bool ParseFile(const std::string &filename) {
     }
     current_file = "";
     line_num = 0;
+    LOG(INFO) << "Done parsing input file " << filename;
     return (yyin != nullptr);
 }

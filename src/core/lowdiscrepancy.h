@@ -255,7 +255,10 @@ inline Float SobolSample(int64_t index, int dimension, uint64_t scramble = 0) {
 }
 
 inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
-    Assert(dimension < NumSobolDimensions);
+    CHECK_LT(dimension, NumSobolDimensions) <<
+        "Integrator has consumed too many Sobol' dimensions; you "
+        "may want to use a Sampler without a dimension limit like "
+        "\"02sequence.\"";
     uint32_t v = scramble;
     for (int i = dimension * SobolMatrixSize; a != 0; a >>= 1, i++)
         if (a & 1) v ^= SobolMatrices32[i];
@@ -269,7 +272,10 @@ inline float SobolSampleFloat(int64_t a, int dimension, uint32_t scramble) {
 }
 
 inline double SobolSampleDouble(int64_t a, int dimension, uint64_t scramble) {
-    Assert(dimension < NumSobolDimensions);
+  CHECK_LT(dimension, NumSobolDimensions) <<
+      "Integrator has consumed too many Sobol' dimensions; you "
+      "may want to use a Sampler without a dimension limit like "
+      "\"02sequence\".";
     uint64_t result = scramble & ~ - (1LL << SobolMatrixSize);
     for (int i = dimension * SobolMatrixSize; a != 0; a >>= 1, i++)
         if (a & 1) result ^= SobolMatrices64[i];

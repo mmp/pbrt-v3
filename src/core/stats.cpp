@@ -219,7 +219,7 @@ static void ReportProfileSample(int, siginfo_t *, void *) {
     }
 #endif
 #endif
-    Assert(profileSamples != nullptr);
+    CHECK(profileSamples != nullptr);
     profileSamples[ProfilerState]++;
 }
 

@@ -204,7 +204,7 @@ Float Paraboloid::Area() const {
 }
 
 Interaction Paraboloid::Sample(const Point2f &u) const {
-    Severe("Paraboloid::Sample not implemented.");
+    LOG(FATAL) << "Paraboloid::Sample not implemented.";
     return Interaction();
 }
 

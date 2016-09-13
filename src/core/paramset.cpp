@@ -108,7 +108,7 @@ void ParamSet::AddNormal3f(const std::string &name,
 void ParamSet::AddRGBSpectrum(const std::string &name,
                               std::unique_ptr<Float[]> values, int nValues) {
     EraseSpectrum(name);
-    Assert(nValues % 3 == 0);
+    CHECK_EQ(nValues % 3, 0);
     nValues /= 3;
     std::unique_ptr<Spectrum[]> s(new Spectrum[nValues]);
     for (int i = 0; i < nValues; ++i) s[i] = Spectrum::FromRGB(&values[3 * i]);
@@ -120,7 +120,7 @@ void ParamSet::AddRGBSpectrum(const std::string &name,
 void ParamSet::AddXYZSpectrum(const std::string &name,
                               std::unique_ptr<Float[]> values, int nValues) {
     EraseSpectrum(name);
-    Assert(nValues % 3 == 0);
+    CHECK_EQ(nValues % 3, 0);
     nValues /= 3;
     std::unique_ptr<Spectrum[]> s(new Spectrum[nValues]);
     for (int i = 0; i < nValues; ++i) s[i] = Spectrum::FromXYZ(&values[3 * i]);
@@ -133,7 +133,7 @@ void ParamSet::AddBlackbodySpectrum(const std::string &name,
                                     std::unique_ptr<Float[]> values,
                                     int nValues) {
     EraseSpectrum(name);
-    Assert(nValues % 2 == 0);  // temperature (K), scale, ...
+    CHECK_EQ(nValues % 2, 0);  // temperature (K), scale, ...
     nValues /= 2;
     std::unique_ptr<Spectrum[]> s(new Spectrum[nValues]);
     std::unique_ptr<Float[]> v(new Float[nCIESamples]);
@@ -151,7 +151,7 @@ void ParamSet::AddSampledSpectrum(const std::string &name,
                                   std::unique_ptr<Float[]> values,
                                   int nValues) {
     EraseSpectrum(name);
-    Assert(nValues % 2 == 0);
+    CHECK_EQ(nValues % 2, 0);
     nValues /= 2;
     std::unique_ptr<Float[]> wl(new Float[nValues]);
     std::unique_ptr<Float[]> v(new Float[nValues]);

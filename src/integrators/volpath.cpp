@@ -124,7 +124,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                               BSDF_ALL, &flags);
             if (f.IsBlack() || pdf == 0.f) break;
             beta *= f * AbsDot(wi, isect.shading.n) / pdf;
-            Assert(std::isinf(beta.y()) == false);
+            DCHECK(std::isinf(beta.y()) == false);
             specularBounce = (flags & BSDF_SPECULAR) != 0;
             ray = isect.SpawnRay(wi);
 
@@ -134,9 +134,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 SurfaceInteraction pi;
                 Spectrum S = isect.bssrdf->Sample_S(
                     scene, sampler.Get1D(), sampler.Get2D(), arena, &pi, &pdf);
-#ifndef NDEBUG
-                Assert(std::isinf(beta.y()) == false);
-#endif
+                DCHECK(std::isinf(beta.y()) == false);
                 if (S.IsBlack() || pdf == 0) break;
                 beta *= S / pdf;
 
@@ -151,9 +149,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                                &pdf, BSDF_ALL, &flags);
                 if (f.IsBlack() || pdf == 0) break;
                 beta *= f * AbsDot(wi, pi.shading.n) / pdf;
-#ifndef NDEBUG
-                Assert(std::isinf(beta.y()) == false);
-#endif
+                DCHECK(std::isinf(beta.y()) == false);
                 specularBounce = (flags & BSDF_SPECULAR) != 0;
                 ray = pi.SpawnRay(wi);
             }
@@ -164,7 +160,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             Float q = std::max((Float).05, 1 - beta.y());
             if (sampler.Get1D() < q) break;
             beta /= 1 - q;
-            Assert(std::isinf(beta.y()) == false);
+            DCHECK(std::isinf(beta.y()) == false);
         }
     }
     ReportValue(pathLength, bounces);

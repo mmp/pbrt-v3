@@ -72,7 +72,7 @@ class MIPMap {
   private:
     // MIPMap Private Methods
     std::unique_ptr<ResampleWeight[]> resampleWeights(int oldRes, int newRes) {
-        Assert(newRes >= oldRes);
+        CHECK_GE(newRes, oldRes);
         std::unique_ptr<ResampleWeight[]> wt(new ResampleWeight[newRes]);
         Float filterwidth = 2.f;
         for (int i = 0; i < newRes; ++i) {
@@ -122,7 +122,9 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
     if (!IsPowerOf2(resolution[0]) || !IsPowerOf2(resolution[1])) {
         // Resample image to power-of-two resolution
         Point2i resPow2(RoundUpPow2(resolution[0]), RoundUpPow2(resolution[1]));
-
+        LOG(INFO) << "Resampling MIPMap from " << resolution << " to " <<
+            resPow2 << ". Ratio= " << (Float(resPow2.x * resPow2.y) /
+                                       Float(resolution.x * resolution.y));
         // Resample image in $s$ direction
         std::unique_ptr<ResampleWeight[]> sWeights =
             resampleWeights(resolution[0], resPow2[0]);
@@ -213,7 +215,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
 
 template <typename T>
 const T &MIPMap<T>::Texel(int level, int s, int t) const {
-    Assert(level < pyramid.size());
+    CHECK_LT(level, pyramid.size());
     const BlockedArray<T> &l = *pyramid[level];
     // Compute texel $(s,t)$ accounting for boundary conditions
     switch (wrapMode) {

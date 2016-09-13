@@ -107,7 +107,8 @@ SpatialLightDistribution::~SpatialLightDistribution() {
     // the buckets.
     // This is slightly ugly: we are depending on the destructor running
     // before statistics are reported (which is currently the case at least).
-    for (size_t i = 0; i < nBuckets; ++i)
+  fprintf(stderr, "a\n");
+  for (size_t i = 0; i < nBuckets; ++i)
         ReportValue(hashBucketLoad, voxelDistribution[i].size());
 }
 

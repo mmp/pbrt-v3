@@ -69,28 +69,28 @@ bool Sampler::SetSampleNumber(int64_t sampleNum) {
 }
 
 void Sampler::Request1DArray(int n) {
-    Assert(n == RoundCount(n));
+    CHECK_EQ(RoundCount(n), n);
     samples1DArraySizes.push_back(n);
     sampleArray1D.push_back(std::vector<Float>(n * samplesPerPixel));
 }
 
 void Sampler::Request2DArray(int n) {
-    Assert(n == RoundCount(n));
+    CHECK_EQ(RoundCount(n), n);
     samples2DArraySizes.push_back(n);
     sampleArray2D.push_back(std::vector<Point2f>(n * samplesPerPixel));
 }
 
 const Float *Sampler::Get1DArray(int n) {
     if (array1DOffset == sampleArray1D.size()) return nullptr;
-    Assert(n == samples1DArraySizes[array1DOffset]);
-    Assert(currentPixelSampleIndex < samplesPerPixel);
+    CHECK_EQ(samples1DArraySizes[array1DOffset], n);
+    CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
     return &sampleArray1D[array1DOffset++][currentPixelSampleIndex * n];
 }
 
 const Point2f *Sampler::Get2DArray(int n) {
     if (array2DOffset == sampleArray2D.size()) return nullptr;
-    Assert(n == samples2DArraySizes[array2DOffset]);
-    Assert(currentPixelSampleIndex < samplesPerPixel);
+    CHECK_EQ(samples2DArraySizes[array2DOffset], n);
+    CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
     return &sampleArray2D[array2DOffset++][currentPixelSampleIndex * n];
 }
 
@@ -113,7 +113,7 @@ bool PixelSampler::SetSampleNumber(int64_t sampleNum) {
 }
 
 Float PixelSampler::Get1D() {
-    Assert(currentPixelSampleIndex < samplesPerPixel);
+    CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
     if (current1DDimension < samples1D.size())
         return samples1D[current1DDimension++][currentPixelSampleIndex];
     else
@@ -121,7 +121,7 @@ Float PixelSampler::Get1D() {
 }
 
 Point2f PixelSampler::Get2D() {
-    Assert(currentPixelSampleIndex < samplesPerPixel);
+    CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
     if (current2DDimension < samples2D.size())
         return samples2D[current2DDimension++][currentPixelSampleIndex];
     else
@@ -156,7 +156,7 @@ void GlobalSampler::StartPixel(const Point2i &p) {
         }
         dim += 2;
     }
-    Assert(dim == arrayEndDim);
+    CHECK_EQ(arrayEndDim, dim);
 }
 
 bool GlobalSampler::StartNextSample() {
