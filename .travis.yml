@@ -10,8 +10,8 @@ install:
   - echo 2 | sudo update-alternatives --config gcc
   - |
     CMAKE_URL="http://www.cmake.org/files/v3.5/cmake-3.5.2-Linux-x86_64.tar.gz"
-    mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
-    export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+    mkdir ${TRAVIS_BUILD_DIR}/cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${TRAVIS_BUILD_DIR}/cmake
+    export PATH=${TRAVIS_BUILD_DIR}/cmake/bin:${PATH}
 after_install:
   - g++ --version
 script:
