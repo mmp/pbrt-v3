@@ -67,6 +67,10 @@ Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                      VisibilityTester *vis) const {
     Interaction pShape = shape->Sample(ref, u);
     pShape.mediumInterface = mediumInterface;
+    if ((pShape.p - ref.p).LengthSquared() == 0) {
+        *pdf = 0;
+        return 0.f;
+    }
     *wi = Normalize(pShape.p - ref.p);
     *pdf = shape->Pdf(ref, *wi);
     *vis = VisibilityTester(ref, pShape);
