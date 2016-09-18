@@ -30,7 +30,6 @@
 
  */
 
-
 // cameras/realistic.cpp*
 #include "cameras/realistic.h"
 #include "paramset.h"
@@ -71,10 +70,12 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
 
     // Compute lens--film distance for given focus distance
     Float fb = FocusBinarySearch(focusDistance);
-    Info("Binary search focus: %f -> %f\n", fb, FocusDistance(fb));
+    LOG(INFO) << StringPrintf("Binary search focus: %f -> %f\n", fb,
+                              FocusDistance(fb));
     elementInterfaces.back().thickness = FocusThickLens(focusDistance);
-    Info("Thick lens focus: %f -> %f\n", elementInterfaces.back().thickness,
-         FocusDistance(elementInterfaces.back().thickness));
+    LOG(INFO) << StringPrintf("Thick lens focus: %f -> %f\n",
+                              elementInterfaces.back().thickness,
+                              FocusDistance(elementInterfaces.back().thickness));
 
     // Compute exit pupil bounds at sampled points on the film
     int nSamples = 64;
@@ -108,7 +109,7 @@ bool RealisticCamera::TraceLensesFromFilm(const Ray &rCamera, Ray *rOut) const {
             if (!IntersectSphericalElement(radius, zCenter, rLens, &t, &n))
                 return false;
         }
-        Assert(t >= 0);
+        CHECK_GE(t, 0);
 
         // Test intersection point against element aperture
         Point3f pHit = rLens(t);
@@ -177,7 +178,7 @@ bool RealisticCamera::TraceLensesFromScene(const Ray &rCamera,
             if (!IntersectSphericalElement(radius, zCenter, rLens, &t, &n))
                 return false;
         }
-        Assert(t >= 0);
+        CHECK_GE(t, 0);
 
         // Test intersection point against element aperture
         Point3f pHit = rLens(t);
@@ -234,7 +235,7 @@ void RealisticCamera::DrawLensSystem() const {
             }
             if (element.eta != 0 && element.eta != 1) {
                 // connect top/bottom to next element
-                Assert(i + 1 < elementInterfaces.size());
+                CHECK_LT(i + 1, elementInterfaces.size());
                 Float nextApertureRadius =
                     elementInterfaces[i + 1].apertureRadius;
                 Float h = std::max(element.apertureRadius, nextApertureRadius);
@@ -308,7 +309,7 @@ void RealisticCamera::DrawRayPathFromFilm(const Ray &r, bool arrow,
             if (!IntersectSphericalElement(radius, zCenter, ray, &t, &n))
                 goto done;
         }
-        Assert(t >= 0);
+        CHECK_GE(t, 0);
 
         printf("Line[{{%f, %f}, {%f, %f}}],", ray.o.z, ray.o.x, ray(t).z,
                ray(t).x);
@@ -372,7 +373,7 @@ void RealisticCamera::DrawRayPathFromScene(const Ray &r, bool arrow,
             if (!IntersectSphericalElement(radius, zCenter, ray, &t, &n))
                 return;
         }
-        Assert(t >= 0.f);
+        CHECK_GE(t, 0.f);
 
         printf("Line[{{%f, %f}, {%f, %f}}],", ray.o.z, ray.o.x, ray(t).z,
                ray(t).x);
@@ -427,29 +428,25 @@ void RealisticCamera::ComputeThickLensApproximation(Float pz[2],
     // Compute cardinal points for film side of lens system
     Ray rScene(Point3f(x, 0, LensFrontZ() + 1), Vector3f(0, 0, -1));
     Ray rFilm;
-    bool ok = TraceLensesFromScene(rScene, &rFilm);
-    if (!ok)
-        Severe(
-            "Unable to trace ray from scene to film for thick lens "
-            "approximation. Is aperture stop extremely small?");
+    CHECK(TraceLensesFromScene(rScene, &rFilm))
+        << "Unable to trace ray from scene to film for thick lens "
+           "approximation. Is aperture stop extremely small?";
     ComputeCardinalPoints(rScene, rFilm, &pz[0], &fz[0]);
 
     // Compute cardinal points for scene side of lens system
     rFilm = Ray(Point3f(x, 0, LensRearZ() - 1), Vector3f(0, 0, 1));
-    ok = TraceLensesFromFilm(rFilm, &rScene);
-    if (!ok)
-        Severe(
-            "Unable to trace ray from film to scene for thick lens "
-            "approximation. Is aperture stop extremely small?");
+    CHECK(TraceLensesFromFilm(rFilm, &rScene))
+        << "Unable to trace ray from film to scene for thick lens "
+           "approximation. Is aperture stop extremely small?";
     ComputeCardinalPoints(rFilm, rScene, &pz[1], &fz[1]);
 }
 
 Float RealisticCamera::FocusThickLens(Float focusDistance) {
     Float pz[2], fz[2];
     ComputeThickLensApproximation(pz, fz);
-    Info("Cardinal points: p' = %f f' = %f, p = %f f = %f.\n", pz[0], fz[0],
-         pz[1], fz[1]);
-    Info("Effective focal length %f\n", fz[0] - pz[0]);
+    LOG(INFO) << StringPrintf("Cardinal points: p' = %f f' = %f, p = %f f = %f.\n",
+                              pz[0], fz[0], pz[1], fz[1]);
+    LOG(INFO) << StringPrintf("Effective focal length %f\n", fz[0] - pz[0]);
     // Compute translation of lens, _delta_, to focus at _focusDistance_
     Float f = fz[0] - pz[0];
     Float z = -focusDistance;
@@ -530,8 +527,8 @@ Bounds2f RealisticCamera::BoundExitPupil(Float pFilmX0, Float pFilmX1) const {
 
     // Return entire element bounds if no rays made it through the lens system
     if (nExitingRays == 0) {
-        Info("Unable to find exit pupil in x = [%f,%f] on film.", pFilmX0,
-             pFilmX1);
+        LOG(INFO) << StringPrintf("Unable to find exit pupil in x = [%f,%f] on film.",
+                                  pFilmX0, pFilmX1);
         return projRearBounds;
     }
 

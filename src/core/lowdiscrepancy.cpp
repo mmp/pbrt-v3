@@ -401,6 +401,7 @@ static Float RadicalInverseSpecialized(uint64_t a) {
         invBaseN *= invBase;
         a = next;
     }
+    DCHECK_LT(reversedDigits * invBaseN, 1.00001);
     return std::min(reversedDigits * invBaseN, OneMinusEpsilon);
 }
 
@@ -418,11 +419,13 @@ ScrambledRadicalInverseSpecialized(const uint16_t *perm, uint64_t a) {
     while (a) {
         uint64_t next = a / base;
         uint64_t digit = a - next * base;
-        Assert(perm[digit] < base);
+        CHECK_LT(perm[digit], base);
         reversedDigits = reversedDigits * base + perm[digit];
         invBaseN *= invBase;
         a = next;
     }
+    DCHECK_LT(invBaseN * (reversedDigits + invBase * perm[0] / (1 - invBase)),
+              1.00001);
     return std::min(
         invBaseN * (reversedDigits + invBase * perm[0] / (1 - invBase)),
         OneMinusEpsilon);
@@ -2486,7 +2489,8 @@ Float RadicalInverse(int baseIndex, uint64_t a) {
     case 1023:
         return RadicalInverseSpecialized<8161>(a);
     default:
-        Severe("Base %d is >= 1024, the limit of RadicalInverse", baseIndex);
+        LOG(FATAL) << StringPrintf("Base %d is >= 1024, the limit of RadicalInverse",
+                                   baseIndex);
         return 0;
     }
 }
@@ -4559,8 +4563,9 @@ Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm) {
     case 1023:
         return ScrambledRadicalInverseSpecialized<8161>(perm, a);
     default:
-        Severe("Base %d is >= 1024, the limit of ScrambledRadicalInverse",
-               baseIndex);
+        LOG(FATAL) << StringPrintf("Base %d is >= 1024, the limit of "
+                                   "ScrambledRadicalInverse",
+                                   baseIndex);
         return 0;
     }
 }

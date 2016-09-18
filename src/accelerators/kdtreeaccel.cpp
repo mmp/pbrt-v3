@@ -139,7 +139,7 @@ void KdTreeAccel::buildTree(int nodeNum, const Bounds3f &nodeBounds,
                             int *primNums, int nPrimitives, int depth,
                             const std::unique_ptr<BoundEdge[]> edges[3],
                             int *prims0, int *prims1, int badRefines) {
-    Assert(nodeNum == nextFreeNode);
+    CHECK_EQ(nodeNum, nextFreeNode);
     // Get next free node from _nodes_ array
     if (nextFreeNode == nAllocedNodes) {
         int nNewAllocNodes = std::max(2 * nAllocedNodes, 512);
@@ -223,7 +223,7 @@ retrySplit:
         }
         if (edges[axis][i].type == EdgeType::Start) ++nBelow;
     }
-    Assert(nBelow == nPrimitives && nAbove == 0);
+    CHECK(nBelow == nPrimitives && nAbove == 0);
 
     // Create leaf if no good splits were found
     if (bestAxis == -1 && retries < 2) {

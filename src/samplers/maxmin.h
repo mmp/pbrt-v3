@@ -70,8 +70,8 @@ class MaxMinDistSampler : public PixelSampler {
               return spp;
           }(samplesPerPixel), nSampledDimensions) {
         int Cindex = Log2Int(samplesPerPixel);
-        Assert(Cindex >= 0 &&
-               Cindex < (sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0])));
+        CHECK(Cindex >= 0 &&
+              Cindex < (sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0])));
         CPixel = CMaxMinDist[Cindex];
     }
 

@@ -4,10 +4,14 @@ sudo: required
 install:
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update
-  - sudo apt-get install -yq build-essential gcc-4.8 g++-4.8 cmake make bison flex libpthread-stubs0-dev
+  - sudo apt-get install -yq build-essential gcc-4.8 g++-4.8 make bison flex libpthread-stubs0-dev
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
   - echo 2 | sudo update-alternatives --config gcc
+  - |
+    CMAKE_URL="http://www.cmake.org/files/v3.5/cmake-3.5.2-Linux-x86_64.tar.gz"
+    mkdir ${TRAVIS_BUILD_DIR}/cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${TRAVIS_BUILD_DIR}/cmake
+    export PATH=${TRAVIS_BUILD_DIR}/cmake/bin:${PATH}
 after_install:
   - g++ --version
 script:

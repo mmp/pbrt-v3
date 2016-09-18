@@ -259,7 +259,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         Vector3f diag = gridBounds.Diagonal();
         Float maxDiag = MaxComponent(diag);
         int baseGridRes = (int)(maxDiag / maxRadius);
-        Assert(baseGridRes > 0);
+        CHECK_GT(baseGridRes, 0);
         int gridRes[3];
         for (int i = 0; i < 3; ++i)
             gridRes[i] = std::max((int)(baseGridRes * diag[i] / maxDiag), 1);

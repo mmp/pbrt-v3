@@ -100,7 +100,7 @@ static void AddArrayElement(void *elem) {
             cur_array->allocated*cur_array->element_size);
     }
     char *next = ((char *)cur_array->array) + cur_array->nelems * cur_array->element_size;
-    Assert(cur_array->element_size == 4 || cur_array->element_size == 8);
+    CHECK(cur_array->element_size == 4 || cur_array->element_size == 8);
     if (cur_array->element_size == 4)
         *((uint32_t *)next) = *((uint32_t *)elem);
     else
@@ -188,7 +188,7 @@ start: pbrt_stmt_list
 
 array_init: %prec HIGH_PRECEDENCE
 {
-    if (cur_array) Severe("MUH");
+    if (cur_array) LOG(FATAL) << "Unexpected error parsing array";
     cur_array = new ParamArray;
 };
 
@@ -660,7 +660,7 @@ static const char *paramTypeToName(int type) {
     case PARAM_TYPE_SPECTRUM: return "spectrum";
     case PARAM_TYPE_STRING: return "string";
     case PARAM_TYPE_TEXTURE: return "texture";
-    default: Severe("Error in paramTypeToName"); return nullptr;
+    default: LOG(FATAL) << "Error in paramTypeToName"; return nullptr;
     }
 }
 
@@ -777,27 +777,33 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                 }
                 ps.AddNormal3f(name, std::move(normals), nItems / 3);
             } else if (type == PARAM_TYPE_RGB) {
-                if ((nItems % 3) != 0)
+                if ((nItems % 3) != 0) {
                     Warning("Excess RGB values given with parameter \"%s\". "
                             "Ignoring last %d of them", cur_paramlist[i].name,
                             nItems % 3);
+                    nItems -= nItems % 3;
+                }
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
                 for (int j = 0; j < nItems; ++j)
                     floats[j] = ((double *)data)[j];
                 ps.AddRGBSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_XYZ) {
-                if ((nItems % 3) != 0)
+                if ((nItems % 3) != 0) {
                     Warning("Excess XYZ values given with parameter \"%s\". "
                             "Ignoring last %d of them", cur_paramlist[i].name,
                             nItems % 3);
+                    nItems -= nItems % 3;
+                }
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
                 for (int j = 0; j < nItems; ++j)
                     floats[j] = ((double *)data)[j];
                 ps.AddXYZSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_BLACKBODY) {
-                if ((nItems % 2) != 0)
+                if ((nItems % 2) != 0) {
                     Warning("Excess value given with blackbody parameter \"%s\". "
                             "Ignoring extra one.", cur_paramlist[i].name);
+                    nItems -= nItems % 2;
+                }
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
                 for (int j = 0; j < nItems; ++j)
                     floats[j] = ((double *)data)[j];
@@ -807,10 +813,12 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                     ps.AddSampledSpectrumFiles(name, (const char **)data, nItems);
                 }
                 else {
-                    if ((nItems % 2) != 0)
+                    if ((nItems % 2) != 0) {
                         Warning("Non-even number of values given with sampled spectrum "
                                 "parameter \"%s\". Ignoring extra.",
                                 cur_paramlist[i].name);
+                        nItems -= nItems % 2;
+                    }
                     std::unique_ptr<Float[]> floats(new Float[nItems]);
                     for (int j = 0; j < nItems; ++j)
                         floats[j] = ((double *)data)[j];
@@ -839,7 +847,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
 
 
 static bool lookupType(const char *name, int *type, std::string &sname) {
-    Assert(name != nullptr);
+    CHECK_NOTNULL(name);
     *type = 0;
     const char *strp = name;
     while (*strp && isspace(*strp))

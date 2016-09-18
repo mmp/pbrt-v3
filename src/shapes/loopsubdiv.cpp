@@ -72,7 +72,7 @@ struct SDFace {
     int vnum(SDVertex *vert) const {
         for (int i = 0; i < 3; ++i)
             if (v[i] == vert) return i;
-        Severe("Basic logic error in SDFace::vnum()");
+        LOG(FATAL) << "Basic logic error in SDFace::vnum()";
         return -1;
     }
     SDFace *nextFace(SDVertex *vert) { return f[vnum(vert)]; }
@@ -82,7 +82,7 @@ struct SDFace {
     SDVertex *otherVert(SDVertex *v0, SDVertex *v1) {
         for (int i = 0; i < 3; ++i)
             if (v[i] != v0 && v[i] != v1) return v[i];
-        Severe("Basic logic error in SDVertex::otherVert()");
+        LOG(FATAL) << "Basic logic error in SDVertex::otherVert()";
         return nullptr;
     }
     SDVertex *v[3];

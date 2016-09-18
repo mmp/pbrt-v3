@@ -330,19 +330,19 @@ class Interval {
 };
 
 inline Interval Sin(const Interval &i) {
-    Assert(i.low >= 0 && i.high <= 2.0001 * Pi);
+    CHECK_GE(i.low, 0);
+    CHECK_LE(i.high, 2.0001 * Pi);
     Float sinLow = std::sin(i.low), sinHigh = std::sin(i.high);
     if (sinLow > sinHigh) std::swap(sinLow, sinHigh);
-    Assert(i.low >= 0 && i.high <= 2.f * Pi);
     if (i.low < Pi / 2 && i.high > Pi / 2) sinHigh = 1.;
     if (i.low < (3.f / 2.f) * Pi && i.high > (3.f / 2.f) * Pi) sinLow = -1.;
     return Interval(sinLow, sinHigh);
 }
 
 inline Interval Cos(const Interval &i) {
-    Assert(i.low >= 0 && i.high <= 2.0001 * Pi);
+    CHECK_GE(i.low, 0);
+    CHECK_LE(i.high, 2.0001 * Pi);
     Float cosLow = std::cos(i.low), cosHigh = std::cos(i.high);
-    Assert(i.low >= 0 && i.high <= 2.f * Pi);
     if (cosLow > cosHigh) std::swap(cosLow, cosHigh);
     if (i.low < Pi && i.high > Pi) cosLow = -1.;
     return Interval(cosLow, cosHigh);
@@ -1230,7 +1230,7 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
         IntervalFindZeros(c1[c].Eval(p), c2[c].Eval(p), c3[c].Eval(p),
                           c4[c].Eval(p), c5[c].Eval(p), theta, Interval(0., 1.),
                           zeros, &nZeros);
-        Assert(nZeros <= sizeof(zeros) / sizeof(zeros[0]));
+        CHECK_LE(nZeros, sizeof(zeros) / sizeof(zeros[0]));
 
         // Expand bounding box for any motion derivative zeros found
         for (int i = 0; i < nZeros; ++i) {

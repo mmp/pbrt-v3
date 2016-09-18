@@ -60,6 +60,7 @@
 #endif
 #include <assert.h>
 #include <string.h>
+#include <glog/logging.h>
 
 // Platform-specific definitions
 #include <stdint.h>
@@ -149,7 +150,7 @@ struct ParamSetItem;
 struct Options {
     int nThreads = 0;
     bool quickRender = false;
-    bool quiet = false, verbose = false;
+    bool quiet = false;
     bool cat = false, toPly = false;
     std::string imageFile;
 };
@@ -366,13 +367,6 @@ int FindInterval(int size, const Predicate &pred) {
     return Clamp(first - 1, 0, size - 2);
 }
 
-#ifdef NDEBUG
-#define Assert(expr) ((void)0)
-#else
-#define Assert(expr)                                                     \
-    ((expr) ? (void)0 : Severe("Assertion \"%s\" failed in %s, line %d", \
-                               #expr, __FILE__, __LINE__))
-#endif  // NDEBUG
 inline Float Lerp(Float t, Float v1, Float v2) { return (1 - t) * v1 + t * v2; }
 
 inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {

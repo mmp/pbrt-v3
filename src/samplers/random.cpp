@@ -39,12 +39,12 @@
 RandomSampler::RandomSampler(int ns, int seed) : Sampler(ns), rng(seed) {}
 
 Float RandomSampler::Get1D() {
-    Assert(currentPixelSampleIndex < samplesPerPixel);
+    CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
     return rng.UniformFloat();
 }
 
 Point2f RandomSampler::Get2D() {
-    Assert(currentPixelSampleIndex < samplesPerPixel);
+    CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
     return {rng.UniformFloat(), rng.UniformFloat()};
 }
 

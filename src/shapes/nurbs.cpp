@@ -43,8 +43,8 @@ static int KnotOffset(const Float *knot, int order, int np, Float t) {
 
     int knotOffset = firstKnot;
     while (t > knot[knotOffset + 1]) ++knotOffset;
-    Assert(knotOffset < np);  // np == lastKnot
-    Assert(t >= knot[knotOffset] && t <= knot[knotOffset + 1]);
+    CHECK_LT(knotOffset, np);  // np == lastKnot
+    CHECK(t >= knot[knotOffset] && t <= knot[knotOffset + 1]);
     return knotOffset;
 }
 
@@ -72,7 +72,7 @@ static Homogeneous3 NURBSEvaluate(int order, const Float *knot,
     knot += knotOffset;
 
     int cpOffset = knotOffset - order + 1;
-    Assert(cpOffset >= 0 && cpOffset < np);
+    CHECK(cpOffset >= 0 && cpOffset < np);
 
     Homogeneous3 *cpWork = ALLOCA(Homogeneous3, order);
     for (int i = 0; i < order; ++i) cpWork[i] = cp[(cpOffset + i) * cpStride];
@@ -80,7 +80,7 @@ static Homogeneous3 NURBSEvaluate(int order, const Float *knot,
     for (int i = 0; i < order - 2; ++i)
         for (int j = 0; j < order - 1 - i; ++j) {
             alpha = (knot[1 + j] - t) / (knot[1 + j] - knot[j + 2 - order + i]);
-            Assert(alpha >= 0. && alpha <= 1.);
+            CHECK(alpha >= 0. && alpha <= 1.);
 
             cpWork[j].x = cpWork[j].x * alpha + cpWork[j + 1].x * (1 - alpha);
             cpWork[j].y = cpWork[j].y * alpha + cpWork[j + 1].y * (1 - alpha);
@@ -89,7 +89,7 @@ static Homogeneous3 NURBSEvaluate(int order, const Float *knot,
         }
 
     alpha = (knot[1] - t) / (knot[1] - knot[0]);
-    Assert(alpha >= 0. && alpha <= 1.);
+    CHECK(alpha >= 0. && alpha <= 1.);
 
     Homogeneous3 val(cpWork[0].x * alpha + cpWork[1].x * (1 - alpha),
                      cpWork[0].y * alpha + cpWork[1].y * (1 - alpha),
@@ -119,14 +119,14 @@ static Point3f NURBSEvaluateSurface(int uOrder, const Float *uKnot, int ucp,
 
     int uOffset = KnotOffset(uKnot, uOrder, ucp, u);
     int uFirstCp = uOffset - uOrder + 1;
-    Assert(uFirstCp >= 0 && uFirstCp + uOrder - 1 < ucp);
+    CHECK(uFirstCp >= 0 && uFirstCp + uOrder - 1 < ucp);
 
     for (int i = 0; i < uOrder; ++i)
         iso[i] = NURBSEvaluate(vOrder, vKnot, &cp[uFirstCp + i], vcp, ucp, v);
 
     int vOffset = KnotOffset(vKnot, vOrder, vcp, v);
     int vFirstCp = vOffset - vOrder + 1;
-    Assert(vFirstCp >= 0 && vFirstCp + vOrder - 1 < vcp);
+    CHECK(vFirstCp >= 0 && vFirstCp + vOrder - 1 < vcp);
 
     Homogeneous3 P =
         NURBSEvaluate(uOrder, uKnot, iso - uFirstCp, ucp, 1, u, dpdu);

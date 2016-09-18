@@ -158,7 +158,7 @@ class BSDF {
           ss(Normalize(si.shading.dpdu)),
           ts(Cross(ns, ss)) {}
     void Add(BxDF *b) {
-        Assert(nBxDFs < MaxBxDFs);
+        CHECK_LT(nBxDFs, MaxBxDFs);
         bxdfs[nBxDFs++] = b;
     }
     int NumComponents(BxDFType flags = BSDF_ALL) const;

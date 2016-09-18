@@ -68,6 +68,8 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     int bounces;
     for (bounces = 0;; ++bounces) {
         // Find next path vertex and accumulate contribution
+        VLOG(2) << "Path tracer bounce " << bounces << ", current L = " << L <<
+            ", beta = " << beta;
 
         // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
@@ -76,11 +78,14 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         // Possibly add emitted light at intersection
         if (bounces == 0 || specularBounce) {
             // Add emitted light at path vertex or from the environment
-            if (foundIntersection)
+            if (foundIntersection) {
                 L += beta * isect.Le(-ray.d);
-            else
+                VLOG(2) << "Added Le -> L = " << L;
+            } else {
                 for (const auto &light : scene.infiniteLights)
                     L += beta * light->Le(ray);
+                VLOG(2) << "Added infinite area lights -> L = " << L;
+            }
         }
 
         // Terminate path if ray escaped or _maxDepth_ was reached
@@ -89,6 +94,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         // Compute scattering functions and skip over medium boundaries
         isect.ComputeScatteringFunctions(ray, arena, true);
         if (!isect.bsdf) {
+            VLOG(2) << "Skipping intersection due to null bsdf";
             ray = isect.SpawnRay(ray.d);
             bounces--;
             continue;
@@ -104,8 +110,9 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             Spectrum Ld =
                 beta * UniformSampleOneLight(isect, scene, arena, sampler, false,
                                              distrib);
+            VLOG(2) << "Sampled direct lighting Ld = " << Ld;
             if (Ld.IsBlack()) ++zeroRadiancePaths;
-            Assert(Ld.y() >= 0.f);
+            CHECK_GE(Ld.y(), 0.f);
             L += Ld;
         }
 
@@ -115,10 +122,12 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         BxDFType flags;
         Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                           BSDF_ALL, &flags);
+        VLOG(2) << "Sampled BSDF, f = " << f << ", pdf = " << pdf;
         if (f.IsBlack() || pdf == 0.f) break;
         beta *= f * AbsDot(wi, isect.shading.n) / pdf;
-        Assert(beta.y() >= 0.f);
-        Assert(std::isinf(beta.y()) == false);
+        VLOG(2) << "Updated beta = " << beta;
+        CHECK_GE(beta.y(), 0.f);
+        DCHECK(!std::isinf(beta.y()));
         specularBounce = (flags & BSDF_SPECULAR) != 0;
         ray = isect.SpawnRay(wi);
 
@@ -128,9 +137,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             SurfaceInteraction pi;
             Spectrum S = isect.bssrdf->Sample_S(
                 scene, sampler.Get1D(), sampler.Get2D(), arena, &pi, &pdf);
-#ifndef NDEBUG
-            Assert(std::isinf(beta.y()) == false);
-#endif
+            DCHECK(!std::isinf(beta.y()));
             if (S.IsBlack() || pdf == 0) break;
             beta *= S / pdf;
 
@@ -143,9 +150,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                                            BSDF_ALL, &flags);
             if (f.IsBlack() || pdf == 0) break;
             beta *= f * AbsDot(wi, pi.shading.n) / pdf;
-#ifndef NDEBUG
-            Assert(std::isinf(beta.y()) == false);
-#endif
+            DCHECK(!std::isinf(beta.y()));
             specularBounce = (flags & BSDF_SPECULAR) != 0;
             ray = pi.SpawnRay(wi);
         }
@@ -153,9 +158,11 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         // Possibly terminate the path with Russian roulette
         if (beta.y() < rrThreshold && bounces > 3) {
             Float q = std::max((Float).05, 1 - beta.y());
+            VLOG(2) << "RR termination probability q = " << q;
             if (sampler.Get1D() < q) break;
             beta /= 1 - q;
-            Assert(std::isinf(beta.y()) == false);
+            VLOG(2) << "After RR survival, beta = " << beta;
+            DCHECK(!std::isinf(beta.y()));
         }
     }
     ReportValue(pathLength, bounces);

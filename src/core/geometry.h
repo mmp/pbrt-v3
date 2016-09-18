@@ -57,7 +57,7 @@ class Vector2 {
   public:
     // Vector2 Public Methods
     Vector2() { x = y = 0; }
-    Vector2(T xx, T yy) : x(xx), y(yy) { Assert(!HasNaNs()); }
+    Vector2(T xx, T yy) : x(xx), y(yy) { DCHECK(!HasNaNs()); }
     bool HasNaNs() const { return isNaN(x) || isNaN(y); }
     explicit Vector2(const Point2<T> &p);
     explicit Vector2(const Point3<T> &p);
@@ -65,12 +65,12 @@ class Vector2 {
     // The default versions of these are fine for release builds; for debug
     // we define them so that we can add the Assert checks.
     Vector2(const Vector2<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x = v.x;
         y = v.y;
     }
     Vector2<T> &operator=(const Vector2<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x = v.x;
         y = v.y;
         return *this;
@@ -78,23 +78,23 @@ class Vector2 {
 #endif  // !NDEBUG
 
     Vector2<T> operator+(const Vector2<T> &v) const {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         return Vector2(x + v.x, y + v.y);
     }
 
     Vector2<T> &operator+=(const Vector2<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x += v.x;
         y += v.y;
         return *this;
     }
     Vector2<T> operator-(const Vector2<T> &v) const {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         return Vector2(x - v.x, y - v.y);
     }
 
     Vector2<T> &operator-=(const Vector2<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x -= v.x;
         y -= v.y;
         return *this;
@@ -108,21 +108,21 @@ class Vector2 {
 
     template <typename U>
     Vector2<T> &operator*=(U f) {
-        Assert(!isNaN(f));
+        DCHECK(!isNaN(f));
         x *= f;
         y *= f;
         return *this;
     }
     template <typename U>
     Vector2<T> operator/(U f) const {
-        Assert(f != 0);
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         return Vector2<T>(x * inv, y * inv);
     }
 
     template <typename U>
     Vector2<T> &operator/=(U f) {
-        Assert(f != 0);
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         x *= inv;
         y *= inv;
@@ -130,13 +130,13 @@ class Vector2 {
     }
     Vector2<T> operator-() const { return Vector2<T>(-x, -y); }
     T operator[](int i) const {
-        Assert(i >= 0 && i <= 1);
+        DCHECK(i >= 0 && i <= 1);
         if (i == 0) return x;
         return y;
     }
 
     T &operator[](int i) {
-        Assert(i >= 0 && i <= 1);
+        DCHECK(i >= 0 && i <= 1);
         if (i == 0) return x;
         return y;
     }
@@ -164,33 +164,33 @@ class Vector3 {
   public:
     // Vector3 Public Methods
     T operator[](int i) const {
-        Assert(i >= 0 && i <= 2);
+        DCHECK(i >= 0 && i <= 2);
         if (i == 0) return x;
         if (i == 1) return y;
         return z;
     }
     T &operator[](int i) {
-        Assert(i >= 0 && i <= 2);
+        DCHECK(i >= 0 && i <= 2);
         if (i == 0) return x;
         if (i == 1) return y;
         return z;
     }
     Vector3() { x = y = z = 0; }
-    Vector3(T x, T y, T z) : x(x), y(y), z(z) { Assert(!HasNaNs()); }
+    Vector3(T x, T y, T z) : x(x), y(y), z(z) { DCHECK(!HasNaNs()); }
     bool HasNaNs() const { return isNaN(x) || isNaN(y) || isNaN(z); }
     explicit Vector3(const Point3<T> &p);
 #ifndef NDEBUG
     // The default versions of these are fine for release builds; for debug
     // we define them so that we can add the Assert checks.
     Vector3(const Vector3<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x = v.x;
         y = v.y;
         z = v.z;
     }
 
     Vector3<T> &operator=(const Vector3<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x = v.x;
         y = v.y;
         z = v.z;
@@ -198,22 +198,22 @@ class Vector3 {
     }
 #endif  // !NDEBUG
     Vector3<T> operator+(const Vector3<T> &v) const {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         return Vector3(x + v.x, y + v.y, z + v.z);
     }
     Vector3<T> &operator+=(const Vector3<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x += v.x;
         y += v.y;
         z += v.z;
         return *this;
     }
     Vector3<T> operator-(const Vector3<T> &v) const {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         return Vector3(x - v.x, y - v.y, z - v.z);
     }
     Vector3<T> &operator-=(const Vector3<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x -= v.x;
         y -= v.y;
         z -= v.z;
@@ -231,7 +231,7 @@ class Vector3 {
     }
     template <typename U>
     Vector3<T> &operator*=(U s) {
-        Assert(!isNaN(s));
+        DCHECK(!isNaN(s));
         x *= s;
         y *= s;
         z *= s;
@@ -239,14 +239,14 @@ class Vector3 {
     }
     template <typename U>
     Vector3<T> operator/(U f) const {
-        Assert(f != 0);
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         return Vector3<T>(x * inv, y * inv, z * inv);
     }
 
     template <typename U>
     Vector3<T> &operator/=(U f) {
-        Assert(f != 0);
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         x *= inv;
         y *= inv;
@@ -284,22 +284,22 @@ template <typename T>
 class Point2 {
   public:
     // Point2 Public Methods
-    explicit Point2(const Point3<T> &p) : x(p.x), y(p.y) { Assert(!HasNaNs()); }
+    explicit Point2(const Point3<T> &p) : x(p.x), y(p.y) { DCHECK(!HasNaNs()); }
     Point2() { x = y = 0; }
-    Point2(T xx, T yy) : x(xx), y(yy) { Assert(!HasNaNs()); }
+    Point2(T xx, T yy) : x(xx), y(yy) { DCHECK(!HasNaNs()); }
 
     template <typename U>
     explicit Point2(const Point2<U> &p) {
         x = (T)p.x;
         y = (T)p.y;
-        Assert(!HasNaNs());
+        DCHECK(!HasNaNs());
     }
 
     template <typename U>
     explicit Point2(const Vector2<U> &p) {
         x = (T)p.x;
         y = (T)p.y;
-        Assert(!HasNaNs());
+        DCHECK(!HasNaNs());
     }
 
     template <typename U>
@@ -309,53 +309,53 @@ class Point2 {
 
 #ifndef NDEBUG
     Point2(const Point2<T> &p) {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         x = p.x;
         y = p.y;
     }
 
     Point2<T> &operator=(const Point2<T> &p) {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         x = p.x;
         y = p.y;
         return *this;
     }
 #endif  // !NDEBUG
     Point2<T> operator+(const Vector2<T> &v) const {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         return Point2<T>(x + v.x, y + v.y);
     }
 
     Point2<T> &operator+=(const Vector2<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x += v.x;
         y += v.y;
         return *this;
     }
     Vector2<T> operator-(const Point2<T> &p) const {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         return Vector2<T>(x - p.x, y - p.y);
     }
 
     Point2<T> operator-(const Vector2<T> &v) const {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         return Point2<T>(x - v.x, y - v.y);
     }
     Point2<T> operator-() const { return Point2<T>(-x, -y); }
     Point2<T> &operator-=(const Vector2<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x -= v.x;
         y -= v.y;
         return *this;
     }
     Point2<T> &operator+=(const Point2<T> &p) {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         x += p.x;
         y += p.y;
         return *this;
     }
     Point2<T> operator+(const Point2<T> &p) const {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         return Point2<T>(x + p.x, y + p.y);
     }
     template <typename U>
@@ -370,24 +370,26 @@ class Point2 {
     }
     template <typename U>
     Point2<T> operator/(U f) const {
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         return Point2<T>(inv * x, inv * y);
     }
     template <typename U>
     Point2<T> &operator/=(U f) {
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         x *= inv;
         y *= inv;
         return *this;
     }
     T operator[](int i) const {
-        Assert(i >= 0 && i <= 1);
+        DCHECK(i >= 0 && i <= 1);
         if (i == 0) return x;
         return y;
     }
 
     T &operator[](int i) {
-        Assert(i >= 0 && i <= 1);
+        DCHECK(i >= 0 && i <= 1);
         if (i == 0) return x;
         return y;
     }
@@ -416,11 +418,11 @@ class Point3 {
   public:
     // Point3 Public Methods
     Point3() { x = y = z = 0; }
-    Point3(T x, T y, T z) : x(x), y(y), z(z) { Assert(!HasNaNs()); }
+    Point3(T x, T y, T z) : x(x), y(y), z(z) { DCHECK(!HasNaNs()); }
     template <typename U>
     explicit Point3(const Point3<U> &p)
         : x((T)p.x), y((T)p.y), z((T)p.z) {
-        Assert(!HasNaNs());
+        DCHECK(!HasNaNs());
     }
     template <typename U>
     explicit operator Vector3<U>() const {
@@ -428,14 +430,14 @@ class Point3 {
     }
 #ifndef NDEBUG
     Point3(const Point3<T> &p) {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         x = p.x;
         y = p.y;
         z = p.z;
     }
 
     Point3<T> &operator=(const Point3<T> &p) {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         x = p.x;
         y = p.y;
         z = p.z;
@@ -443,40 +445,40 @@ class Point3 {
     }
 #endif  // !NDEBUG
     Point3<T> operator+(const Vector3<T> &v) const {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         return Point3<T>(x + v.x, y + v.y, z + v.z);
     }
     Point3<T> &operator+=(const Vector3<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x += v.x;
         y += v.y;
         z += v.z;
         return *this;
     }
     Vector3<T> operator-(const Point3<T> &p) const {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         return Vector3<T>(x - p.x, y - p.y, z - p.z);
     }
     Point3<T> operator-(const Vector3<T> &v) const {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         return Point3<T>(x - v.x, y - v.y, z - v.z);
     }
     Point3<T> &operator-=(const Vector3<T> &v) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
         x -= v.x;
         y -= v.y;
         z -= v.z;
         return *this;
     }
     Point3<T> &operator+=(const Point3<T> &p) {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         x += p.x;
         y += p.y;
         z += p.z;
         return *this;
     }
     Point3<T> operator+(const Point3<T> &p) const {
-        Assert(!p.HasNaNs());
+        DCHECK(!p.HasNaNs());
         return Point3<T>(x + p.x, y + p.y, z + p.z);
     }
     template <typename U>
@@ -492,11 +494,13 @@ class Point3 {
     }
     template <typename U>
     Point3<T> operator/(U f) const {
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         return Point3<T>(inv * x, inv * y, inv * z);
     }
     template <typename U>
     Point3<T> &operator/=(U f) {
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         x *= inv;
         y *= inv;
@@ -504,14 +508,14 @@ class Point3 {
         return *this;
     }
     T operator[](int i) const {
-        Assert(i >= 0 && i <= 2);
+        DCHECK(i >= 0 && i <= 2);
         if (i == 0) return x;
         if (i == 1) return y;
         return z;
     }
 
     T &operator[](int i) {
-        Assert(i >= 0 && i <= 2);
+        DCHECK(i >= 0 && i <= 2);
         if (i == 0) return x;
         if (i == 1) return y;
         return z;
@@ -552,27 +556,27 @@ class Normal3 {
   public:
     // Normal3 Public Methods
     Normal3() { x = y = z = 0; }
-    Normal3(T xx, T yy, T zz) : x(xx), y(yy), z(zz) { Assert(!HasNaNs()); }
+    Normal3(T xx, T yy, T zz) : x(xx), y(yy), z(zz) { DCHECK(!HasNaNs()); }
     Normal3<T> operator-() const { return Normal3(-x, -y, -z); }
     Normal3<T> operator+(const Normal3<T> &n) const {
-        Assert(!n.HasNaNs());
+        DCHECK(!n.HasNaNs());
         return Normal3<T>(x + n.x, y + n.y, z + n.z);
     }
 
     Normal3<T> &operator+=(const Normal3<T> &n) {
-        Assert(!n.HasNaNs());
+        DCHECK(!n.HasNaNs());
         x += n.x;
         y += n.y;
         z += n.z;
         return *this;
     }
     Normal3<T> operator-(const Normal3<T> &n) const {
-        Assert(!n.HasNaNs());
+        DCHECK(!n.HasNaNs());
         return Normal3<T>(x - n.x, y - n.y, z - n.z);
     }
 
     Normal3<T> &operator-=(const Normal3<T> &n) {
-        Assert(!n.HasNaNs());
+        DCHECK(!n.HasNaNs());
         x -= n.x;
         y -= n.y;
         z -= n.z;
@@ -593,14 +597,14 @@ class Normal3 {
     }
     template <typename U>
     Normal3<T> operator/(U f) const {
-        Assert(f != 0);
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         return Normal3<T>(x * inv, y * inv, z * inv);
     }
 
     template <typename U>
     Normal3<T> &operator/=(U f) {
-        Assert(f != 0);
+        CHECK_NE(f, 0);
         Float inv = (Float)1 / f;
         x *= inv;
         y *= inv;
@@ -612,14 +616,14 @@ class Normal3 {
 
 #ifndef NDEBUG
     Normal3<T>(const Normal3<T> &n) {
-        Assert(!n.HasNaNs());
+        DCHECK(!n.HasNaNs());
         x = n.x;
         y = n.y;
         z = n.z;
     }
 
     Normal3<T> &operator=(const Normal3<T> &n) {
-        Assert(!n.HasNaNs());
+        DCHECK(!n.HasNaNs());
         x = n.x;
         y = n.y;
         z = n.z;
@@ -627,7 +631,7 @@ class Normal3 {
     }
 #endif  // !NDEBUG
     explicit Normal3<T>(const Vector3<T> &v) : x(v.x), y(v.y), z(v.z) {
-        Assert(!v.HasNaNs());
+        DCHECK(!v.HasNaNs());
     }
     bool operator==(const Normal3<T> &n) const {
         return x == n.x && y == n.y && z == n.z;
@@ -637,14 +641,14 @@ class Normal3 {
     }
 
     T operator[](int i) const {
-        Assert(i >= 0 && i <= 2);
+        DCHECK(i >= 0 && i <= 2);
         if (i == 0) return x;
         if (i == 1) return y;
         return z;
     }
 
     T &operator[](int i) {
-        Assert(i >= 0 && i <= 2);
+        DCHECK(i >= 0 && i <= 2);
         if (i == 0) return x;
         if (i == 1) return y;
         return z;
@@ -702,11 +706,11 @@ class Bounds2 {
             return 1;
     }
     inline const Point2<T> &operator[](int i) const {
-        Assert(i == 0 || i == 1);
+        DCHECK(i == 0 || i == 1);
         return (i == 0) ? pMin : pMax;
     }
     inline Point2<T> &operator[](int i) {
-        Assert(i == 0 || i == 1);
+        DCHECK(i == 0 || i == 1);
         return (i == 0) ? pMin : pMax;
     }
     bool operator==(const Bounds2<T> &b) const {
@@ -763,7 +767,7 @@ class Bounds3 {
         return b.pMin != pMin || b.pMax != pMax;
     }
     Point3<T> Corner(int corner) const {
-        Assert(corner >= 0 && corner < 8);
+        DCHECK(corner >= 0 && corner < 8);
         return Point3<T>((*this)[(corner & 1)].x,
                          (*this)[(corner & 2) ? 1 : 0].y,
                          (*this)[(corner & 4) ? 1 : 0].z);
@@ -922,7 +926,7 @@ class RayDifferential : public Ray {
 template <typename T>
 inline Vector3<T>::Vector3(const Point3<T> &p)
     : x(p.x), y(p.y), z(p.z) {
-    Assert(!HasNaNs());
+    DCHECK(!HasNaNs());
 }
 
 template <typename T, typename U>
@@ -936,19 +940,19 @@ Vector3<T> Abs(const Vector3<T> &v) {
 
 template <typename T>
 inline T Dot(const Vector3<T> &v1, const Vector3<T> &v2) {
-    Assert(!v1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
 template <typename T>
 inline T AbsDot(const Vector3<T> &v1, const Vector3<T> &v2) {
-    Assert(!v1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     return std::abs(Dot(v1, v2));
 }
 
 template <typename T>
 inline Vector3<T> Cross(const Vector3<T> &v1, const Vector3<T> &v2) {
-    Assert(!v1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     double v1x = v1.x, v1y = v1.y, v1z = v1.z;
     double v2x = v2.x, v2y = v2.y, v2z = v2.z;
     return Vector3<T>((v1y * v2z) - (v1z * v2y), (v1z * v2x) - (v1x * v2z),
@@ -957,7 +961,7 @@ inline Vector3<T> Cross(const Vector3<T> &v1, const Vector3<T> &v2) {
 
 template <typename T>
 inline Vector3<T> Cross(const Vector3<T> &v1, const Normal3<T> &v2) {
-    Assert(!v1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     double v1x = v1.x, v1y = v1.y, v1z = v1.z;
     double v2x = v2.x, v2y = v2.y, v2z = v2.z;
     return Vector3<T>((v1y * v2z) - (v1z * v2y), (v1z * v2x) - (v1x * v2z),
@@ -966,7 +970,7 @@ inline Vector3<T> Cross(const Vector3<T> &v1, const Normal3<T> &v2) {
 
 template <typename T>
 inline Vector3<T> Cross(const Normal3<T> &v1, const Vector3<T> &v2) {
-    Assert(!v1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     double v1x = v1.x, v1y = v1.y, v1z = v1.z;
     double v2x = v2.x, v2y = v2.y, v2z = v2.z;
     return Vector3<T>((v1y * v2z) - (v1z * v2y), (v1z * v2x) - (v1x * v2z),
@@ -1022,13 +1026,13 @@ inline void CoordinateSystem(const Vector3<T> &v1, Vector3<T> *v2,
 template <typename T>
 Vector2<T>::Vector2(const Point2<T> &p)
     : x(p.x), y(p.y) {
-    Assert(!HasNaNs());
+    DCHECK(!HasNaNs());
 }
 
 template <typename T>
 Vector2<T>::Vector2(const Point3<T> &p)
     : x(p.x), y(p.y) {
-    Assert(!HasNaNs());
+    DCHECK(!HasNaNs());
 }
 
 template <typename T, typename U>
@@ -1037,13 +1041,13 @@ inline Vector2<T> operator*(U f, const Vector2<T> &v) {
 }
 template <typename T>
 inline Float Dot(const Vector2<T> &v1, const Vector2<T> &v2) {
-    Assert(!v1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     return v1.x * v2.x + v1.y * v2.y;
 }
 
 template <typename T>
 inline Float AbsDot(const Vector2<T> &v1, const Vector2<T> &v2) {
-    Assert(!v1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     return std::abs(Dot(v1, v2));
 }
 
@@ -1068,7 +1072,7 @@ inline Float DistanceSquared(const Point3<T> &p1, const Point3<T> &p2) {
 
 template <typename T, typename U>
 inline Point3<T> operator*(U f, const Point3<T> &p) {
-    Assert(!p.HasNaNs());
+    DCHECK(!p.HasNaNs());
     return p * f;
 }
 
@@ -1116,7 +1120,7 @@ inline Float DistanceSquared(const Point2<T> &p1, const Point2<T> &p2) {
 
 template <typename T, typename U>
 inline Point2<T> operator*(U f, const Point2<T> &p) {
-    Assert(!p.HasNaNs());
+    DCHECK(!p.HasNaNs());
     return p * f;
 }
 
@@ -1163,42 +1167,42 @@ inline Normal3<T> Normalize(const Normal3<T> &n) {
 template <typename T>
 inline Vector3<T>::Vector3(const Normal3<T> &n)
     : x(n.x), y(n.y), z(n.z) {
-    Assert(!n.HasNaNs());
+    DCHECK(!n.HasNaNs());
 }
 
 template <typename T>
 inline T Dot(const Normal3<T> &n1, const Vector3<T> &v2) {
-    Assert(!n1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!n1.HasNaNs() && !v2.HasNaNs());
     return n1.x * v2.x + n1.y * v2.y + n1.z * v2.z;
 }
 
 template <typename T>
 inline T Dot(const Vector3<T> &v1, const Normal3<T> &n2) {
-    Assert(!v1.HasNaNs() && !n2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !n2.HasNaNs());
     return v1.x * n2.x + v1.y * n2.y + v1.z * n2.z;
 }
 
 template <typename T>
 inline T Dot(const Normal3<T> &n1, const Normal3<T> &n2) {
-    Assert(!n1.HasNaNs() && !n2.HasNaNs());
+    DCHECK(!n1.HasNaNs() && !n2.HasNaNs());
     return n1.x * n2.x + n1.y * n2.y + n1.z * n2.z;
 }
 
 template <typename T>
 inline T AbsDot(const Normal3<T> &n1, const Vector3<T> &v2) {
-    Assert(!n1.HasNaNs() && !v2.HasNaNs());
+    DCHECK(!n1.HasNaNs() && !v2.HasNaNs());
     return std::abs(n1.x * v2.x + n1.y * v2.y + n1.z * v2.z);
 }
 
 template <typename T>
 inline T AbsDot(const Vector3<T> &v1, const Normal3<T> &n2) {
-    Assert(!v1.HasNaNs() && !n2.HasNaNs());
+    DCHECK(!v1.HasNaNs() && !n2.HasNaNs());
     return std::abs(v1.x * n2.x + v1.y * n2.y + v1.z * n2.z);
 }
 
 template <typename T>
 inline T AbsDot(const Normal3<T> &n1, const Normal3<T> &n2) {
-    Assert(!n1.HasNaNs() && !n2.HasNaNs());
+    DCHECK(!n1.HasNaNs() && !n2.HasNaNs());
     return std::abs(n1.x * n2.x + n1.y * n2.y + n1.z * n2.z);
 }
 
@@ -1229,13 +1233,13 @@ Normal3<T> Abs(const Normal3<T> &v) {
 
 template <typename T>
 inline const Point3<T> &Bounds3<T>::operator[](int i) const {
-    Assert(i == 0 || i == 1);
+    DCHECK(i == 0 || i == 1);
     return (i == 0) ? pMin : pMax;
 }
 
 template <typename T>
 inline Point3<T> &Bounds3<T>::operator[](int i) {
-    Assert(i == 0 || i == 1);
+    DCHECK(i == 0 || i == 1);
     return (i == 0) ? pMin : pMax;
 }
 

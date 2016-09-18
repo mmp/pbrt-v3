@@ -371,7 +371,7 @@ Float Curve::Area() const {
 }
 
 Interaction Curve::Sample(const Point2f &u) const {
-    Severe("Curve::Sample not implemented.");
+    LOG(FATAL) << "Curve::Sample not implemented.";
     return Interaction();
 }
 

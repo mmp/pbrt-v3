@@ -240,7 +240,7 @@ Float Hyperboloid::Area() const {
 #undef SQR
 #undef QUAD
 Interaction Hyperboloid::Sample(const Point2f &u) const {
-    Severe("Hyperboloid::Sample not implemented.");
+    LOG(FATAL) << "Hyperboloid::Sample not implemented.";
     return Interaction();
 }
 

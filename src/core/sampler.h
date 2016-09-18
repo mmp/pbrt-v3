@@ -62,6 +62,10 @@ class Sampler {
     virtual bool StartNextSample();
     virtual std::unique_ptr<Sampler> Clone(int seed) = 0;
     virtual bool SetSampleNumber(int64_t sampleNum);
+    std::string StateString() const {
+      return StringPrintf("(%d,%d), sample %" PRId64, currentPixel.x,
+                          currentPixel.y, currentPixelSampleIndex);
+    }
     int64_t CurrentSampleNumber() const { return currentPixelSampleIndex; }
 
     // Sampler Public Data

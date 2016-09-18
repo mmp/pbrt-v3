@@ -237,7 +237,7 @@ static void AddArrayElement(void *elem) {
             cur_array->allocated*cur_array->element_size);
     }
     char *next = ((char *)cur_array->array) + cur_array->nelems * cur_array->element_size;
-    Assert(cur_array->element_size == 4 || cur_array->element_size == 8);
+    CHECK(cur_array->element_size == 4 || cur_array->element_size == 8);
     if (cur_array->element_size == 4)
         *((uint32_t *)next) = *((uint32_t *)elem);
     else
@@ -1649,7 +1649,7 @@ yyreduce:
   case 3:
 #line 190 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
     {
-    if (cur_array) Severe("MUH");
+    if (cur_array) LOG(FATAL) << "Unexpected error parsing array";
     cur_array = new ParamArray;
 ;}
     break;
@@ -2384,7 +2384,7 @@ static const char *paramTypeToName(int type) {
     case PARAM_TYPE_SPECTRUM: return "spectrum";
     case PARAM_TYPE_STRING: return "string";
     case PARAM_TYPE_TEXTURE: return "texture";
-    default: Severe("Error in paramTypeToName"); return nullptr;
+    default: LOG(FATAL) << "Error in paramTypeToName"; return nullptr;
     }
 }
 
@@ -2563,7 +2563,7 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
 
 
 static bool lookupType(const char *name, int *type, std::string &sname) {
-    Assert(name != nullptr);
+    CHECK_NOTNULL(name);
     *type = 0;
     const char *strp = name;
     while (*strp && isspace(*strp))

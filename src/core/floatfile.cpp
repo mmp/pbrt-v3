@@ -30,7 +30,6 @@
 
  */
 
-
 // core/floatfile.cpp*
 #include "floatfile.h"
 #include <ctype.h>
@@ -51,12 +50,14 @@ bool ReadFloatFile(const char *filename, std::vector<Float> *values) {
     while ((c = getc(f)) != EOF) {
         if (c == '\n') ++lineNumber;
         if (inNumber) {
+            CHECK_LT(curNumberPos, (int)sizeof(curNumber))
+                << "Overflowed buffer for parsing number in file: " << filename
+                << ", at line " << lineNumber;
             if (isdigit(c) || c == '.' || c == 'e' || c == '-' || c == '+')
                 curNumber[curNumberPos++] = c;
             else {
                 curNumber[curNumberPos++] = '\0';
                 values->push_back(atof(curNumber));
-                Assert(curNumberPos < (int)sizeof(curNumber));
                 inNumber = false;
                 curNumberPos = 0;
             }

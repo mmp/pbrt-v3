@@ -40,16 +40,16 @@
 // Primitive Method Definitions
 Primitive::~Primitive() {}
 const AreaLight *Aggregate::GetAreaLight() const {
-    Severe(
+    LOG(FATAL) <<
         "Aggregate::GetAreaLight() method"
-        "called; should have gone to GeometricPrimitive");
+        "called; should have gone to GeometricPrimitive";
     return nullptr;
 }
 
 const Material *Aggregate::GetMaterial() const {
-    Severe(
+    LOG(FATAL) <<
         "Aggregate::GetMaterial() method"
-        "called; should have gone to GeometricPrimitive");
+        "called; should have gone to GeometricPrimitive";
     return nullptr;
 }
 
@@ -57,9 +57,9 @@ void Aggregate::ComputeScatteringFunctions(SurfaceInteraction *isect,
                                            MemoryArena &arena,
                                            TransportMode mode,
                                            bool allowMultipleLobes) const {
-    Severe(
+    LOG(FATAL) <<
         "Aggregate::ComputeScatteringFunctions() method"
-        "called; should have gone to GeometricPrimitive");
+        "called; should have gone to GeometricPrimitive";
 }
 
 // TransformedPrimitive Method Definitions
@@ -74,7 +74,7 @@ bool TransformedPrimitive::Intersect(const Ray &r,
     // Transform instance's intersection data to world space
     if (!InterpolatedPrimToWorld.IsIdentity())
         *isect = InterpolatedPrimToWorld(*isect);
-    Assert(Dot(isect->n, isect->shading.n) >= 0.);
+    CHECK_GE(Dot(isect->n, isect->shading.n), 0);
     return true;
 }
 
@@ -98,7 +98,7 @@ bool GeometricPrimitive::Intersect(const Ray &r,
     if (!shape->Intersect(r, &tHit, isect)) return false;
     r.tMax = tHit;
     isect->primitive = this;
-    Assert(Dot(isect->n, isect->shading.n) >= 0.);
+    CHECK_GE(Dot(isect->n, isect->shading.n), 0.);
     // Initialize _SurfaceInteraction::mediumInterface_ after _Shape_
     // intersection
     if (mediumInterface.IsMediumTransition())
@@ -123,5 +123,5 @@ void GeometricPrimitive::ComputeScatteringFunctions(
     if (material)
         material->ComputeScatteringFunctions(isect, arena, mode,
                                              allowMultipleLobes);
-    Assert(Dot(isect->n, isect->shading.n) >= 0.);
+    CHECK_GE(Dot(isect->n, isect->shading.n), 0.);
 }
