@@ -157,7 +157,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Possibly terminate the path with Russian roulette
         if (beta.y() < rrThreshold && bounces > 3) {
-            Float q = std::max((Float).05, 1 - beta.y());
+            Float q = std::max((Float).05, 1 - beta.MaxComponentValue());
             VLOG(2) << "RR termination probability q = " << q;
             if (sampler.Get1D() < q) break;
             beta /= 1 - q;

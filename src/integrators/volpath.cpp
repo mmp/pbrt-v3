@@ -157,7 +157,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Possibly terminate the path with Russian roulette
         if (beta.y() < rrThreshold && bounces > 3) {
-            Float q = std::max((Float).05, 1 - beta.y());
+            Float q = std::max((Float).05, 1 - beta.MaxComponentValue());
             if (sampler.Get1D() < q) break;
             beta /= 1 - q;
             DCHECK(std::isinf(beta.y()) == false);
