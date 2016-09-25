@@ -734,6 +734,26 @@ std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTexture(
     return std::make_shared<ConstantTexture<Spectrum>>(val);
 }
 
+std::shared_ptr<Texture<Spectrum>> TextureParams::GetSpectrumTextureOrNull(
+    const std::string &n) const {
+    std::string name = geomParams.FindTexture(n);
+    if (name == "") name = materialParams.FindTexture(n);
+    if (name != "") {
+        if (spectrumTextures.find(name) != spectrumTextures.end())
+            return spectrumTextures[name];
+        else {
+            Error(
+                "Couldn't find spectrum texture named \"%s\" for parameter \"%s\"",
+                name.c_str(), n.c_str());
+            return nullptr;
+        }
+    }
+    int count;
+    const Spectrum *val = geomParams.FindSpectrum(n, &count);
+    if (!val) val = materialParams.FindSpectrum(n, &count);
+    if (val) return std::make_shared<ConstantTexture<Spectrum>>(*val);
+    return nullptr;
+}
 std::shared_ptr<Texture<Float>> TextureParams::GetFloatTexture(
     const std::string &n, Float def) const {
     std::string name = geomParams.FindTexture(n);

@@ -167,6 +167,8 @@ class TextureParams {
           materialParams(materialParams) {}
     std::shared_ptr<Texture<Spectrum>> GetSpectrumTexture(
         const std::string &name, const Spectrum &def) const;
+    std::shared_ptr<Texture<Spectrum>> GetSpectrumTextureOrNull(
+        const std::string &name) const;
     std::shared_ptr<Texture<Float>> GetFloatTexture(const std::string &name,
                                                     Float def) const;
     std::shared_ptr<Texture<Float>> GetFloatTextureOrNull(
