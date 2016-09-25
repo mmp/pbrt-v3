@@ -96,6 +96,10 @@ SpatialLightDistribution::SpatialLightDistribution(const Scene &scene,
     for (int i = 0; i < 3; ++i)
         nVoxels[i] = std::max(1, int(std::round(diag[i] / bmax * maxVoxels)));
 
+    LOG(INFO) << "SpatialLightDistribution: scene bounds " << b <<
+        ", voxel res (" << nVoxels[0] << ", " << nVoxels[1] << ", " <<
+        nVoxels[2] << ")";
+
     // It's important to pre-size the localVoxelDistributions vector, to
     // avoid race conditions with one thread resizing the vector while
     // another is reading from it.
@@ -107,9 +111,13 @@ SpatialLightDistribution::~SpatialLightDistribution() {
     // the buckets.
     // This is slightly ugly: we are depending on the destructor running
     // before statistics are reported (which is currently the case at least).
-  fprintf(stderr, "a\n");
-  for (size_t i = 0; i < nBuckets; ++i)
+    for (size_t i = 0; i < nBuckets; ++i) {
+        LOG(INFO) << "Bucket " << i << ", size " << voxelDistribution[i].size()
+                  << ", bucket count " << voxelDistribution[i].bucket_count()
+                  << ", load factor " << voxelDistribution[i].load_factor()
+                  << ", max load factor " << voxelDistribution[i].max_load_factor();
         ReportValue(hashBucketLoad, voxelDistribution[i].size());
+    }
 }
 
 const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
@@ -125,6 +133,8 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     LocalBucketHash *localVoxelDistribution =
         localVoxelDistributions[ThreadIndex].get();
     if (!localVoxelDistribution) {
+        LOG(INFO) << "Created per-thread SpatialLightDistribution for thread" <<
+            ThreadIndex;
         localVoxelDistribution = new LocalBucketHash;
         localVoxelDistributions[ThreadIndex].reset(localVoxelDistribution);
     }
@@ -144,6 +154,8 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     size_t hash = std::hash<int>{}(pi[0] + nVoxels[0] * pi[1] +
                                    nVoxels[0] * nVoxels[1] * pi[2]);
     hash &= (nBuckets - 1);
+    VLOG(2) << "SpatialLightDistribution: p = " << p << ", pi = " << pi
+            << ", hash = " << hash;
 
     // Acquire the lock for the corresponding second-level hash table.
     std::lock_guard<std::mutex> lock(mutexes[hash]);
@@ -215,8 +227,13 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
         std::accumulate(lightContrib.begin(), lightContrib.end(), Float(0));
     Float avgContrib = sumContrib / (nSamples * lightContrib.size());
     Float minContrib = (avgContrib > 0) ? .001 * avgContrib : 1;
-    for (size_t i = 0; i < lightContrib.size(); ++i)
+    for (size_t i = 0; i < lightContrib.size(); ++i) {
+        VLOG(2) << "Voxel pi = " << pi << ", light " << i << " contrib = "
+                << lightContrib[i];
         lightContrib[i] = std::max(lightContrib[i], minContrib);
+    }
+    LOG(INFO) << "Initialized light distribution in voxel pi= " <<  pi <<
+        ", avgContrib = " << avgContrib;
 
     // Compute a sampling distribution from the accumulated
     // contributions.
