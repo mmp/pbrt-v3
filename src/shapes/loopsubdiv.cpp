@@ -143,7 +143,7 @@ inline Float loopGamma(int valence) {
 }
 
 // LoopSubdiv Function Definitions
-std::vector<std::shared_ptr<Shape>> LoopSubdivide(
+static std::vector<std::shared_ptr<Shape>> LoopSubdivide(
     const Transform *ObjectToWorld, const Transform *WorldToObject,
     bool reverseOrientation, int nLevels, int nIndices,
     const int *vertexIndices, int nVertices, const Point3f *p) {
