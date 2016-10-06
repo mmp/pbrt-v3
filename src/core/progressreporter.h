@@ -77,6 +77,4 @@ class ProgressReporter {
     std::thread updateThread;
 };
 
-extern int TerminalWidth();
-
 #endif  // PBRT_CORE_PROGRESSREPORTER_H

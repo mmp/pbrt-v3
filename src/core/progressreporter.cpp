@@ -43,6 +43,8 @@
 #include <errno.h>
 #endif  // !PBRT_IS_WINDOWS
 
+static int TerminalWidth();
+
 // ProgressReporter Method Definitions
 ProgressReporter::ProgressReporter(int64_t totalWork, const std::string &title)
     : totalWork(std::max((int64_t)1, totalWork)),
@@ -123,12 +125,12 @@ void ProgressReporter::Done() {
     workDone = totalWork;
 }
 
-int TerminalWidth() {
+static int TerminalWidth() {
 #ifdef PBRT_IS_WINDOWS
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     if (h == INVALID_HANDLE_VALUE || !h) {
         fprintf(stderr, "GetStdHandle() call failed");
-        return 8192;
+        return 80;
     }
     CONSOLE_SCREEN_BUFFER_INFO bufferInfo = {0};
     GetConsoleScreenBufferInfo(h, &bufferInfo);
@@ -145,7 +147,7 @@ int TerminalWidth() {
                         errno);
             }
         }
-        return 8192;
+        return 80;
     }
     return w.ws_col;
 #endif  // PBRT_IS_WINDOWS
