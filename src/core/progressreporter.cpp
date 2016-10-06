@@ -98,6 +98,9 @@ void ProgressReporter::PrintBar() {
         else if (iterCount == 70)
             // Up to 1s after an additional ~30s have elapsed.
             sleepDuration *= 2;
+        else if (iterCount == 520)
+            // After 15m, jump up to 5s intervals
+            sleepDuration *= 5;
 
         Float percentDone = Float(workDone) / Float(totalWork);
         int plussesNeeded = std::round(totalPlusses * percentDone);
