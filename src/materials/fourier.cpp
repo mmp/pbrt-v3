@@ -100,6 +100,7 @@ bool FourierBSDFTable::Read(const std::string &filename,
                             FourierBSDFTable *bsdfTable) {
     bsdfTable->mu = bsdfTable->cdf = bsdfTable->a = nullptr;
     bsdfTable->aOffset = bsdfTable->m = nullptr;
+    bsdfTable->nChannels = 0;
 
     FILE *f = fopen(filename.c_str(), "rb");
 
@@ -185,6 +186,7 @@ bool FourierBSDFTable::Read(const std::string &filename,
     fclose(f);
     return true;
 fail:
+    bsdfTable->nChannels = 0;
     fclose(f);
     Error(
         "Tabulated BSDF file \"%s\" has an incompatible file format or "
