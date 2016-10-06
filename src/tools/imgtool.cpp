@@ -17,6 +17,7 @@
 extern "C" {
 #include "ext/ArHosekSkyModel.h"
 }
+#include <glog/logging.h>
 
 static void usage(const char *msg = nullptr, ...) {
     if (msg) {
@@ -759,6 +760,9 @@ int convert(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+    google::InitGoogleLogging(argv[0]);
+    FLAGS_stderrthreshold = 1; // Warning and above.
+
     if (argc < 2) usage();
 
     if (!strcmp(argv[1], "assemble"))
