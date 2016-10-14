@@ -94,6 +94,15 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
         tilePixelBounds, filter->radius, filterTable, filterTableWidth));
 }
 
+void Film::Clear() {
+    for (Point2i p : croppedPixelBounds) {
+        Pixel &pixel = GetPixel(p);
+        for (int c = 0; c < 3; ++c)
+            pixel.splatXYZ[c] = pixel.xyz[c] = 0;
+        pixel.filterWeightSum = 0;
+    }
+}
+
 void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
     ProfilePhase p(Prof::MergeFilmTile);
     std::lock_guard<std::mutex> lock(mutex);
