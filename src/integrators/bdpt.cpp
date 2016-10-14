@@ -299,14 +299,8 @@ inline int BufferIndex(int s, int t) {
 void BDPTIntegrator::Render(const Scene &scene) {
     ProfilePhase p(Prof::IntegratorRender);
 
-    // We'll generally use a SpatialLightDistribution for the sampling
-    // distribution for choosing the light at the start of a light path,
-    // using the first visible point from the camera as the lookup
-    // point. For cases where the camera ray doesn't intersect anything,
-    // we'll fall back to sampling based on light power.
-    std::unique_ptr<LightDistribution> defaultLightDistrib =
+    std::unique_ptr<LightDistribution> lightDistribution =
         CreateLightSampleDistribution(lightSampleStrategy, scene);
-    PowerLightDistribution powerLightDistrib(scene);
 
     // Compute a reverse mapping from light pointers to offsets into the
     // scene lights vector (and, equivalently, offsets into
@@ -375,11 +369,15 @@ void BDPTIntegrator::Render(const Scene &scene) {
                     int nCamera = GenerateCameraSubpath(
                         scene, *tileSampler, arena, maxDepth + 2, *camera,
                         pFilm, cameraVertices);
-                    // Get a distribution for sampling the light at the start
-                    // of the light subpath.
-                    const Distribution1D *lightDistr = (nCamera >= 2) ?
-                        defaultLightDistrib->Lookup(cameraVertices[1].p()) :
-                        powerLightDistrib.Lookup(cameraVertices[0].p());
+                    // Get a distribution for sampling the light at the
+                    // start of the light subpath. Because the light path
+                    // follows multiple bounces, basing the sampling
+                    // distribution on any of the vertices of the camera
+                    // path is unlikely to be a good strategy. We use the
+                    // PowerLightDistribution by default here, which
+                    // doesn't use the point passed to it.
+                    const Distribution1D *lightDistr =
+                        lightDistribution->Lookup(cameraVertices[0].p());
                     // Now trace the light subpath
                     int nLight = GenerateLightSubpath(
                         scene, *tileSampler, arena, maxDepth + 1,
