@@ -1303,7 +1303,15 @@ inline Bounds2iIterator begin(const Bounds2i &b) {
 }
 
 inline Bounds2iIterator end(const Bounds2i &b) {
-    return Bounds2iIterator(b, Point2i(b.pMin.x, b.pMax.y));
+    // Normally, the ending point is at the minimum x value and one past
+    // the last valid y value.
+    Point2i pEnd(b.pMin.x, b.pMax.y);
+    // However, if the bounds are degenerate, override the end point to
+    // equal the start point so that any attempt to iterate over the bounds
+    // exits out immediately.
+    if (b.pMin.x >= b.pMax.x || b.pMin.y >= b.pMax.y)
+        pEnd = b.pMin;
+    return Bounds2iIterator(b, pEnd);
 }
 
 template <typename T>
