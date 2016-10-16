@@ -11,9 +11,12 @@ Pharr](http://pharr.org/matt), [Wenzel
 Jakob](http://www.mitsuba-renderer.org/~wenzel/), and Greg Humphreys.  As
 before, the code is available under the BSD license.
 
-Please see the [User's Guide](https://pbrt.org/users-guide.html) for more
+Please see the [User's Guide](http://pbrt.org/users-guide.html) for more
 information about how to check out and build the system as well as various
 additional information about working with pbrt.
+
+Example scenes
+--------------
 
 Over 6GB of example scenes are available for download. (Many are new and
 weren't available with previous versions of pbrt.) We're trying an
