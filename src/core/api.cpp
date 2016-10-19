@@ -68,6 +68,7 @@
 #include "lights/spot.h"
 #include "materials/fourier.h"
 #include "materials/glass.h"
+#include "materials/hair.h"
 #include "materials/kdsubsurface.h"
 #include "materials/matte.h"
 #include "materials/metal.h"
@@ -415,6 +416,8 @@ std::shared_ptr<Material> MakeMaterial(const std::string &name,
         material = CreateGlassMaterial(mp);
     else if (name == "mirror")
         material = CreateMirrorMaterial(mp);
+    else if (name == "hair")
+        material = CreateHairMaterial(mp);
     else if (name == "mix") {
         std::string m1 = mp.FindString("namedmaterial1", "");
         std::string m2 = mp.FindString("namedmaterial2", "");
