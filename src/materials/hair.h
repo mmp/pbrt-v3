@@ -49,6 +49,7 @@ http://pbrt.org/hair.pdf for a description of the implementation here.
 #include "material.h"
 #include "pbrt.h"
 #include "reflection.h"
+#include <array>
 
 // HairMaterial Declarations
 class HairMaterial : public Material {
