@@ -125,13 +125,14 @@ static Float Pow(Float v) {
 }
 
 template <>
-Float Pow<1>(Float v) {
+inline Float Pow<1>(Float v) {
     return v;
 }
 template <>
-Float Pow<0>(Float v) {
+inline Float Pow<0>(Float v) {
     return 1;
 }
+
 inline Float SafeASin(Float x) {
     CHECK(x >= -1.0001 && x <= 1.0001);
     return std::asin(Clamp(x, -1, 1));
