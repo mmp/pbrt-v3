@@ -7252,7 +7252,7 @@ class FloatingPoint {
 
   // Returns the floating-point number that represent positive infinity.
   static RawType Infinity() {
-    return ReinterpretBits(kExponentBitMask);
+    return std::numeric_limits<RawType>::infinity();
   }
 
   // Returns the maximum representable finite floating-point number.
