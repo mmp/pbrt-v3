@@ -31,11 +31,11 @@
  */
 
 // tests/hair.cpp*
+#include "tests/gtest/gtest.h"
 #include "materials/hair.h"
 #include "pbrt.h"
 #include "rng.h"
 #include "sampling.h"
-#include "tests/gtest/gtest.h"
 
 // Hair Tests
 #if 0
