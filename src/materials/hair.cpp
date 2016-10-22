@@ -500,46 +500,13 @@ Float HairBSDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     return pdf;
 }
 
-struct TestSamp {
-    TestSamp() {
-        RNG rng;
-        for (int i = 0; i < 1000; ++i) {
-            Float h = -1 + 2 * rng.UniformFloat();
-            Float beta_m = .1 + .9 * rng.UniformFloat();
-            Float beta_n = .1 + .9 * rng.UniformFloat();
-            Float sig = .25 + 8 * rng.UniformFloat();
-
-            Vector3f wo =
-                UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
-            Vector3f wi =
-                UniformSampleSphere({rng.UniformFloat(), rng.UniformFloat()});
-            HairBSDF hair(h, 1.55, sig, beta_m, beta_n, 0.f);
-            Spectrum f = hair.f(wo, wi);
-            if (f.y() < .1 && rng.UniformFloat() > .05) continue;
-            Float pdf = hair.Pdf(wo, wi);
-
-            Point2f u{rng.UniformFloat(), rng.UniformFloat()};
-            Float pdfs;
-            Vector3f wis;
-            Spectrum fs = hair.Sample_f(wo, &wis, u, &pdfs, nullptr);
-            fprintf(stderr,
-                    "{%.9g, %.9g, %.9g, %.9g, %.9g, %.9g, %.9g, %.9g,\n"
-                    "     %.9g, %.9g, %.9g, %.9g, %.9g, %.9g, %.9g, %.9g,\n"
-                    "     %.9g, %.9g, %.9g },\n",
-                    h, beta_m, beta_n, sig, wo.x, wo.y, wo.z, wi.x, wi.y, wi.z,
-                    f.y(), pdf, u[0], u[1], wis.x, wis.y, wis.z, fs.y(), pdfs);
-        }
-        exit(0);
-    }
-};
-
-// static TestSamp _ts;
 std::string HairBSDF::ToString() const {
-    // FIXME: update for all the new member variables
-    return StringPrintf("[ Hair h: %f eta: %f, v[0] %f, s %f, sigma_a: ", h,
-                        eta, v[0], s) +
-           sigma_a.ToString() +
-           StringPrintf(" beta_m: %f beta_n: %f ]", beta_m, beta_n);
+    return StringPrintf(
+        "[ Hair h: %f gammaO: %f eta: %f beta_m: %f beta_n: %f alpha: %f "
+        "v[0]: %f s: %f sigma_a: ", h, gammaO, eta, beta_m, beta_n, alpha,
+        v[0], s) +
+        sigma_a.ToString() +
+        std::string("  ]");
 }
 
 Spectrum HairBSDF::SigmaAFromConcentration(Float ce, Float cp) {
