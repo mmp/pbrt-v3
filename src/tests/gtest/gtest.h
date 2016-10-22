@@ -48,6 +48,10 @@
 // registration from Barthelemy Dagenais' (barthelemy@prologique.com)
 // easyUnit framework.
 
+#ifdef PBRT_CORE_PBRT_H
+#error "gtest.h must be #included before pbrt.h; on Windows, pbrt.h #defines Infinity, which is also the name of a method in gtest.h"
+#endif // PBRT_CORE_PBRT_H
+
 #ifndef GTEST_INCLUDE_GTEST_GTEST_H_
 #define GTEST_INCLUDE_GTEST_GTEST_H_
 
