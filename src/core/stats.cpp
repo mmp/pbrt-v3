@@ -92,9 +92,21 @@ void StatsAccumulator::Print(FILE *dest) {
         if (counter.second == 0) continue;
         std::string category, title;
         getCategoryAndTitle(counter.first, &category, &title);
-        double mib = (double)counter.second / (1024. * 1024.);
-        toPrint[category].push_back(StringPrintf(
-            "%-42s                  %9.2f MiB", title.c_str(), mib));
+        double kb = (double)counter.second / 1024.;
+        if (kb < 1024.)
+            toPrint[category].push_back(StringPrintf(
+                "%-42s                  %9.2f kB", title.c_str(), kb));
+        else {
+            float mib = kb / 1024.;
+            if (mib < 1024.)
+                toPrint[category].push_back(StringPrintf(
+                    "%-42s                  %9.2f MiB", title.c_str(), mib));
+            else {
+                float gib = mib / 1024.;
+                toPrint[category].push_back(StringPrintf(
+                    "%-42s                  %9.2f GiB", title.c_str(), gib));
+            }
+        }
     }
     for (auto &distributionSum : intDistributionSums) {
         const std::string &name = distributionSum.first;

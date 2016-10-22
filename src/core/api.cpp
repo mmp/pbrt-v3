@@ -401,6 +401,8 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
     return shapes;
 }
 
+STAT_COUNTER("Scene/Materials created", nMaterialsCreated);
+
 std::shared_ptr<Material> MakeMaterial(const std::string &name,
                                        const TextureParams &mp) {
     Material *material = nullptr;
@@ -463,6 +465,7 @@ std::shared_ptr<Material> MakeMaterial(const std::string &name,
 
     mp.ReportUnused();
     if (!material) Error("Unable to create material \"%s\"", name.c_str());
+    else ++nMaterialsCreated;
     return std::shared_ptr<Material>(material);
 }
 

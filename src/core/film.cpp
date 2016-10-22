@@ -35,6 +35,9 @@
 #include "film.h"
 #include "paramset.h"
 #include "imageio.h"
+#include "stats.h"
+
+STAT_MEMORY_COUNTER("Memory/Film pixels", filmPixelMemory);
 
 // Film Method Definitions
 Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
@@ -58,6 +61,7 @@ Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
 
     // Allocate film image storage
     pixels = std::unique_ptr<Pixel[]>(new Pixel[croppedPixelBounds.Area()]);
+    filmPixelMemory += croppedPixelBounds.Area() * sizeof(Pixel);
 
     // Precompute filter weight table
     int offset = 0;
