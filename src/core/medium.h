@@ -40,6 +40,7 @@
 
 // core/medium.h*
 #include "pbrt.h"
+#include "geometry.h"
 #include "spectrum.h"
 #include <memory>
 

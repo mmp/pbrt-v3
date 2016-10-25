@@ -34,6 +34,7 @@
 // core/bssrdf.cpp*
 #include "bssrdf.h"
 #include "interpolation.h"
+#include "parallel.h"
 #include "scene.h"
 
 // BSSRDF Utility Functions

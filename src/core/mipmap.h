@@ -43,6 +43,8 @@
 #include "spectrum.h"
 #include "texture.h"
 #include "stats.h"
+#include "parallel.h"
+
 STAT_COUNTER("Texture/Texture map EWA lookups", nEWALookups);
 STAT_COUNTER("Texture/Texture map trilerp lookups", nTrilerpLookups);
 STAT_MEMORY_COUNTER("Memory/Texture MIP maps", mipMapMemory);

@@ -40,7 +40,6 @@
 
 // core/memory.h*
 #include "pbrt.h"
-#include "parallel.h"
 #include <list>
 
 // Memory Declarations
