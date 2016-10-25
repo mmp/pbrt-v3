@@ -41,7 +41,6 @@
 // core/spectrum.h*
 #include "pbrt.h"
 #include "stringprint.h"
-#include "parallel.h"
 
 // Spectrum Utility Declarations
 static const int sampledLambdaStart = 400;

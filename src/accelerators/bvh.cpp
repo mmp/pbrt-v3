@@ -36,6 +36,7 @@
 #include "interaction.h"
 #include "paramset.h"
 #include "stats.h"
+#include "parallel.h"
 #include <algorithm>
 
 STAT_TIMER("Time/BVH construction", constructionTime);

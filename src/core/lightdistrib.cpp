@@ -34,10 +34,11 @@
 // low res image first?
 
 #include "lightdistrib.h"
-#include <numeric>
 #include "lowdiscrepancy.h"
+#include "parallel.h"
 #include "scene.h"
 #include "stats.h"
+#include <numeric>
 
 LightDistribution::~LightDistribution() {}
 

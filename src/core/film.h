@@ -44,6 +44,7 @@
 #include "spectrum.h"
 #include "filter.h"
 #include "stats.h"
+#include "parallel.h"
 
 // FilmTilePixel Declarations
 struct FilmTilePixel {
