@@ -136,7 +136,7 @@ Float SampleCatmullRom(int n, const Float *x, const Float *f, const Float *F,
     Float a = 0, b = 1, Fhat, fhat;
     while (true) {
         // Fall back to a bisection step when _t_ is out of bounds
-        if (!(t >= a && t <= b)) t = 0.5f * (a + b);
+        if (!(t > a && t < b)) t = 0.5f * (a + b);
 
         // Evaluate target function and its derivative in Horner form
         Fhat = t * (f0 +
@@ -314,7 +314,7 @@ Float InvertCatmullRom(int n, const Float *x, const Float *values, Float u) {
     Float Fhat, fhat;
     while (true) {
         // Fall back to a bisection step when _t_ is out of bounds
-        if (!(t >= a && t <= b)) t = 0.5f * (a + b);
+        if (!(t > a && t < b)) t = 0.5f * (a + b);
 
         // Compute powers of _t_
         Float t2 = t * t, t3 = t2 * t;
@@ -408,7 +408,7 @@ Float SampleFourier(const Float *ak, const Float *recip, int m, Float u,
         phi -= F / f;
 
         // Fall back to a bisection step when $\phi$ is out of bounds
-        if (!(phi >= a && phi <= b)) phi = 0.5f * (a + b);
+        if (!(phi > a && phi < b)) phi = 0.5f * (a + b);
     }
     // Potentially flip $\phi$ and return the result
     if (flip) phi = 2 * Pi - phi;
