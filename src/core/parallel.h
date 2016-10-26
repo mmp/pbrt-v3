@@ -42,6 +42,7 @@
 #include "pbrt.h"
 #include "geometry.h"
 #include <mutex>
+#include <condition_variable>
 #include <functional>
 #include <atomic>
 
@@ -75,12 +76,35 @@ class AtomicFloat {
 #endif
 };
 
+// Simple one-use barrier; ensures that multiple threads all reach a
+// particular point of execution before allowing any of them to proceed
+// past it.
+//
+// Note: this should be heap allocated and managed with a shared_ptr, where
+// all threads that use it are passed the shared_ptr. This ensures that
+// memory for the Barrier won't be freed until all threads have
+// successfully cleared it.
+class Barrier {
+public:
+  Barrier(int count) : count(count) { CHECK_GT(count, 0); }
+  ~Barrier() { CHECK_EQ(count, 0); }
+  void Wait();
+
+private:
+  std::mutex mutex;
+  std::condition_variable cv;
+  int count;
+};
+
 void ParallelFor(std::function<void(int64_t)> func, int64_t count,
                  int chunkSize = 1);
 extern PBRT_THREAD_LOCAL int ThreadIndex;
 void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count);
 int MaxThreadIndex();
 int NumSystemCores();
-void TerminateWorkerThreads();
+
+void ParallelInit();
+void ParallelCleanup();
+void MergeWorkerThreadStats();
 
 #endif  // PBRT_CORE_PARALLEL_H

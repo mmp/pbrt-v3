@@ -177,8 +177,13 @@ static const char *ProfNames[] = {
     "MIPMap::Lookup() (EWA)",
 };
 
+static_assert((int)Prof::NumProfEvents == sizeof(ProfNames) / sizeof(ProfNames[0]),
+              "ProfNames[] array and Prof enumerant have different "
+              "numbers of entries!");
+
 extern PBRT_THREAD_LOCAL uint32_t ProfilerState;
 inline uint32_t CurrentProfilerState() { return ProfilerState; }
+
 class ProfilePhase {
   public:
     // ProfilePhase Public Methods
@@ -200,6 +205,7 @@ class ProfilePhase {
 };
 
 void InitProfiler();
+void ProfilerWorkerThreadInit();
 void ReportProfilerResults(FILE *dest);
 void CleanupProfiler();
 

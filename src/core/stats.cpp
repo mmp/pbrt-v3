@@ -33,6 +33,7 @@
 // core/stats.cpp*
 #include "stats.h"
 #include "stringprint.h"
+#include "parallel.h"
 #include <algorithm>
 #include <mutex>
 #include <cinttypes>
@@ -172,17 +173,21 @@ void StatsAccumulator::Print(FILE *dest) {
 
 static PBRT_CONSTEXPR int NumProfEvents = (int)Prof::NumProfEvents;
 PBRT_THREAD_LOCAL uint32_t ProfilerState;
+static std::atomic<bool> profilerRunning(false);
 
-#ifdef PBRT_IS_OSX
-#include <execinfo.h>
-#endif
 void InitProfiler() {
-    static_assert(NumProfEvents == sizeof(ProfNames) / sizeof(ProfNames[0]),
-                  "ProfNames[] array and Prof enumerant have different "
-                  "number of entries!");
+    CHECK(!profilerRunning);
+
+    // Access the per-thread ProfilerState variable now, so that there's no
+    // risk of its first access being in the signal handler (which in turn
+    // would cause dynamic memory allocation, which is illegal in a signal
+    // handler).
+    ProfilerState = 0;
+
     profileSamples = new std::atomic<uint64_t>[1 << NumProfEvents];
     for (int i = 0; i < (1 << NumProfEvents); ++i) profileSamples[i] = 0;
-// Set timer to periodically interrupt the system for profiling
+
+    // Set timer to periodically interrupt the system for profiling
 #ifndef PBRT_IS_WINDOWS
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
@@ -196,46 +201,48 @@ void InitProfiler() {
     timer.it_interval.tv_usec = 1000000 / 100;  // 100 Hz sampling
     timer.it_value = timer.it_interval;
 
-    if (setitimer(ITIMER_PROF, &timer, NULL) != 0)
-        Error("Timer could not be initialized");
+    CHECK_EQ(setitimer(ITIMER_PROF, &timer, NULL), 0) <<
+        "Timer could not be initialized: " << strerror(errno);
 #endif
+    profilerRunning = true;
+}
+
+void ProfilerWorkerThreadInit() {
+#ifndef PBRT_IS_WINDOWS
+    // The per-thread initialization in the worker threads has to happen
+    // *before* the profiling signal handler is installed.
+    CHECK(!profilerRunning);
+
+    // ProfilerState is a thread-local variable that is accessed in the
+    // profiler signal handler. It's important to access it here, which
+    // causes the dynamic memory allocation for the thread-local storage to
+    // happen now, rather than in the signal handler, where this isn't
+    // allowed.
+    ProfilerState = 0;
+#endif // !PBRT_IS_WINDOWS
 }
 
 void CleanupProfiler() {
+     CHECK(profilerRunning);
 #ifndef PBRT_IS_WINDOWS
     static struct itimerval timer;
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 0;
     timer.it_value = timer.it_interval;
 
-    if (setitimer(ITIMER_PROF, &timer, NULL) != 0)
-        Error("Timer could not be disabled");
+    CHECK_EQ(setitimer(ITIMER_PROF, &timer, NULL), 0) <<
+        "Timer could not be disabled: " << strerror(errno);
 #endif // !PBRT_IS_WINDOWS
+    profilerRunning = false;
 }
 
 #ifndef PBRT_IS_WINDOWS
 static void ReportProfileSample(int, siginfo_t *, void *) {
-#if 0
-    // Print stack trace if context is unknown
-#if 0 && defined(PBRT_IS_OSX)
-    static std::atomic<int> foo(20);
-    if (ProfilerState == 0 && --foo == 0) {
-        void* callstack[128];
-        int i, frames = backtrace(callstack, 128);
-        char** strs = backtrace_symbols(callstack, frames);
-        for (i = 0; i < frames; ++i) {
-            printf("%s\n", strs[i]);
-        }
-        free(strs);
-        foo = 20;
-    }
-#endif
-#endif
     CHECK(profileSamples != nullptr);
     profileSamples[ProfilerState]++;
 }
-
 #endif  // !PBRT_IS_WINDOWS
+
 void ReportProfilerResults(FILE *dest) {
 #ifndef PBRT_IS_WINDOWS
     uint64_t overallCount = 0;

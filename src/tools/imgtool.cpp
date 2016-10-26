@@ -153,6 +153,7 @@ int makesky(int argc, char *argv[]) {
 
     int nTheta = resolution, nPhi = 2 * nTheta;
     std::vector<Float> img(3 * nTheta * nPhi, 0.f);
+    ParallelInit();
     ParallelFor([&](int64_t t) {
         Float theta = float(t + 0.5) / nTheta * Pi;
         if (theta > Pi / 2.) return;
@@ -180,7 +181,7 @@ int makesky(int argc, char *argv[]) {
 
     WriteImage(outfile, (Float *)&img[0], Bounds2i({0, 0}, {nPhi, nTheta}),
                {nPhi, nTheta});
-    TerminateWorkerThreads();
+    ParallelCleanup();
     return 0;
 }
 

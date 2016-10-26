@@ -738,6 +738,8 @@ void pbrtInit(const Options &opt) {
 
     // General \pbrt Initialization
     SampledSpectrum::Init();
+    ParallelInit();  // Threads must be launched before the profiler is
+                     // initialized.
     InitProfiler();
 }
 
@@ -748,7 +750,7 @@ void pbrtCleanup() {
     else if (currentApiState == APIState::WorldBlock)
         Error("pbrtCleanup() called while inside world block.");
     currentApiState = APIState::Uninitialized;
-    TerminateWorkerThreads();
+    ParallelCleanup();
     renderOptions.reset(nullptr);
     CleanupProfiler();
 }
@@ -1369,18 +1371,20 @@ void pbrtWorldEnd() {
         std::unique_ptr<Integrator> integrator(renderOptions->MakeIntegrator());
         std::unique_ptr<Scene> scene(renderOptions->MakeScene());
         if (scene && integrator) integrator->Render(*scene);
-        TerminateWorkerThreads();
     }
 
     // Clean up after rendering
     graphicsState = GraphicsState();
     transformCache.Clear();
     currentApiState = APIState::OptionsBlock;
+
+    MergeWorkerThreadStats();
     ReportThreadStats();
     if (!PbrtOptions.quiet && !PbrtOptions.cat && !PbrtOptions.toPly) {
         PrintStats(stdout);
         ReportProfilerResults(stdout);
     }
+
     for (int i = 0; i < MaxTransforms; ++i) curTransform[i] = Transform();
     activeTransformBits = AllTransformsBits;
     namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
