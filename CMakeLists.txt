@@ -288,6 +288,10 @@ ADD_EXECUTABLE ( obj2pbrt
   src/tools/obj2pbrt.cpp
   )
 
+ADD_EXECUTABLE ( cyhair2pbrt
+  src/tools/cyhair2pbrt.cpp
+  )
+
 TARGET_LINK_LIBRARIES ( bsdftest
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
@@ -303,6 +307,11 @@ TARGET_LINK_LIBRARIES ( imgtool
   )
 
 TARGET_LINK_LIBRARIES ( obj2pbrt
+  pbrt
+  ${CMAKE_THREAD_LIBS_INIT}
+  )
+
+TARGET_LINK_LIBRARIES ( cyhair2pbrt
   pbrt
   ${CMAKE_THREAD_LIBS_INIT}
   )
@@ -336,6 +345,7 @@ INSTALL ( TARGETS
   bsdftest
   imgtool
   obj2pbrt
+  cyhair2pbrt
   DESTINATION
   bin
   )
