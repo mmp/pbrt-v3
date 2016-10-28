@@ -297,8 +297,6 @@ inline int BufferIndex(int s, int t) {
 }
 
 void BDPTIntegrator::Render(const Scene &scene) {
-    ProfilePhase p(Prof::IntegratorRender);
-
     std::unique_ptr<LightDistribution> lightDistribution =
         CreateLightSampleDistribution(lightSampleStrategy, scene);
 

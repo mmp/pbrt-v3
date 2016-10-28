@@ -85,15 +85,15 @@ class AtomicFloat {
 // memory for the Barrier won't be freed until all threads have
 // successfully cleared it.
 class Barrier {
-public:
-  Barrier(int count) : count(count) { CHECK_GT(count, 0); }
-  ~Barrier() { CHECK_EQ(count, 0); }
-  void Wait();
+  public:
+    Barrier(int count) : count(count) { CHECK_GT(count, 0); }
+    ~Barrier() { CHECK_EQ(count, 0); }
+    void Wait();
 
-private:
-  std::mutex mutex;
-  std::condition_variable cv;
-  int count;
+  private:
+    std::mutex mutex;
+    std::condition_variable cv;
+    int count;
 };
 
 void ParallelFor(std::function<void(int64_t)> func, int64_t count,

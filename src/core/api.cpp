@@ -1370,20 +1370,32 @@ void pbrtWorldEnd() {
     } else {
         std::unique_ptr<Integrator> integrator(renderOptions->MakeIntegrator());
         std::unique_ptr<Scene> scene(renderOptions->MakeScene());
+
+        // This is kind of ugly; we directly override the current profiler
+        // state to switch from parsing/scene construction related stuff to
+        // rendering stuff and then switch it back below. The underlying
+        // issue is that all the rest of the profiling system assumes
+        // hierarchical inheritance of profiling state; this is the only
+        // place where that isn't the case.
+        CHECK_EQ(CurrentProfilerState(), ProfToBits(Prof::SceneConstruction));
+        ProfilerState = ProfToBits(Prof::IntegratorRender);
+
         if (scene && integrator) integrator->Render(*scene);
+
+        MergeWorkerThreadStats();
+        ReportThreadStats();
+        if (!PbrtOptions.quiet) {
+            PrintStats(stdout);
+            ReportProfilerResults(stdout);
+        }
+
+        ProfilerState = ProfToBits(Prof::SceneConstruction);
     }
 
     // Clean up after rendering
     graphicsState = GraphicsState();
     transformCache.Clear();
     currentApiState = APIState::OptionsBlock;
-
-    MergeWorkerThreadStats();
-    ReportThreadStats();
-    if (!PbrtOptions.quiet && !PbrtOptions.cat && !PbrtOptions.toPly) {
-        PrintStats(stdout);
-        ReportProfilerResults(stdout);
-    }
 
     for (int i = 0; i < MaxTransforms; ++i) curTransform[i] = Transform();
     activeTransformBits = AllTransformsBits;

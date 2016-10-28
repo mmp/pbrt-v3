@@ -60,13 +60,13 @@ class ParallelForLoop {
   public:
     // ParallelForLoop Public Methods
     ParallelForLoop(std::function<void(int64_t)> func1D, int64_t maxIndex,
-                    int chunkSize, int profilerState)
+                    int chunkSize, uint64_t profilerState)
         : func1D(std::move(func1D)),
           maxIndex(maxIndex),
           chunkSize(chunkSize),
           profilerState(profilerState) {}
     ParallelForLoop(const std::function<void(Point2i)> &f, const Point2i &count,
-                    int profilerState)
+                    uint64_t profilerState)
         : func2D(f),
           maxIndex(count.x * count.y),
           chunkSize(1),
@@ -79,7 +79,8 @@ class ParallelForLoop {
     std::function<void(int64_t)> func1D;
     std::function<void(Point2i)> func2D;
     const int64_t maxIndex;
-    const int chunkSize, profilerState;
+    const int chunkSize;
+    uint64_t profilerState;
     int64_t nextIndex = 0;
     int activeWorkers = 0;
     ParallelForLoop *next = nullptr;
@@ -155,7 +156,7 @@ static void workerThreadFunc(int tIndex, std::shared_ptr<Barrier> barrier) {
             // Run loop indices in _[indexStart, indexEnd)_
             lock.unlock();
             for (int64_t index = indexStart; index < indexEnd; ++index) {
-                int oldState = ProfilerState;
+                uint64_t oldState = ProfilerState;
                 ProfilerState = loop.profilerState;
                 if (loop.func1D) {
                     loop.func1D(index);
@@ -216,7 +217,7 @@ void ParallelFor(std::function<void(int64_t)> func, int64_t count,
         // Run loop indices in _[indexStart, indexEnd)_
         lock.unlock();
         for (int64_t index = indexStart; index < indexEnd; ++index) {
-            int oldState = ProfilerState;
+            uint64_t oldState = ProfilerState;
             ProfilerState = loop.profilerState;
             if (loop.func1D) {
                 loop.func1D(index);
@@ -276,7 +277,7 @@ void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
         // Run loop indices in _[indexStart, indexEnd)_
         lock.unlock();
         for (int64_t index = indexStart; index < indexEnd; ++index) {
-            int oldState = ProfilerState;
+            uint64_t oldState = ProfilerState;
             ProfilerState = loop.profilerState;
             if (loop.func1D) {
                 loop.func1D(index);

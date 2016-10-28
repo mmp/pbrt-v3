@@ -224,7 +224,6 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
 
 // SamplerIntegrator Method Definitions
 void SamplerIntegrator::Render(const Scene &scene) {
-    ProfilePhase p(Prof::IntegratorRender);
     Preprocess(scene, *sampler);
     // Render image tiles in parallel
 

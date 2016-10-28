@@ -136,6 +136,8 @@ class StatsAccumulator {
 };
 
 enum class Prof {
+    SceneConstruction,
+
     IntegratorRender,
     SamplerIntegratorLi,
     LightDistrib,
@@ -154,13 +156,19 @@ enum class Prof {
     StartPixel,
     TexFiltTrilerp,
     TexFiltEWA,
-    NumProfEvents
+    NumProfCategories
 };
 
+static_assert((int)Prof::NumProfCategories <= 64,
+              "No more than 64 profiling categories may be defined.");
+
+inline uint64_t ProfToBits(Prof p) { return 1ull << (int)p; }
+
 static const char *ProfNames[] = {
+    "Scene parsing and creation",
     "Integrator::Render()",
     "SamplerIntegrator::Li()",
-    "Light Sampling Distribution",
+    "Light sampling distribution",
     "Direct lighting",
     "Accelerator::Intersect()",
     "Accelerator::IntersectP()",
@@ -177,23 +185,26 @@ static const char *ProfNames[] = {
     "MIPMap::Lookup() (EWA)",
 };
 
-static_assert((int)Prof::NumProfEvents == sizeof(ProfNames) / sizeof(ProfNames[0]),
+static_assert((int)Prof::NumProfCategories ==
+                  sizeof(ProfNames) / sizeof(ProfNames[0]),
               "ProfNames[] array and Prof enumerant have different "
               "numbers of entries!");
 
-extern PBRT_THREAD_LOCAL uint32_t ProfilerState;
-inline uint32_t CurrentProfilerState() { return ProfilerState; }
+extern PBRT_THREAD_LOCAL uint64_t ProfilerState;
+inline uint64_t CurrentProfilerState() { return ProfilerState; }
 
 class ProfilePhase {
   public:
     // ProfilePhase Public Methods
     ProfilePhase(Prof p) {
-        categoryBit = (1 << (int)p);
+        CHECK_NE(ProfilerState, 0);
+        categoryBit = ProfToBits(p);
         reset = (ProfilerState & categoryBit) == 0;
         ProfilerState |= categoryBit;
     }
     ~ProfilePhase() {
         if (reset) ProfilerState &= ~categoryBit;
+        CHECK_NE(ProfilerState, 0);
     }
     ProfilePhase(const ProfilePhase &) = delete;
     ProfilePhase &operator=(const ProfilePhase &) = delete;
@@ -201,7 +212,7 @@ class ProfilePhase {
   private:
     // ProfilePhase Private Data
     bool reset;
-    uint32_t categoryBit;
+    uint64_t categoryBit;
 };
 
 void InitProfiler();
