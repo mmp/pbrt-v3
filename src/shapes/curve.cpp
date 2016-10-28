@@ -122,6 +122,7 @@ Bounds3f Curve::ObjectBound() const {
 
 bool Curve::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
                       bool testAlphaTexture) const {
+    ProfilePhase p(isect ? Prof::CurveIntersect : Prof::CurveIntersectP);
     ++nTests;
     // Transform _Ray_ to object space
     Vector3f oErr, dErr;

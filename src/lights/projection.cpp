@@ -37,6 +37,7 @@
 #include "paramset.h"
 #include "imageio.h"
 #include "reflection.h"
+#include "stats.h"
 
 // ProjectionLight Method Definitions
 ProjectionLight::ProjectionLight(const Transform &LightToWorld,
@@ -73,6 +74,7 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
 Spectrum ProjectionLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                     Vector3f *wi, Float *pdf,
                                     VisibilityTester *vis) const {
+    ProfilePhase _(Prof::LightSample);
     *wi = Normalize(pLight - ref.p);
     *pdf = 1;
     *vis =
@@ -108,6 +110,7 @@ Float ProjectionLight::Pdf_Li(const Interaction &, const Vector3f &) const {
 Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                     Float time, Ray *ray, Normal3f *nLight,
                                     Float *pdfPos, Float *pdfDir) const {
+    ProfilePhase _(Prof::LightSample);
     Vector3f v = UniformSampleCone(u1, cosTotalWidth);
     *ray = Ray(pLight, LightToWorld(v), Infinity, time, mediumInterface.inside);
     *nLight = (Normal3f)ray->d;  /// same here
@@ -118,6 +121,7 @@ Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
 
 void ProjectionLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
                              Float *pdfDir) const {
+    ProfilePhase _(Prof::LightPdf);
     *pdfPos = 0.f;
     *pdfDir = (CosTheta(WorldToLight(ray.d)) >= cosTotalWidth)
                   ? UniformConePdf(cosTotalWidth)

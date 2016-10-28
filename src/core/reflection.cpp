@@ -702,7 +702,7 @@ Spectrum BSDF::rho(const Vector3f &wo, int nSamples, const Point2f *samples,
 Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
                         const Point2f &u, Float *pdf, BxDFType type,
                         BxDFType *sampledType) const {
-    ProfilePhase pp(Prof::BSDFEvaluation);
+    ProfilePhase pp(Prof::BSDFSampling);
     // Choose which _BxDF_ to sample
     int matchingComps = NumComponents(type);
     if (matchingComps == 0) {
@@ -768,6 +768,7 @@ Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
 
 Float BSDF::Pdf(const Vector3f &woWorld, const Vector3f &wiWorld,
                 BxDFType flags) const {
+    ProfilePhase pp(Prof::BSDFPdf);
     if (nBxDFs == 0.f) return 0.f;
     Vector3f wo = WorldToLocal(woWorld), wi = WorldToLocal(wiWorld);
     if (wo.z == 0) return 0.;

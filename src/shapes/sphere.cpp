@@ -36,6 +36,7 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "efloat.h"
+#include "stats.h"
 
 // Sphere Method Definitions
 Bounds3f Sphere::ObjectBound() const {
@@ -45,6 +46,7 @@ Bounds3f Sphere::ObjectBound() const {
 
 bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
                        bool testAlphaTexture) const {
+    ProfilePhase p(Prof::ShapeIntersect);
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -152,6 +154,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
 }
 
 bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
+    ProfilePhase p(Prof::ShapeIntersectP);
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space

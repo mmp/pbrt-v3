@@ -231,7 +231,7 @@ Spectrum TabulatedBSSRDF::Sr(Float r) const {
 Spectrum SeparableBSSRDF::Sample_S(const Scene &scene, Float u1,
                                    const Point2f &u2, MemoryArena &arena,
                                    SurfaceInteraction *si, Float *pdf) const {
-    ProfilePhase pp(Prof::BSSRDFEvaluation);
+    ProfilePhase pp(Prof::BSSRDFSampling);
     Spectrum Sp = Sample_Sp(scene, u1, u2, arena, si, pdf);
     if (!Sp.IsBlack()) {
         // Initialize material model at sampled surface interaction

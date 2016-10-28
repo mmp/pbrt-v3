@@ -88,6 +88,7 @@ KdTreeAccel::KdTreeAccel(const std::vector<std::shared_ptr<Primitive>> &p,
       emptyBonus(emptyBonus),
       primitives(p) {
     // Build kd-tree for accelerator
+    ProfilePhase _(Prof::AccelConstruction);
     nextFreeNode = nAllocedNodes = 0;
     if (maxDepth <= 0)
         maxDepth = std::round(8 + 1.3f * Log2Int(primitives.size()));

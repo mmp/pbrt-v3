@@ -35,6 +35,7 @@
 #include "paramset.h"
 #include "sampling.h"
 #include "shapes/triangle.h"
+#include "stats.h"
 
 // DiffuseAreaLight Method Definitions
 DiffuseAreaLight::DiffuseAreaLight(const Transform &LightToWorld,
@@ -65,6 +66,7 @@ Spectrum DiffuseAreaLight::Power() const {
 Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                      Vector3f *wi, Float *pdf,
                                      VisibilityTester *vis) const {
+    ProfilePhase _(Prof::LightSample);
     Interaction pShape = shape->Sample(ref, u);
     pShape.mediumInterface = mediumInterface;
     if ((pShape.p - ref.p).LengthSquared() == 0) {
@@ -79,12 +81,14 @@ Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
 
 Float DiffuseAreaLight::Pdf_Li(const Interaction &ref,
                                const Vector3f &wi) const {
+    ProfilePhase _(Prof::LightPdf);
     return shape->Pdf(ref, wi);
 }
 
 Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                      Float time, Ray *ray, Normal3f *nLight,
                                      Float *pdfPos, Float *pdfDir) const {
+    ProfilePhase _(Prof::LightSample);
     // Sample a point on the area light's _Shape_, _pShape_
     Interaction pShape = shape->Sample(u1);
     pShape.mediumInterface = mediumInterface;
@@ -120,6 +124,7 @@ Spectrum DiffuseAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
 
 void DiffuseAreaLight::Pdf_Le(const Ray &ray, const Normal3f &n, Float *pdfPos,
                               Float *pdfDir) const {
+    ProfilePhase _(Prof::LightPdf);
     Interaction it(ray.o, n, Vector3f(), Vector3f(n), ray.time,
                    mediumInterface);
     *pdfPos = shape->Pdf(it);

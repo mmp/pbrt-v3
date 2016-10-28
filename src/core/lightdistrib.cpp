@@ -122,7 +122,7 @@ SpatialLightDistribution::~SpatialLightDistribution() {
 }
 
 const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
-    ProfilePhase _(Prof::LightDistrib);
+    ProfilePhase _(Prof::LightDistribLookup);
 
     // Compute integer voxel coordinates for the given point |p| with
     // respect to the overall voxel grid.
@@ -150,6 +150,7 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     // Now we need to either get the distribution from the shared hash
     // table (if another thread has already created it), or create it
     // ourselves and add it to the shared table.
+    ProfilePhase __(Prof::LightDistribLookupL2);
 
     // First, compute a hash into the first-level hash table.
     size_t hash = std::hash<int>{}(pi[0] + nVoxels[0] * pi[1] +
@@ -175,6 +176,7 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     // throughout the following; in general, we'd like to do the following
     // quickly so that other threads don't get held up waiting for that
     // lock (for this or other voxels that share it).
+    ProfilePhase ___(Prof::LightDistribCreation);
     ++nCreated;
 
     // Compute the world-space bounding box of the voxel.

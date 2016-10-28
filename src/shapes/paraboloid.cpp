@@ -35,6 +35,7 @@
 #include "shapes/paraboloid.h"
 #include "paramset.h"
 #include "efloat.h"
+#include "stats.h"
 
 // Paraboloid Method Definitions
 Paraboloid::Paraboloid(const Transform *o2w, const Transform *w2o, bool ro,
@@ -52,6 +53,7 @@ Bounds3f Paraboloid::ObjectBound() const {
 
 bool Paraboloid::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
                            bool testAlphaTexture) const {
+    ProfilePhase p(Prof::ShapeIntersect);
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space
@@ -149,6 +151,7 @@ bool Paraboloid::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
 }
 
 bool Paraboloid::IntersectP(const Ray &r, bool testAlphaTexture) const {
+    ProfilePhase p(Prof::ShapeIntersectP);
     Float phi;
     Point3f pHit;
     // Transform _Ray_ to object space

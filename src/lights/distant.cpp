@@ -35,6 +35,7 @@
 #include "lights/distant.h"
 #include "paramset.h"
 #include "sampling.h"
+#include "stats.h"
 
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &LightToWorld, const Spectrum &L,
@@ -42,9 +43,11 @@ DistantLight::DistantLight(const Transform &LightToWorld, const Spectrum &L,
     : Light((int)LightFlags::DeltaDirection, LightToWorld, MediumInterface()),
       L(L),
       wLight(Normalize(LightToWorld(wLight))) {}
+
 Spectrum DistantLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                  Vector3f *wi, Float *pdf,
                                  VisibilityTester *vis) const {
+    ProfilePhase _(Prof::LightSample);
     *wi = wLight;
     *pdf = 1;
     Point3f pOutside = ref.p + wLight * (2 * worldRadius);
@@ -64,6 +67,7 @@ Float DistantLight::Pdf_Li(const Interaction &, const Vector3f &) const {
 Spectrum DistantLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                  Float time, Ray *ray, Normal3f *nLight,
                                  Float *pdfPos, Float *pdfDir) const {
+    ProfilePhase _(Prof::LightSample);
     // Choose point on disk oriented toward infinite light direction
     Vector3f v1, v2;
     CoordinateSystem(wLight, &v1, &v2);
@@ -80,6 +84,7 @@ Spectrum DistantLight::Sample_Le(const Point2f &u1, const Point2f &u2,
 
 void DistantLight::Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
                           Float *pdfDir) const {
+    ProfilePhase _(Prof::LightPdf);
     *pdfPos = 1 / (Pi * worldRadius * worldRadius);
     *pdfDir = 0;
 }
