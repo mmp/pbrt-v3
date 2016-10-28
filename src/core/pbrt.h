@@ -314,6 +314,21 @@ inline int Log2Int(uint32_t v) {
 #endif
 }
 
+inline int Log2Int(int32_t v) { return Log2Int((uint32_t)v); }
+
+inline int Log2Int(uint64_t v) {
+#if defined(PBRT_IS_MSVC)
+    unsigned long lz = 0;
+    if (_BitScanReverse64(&lz, v)) return lz;
+    return 0;
+#else
+    return 63 - __builtin_clzll(v);
+#endif
+}
+
+inline int Log2Int(int64_t v) { return Log2Int((uint64_t)v); }
+inline int Log2Int(size_t v) { return Log2Int((uint64_t)v); }
+
 template <typename T>
 inline PBRT_CONSTEXPR bool IsPowerOf2(T v) {
     return v && !(v & (v - 1));

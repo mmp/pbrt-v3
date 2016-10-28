@@ -7,10 +7,22 @@ TEST(Log2, Basics) {
     for (int i = 0; i < 32; ++i) {
         uint32_t ui = 1u << i;
         EXPECT_EQ(i, Log2Int(ui));
+        EXPECT_EQ(i, Log2Int((uint64_t)ui));
     }
 
     for (int i = 1; i < 31; ++i) {
         uint32_t ui = 1u << i;
+        EXPECT_EQ(i, Log2Int(ui + 1));
+        EXPECT_EQ(i, Log2Int((uint64_t)(ui + 1)));
+    }
+
+    for (int i = 0; i < 64; ++i) {
+        uint64_t ui = 1ull << i;
+        EXPECT_EQ(i, Log2Int(ui));
+    }
+
+    for (int i = 1; i < 64; ++i) {
+        uint64_t ui = 1ull << i;
         EXPECT_EQ(i, Log2Int(ui + 1));
     }
 }
