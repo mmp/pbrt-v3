@@ -63,6 +63,7 @@ class StatRegisterer {
 };
 
 void PrintStats(FILE *dest);
+void ClearStats();
 void ReportThreadStats();
 
 class StatsAccumulator {
@@ -117,6 +118,7 @@ class StatsAccumulator {
     }
 
     void Print(FILE *file);
+    void Clear();
 
   private:
     // StatsAccumulator Private Data
@@ -218,6 +220,7 @@ class ProfilePhase {
 void InitProfiler();
 void ProfilerWorkerThreadInit();
 void ReportProfilerResults(FILE *dest);
+void ClearProfiler();
 void CleanupProfiler();
 
 // Statistics Macros

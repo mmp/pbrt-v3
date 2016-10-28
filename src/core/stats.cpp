@@ -84,6 +84,8 @@ void StatRegisterer::CallCallbacks(StatsAccumulator &accum) {
 
 void PrintStats(FILE *dest) { statsAccumulator.Print(dest); }
 
+void ClearStats() { statsAccumulator.Clear(); }
+
 static void getCategoryAndTitle(const std::string &str, std::string *category,
                                 std::string *title) {
     const char *s = str.c_str();
@@ -189,6 +191,23 @@ void StatsAccumulator::Print(FILE *dest) {
     }
 }
 
+void StatsAccumulator::Clear() {
+    counters.clear();
+    memoryCounters.clear();
+    intDistributionSums.clear();
+    intDistributionCounts.clear();
+    intDistributionMins.clear();
+    intDistributionMaxs.clear();
+    floatDistributionSums.clear();
+    floatDistributionCounts.clear();
+    floatDistributionMins.clear();
+    floatDistributionMaxs.clear();
+    percentages.clear();
+    ratios.clear();
+    timers.clear();
+}
+
+
 PBRT_THREAD_LOCAL uint64_t ProfilerState;
 static std::atomic<bool> profilerRunning{false};
 
@@ -201,10 +220,7 @@ void InitProfiler() {
     // handler).
     ProfilerState = ProfToBits(Prof::SceneConstruction);
 
-    for (ProfileSample &ps : profileSamples) {
-        ps.profilerState = 0;
-        ps.count = 0;
-    }
+    ClearProfiler();
 
 // Set timer to periodically interrupt the system for profiling
 #ifndef PBRT_IS_WINDOWS
@@ -239,6 +255,13 @@ void ProfilerWorkerThreadInit() {
     // allowed.
     ProfilerState = ProfToBits(Prof::SceneConstruction);
 #endif // !PBRT_IS_WINDOWS
+}
+
+void ClearProfiler() {
+    for (ProfileSample &ps : profileSamples) {
+        ps.profilerState = 0;
+        ps.count = 0;
+    }
 }
 
 void CleanupProfiler() {

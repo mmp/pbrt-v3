@@ -1387,6 +1387,8 @@ void pbrtWorldEnd() {
         if (!PbrtOptions.quiet) {
             PrintStats(stdout);
             ReportProfilerResults(stdout);
+            ClearStats();
+            ClearProfiler();
         }
 
         ProfilerState = ProfToBits(Prof::SceneConstruction);
