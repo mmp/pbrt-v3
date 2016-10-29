@@ -224,14 +224,12 @@ class ProfilePhase {
   public:
     // ProfilePhase Public Methods
     ProfilePhase(Prof p) {
-        CHECK_NE(ProfilerState, 0);
         categoryBit = ProfToBits(p);
         reset = (ProfilerState & categoryBit) == 0;
         ProfilerState |= categoryBit;
     }
     ~ProfilePhase() {
         if (reset) ProfilerState &= ~categoryBit;
-        CHECK_NE(ProfilerState, 0);
     }
     ProfilePhase(const ProfilePhase &) = delete;
     ProfilePhase &operator=(const ProfilePhase &) = delete;
