@@ -327,9 +327,6 @@ inline int Log2Int(uint64_t v) {
 }
 
 inline int Log2Int(int64_t v) { return Log2Int((uint64_t)v); }
-#if !defined(PBRT_IS_MSVC2013) && !defined(PBRT_IS_MSVC2015)
-inline int Log2Int(size_t v) { return Log2Int((uint64_t)v); }
-#endif  // !MSVC
 
 template <typename T>
 inline PBRT_CONSTEXPR bool IsPowerOf2(T v) {
