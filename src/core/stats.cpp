@@ -195,11 +195,22 @@ void InitProfiler() {
     profilerRunning = true;
 }
 
+static std::atomic<int> profilerSuspendCount{0};
+
+void SuspendProfiler() {
+    ++profilerSuspendCount;
+}
+
+void ResumeProfiler() {
+    --profilerSuspendCount;
+    Assert(profilerSuspendCount >= 0);
+}
+
 void ProfilerWorkerThreadInit() {
 #ifndef PBRT_IS_WINDOWS
     // The per-thread initialization in the worker threads has to happen
     // *before* the profiling signal handler is installed.
-    Assert(!profilerRunning);
+    Assert(!profilerRunning || profilerSuspendCount > 0);
 
     // ProfilerState is a thread-local variable that is accessed in the
     // profiler signal handler. It's important to access it here, which
@@ -226,6 +237,8 @@ void CleanupProfiler() {
 
 #ifndef PBRT_IS_WINDOWS
 static void ReportProfileSample(int, siginfo_t *, void *) {
+    if (profilerSuspendCount > 0) return;
+    if (ProfilerState == 0) return; // A ProgressReporter thread, most likely.
     profileSamples[ProfilerState]++;
 }
 #endif  // !PBRT_IS_WINDOWS
