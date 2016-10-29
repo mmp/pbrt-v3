@@ -227,16 +227,17 @@ Interaction Sphere::Sample(const Point2f &u) const {
 }
 
 Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
-    // Compute coordinate system for sphere sampling
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
-    Vector3f wc = Normalize(pCenter - ref.p);
-    Vector3f wcX, wcY;
-    CoordinateSystem(wc, &wcX, &wcY);
 
     // Sample uniformly on sphere if $\pt{}$ is inside it
     Point3f pOrigin =
         OffsetRayOrigin(ref.p, ref.pError, ref.n, pCenter - ref.p);
     if (DistanceSquared(pOrigin, pCenter) <= radius * radius) return Sample(u);
+
+    // Compute coordinate system for sphere sampling
+    Vector3f wc = Normalize(pCenter - ref.p);
+    Vector3f wcX, wcY;
+    CoordinateSystem(wc, &wcX, &wcY);
 
     // Sample sphere uniformly inside subtended cone
 
