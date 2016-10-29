@@ -35,6 +35,7 @@
 #include "progressreporter.h"
 #include <chrono>
 #include "parallel.h"
+#include "stats.h"
 #ifdef PBRT_IS_WINDOWS
 #include <windows.h>
 #else
@@ -53,8 +54,28 @@ ProgressReporter::ProgressReporter(int64_t totalWork, const std::string &title)
     workDone = 0;
     exitThread = false;
     // Launch thread to periodically update progress bar
-    if (!PbrtOptions.quiet)
-        updateThread = std::thread([this]() { PrintBar(); });
+    if (!PbrtOptions.quiet) {
+        // We need to temporarily disable the profiler before launching
+        // the update thread here, through the time the thread calls
+        // ProfilerWorkerThreadInit(). Otherwise, there's a potential
+        // deadlock if the profiler interrupt fires in the progress
+        // reporter's thread and we try to access the thread-local
+        // ProfilerState variable in the signal handler for the first
+        // time. (Which in turn calls malloc, which isn't allowed in a
+        // signal handler.)
+        SuspendProfiler();
+        std::shared_ptr<Barrier> barrier = std::make_shared<Barrier>(2);
+        updateThread = std::thread([this,&barrier]() {
+            ProfilerWorkerThreadInit();
+            ProfilerState = 0;
+            barrier->Wait();
+            PrintBar();
+        });
+        // Wait for the thread to get past the ProfilerWorkerThreadInit()
+        // call.
+        barrier->Wait();
+        ResumeProfiler();
+    }
 }
 
 ProgressReporter::~ProgressReporter() {

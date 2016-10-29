@@ -243,6 +243,8 @@ class ProfilePhase {
 };
 
 void InitProfiler();
+void SuspendProfiler();
+void ResumeProfiler();
 void ProfilerWorkerThreadInit();
 void ReportProfilerResults(FILE *dest);
 void ClearProfiler();
