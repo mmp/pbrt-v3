@@ -331,7 +331,7 @@ TEST(Triangle, SolidAngle) {
         // form.
         Float sphericalArea = tri->SolidAngle(pc);
 
-        EXPECT_LT(error(sphericalArea, triSampleEstimate), .01)
+        EXPECT_LT(error(sphericalArea, triSampleEstimate), .015)
             << "spherical area: " << sphericalArea
             << ", tri sampling: " << triSampleEstimate << ", pc = " << pc
             << ", tri index " << i;
