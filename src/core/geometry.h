@@ -1298,6 +1298,21 @@ inline Bounds3<T> Expand(const Bounds3<T> &b, U delta) {
                       b.pMax + Vector3<T>(delta, delta, delta));
 }
 
+// Minimum squared distance from point to box; returns zero if point is
+// inside.
+template <typename T, typename U>
+inline Float DistanceSquared(const Point3<T> &p, const Bounds3<U> &b) {
+    Float dx = std::max({Float(0), b.pMin.x - p.x, p.x - b.pMax.x});
+    Float dy = std::max({Float(0), b.pMin.y - p.y, p.y - b.pMax.y});
+    Float dz = std::max({Float(0), b.pMin.z - p.z, p.z - b.pMax.z});
+    return dx * dx + dy * dy + dz * dz;
+}
+
+template <typename T, typename U>
+inline Float Distance(const Point3<T> &p, const Bounds3<U> &b) {
+    return std::sqrt(DistanceSquared(p, b));
+}
+
 inline Bounds2iIterator begin(const Bounds2i &b) {
     return Bounds2iIterator(b, b.pMin);
 }
