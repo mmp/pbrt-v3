@@ -38,6 +38,8 @@
 #include "sampling.h"
 #include "efloat.h"
 #include "ext/rply.h"
+#include <array>
+
 STAT_PERCENT("Intersections/Ray-triangle intersection tests", nHits, nTests);
 
 // Triangle Local Definitions
@@ -557,6 +559,37 @@ Interaction Triangle::Sample(const Point2f &u) const {
         Abs(b[0] * p0) + Abs(b[1] * p1) + Abs((1 - b[0] - b[1]) * p2);
     it.pError = gamma(6) * Vector3f(pAbsSum.x, pAbsSum.y, pAbsSum.z);
     return it;
+}
+
+Float Triangle::SolidAngle(const Point3f &p) const {
+    // Project the vertices into the unit sphere around p.
+    std::array<Vector3f, 3> pSphere = {
+        Normalize(mesh->p[v[0]] - p), Normalize(mesh->p[v[1]] - p),
+        Normalize(mesh->p[v[2]] - p)
+    };
+
+    // http://math.stackexchange.com/questions/9819/area-of-a-spherical-triangle
+    // Girard's theorem: surface area of a spherical triangle on a unit
+    // sphere is the 'excess angle' alpha+beta+gamma-pi, where
+    // alpha/beta/gamma are the interior angles at the vertices.
+    //
+    // Given three vertices on the sphere, a, b, c, then we can compute,
+    // for example, the angle c->a->b by
+    //
+    // cos theta =  Dot(Cross(c, a), Cross(b, a) /
+    //              (Length(Cross(c, a)) * Length(Cross(b, a))).
+    //
+    Vector3f cross01 = Normalize(Cross(pSphere[0], pSphere[1]));
+    Vector3f cross12 = Normalize(Cross(pSphere[1], pSphere[2]));
+    Vector3f cross20 = Normalize(Cross(pSphere[2], pSphere[0]));
+
+    // We only need to do three cross products to evaluate the angles at
+    // all three vertices, though, since we can take advantage of the fact
+    // that Cross(a, b) = -Cross(b, a).
+    return std::abs(
+        std::acos(Clamp(Dot(cross01, -cross12), -1, 1)) +
+        std::acos(Clamp(Dot(cross12, -cross20), -1, 1)) +
+        std::acos(Clamp(Dot(cross20, -cross01), -1, 1)) - Pi);
 }
 
 std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(

@@ -1,9 +1,11 @@
 
 #include "tests/gtest/gtest.h"
 #include <cmath>
+#include <functional>
 #include "pbrt.h"
 #include "rng.h"
 #include "shape.h"
+#include "lowdiscrepancy.h"
 #include "sampling.h"
 #include "shapes/cone.h"
 #include "shapes/cylinder.h"
@@ -11,9 +13,13 @@
 #include "shapes/sphere.h"
 #include "shapes/triangle.h"
 
-static Float p(RNG &rng, Float exp = 8.) {
+static Float pExp(RNG &rng, Float exp = 8.) {
     Float logu = Lerp(rng.UniformFloat(), -exp, exp);
     return std::pow(10, logu);
+}
+
+static Float pUnif(RNG &rng, Float range = 10.) {
+    return Lerp(rng.UniformFloat(), -range, range);
 }
 
 TEST(Triangle, Watertight) {
@@ -119,26 +125,35 @@ TEST(Triangle, Watertight) {
     }
 }
 
+std::shared_ptr<Triangle> GetRandomTriangle(std::function<Float()> value) {
+    // Triangle vertices
+    Point3f v[3];
+    for (int j = 0; j < 3; ++j)
+        for (int k = 0; k < 3; ++k) v[j][k] = value();
+
+    if ((Cross(v[1] - v[0], v[2] - v[0]).LengthSquared()) < 1e-20)
+        // Don't into trouble with ~degenerate triangles.
+        return nullptr;
+
+    // Create the corresponding Triangle.
+    static Transform identity;
+    int indices[3] = {0, 1, 2};
+    std::vector<std::shared_ptr<Shape>> triVec =
+        CreateTriangleMesh(&identity, &identity, false, 1, indices, 3, v,
+                           nullptr, nullptr, nullptr, nullptr, nullptr);
+    EXPECT_EQ(1, triVec.size());
+    std::shared_ptr<Triangle> tri =
+        std::dynamic_pointer_cast<Triangle>(triVec[0]);
+    EXPECT_NE(tri.get(), nullptr);
+    return tri;
+}
+
 TEST(Triangle, Reintersect) {
     for (int i = 0; i < 1000; ++i) {
         RNG rng(i);
-        // Triangle vertices
-        Point3f v[3];
-        for (int j = 0; j < 3; ++j)
-            for (int k = 0; k < 3; ++k) v[j][k] = p(rng);
-
-        if ((Cross(v[1] - v[0], v[2] - v[0]).LengthSquared()) < 1e-20)
-            // Don't into trouble with ~degenerate triangles.
-            continue;
-
-        // Create the corresponding Triangle.
-        Transform identity;
-        int indices[3] = {0, 1, 2};
-        std::vector<std::shared_ptr<Shape>> triVec =
-            CreateTriangleMesh(&identity, &identity, false, 1, indices, 3, v,
-                               nullptr, nullptr, nullptr, nullptr, nullptr);
-        EXPECT_EQ(1, triVec.size());
-        std::shared_ptr<Shape> tri = triVec[0];
+        std::shared_ptr<Triangle> tri =
+            GetRandomTriangle([&]() { return pExp(rng); });
+        if (!tri) continue;
 
         // Sample a point on the triangle surface to shoot the ray toward.
         Point2f u;
@@ -148,7 +163,7 @@ TEST(Triangle, Reintersect) {
 
         // Choose a ray origin.
         Point3f o;
-        for (int j = 0; j < 3; ++j) o[j] = p(rng);
+        for (int j = 0; j < 3; ++j) o[j] = pExp(rng);
 
         // Intersect the ray with the triangle.
         Ray r(o, pTri.p - o);
@@ -176,12 +191,150 @@ TEST(Triangle, Reintersect) {
 
             // Choose a random point to trace rays to.
             Point3f p2;
-            for (int k = 0; k < 3; ++k) p2[k] = p(rng);
+            for (int k = 0; k < 3; ++k) p2[k] = pExp(rng);
             rOut = isect.SpawnRayTo(p2);
 
             EXPECT_FALSE(tri->IntersectP(rOut));
             EXPECT_FALSE(tri->Intersect(rOut, &tHit, &isect, false));
         }
+    }
+}
+
+// Computes the projected solid angle subtended by a series of random
+// triangles both using uniform spherical sampling as well as
+// Triangle::Sample(), in order to verify Triangle::Sample().
+TEST(Triangle, Sampling) {
+    for (int i = 0; i < 30; ++i) {
+        const Float range = 10;
+        RNG rng(i);
+        std::shared_ptr<Triangle> tri =
+            GetRandomTriangle([&]() { return pUnif(rng, range); });
+        if (!tri) continue;
+
+        // Ensure that the reference point isn't too close to the
+        // triangle's surface (which makes the Monte Carlo stuff have more
+        // variance, thus requiring more samples).
+        Point3f pc{pUnif(rng, range), pUnif(rng, range), pUnif(rng, range)};
+        pc[rng.UniformUInt32() % 3] =
+            rng.UniformFloat() > .5 ? (-range - 3) : (range + 3);
+
+        // Compute reference value using Monte Carlo with uniform spherical
+        // sampling.
+        const int count = 512 * 1024;
+        int hits = 0;
+        for (int j = 0; j < count; ++j) {
+            Point2f u{RadicalInverse(0, j), RadicalInverse(1, j)};
+            Vector3f w = UniformSampleSphere(u);
+            if (tri->IntersectP(Ray(pc, w))) ++hits;
+        }
+        double unifEstimate = hits / double(count * UniformSpherePdf());
+
+        // Now use Triangle::Sample()...
+        Interaction ref(pc, Normal3f(), Vector3f(), Vector3f(0, 0, 1), 0,
+                        MediumInterface{});
+        double triSampleEstimate = 0;
+        for (int j = 0; j < count; ++j) {
+            Point2f u{RadicalInverse(0, j), RadicalInverse(1, j)};
+            Interaction pTri = tri->Sample(u);
+            Vector3f wi = Normalize(pTri.p - pc);
+
+            // No occlusion is possible, so no need to trace a visibility
+            // ray to compute the PDF.
+            Float pdf = tri->Pdf(ref, wi);
+
+            // However, the returned PDF value is occasionally zero, if the
+            // ray doesn't intersect actually the triangle.  This should only
+            // happen if one of the components of u is close to 0 or 1, such
+            // that the sampled point is close to an edge.
+            if (pdf == 0)
+                EXPECT_TRUE(u[0] < 1e-2 || u[0] > .99 || u[1] < 1e-2 ||
+                            u[1] > .99)
+                    << "Zero PDF but u in triangle interior?! u: " << u;
+            else
+                triSampleEstimate += 1. / (count * pdf);
+        }
+
+        // Now make sure that the two computed solid angle values are
+        // fairly close.
+        // Absolute error for small solid angles, relative for large.
+        auto error = [](Float a, Float b) {
+            if (std::abs(a) < 1e-4 || std::abs(b) < 1e-4)
+                return std::abs(a - b);
+            return std::abs((a - b) / b);
+        };
+
+        // Don't compare really small triangles, since uniform sampling
+        // doesn't get a good estimate for them.
+        if (triSampleEstimate > 1e-3)
+            // The error tolerance is fairly large so that we can use a
+            // reasonable number of samples.  It has been verified that for
+            // larger numbers of Monte Carlo samples, the error continues to
+            // tighten.
+            EXPECT_LT(error(triSampleEstimate, unifEstimate), .1)
+                << "Unif sampling: " << unifEstimate
+                << ", triangle sampling: " << triSampleEstimate
+                << ", tri index " << i;
+    }
+}
+
+// Checks the closed-form solid angle computation for triangles against a
+// Monte Carlo estimate of it.
+TEST(Triangle, SolidAngle) {
+    for (int i = 0; i < 50; ++i) {
+        const Float range = 10;
+        RNG rng(100 +
+                i);  // Use different triangles than the Triangle/Sample test.
+        std::shared_ptr<Triangle> tri =
+            GetRandomTriangle([&]() { return pUnif(rng, range); });
+        if (!tri) continue;
+
+        // Ensure that the reference point isn't too close to the
+        // triangle's surface (which makes the Monte Carlo stuff have more
+        // variance, thus requiring more samples).
+        Point3f pc{pUnif(rng, range), pUnif(rng, range), pUnif(rng, range)};
+        pc[rng.UniformUInt32() % 3] =
+            rng.UniformFloat() > .5 ? (-range - 3) : (range + 3);
+
+        // Compute a reference value using Triangle::Sample()
+        const int count = 64 * 1024;
+        Interaction ref(pc, Normal3f(), Vector3f(), Vector3f(0, 0, 1), 0,
+                        MediumInterface{});
+        double triSampleEstimate = 0;
+        for (int j = 0; j < count; ++j) {
+            Point2f u{RadicalInverse(0, j), RadicalInverse(1, j)};
+            Interaction pTri = tri->Sample(u);
+            Vector3f wi = Normalize(pTri.p - pc);
+
+            // No occlusion is possible, so no need to trace a visibility
+            // ray to compute the PDF.
+            Float pdf = tri->Pdf(ref, wi);
+
+            // However, the returned PDF value is occasionally zero, if the
+            // ray doesn't intersect actually the triangle.  This should only
+            // happen if one of the components of u is close to 0 or 1, such
+            // that the sampled point is close to an edge.
+            if (pdf == 0)
+                EXPECT_TRUE(u[0] < 1e-2 || u[0] > .99 || u[1] < 1e-2 ||
+                            u[1] > .99)
+                    << "Zero PDF but u in triangle interior?! u: " << u;
+            else
+                triSampleEstimate += 1. / (count * pdf);
+        }
+
+        auto error = [](Float a, Float b) {
+            if (std::abs(a) < 1e-4 || std::abs(b) < 1e-4)
+                return std::abs(a - b);
+            return std::abs((a - b) / b);
+        };
+
+        // Now compute the subtended solid angle of the triangle in closed
+        // form.
+        Float sphericalArea = tri->SolidAngle(pc);
+
+        EXPECT_LT(error(sphericalArea, triSampleEstimate), .01)
+            << "spherical area: " << sphericalArea
+            << ", tri sampling: " << triSampleEstimate << ", pc = " << pc
+            << ", tri index " << i;
     }
 }
 
@@ -192,7 +345,7 @@ TEST(Triangle, Reintersect) {
 static void TestReintersectConvex(Shape &shape, RNG &rng) {
     // Ray origin
     Point3f o;
-    for (int c = 0; c < 3; ++c) o[c] = p(rng);
+    for (int c = 0; c < 3; ++c) o[c] = pExp(rng);
 
     // Destination: a random point in the shape's bounding box.
     Bounds3f bbox = shape.WorldBound();
@@ -227,7 +380,7 @@ static void TestReintersectConvex(Shape &shape, RNG &rng) {
 
         // Choose a random point to trace rays to.
         Point3f p2;
-        for (int c = 0; c < 3; ++c) p2[c] = p(rng);
+        for (int c = 0; c < 3; ++c) p2[c] = pExp(rng);
         // Make sure that the point we're tracing rays toward is in the
         // hemisphere about the intersection point's surface normal.
         w = p2 - isect.p;
@@ -244,7 +397,7 @@ TEST(FullSphere, Reintersect) {
     for (int i = 0; i < 1000; ++i) {
         RNG rng(i);
         Transform identity;
-        Float radius = p(rng, 4);
+        Float radius = pExp(rng, 4);
         Float zMin = -radius;
         Float zMax = radius;
         Float phiMax = 360;
@@ -258,7 +411,7 @@ TEST(ParialSphere, Normal) {
     for (int i = 0; i < 1000; ++i) {
         RNG rng(i);
         Transform identity;
-        Float radius = p(rng, 4);
+        Float radius = pExp(rng, 4);
         Float zMin = rng.UniformFloat() < 0.5
                          ? -radius
                          : Lerp(rng.UniformFloat(), -radius, radius);
@@ -271,7 +424,7 @@ TEST(ParialSphere, Normal) {
 
         // Ray origin
         Point3f o;
-        for (int c = 0; c < 3; ++c) o[c] = p(rng);
+        for (int c = 0; c < 3; ++c) o[c] = pExp(rng);
 
         // Destination: a random point in the shape's bounding box.
         Bounds3f bbox = sphere.WorldBound();
@@ -297,7 +450,7 @@ TEST(PartialSphere, Reintersect) {
     for (int i = 0; i < 1000; ++i) {
         RNG rng(i);
         Transform identity;
-        Float radius = p(rng, 4);
+        Float radius = pExp(rng, 4);
         Float zMin = rng.UniformFloat() < 0.5
                          ? -radius
                          : Lerp(rng.UniformFloat(), -radius, radius);
@@ -316,9 +469,9 @@ TEST(Cylinder, Reintersect) {
     for (int i = 0; i < 1000; ++i) {
         RNG rng(i);
         Transform identity;
-        Float radius = p(rng, 4);
-        Float zMin = p(rng, 4) * (rng.UniformFloat() < 0.5 ? -1 : 1);
-        Float zMax = p(rng, 4) * (rng.UniformFloat() < 0.5 ? -1 : 1);
+        Float radius = pExp(rng, 4);
+        Float zMin = pExp(rng, 4) * (rng.UniformFloat() < 0.5 ? -1 : 1);
+        Float zMax = pExp(rng, 4) * (rng.UniformFloat() < 0.5 ? -1 : 1);
         Float phiMax =
             rng.UniformFloat() < 0.5 ? 360. : rng.UniformFloat() * 360.;
         Cylinder cyl(&identity, &identity, false, radius, zMin, zMax, phiMax);

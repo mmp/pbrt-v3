@@ -42,6 +42,7 @@
 #include "shape.h"
 #include "stats.h"
 #include <map>
+
 STAT_MEMORY_COUNTER("Memory/Triangle meshes", triMeshBytes);
 
 // Triangle Declarations
@@ -76,10 +77,13 @@ class Triangle : public Shape {
     Bounds3f ObjectBound() const;
     Bounds3f WorldBound() const;
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
-                   bool testAlphaTexture) const;
-    bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
+                   bool testAlphaTexture = true) const;
+    bool IntersectP(const Ray &ray, bool testAlphaTexture = true) const;
     Float Area() const;
     Interaction Sample(const Point2f &u) const;
+    // Returns the solid angle subtended by the triangle w.r.t. the given
+    // reference point p.
+    Float SolidAngle(const Point3f &p) const;
 
   private:
     // Triangle Private Methods
