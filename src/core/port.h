@@ -100,4 +100,14 @@
   #define snprintf _snprintf
 #endif
 
+#ifndef PBRT_L1_CACHE_LINE_SIZE
+  #define PBRT_L1_CACHE_LINE_SIZE 64
+#endif
+
+#if defined(PBRT_IS_MSVC)
+  #define PBRT_FORCEINLINE __forceinline
+#else
+  #define PBRT_FORCEINLINE __attribute__((always_inline)) inline
+#endif
+
 #endif // PBRT_CORE_PORT_H

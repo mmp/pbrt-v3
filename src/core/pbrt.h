@@ -183,9 +183,6 @@ static const Float Sqrt2 = 1.41421356237309504880;
 #if defined(PBRT_IS_MSVC)
 #define alloca _alloca
 #endif
-#ifndef PBRT_L1_CACHE_LINE_SIZE
-#define PBRT_L1_CACHE_LINE_SIZE 64
-#endif
 
 // Global Inline Functions
 inline uint32_t FloatToBits(float f) {

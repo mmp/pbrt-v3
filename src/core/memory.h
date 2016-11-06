@@ -40,6 +40,7 @@
 
 // core/memory.h*
 #include "pbrt.h"
+#include "port.h"
 #include <list>
 
 // Memory Declarations
@@ -53,7 +54,7 @@ T *AllocAligned(size_t count) {
 void FreeAligned(void *);
 class
 #ifdef PBRT_HAVE_ALIGNAS
-alignas(128)
+alignas(PBRT_L1_CACHE_LINE_SIZE)
 #endif // PBRT_HAVE_ALIGNAS
     MemoryArena {
   public:
