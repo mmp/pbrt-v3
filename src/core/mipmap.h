@@ -47,7 +47,6 @@
 STAT_COUNTER("Texture/EWA lookups", nEWALookups);
 STAT_COUNTER("Texture/Trilinear lookups", nTrilerpLookups);
 STAT_MEMORY_COUNTER("Memory/Texture MIP maps", mipMapMemory);
-STAT_TIMER("Time/MIP map creation", mipMapTime);
 
 // MIPMap Helper Declarations
 enum class ImageWrap { Repeat, Black, Clamp };
@@ -118,7 +117,8 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
       maxAnisotropy(maxAnisotropy),
       wrapMode(wrapMode),
       resolution(res) {
-    StatTimer timer(&mipMapTime);
+    ProfilePhase _(Prof::MIPMapCreation);
+
     std::unique_ptr<T[]> resampledImage = nullptr;
     if (!IsPowerOf2(resolution[0]) || !IsPowerOf2(resolution[1])) {
         // Resample image to power-of-two resolution

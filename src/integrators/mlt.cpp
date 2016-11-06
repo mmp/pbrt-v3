@@ -45,7 +45,6 @@
 #include "sampling.h"
 #include "progressreporter.h"
 
-STAT_TIMER("Time/Rendering", renderingTime);
 STAT_PERCENT("Integrator/Acceptance rate", acceptedMutations, totalMutations);
 
 // MLTSampler Constants
@@ -204,7 +203,6 @@ void MLTIntegrator::Render(const Scene &scene) {
     int64_t nTotalMutations =
         (int64_t)mutationsPerPixel * (int64_t)film.GetSampleBounds().Area();
     if (scene.lights.size() > 0) {
-        StatTimer timer(&renderingTime);
         const int progressFrequency = 32768;
         ProgressReporter progress(nTotalMutations / progressFrequency,
                                   "Rendering");

@@ -41,7 +41,6 @@
 #include "sampler.h"
 #include "stats.h"
 
-STAT_TIMER("Time/Rendering", renderingTime);
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
@@ -340,7 +339,6 @@ void BDPTIntegrator::Render(const Scene &scene) {
 
     // Render and write the output image to disk
     if (scene.lights.size() > 0) {
-        StatTimer timer(&renderingTime);
         ParallelFor2D([&](const Point2i tile) {
             // Render a single tile using BDPT
             MemoryArena arena;

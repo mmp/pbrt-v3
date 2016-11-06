@@ -176,15 +176,6 @@ void StatsAccumulator::Print(FILE *dest) {
             "%-42s%12" PRIu64 " / %12" PRIu64 " (%.2fx)", title.c_str(), num,
             denom, (double)num / (double)denom));
     }
-    for (auto &timer : timers) {
-        if (timer.second == 0) continue;
-        uint64_t ns = timer.second;
-        double seconds = (double)ns / 1e9;
-        std::string category, title;
-        getCategoryAndTitle(timer.first, &category, &title);
-        toPrint[category].push_back(StringPrintf(
-            "%-42s                  %9.3f s", title.c_str(), seconds));
-    }
 
     for (auto &categories : toPrint) {
         fprintf(dest, "  %s\n", categories.first.c_str());
@@ -206,7 +197,6 @@ void StatsAccumulator::Clear() {
     floatDistributionMaxs.clear();
     percentages.clear();
     ratios.clear();
-    timers.clear();
 }
 
 PBRT_THREAD_LOCAL uint64_t ProfilerState;

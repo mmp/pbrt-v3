@@ -39,7 +39,6 @@
 #include "parallel.h"
 #include <algorithm>
 
-STAT_TIMER("Time/BVH construction", constructionTime);
 STAT_MEMORY_COUNTER("Memory/BVH tree", treeBytes);
 STAT_RATIO("BVH/Primitives per leaf node", totalPrimitives, totalLeafNodes);
 STAT_COUNTER("BVH/Interior nodes", interiorNodes);
@@ -185,7 +184,6 @@ BVHAccel::BVHAccel(const std::vector<std::shared_ptr<Primitive>> &p,
       splitMethod(splitMethod),
       primitives(p) {
     ProfilePhase _(Prof::AccelConstruction);
-    StatTimer buildTime(&constructionTime);
     if (primitives.size() == 0) return;
     // Build BVH from _primitives_
 

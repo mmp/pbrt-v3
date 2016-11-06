@@ -43,7 +43,6 @@
 #include "camera.h"
 #include "stats.h"
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
-STAT_TIMER("Time/Rendering", renderingTime);
 
 // Integrator Method Definitions
 Integrator::~Integrator() {}
@@ -235,7 +234,6 @@ void SamplerIntegrator::Render(const Scene &scene) {
                    (sampleExtent.y + tileSize - 1) / tileSize);
     ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
-        StatTimer timer(&renderingTime);
         ParallelFor2D([&](Point2i tile) {
             // Render section of image corresponding to _tile_
 

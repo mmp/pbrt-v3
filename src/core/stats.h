@@ -113,9 +113,6 @@ class StatsAccumulator {
         ratios[name].first += num;
         ratios[name].second += denom;
     }
-    void ReportTimer(const std::string &name, int64_t val) {
-        timers[name] += val;
-    }
 
     void Print(FILE *file);
     void Clear();
@@ -134,16 +131,20 @@ class StatsAccumulator {
     std::map<std::string, double> floatDistributionMaxs;
     std::map<std::string, std::pair<int64_t, int64_t>> percentages;
     std::map<std::string, std::pair<int64_t, int64_t>> ratios;
-    std::map<std::string, int64_t> timers;
 };
 
 enum class Prof {
     SceneConstruction,
     AccelConstruction,
     TextureLoading,
+    MIPMapCreation,
 
     IntegratorRender,
     SamplerIntegratorLi,
+    SPPMCameraPass,
+    SPPMGridConstruction,
+    SPPMPhotonPass,
+    SPPMStatsUpdate,
     LightDistribLookup,
     LightDistribLookupL2,
     LightDistribCreation,
@@ -181,12 +182,18 @@ inline uint64_t ProfToBits(Prof p) { return 1ull << (int)p; }
 static const char *ProfNames[] = {
     "Scene parsing and creation",
     "Acceleration structure creation",
-    "Texture loading and pyramid generation",
+    "Texture loading",
+    "MIP map generation",
+
     "Integrator::Render()",
     "SamplerIntegrator::Li()",
-    "SpatialLightDistribution Lookup",
-    "SpatialLightDistribution Global Lookup",
-    "SpatialLightDistribution Creation",
+    "SPPM camera pass",
+    "SPPM grid construction",
+    "SPPM photon pass",
+    "SPPM photon statistics update",
+    "SpatialLightDistribution lookup",
+    "SpatialLightDistribution global lookup",
+    "SpatialLightDistribution creation",
     "Direct lighting",
     "BSDF::f()",
     "BSDF::Sample_f()",
@@ -330,31 +337,5 @@ void CleanupProfiler();
         numVar = denomVar = 0;                                \
     }                                                         \
     static StatRegisterer STATS_REG##numVar(STATS_FUNC##numVar)
-
-class StatTimer {
-  public:
-    StatTimer(uint64_t *sns) {
-        sumNS = sns;
-        startTime = std::chrono::high_resolution_clock::now();
-    };
-    ~StatTimer() {
-        time_point endTime = std::chrono::high_resolution_clock::now();
-        *sumNS += std::chrono::duration_cast<std::chrono::nanoseconds>(
-                      endTime - startTime)
-                      .count();
-    }
-
-    typedef std::chrono::high_resolution_clock::time_point time_point;
-    time_point startTime;
-    uint64_t *sumNS;
-};
-
-#define STAT_TIMER(title, var)                             \
-    static PBRT_THREAD_LOCAL uint64_t var;                 \
-    static void STATS_FUNC##var(StatsAccumulator &accum) { \
-        accum.ReportTimer(title, var);                     \
-        var = 0;                                           \
-    }                                                      \
-    static StatRegisterer STATS_REG##var(STATS_FUNC##var)
 
 #endif  // PBRT_CORE_STATS_H

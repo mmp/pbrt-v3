@@ -45,10 +45,6 @@
 #include "samplers/halton.h"
 #include "stats.h"
 
-STAT_TIMER("Time/SPPM camera pass", hitPointTimer);
-STAT_TIMER("Time/SPPM visible point grid construction", gridConstructionTimer);
-STAT_TIMER("Time/SPPM photon pass", photonTimer);
-STAT_TIMER("Time/SPPM statistics update", statsUpdateTimer);
 STAT_RATIO(
     "Stochastic Progressive Photon Mapping/Visible points checked per photon "
     "intersection",
@@ -136,7 +132,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
         // Generate SPPM visible points
         std::vector<MemoryArena> perThreadArenas(MaxThreadIndex());
         {
-            StatTimer timer(&hitPointTimer);
+            ProfilePhase _(Prof::SPPMCameraPass);
             ParallelFor2D([&](Point2i tile) {
                 MemoryArena &arena = perThreadArenas[ThreadIndex];
                 // Follow camera paths for _tile_ in image for SPPM
@@ -239,34 +235,33 @@ void SPPMIntegrator::Render(const Scene &scene) {
         progress.Update();
 
         // Create grid of all SPPM visible points
-
-        // Allocate grid for SPPM visible points
-        int hashSize = nPixels;
-        std::vector<std::atomic<SPPMPixelListNode *>> grid(hashSize);
-
-        // Compute grid bounds for SPPM visible points
-        Bounds3f gridBounds;
-        Float maxRadius = 0.;
-        for (int i = 0; i < nPixels; ++i) {
-            const SPPMPixel &pixel = pixels[i];
-            if (pixel.vp.beta.IsBlack()) continue;
-            Bounds3f vpBound = Expand(Bounds3f(pixel.vp.p), pixel.radius);
-            gridBounds = Union(gridBounds, vpBound);
-            maxRadius = std::max(maxRadius, pixel.radius);
-        }
-
-        // Compute resolution of SPPM grid in each dimension
-        Vector3f diag = gridBounds.Diagonal();
-        Float maxDiag = MaxComponent(diag);
-        int baseGridRes = (int)(maxDiag / maxRadius);
-        CHECK_GT(baseGridRes, 0);
         int gridRes[3];
-        for (int i = 0; i < 3; ++i)
-            gridRes[i] = std::max((int)(baseGridRes * diag[i] / maxDiag), 1);
-
-        // Add visible points to SPPM grid
+        Bounds3f gridBounds;
+        // Allocate grid for SPPM visible points
+        const int hashSize = nPixels;
+        std::vector<std::atomic<SPPMPixelListNode *>> grid(hashSize);
         {
-            StatTimer timer(&gridConstructionTimer);
+            ProfilePhase _(Prof::SPPMGridConstruction);
+
+            // Compute grid bounds for SPPM visible points
+            Float maxRadius = 0.;
+            for (int i = 0; i < nPixels; ++i) {
+                const SPPMPixel &pixel = pixels[i];
+                if (pixel.vp.beta.IsBlack()) continue;
+                Bounds3f vpBound = Expand(Bounds3f(pixel.vp.p), pixel.radius);
+                gridBounds = Union(gridBounds, vpBound);
+                maxRadius = std::max(maxRadius, pixel.radius);
+            }
+
+            // Compute resolution of SPPM grid in each dimension
+            Vector3f diag = gridBounds.Diagonal();
+            Float maxDiag = MaxComponent(diag);
+            int baseGridRes = (int)(maxDiag / maxRadius);
+            CHECK_GT(baseGridRes, 0);
+            for (int i = 0; i < 3; ++i)
+                gridRes[i] = std::max((int)(baseGridRes * diag[i] / maxDiag), 1);
+
+            // Add visible points to SPPM grid
             ParallelFor([&](int pixelIndex) {
                 MemoryArena &arena = perThreadArenas[ThreadIndex];
                 SPPMPixel &pixel = pixels[pixelIndex];
@@ -303,7 +298,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
 
         // Trace photons and accumulate contributions
         {
-            StatTimer timer(&photonTimer);
+            ProfilePhase _(Prof::SPPMPhotonPass);
             std::vector<MemoryArena> photonShootArenas(MaxThreadIndex());
             ParallelFor([&](int photonIndex) {
                 MemoryArena &arena = photonShootArenas[ThreadIndex];
@@ -417,7 +412,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
 
         // Update pixel values from this pass's photons
         {
-            StatTimer timer(&statsUpdateTimer);
+            ProfilePhase _(Prof::SPPMStatsUpdate);
             ParallelFor([&](int i) {
                 SPPMPixel &p = pixels[i];
                 if (p.M > 0) {
