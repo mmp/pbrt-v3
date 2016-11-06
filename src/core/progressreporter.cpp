@@ -33,7 +33,6 @@
 
 // core/progressreporter.cpp*
 #include "progressreporter.h"
-#include <chrono>
 #include "parallel.h"
 #include "stats.h"
 #ifdef PBRT_IS_WINDOWS
