@@ -60,8 +60,9 @@ class Sphere : public Shape {
                    bool testAlphaTexture) const;
     bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
     Float Area() const;
-    Interaction Sample(const Point2f &u) const;
-    Interaction Sample(const Interaction &ref, const Point2f &u) const;
+    Interaction Sample(const Point2f &u, Float *pdf) const;
+    Interaction Sample(const Interaction &ref, const Point2f &u,
+                       Float *pdf) const;
     Float Pdf(const Interaction &ref, const Vector3f &wi) const;
 
   private:

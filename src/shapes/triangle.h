@@ -80,7 +80,10 @@ class Triangle : public Shape {
                    bool testAlphaTexture = true) const;
     bool IntersectP(const Ray &ray, bool testAlphaTexture = true) const;
     Float Area() const;
-    Interaction Sample(const Point2f &u) const;
+
+    using Shape::Sample;  // Bring in the other Sample() overload.
+    Interaction Sample(const Point2f &u, Float *pdf) const;
+
     // Returns the solid angle subtended by the triangle w.r.t. the given
     // reference point p.
     Float SolidAngle(const Point3f &p) const;

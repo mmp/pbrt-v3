@@ -214,7 +214,7 @@ bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
 
 Float Sphere::Area() const { return phiMax * radius * (zMax - zMin); }
 
-Interaction Sphere::Sample(const Point2f &u) const {
+Interaction Sphere::Sample(const Point2f &u, Float *pdf) const {
     Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(u);
     Interaction it;
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
@@ -223,16 +223,31 @@ Interaction Sphere::Sample(const Point2f &u) const {
     pObj *= radius / Distance(pObj, Point3f(0, 0, 0));
     Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+    *pdf = 1 / Area();
     return it;
 }
 
-Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
+Interaction Sphere::Sample(const Interaction &ref, const Point2f &u,
+                           Float *pdf) const {
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
 
     // Sample uniformly on sphere if $\pt{}$ is inside it
     Point3f pOrigin =
         OffsetRayOrigin(ref.p, ref.pError, ref.n, pCenter - ref.p);
-    if (DistanceSquared(pOrigin, pCenter) <= radius * radius) return Sample(u);
+    if (DistanceSquared(pOrigin, pCenter) <= radius * radius) {
+        Interaction intr = Sample(u, pdf);
+        Vector3f wi = intr.p - ref.p;
+        if (wi.LengthSquared() == 0)
+            *pdf = 0;
+        else {
+            // Convert from area measure returned by Sample() call above to
+            // solid angle measure.
+            wi = Normalize(wi);
+            *pdf *= DistanceSquared(ref.p, intr.p) / AbsDot(intr.n, -wi);
+        }
+        if (std::isinf(*pdf)) *pdf = 0.f;
+        return intr;
+    }
 
     // Compute coordinate system for sphere sampling
     Vector3f wc = Normalize(pCenter - ref.p);
@@ -270,6 +285,10 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u) const {
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
     it.n = (*ObjectToWorld)(Normal3f(nObj));
     if (reverseOrientation) it.n *= -1;
+
+    // Uniform cone PDF.
+    *pdf = 1 / (2 * Pi * (1 - cosThetaMax));
+
     return it;
 }
 

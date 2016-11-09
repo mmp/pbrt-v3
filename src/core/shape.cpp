@@ -50,6 +50,22 @@ Shape::Shape(const Transform *ObjectToWorld, const Transform *WorldToObject,
 
 Bounds3f Shape::WorldBound() const { return (*ObjectToWorld)(ObjectBound()); }
 
+Interaction Shape::Sample(const Interaction &ref, const Point2f &u,
+                          Float *pdf) const {
+    Interaction intr = Sample(u, pdf);
+    Vector3f wi = intr.p - ref.p;
+    if (wi.LengthSquared() == 0)
+        *pdf = 0;
+    else {
+        wi = Normalize(wi);
+        // Convert from area measure, as returned by the Sample() call
+        // above, to solid angle measure.
+        *pdf *= DistanceSquared(ref.p, intr.p) / AbsDot(intr.n, -wi);
+        if (std::isinf(*pdf)) *pdf = 0.f;
+    }
+    return intr;
+}
+
 Float Shape::Pdf(const Interaction &ref, const Vector3f &wi) const {
     // Intersect sample ray with area light geometry
     Ray ray = ref.SpawnRay(wi);

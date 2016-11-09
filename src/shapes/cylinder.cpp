@@ -201,7 +201,7 @@ bool Cylinder::IntersectP(const Ray &r, bool testAlphaTexture) const {
 
 Float Cylinder::Area() const { return (zMax - zMin) * radius * phiMax; }
 
-Interaction Cylinder::Sample(const Point2f &u) const {
+Interaction Cylinder::Sample(const Point2f &u, Float *pdf) const {
     Float z = Lerp(u[0], zMin, zMax);
     Float phi = u[1] * phiMax;
     Point3f pObj = Point3f(radius * std::cos(phi), radius * std::sin(phi), z);
@@ -214,6 +214,7 @@ Interaction Cylinder::Sample(const Point2f &u) const {
     pObj.y *= radius / hitRad;
     Vector3f pObjError = gamma(3) * Abs(Vector3f(pObj.x, pObj.y, 0));
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+    *pdf = 1 / Area();
     return it;
 }
 

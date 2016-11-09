@@ -538,7 +538,7 @@ Float Triangle::Area() const {
     return 0.5 * Cross(p1 - p0, p2 - p0).Length();
 }
 
-Interaction Triangle::Sample(const Point2f &u) const {
+Interaction Triangle::Sample(const Point2f &u, Float *pdf) const {
     Point2f b = UniformSampleTriangle(u);
     // Get triangle vertices in _p0_, _p1_, and _p2_
     const Point3f &p0 = mesh->p[v[0]];
@@ -558,6 +558,7 @@ Interaction Triangle::Sample(const Point2f &u) const {
     Point3f pAbsSum =
         Abs(b[0] * p0) + Abs(b[1] * p1) + Abs((1 - b[0] - b[1]) * p2);
     it.pError = gamma(6) * Vector3f(pAbsSum.x, pAbsSum.y, pAbsSum.z);
+    *pdf = 1 / Area();
     return it;
 }
 

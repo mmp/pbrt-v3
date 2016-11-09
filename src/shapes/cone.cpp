@@ -200,7 +200,7 @@ Float Cone::Area() const {
            2;
 }
 
-Interaction Cone::Sample(const Point2f &u) const {
+Interaction Cone::Sample(const Point2f &u, Float *pdf) const {
     LOG(FATAL) << "Cone::Sample not implemented.";
     return Interaction();
 }

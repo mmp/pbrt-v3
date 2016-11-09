@@ -71,7 +71,7 @@ class Curve : public Shape {
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                    bool testAlphaTexture) const;
     Float Area() const;
-    Interaction Sample(const Point2f &u) const;
+    Interaction Sample(const Point2f &u, Float *pdf) const;
 
   private:
     // Curve Private Methods

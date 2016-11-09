@@ -371,7 +371,7 @@ Float Curve::Area() const {
     return approxLength * avgWidth;
 }
 
-Interaction Curve::Sample(const Point2f &u) const {
+Interaction Curve::Sample(const Point2f &u, Float *pdf) const {
     LOG(FATAL) << "Curve::Sample not implemented.";
     return Interaction();
 }

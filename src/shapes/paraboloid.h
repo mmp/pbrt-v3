@@ -53,7 +53,7 @@ class Paraboloid : public Shape {
                    bool testAlphaTexture) const;
     bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
     Float Area() const;
-    Interaction Sample(const Point2f &u) const;
+    Interaction Sample(const Point2f &u, Float *pdf) const;
 
   protected:
     // Paraboloid Private Data

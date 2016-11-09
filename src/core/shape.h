@@ -41,9 +41,9 @@
 // core/shape.h*
 #include "pbrt.h"
 #include "geometry.h"
-#include "transform.h"
 #include "interaction.h"
 #include "memory.h"
+#include "transform.h"
 
 // Shape Declarations
 class Shape {
@@ -62,11 +62,15 @@ class Shape {
         return Intersect(ray, nullptr, nullptr, testAlphaTexture);
     }
     virtual Float Area() const = 0;
-    virtual Interaction Sample(const Point2f &u) const = 0;
+    // Sample a point on the surface of the shape and return the PDF with
+    // respect to area on the surface.
+    virtual Interaction Sample(const Point2f &u, Float *pdf) const = 0;
     virtual Float Pdf(const Interaction &) const { return 1 / Area(); }
-    virtual Interaction Sample(const Interaction &ref, const Point2f &u) const {
-        return Sample(u);
-    }
+
+    // Sample a point on the shape given a reference point |ref| and
+    // return the PDF with respect to solid angle from |ref|.
+    virtual Interaction Sample(const Interaction &ref, const Point2f &u,
+                               Float *pdf) const;
     virtual Float Pdf(const Interaction &ref, const Vector3f &wi) const;
 
     // Shape Public Data

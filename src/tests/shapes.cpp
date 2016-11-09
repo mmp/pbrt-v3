@@ -159,7 +159,8 @@ TEST(Triangle, Reintersect) {
         Point2f u;
         u[0] = rng.UniformFloat();
         u[1] = rng.UniformFloat();
-        Interaction pTri = tri->Sample(u);
+        Float pdf;
+        Interaction pTri = tri->Sample(u, &pdf);
 
         // Choose a ray origin.
         Point3f o;
@@ -235,23 +236,11 @@ TEST(Triangle, Sampling) {
         double triSampleEstimate = 0;
         for (int j = 0; j < count; ++j) {
             Point2f u{RadicalInverse(0, j), RadicalInverse(1, j)};
-            Interaction pTri = tri->Sample(u);
+            Float pdf;
+            Interaction pTri = tri->Sample(ref, u, &pdf);
             Vector3f wi = Normalize(pTri.p - pc);
-
-            // No occlusion is possible, so no need to trace a visibility
-            // ray to compute the PDF.
-            Float pdf = tri->Pdf(ref, wi);
-
-            // However, the returned PDF value is occasionally zero, if the
-            // ray doesn't intersect actually the triangle.  This should only
-            // happen if one of the components of u is close to 0 or 1, such
-            // that the sampled point is close to an edge.
-            if (pdf == 0)
-                EXPECT_TRUE(u[0] < 1e-2 || u[0] > .99 || u[1] < 1e-2 ||
-                            u[1] > .99)
-                    << "Zero PDF but u in triangle interior?! u: " << u;
-            else
-                triSampleEstimate += 1. / (count * pdf);
+            EXPECT_GT(pdf, 0);
+            triSampleEstimate += 1. / (count * pdf);
         }
 
         // Now make sure that the two computed solid angle values are
@@ -302,23 +291,11 @@ TEST(Triangle, SolidAngle) {
         double triSampleEstimate = 0;
         for (int j = 0; j < count; ++j) {
             Point2f u{RadicalInverse(0, j), RadicalInverse(1, j)};
-            Interaction pTri = tri->Sample(u);
+            Float pdf;
+            Interaction pTri = tri->Sample(ref, u, &pdf);
             Vector3f wi = Normalize(pTri.p - pc);
-
-            // No occlusion is possible, so no need to trace a visibility
-            // ray to compute the PDF.
-            Float pdf = tri->Pdf(ref, wi);
-
-            // However, the returned PDF value is occasionally zero, if the
-            // ray doesn't intersect actually the triangle.  This should only
-            // happen if one of the components of u is close to 0 or 1, such
-            // that the sampled point is close to an edge.
-            if (pdf == 0)
-                EXPECT_TRUE(u[0] < 1e-2 || u[0] > .99 || u[1] < 1e-2 ||
-                            u[1] > .99)
-                    << "Zero PDF but u in triangle interior?! u: " << u;
-            else
-                triSampleEstimate += 1. / (count * pdf);
+            EXPECT_GT(pdf, 0);
+            triSampleEstimate += 1. / (count * pdf);
         }
 
         auto error = [](Float a, Float b) {
