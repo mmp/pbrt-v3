@@ -191,5 +191,5 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
     std::string lightStrategy = params.FindOneString("lightsamplestrategy",
                                                      "spatial");
     return new PathIntegrator(maxDepth, camera, sampler, pixelBounds,
-                              rrThreshold);
+                              rrThreshold, lightStrategy);
 }
