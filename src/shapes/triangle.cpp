@@ -577,12 +577,19 @@ Float Triangle::SolidAngle(const Point3f &p) const {
     // Given three vertices on the sphere, a, b, c, then we can compute,
     // for example, the angle c->a->b by
     //
-    // cos theta =  Dot(Cross(c, a), Cross(b, a) /
+    // cos theta =  Dot(Cross(c, a), Cross(b, a)) /
     //              (Length(Cross(c, a)) * Length(Cross(b, a))).
     //
-    Vector3f cross01 = Normalize(Cross(pSphere[0], pSphere[1]));
-    Vector3f cross12 = Normalize(Cross(pSphere[1], pSphere[2]));
-    Vector3f cross20 = Normalize(Cross(pSphere[2], pSphere[0]));
+    Vector3f cross01 = (Cross(pSphere[0], pSphere[1]));
+    Vector3f cross12 = (Cross(pSphere[1], pSphere[2]));
+    Vector3f cross20 = (Cross(pSphere[2], pSphere[0]));
+
+    // Some of these vectors may be degenerate. In this case, we don't want
+    // to normalize them so that we don't hit an assert. This is fine,
+    // since the corresponding dot products below will be zero.
+    if (cross01.LengthSquared() > 0) cross01 = Normalize(cross01);
+    if (cross12.LengthSquared() > 0) cross12 = Normalize(cross12);
+    if (cross20.LengthSquared() > 0) cross20 = Normalize(cross20);
 
     // We only need to do three cross products to evaluate the angles at
     // all three vertices, though, since we can take advantage of the fact
