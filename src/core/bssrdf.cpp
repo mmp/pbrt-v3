@@ -278,7 +278,7 @@ Spectrum SeparableBSSRDF::Sample_Sp(const Scene &scene, Float u1,
 
     // Compute BSSRDF profile bounds and intersection height
     Float rMax = Sample_Sr(ch, 0.999f);
-    if (r > rMax) return Spectrum(0.f);
+    if (r >= rMax) return Spectrum(0.f);
     Float l = 2 * std::sqrt(rMax * rMax - r * r);
 
     // Compute BSSRDF sampling ray segment
