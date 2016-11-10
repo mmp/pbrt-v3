@@ -44,7 +44,7 @@ LightDistribution::~LightDistribution() {}
 
 std::unique_ptr<LightDistribution> CreateLightSampleDistribution(
     const std::string &name, const Scene &scene) {
-    if (name == "uniform")
+    if (name == "uniform" || scene.lights.size() == 1)
         return std::unique_ptr<LightDistribution>{
             new UniformLightDistribution(scene)};
     else if (name == "power")
@@ -84,6 +84,7 @@ const Distribution1D *PowerLightDistribution::Lookup(const Point3f &p) const {
 STAT_COUNTER("SpatialLightDistribution/Distributions created", nCreated);
 STAT_INT_DISTRIBUTION("SpatialLightDistribution/Hash bucket load",
                       hashBucketLoad);
+STAT_RATIO("SpatialLightDistribution/Lookups per distribution", nLookups, nDistributions);
 
 SpatialLightDistribution::SpatialLightDistribution(const Scene &scene,
                                                    int maxVoxels)
@@ -104,7 +105,7 @@ SpatialLightDistribution::SpatialLightDistribution(const Scene &scene,
     // It's important to pre-size the localVoxelDistributions vector, to
     // avoid race conditions with one thread resizing the vector while
     // another is reading from it.
-    localVoxelDistributions.resize(NumSystemCores());
+    localVoxelDistributions.resize(MaxThreadIndex());
 }
 
 SpatialLightDistribution::~SpatialLightDistribution() {
@@ -123,6 +124,7 @@ SpatialLightDistribution::~SpatialLightDistribution() {
 
 const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     ProfilePhase _(Prof::LightDistribLookup);
+    ++nLookups;
 
     // Compute integer voxel coordinates for the given point |p| with
     // respect to the overall voxel grid.
@@ -156,8 +158,6 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     size_t hash = std::hash<int>{}(pi[0] + nVoxels[0] * pi[1] +
                                    nVoxels[0] * nVoxels[1] * pi[2]);
     hash &= (nBuckets - 1);
-    VLOG(2) << "SpatialLightDistribution: p = " << p << ", pi = " << pi
-            << ", hash = " << hash;
 
     // Acquire the lock for the corresponding second-level hash table.
     std::lock_guard<std::mutex> lock(mutexes[hash]);
@@ -178,6 +178,7 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     // lock (for this or other voxels that share it).
     ProfilePhase ___(Prof::LightDistribCreation);
     ++nCreated;
+    ++nDistributions;
 
     // Compute the world-space bounding box of the voxel.
     Point3f p0(Float(pi[0]) / Float(nVoxels[0]),
