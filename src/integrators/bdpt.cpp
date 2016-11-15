@@ -504,7 +504,8 @@ Spectrum ConnectBDPT(
             L = qs.beta * qs.f(pt) * pt.f(qs) * pt.beta;
             VLOG(2) << "General connect s: " << s << ", t: " << t <<
                 " qs: " << qs << ", pt: " << pt << ", qs.f(pt): " << qs.f(pt) <<
-                ", pt.f(qs): " << pt.f(qs);
+                ", pt.f(qs): " << pt.f(qs) << ", G: " << G(scene, sampler, qs, pt) <<
+                ", dist^2: " << DistanceSquared(qs.p(), pt.p());
             if (!L.IsBlack()) L *= G(scene, sampler, qs, pt);
         }
     }
@@ -517,6 +518,8 @@ Spectrum ConnectBDPT(
     Float misWeight =
         L.IsBlack() ? 0.f : MISWeight(scene, lightVertices, cameraVertices,
                                       sampled, s, t, lightDistr, lightToIndex);
+    VLOG(2) << "MIS weight for (s,t) = (" << s << ", " << t << ") connection: "
+            << misWeight;
     DCHECK(!std::isnan(misWeight));
     L *= misWeight;
     if (misWeightPtr) *misWeightPtr = misWeight;
