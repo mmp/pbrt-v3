@@ -48,6 +48,11 @@
 #include "camera.h"
 #include "sampling.h"
 
+/// Forward declaration (correction term for adjoint BSDF with shading normals)
+extern Float CorrectShadingNormal(const SurfaceInteraction &isect,
+                                  const Vector3f &wo, const Vector3f &wi,
+                                  TransportMode mode);
+
 // EndpointInteraction Declarations
 struct EndpointInteraction : Interaction {
     union {
@@ -205,13 +210,14 @@ struct Vertex {
             return GetInteraction().n;
     }
     bool IsOnSurface() const { return ng() != Normal3f(); }
-    Spectrum f(const Vertex &next) const {
+    Spectrum f(const Vertex &next, TransportMode mode) const {
         Vector3f wi = next.p() - p();
         if (wi.LengthSquared() == 0) return 0.;
         wi = Normalize(wi);
         switch (type) {
         case VertexType::Surface:
-            return si.bsdf->f(si.wo, wi);
+            return si.bsdf->f(si.wo, wi) *
+                CorrectShadingNormal(si, si.wo, wi, mode);
         case VertexType::Medium:
             return mi.phase->p(mi.wo, wi);
         default:
