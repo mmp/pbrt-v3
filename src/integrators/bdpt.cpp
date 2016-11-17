@@ -55,10 +55,10 @@ Float CorrectShadingNormal(const SurfaceInteraction &isect, const Vector3f &wo,
     if (mode == TransportMode::Importance) {
         Float num = AbsDot(wo, isect.shading.n) * AbsDot(wi, isect.n);
         Float denom = AbsDot(wo, isect.n) * AbsDot(wi, isect.shading.n);
-        if (denom == 0) {
-            CHECK_EQ(num, 0);
-            return 0;
-        }
+        // wi is occasionally perpendicular to isect.shading.n; this is
+        // fine, but we don't want to return an infinite or NaN value in
+        // that case.
+        if (denom == 0) return 0;
         return num / denom;
     } else
         return 1;
