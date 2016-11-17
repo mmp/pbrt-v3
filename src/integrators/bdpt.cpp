@@ -464,7 +464,7 @@ Spectrum ConnectBDPT(
             if (pdf > 0 && !Wi.IsBlack()) {
                 // Initialize dynamically sampled vertex and _L_ for $t=1$ case
                 sampled = Vertex::CreateCamera(&camera, vis.P1(), Wi / pdf);
-                L = qs.beta * qs.f(sampled) * sampled.beta;
+                L = qs.beta * qs.f(sampled, TransportMode::Importance) * sampled.beta;
                 if (qs.IsOnSurface()) L *= AbsDot(wi, qs.ns());
                 DCHECK(!L.HasNaNs());
                 // Only check visibility after we know that the path would
@@ -491,7 +491,7 @@ Spectrum ConnectBDPT(
                     Vertex::CreateLight(ei, lightWeight / (pdf * lightPdf), 0);
                 sampled.pdfFwd =
                     sampled.PdfLightOrigin(scene, pt, lightDistr, lightToIndex);
-                L = pt.beta * pt.f(sampled) * sampled.beta;
+                L = pt.beta * pt.f(sampled, TransportMode::Radiance) * sampled.beta;
                 if (pt.IsOnSurface()) L *= AbsDot(wi, pt.ns());
                 // Only check visibility if the path would carry radiance.
                 if (!L.IsBlack()) L *= vis.Tr(scene, sampler);
@@ -501,10 +501,10 @@ Spectrum ConnectBDPT(
         // Handle all other bidirectional connection cases
         const Vertex &qs = lightVertices[s - 1], &pt = cameraVertices[t - 1];
         if (qs.IsConnectible() && pt.IsConnectible()) {
-            L = qs.beta * qs.f(pt) * pt.f(qs) * pt.beta;
+            L = qs.beta * qs.f(pt, TransportMode::Importance) * pt.f(qs, TransportMode::Radiance) * pt.beta;
             VLOG(2) << "General connect s: " << s << ", t: " << t <<
-                " qs: " << qs << ", pt: " << pt << ", qs.f(pt): " << qs.f(pt) <<
-                ", pt.f(qs): " << pt.f(qs) << ", G: " << G(scene, sampler, qs, pt) <<
+                " qs: " << qs << ", pt: " << pt << ", qs.f(pt): " << qs.f(pt, TransportMode::Importance) <<
+                ", pt.f(qs): " << pt.f(qs, TransportMode::Radiance) << ", G: " << G(scene, sampler, qs, pt) <<
                 ", dist^2: " << DistanceSquared(qs.p(), pt.p());
             if (!L.IsBlack()) L *= G(scene, sampler, qs, pt);
         }
