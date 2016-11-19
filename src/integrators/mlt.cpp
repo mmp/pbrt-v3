@@ -55,6 +55,7 @@ static const int nSampleStreams = 3;
 
 // MLTSampler Method Definitions
 Float MLTSampler::Get1D() {
+    ProfilePhase _(Prof::GetSample);
     int index = GetNextIndex();
     EnsureReady(index);
     return X[index].value;

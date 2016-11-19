@@ -118,6 +118,7 @@ class FilmTile {
     }
     void AddSample(const Point2f &pFilm, Spectrum L,
                    Float sampleWeight = 1.) {
+        ProfilePhase _(Prof::AddFilmSample);
         if (L.y() > maxSampleLuminance)
             L *= maxSampleLuminance / L.y();
         // Compute sample's raster bounds

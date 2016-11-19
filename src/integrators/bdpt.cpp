@@ -69,6 +69,7 @@ int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
                           const Camera &camera, const Point2f &pFilm,
                           Vertex *path) {
     if (maxDepth == 0) return 0;
+    ProfilePhase _(Prof::BDPTGenerateSubpath);
     // Sample initial ray for camera subpath
     CameraSample cameraSample;
     cameraSample.pFilm = pFilm;
@@ -95,6 +96,7 @@ int GenerateLightSubpath(
     const std::unordered_map<const Light *, size_t> &lightToIndex,
     Vertex *path) {
     if (maxDepth == 0) return 0;
+    ProfilePhase _(Prof::BDPTGenerateSubpath);
     // Sample initial ray for light subpath
     Float lightPdf;
     int lightNum = lightDistr.SampleDiscrete(sampler.Get1D(), &lightPdf);
@@ -440,6 +442,7 @@ Spectrum ConnectBDPT(
     const std::unordered_map<const Light *, size_t> &lightToIndex,
     const Camera &camera, Sampler &sampler, Point2f *pRaster,
     Float *misWeightPtr) {
+    ProfilePhase _(Prof::BDPTConnectSubpaths);
     Spectrum L(0.f);
     // Ignore invalid connections related to infinite area lights
     if (t > 1 && s != 0 && cameraVertices[t - 1].type == VertexType::Light)

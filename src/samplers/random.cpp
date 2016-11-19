@@ -35,15 +35,18 @@
 #include "samplers/random.h"
 #include "paramset.h"
 #include "sampling.h"
+#include "stats.h"
 
 RandomSampler::RandomSampler(int ns, int seed) : Sampler(ns), rng(seed) {}
 
 Float RandomSampler::Get1D() {
+    ProfilePhase _(Prof::GetSample);
     CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
     return rng.UniformFloat();
 }
 
 Point2f RandomSampler::Get2D() {
+    ProfilePhase _(Prof::GetSample);
     CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
     return {rng.UniformFloat(), rng.UniformFloat()};
 }
@@ -55,6 +58,7 @@ std::unique_ptr<Sampler> RandomSampler::Clone(int seed) {
 }
 
 void RandomSampler::StartPixel(const Point2i &p) {
+    ProfilePhase _(Prof::StartPixel);
     for (size_t i = 0; i < sampleArray1D.size(); ++i)
         for (size_t j = 0; j < sampleArray1D[i].size(); ++j)
             sampleArray1D[i][j] = rng.UniformFloat();

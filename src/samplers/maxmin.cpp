@@ -34,9 +34,11 @@
 // samplers/maxmin.cpp*
 #include "samplers/maxmin.h"
 #include "paramset.h"
+#include "stats.h"
 
 // MaxMinDistSampler Method Definitions
 void MaxMinDistSampler::StartPixel(const Point2i &p) {
+    ProfilePhase _(Prof::StartPixel);
     Float invSPP = (Float)1 / samplesPerPixel;
     for (int i = 0; i < samplesPerPixel; ++i)
         samples2D[0][i] = Point2f(i * invSPP, SampleGeneratorMatrix(CPixel, i));
