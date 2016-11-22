@@ -25,9 +25,7 @@ build:
   project: c:\pbrt-v3\build\pbrt-v3.sln
   parallel: true
   verbosity: normal
-# Quick Hack to force zlib.sln to be built first, Default build failed to do so.
 build_script:
-- msbuild c:\pbrt-v3\build\src\ext\zlib\zlib.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - msbuild c:\pbrt-v3\build\pbrt-v3.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 after_build:
 - cd c:\pbrt-v3\build\Release
