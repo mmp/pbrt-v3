@@ -128,7 +128,11 @@ INCLUDE_DIRECTORIES (
   ${CMAKE_BINARY_DIR}/src/ext/openexr/OpenEXR/config
 )
 
-SET(OPENEXR_LIBS IlmImf Imath Half)
+IF(WIN32)
+  SET(OPENEXR_LIBS IlmImf Imath Half zlibstatic)
+ELSE()
+  SET(OPENEXR_LIBS IlmImf Imath Half)
+ENDIF()
 
 SET(WITH_GFLAGS OFF CACHE BOOL "Use gflags")
 SET(BUILD_SHARED_LIBS OFF CACHE BOOL " " FORCE)
