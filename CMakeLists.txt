@@ -121,7 +121,11 @@ INCLUDE_DIRECTORIES (
   ${CMAKE_BINARY_DIR}/src/ext/openexr/OpenEXR/config
 )
 
-SET(OPENEXR_LIBS IlmImf Imath Half)
+IF(WIN32)
+  SET(OPENEXR_LIBS IlmImf Imath Half zlibstatic)
+ELSE()
+  SET(OPENEXR_LIBS IlmImf Imath Half)
+ENDIF()
 
 SET ( PBRT_CORE_SOURCE
   src/core/api.cpp
