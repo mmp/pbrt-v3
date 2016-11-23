@@ -34,6 +34,8 @@
 // core/memory.cpp*
 #include "memory.h"
 
+namespace pbrt {
+
 // Memory Allocation Functions
 void *AllocAligned(size_t size) {
 #if defined(PBRT_IS_WINDOWS)
@@ -55,3 +57,5 @@ void FreeAligned(void *ptr) {
     free(ptr);
 #endif
 }
+
+}  // namespace pbrt

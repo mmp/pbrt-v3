@@ -43,6 +43,8 @@
 #include "integrator.h"
 #include "scene.h"
 
+namespace pbrt {
+
 // LightStrategy Declarations
 enum class LightStrategy { UniformSampleAll, UniformSampleOne };
 
@@ -71,5 +73,7 @@ class DirectLightingIntegrator : public SamplerIntegrator {
 DirectLightingIntegrator *CreateDirectLightingIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera);
+
+}  // namespace pbrt
 
 #endif  // PBRT_INTEGRATORS_DIRECTLIGHTING_H

@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "material.h"
 
+namespace pbrt {
+
 // UberMaterial Declarations
 class UberMaterial : public Material {
   public:
@@ -81,5 +83,7 @@ class UberMaterial : public Material {
 };
 
 UberMaterial *CreateUberMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_UBER_H

@@ -42,6 +42,8 @@
 #include "sampler.h"
 #include "rng.h"
 
+namespace pbrt {
+
 class RandomSampler : public Sampler {
   public:
     RandomSampler(int ns, int seed = 0);
@@ -55,5 +57,7 @@ class RandomSampler : public Sampler {
 };
 
 Sampler *CreateRandomSampler(const ParamSet &params);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SAMPLERS_RANDOM_H

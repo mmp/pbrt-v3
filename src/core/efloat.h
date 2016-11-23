@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "stringprint.h"
 
+namespace pbrt {
+
 // EFloat Declarations
 class EFloat {
   public:
@@ -281,5 +283,7 @@ inline bool Quadratic(EFloat A, EFloat B, EFloat C, EFloat *t0, EFloat *t1) {
     if ((float)*t0 > (float)*t1) std::swap(*t0, *t1);
     return true;
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_EFLOAT_H

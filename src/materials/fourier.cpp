@@ -35,6 +35,8 @@
 #include "paramset.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 std::map<std::string, std::unique_ptr<FourierBSDFTable>>
     FourierMaterial::loadedBSDFs;
 
@@ -223,3 +225,5 @@ FourierMaterial *CreateFourierMaterial(const TextureParams &mp) {
         mp.GetFloatTextureOrNull("bumpmap");
     return new FourierMaterial(mp.FindFilename("bsdffile"), bumpMap);
 }
+
+}  // namespace pbrt

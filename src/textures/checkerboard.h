@@ -43,6 +43,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // AAMethod Declaration
 enum class AAMethod { None, ClosedForm };
 
@@ -135,5 +137,7 @@ Texture<Float> *CreateCheckerboardFloatTexture(const Transform &tex2world,
                                                const TextureParams &tp);
 Texture<Spectrum> *CreateCheckerboardSpectrumTexture(const Transform &tex2world,
                                                      const TextureParams &tp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_TEXTURES_CHECKERBOARD_H

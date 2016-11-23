@@ -37,6 +37,8 @@
 #include "efloat.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Paraboloid Method Definitions
 Paraboloid::Paraboloid(const Transform *o2w, const Transform *w2o, bool ro,
                        Float radius, Float z0, Float z1, Float phiMax)
@@ -222,3 +224,5 @@ std::shared_ptr<Paraboloid> CreateParaboloidShape(const Transform *o2w,
     return std::make_shared<Paraboloid>(o2w, w2o, reverseOrientation, radius,
                                         zmin, zmax, phimax);
 }
+
+}  // namespace pbrt

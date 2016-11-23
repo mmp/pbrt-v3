@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "primitive.h"
 #include <atomic>
+
+namespace pbrt {
 struct BVHBuildNode;
 
 // BVHAccel Forward Declarations
@@ -94,5 +96,7 @@ class BVHAccel : public Aggregate {
 
 std::shared_ptr<BVHAccel> CreateBVHAccelerator(
     const std::vector<std::shared_ptr<Primitive>> &prims, const ParamSet &ps);
+
+}  // namespace pbrt
 
 #endif  // PBRT_ACCELERATORS_BVH_H

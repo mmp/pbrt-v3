@@ -44,6 +44,9 @@
 #include "texture.h"
 #include "stats.h"
 #include "parallel.h"
+
+namespace pbrt {
+
 STAT_COUNTER("Texture/EWA lookups", nEWALookups);
 STAT_COUNTER("Texture/Trilinear lookups", nTrilerpLookups);
 STAT_MEMORY_COUNTER("Memory/Texture MIP maps", mipMapMemory);
@@ -351,5 +354,7 @@ T MIPMap<T>::EWA(int level, Point2f st, Vector2f dst0, Vector2f dst1) const {
 
 template <typename T>
 Float MIPMap<T>::weightLut[WeightLUTSize];
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_MIPMAP_H

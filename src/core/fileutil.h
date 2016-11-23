@@ -44,6 +44,8 @@
 #include <cctype>
 #include <string.h>
 
+namespace pbrt {
+
 // Platform independent filename-handling functions.
 bool IsAbsolutePath(const std::string &filename);
 std::string AbsolutePath(const std::string &filename);
@@ -57,5 +59,7 @@ inline bool HasExtension(const std::string &value, const std::string &ending) {
         ending.rbegin(), ending.rend(), value.rbegin(),
         [](char a, char b) { return std::tolower(a) == std::tolower(b); });
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_FILEUTIL_H

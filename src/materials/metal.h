@@ -43,6 +43,8 @@
 #include "material.h"
 #include "spectrum.h"
 
+namespace pbrt {
+
 // MetalMaterial Declarations
 class MetalMaterial : public Material {
   public:
@@ -67,5 +69,7 @@ class MetalMaterial : public Material {
 };
 
 MetalMaterial *CreateMetalMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_METAL_H

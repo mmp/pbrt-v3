@@ -37,6 +37,8 @@
 #include "imageio.h"
 #include "stats.h"
 
+namespace pbrt {
+
 STAT_MEMORY_COUNTER("Memory/Film pixels", filmPixelMemory);
 
 // Film Method Definitions
@@ -204,7 +206,7 @@ void Film::WriteImage(Float splatScale) {
     // Write RGB image
     LOG(INFO) << "Writing image " << filename << " with bounds " <<
         croppedPixelBounds;
-    ::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution);
+    pbrt::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution);
 }
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
@@ -245,3 +247,5 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
     return new Film(Point2i(xres, yres), crop, std::move(filter), diagonal,
                     filename, scale, maxSampleLuminance);
 }
+
+}  // namespace pbrt

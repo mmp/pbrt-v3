@@ -39,6 +39,8 @@
 #include "interaction.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // UberMaterial Method Definitions
 void UberMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                               MemoryArena &arena,
@@ -122,3 +124,5 @@ UberMaterial *CreateUberMaterial(const TextureParams &mp) {
     return new UberMaterial(Kd, Ks, Kr, Kt, roughness, uroughness, vroughness,
                             opacity, eta, bumpMap, remapRoughness);
 }
+
+}  // namespace pbrt

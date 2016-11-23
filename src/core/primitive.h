@@ -44,6 +44,8 @@
 #include "material.h"
 #include "medium.h"
 
+namespace pbrt {
+
 // Primitive Declarations
 class Primitive {
   public:
@@ -127,5 +129,7 @@ class Aggregate : public Primitive {
                                     MemoryArena &arena, TransportMode mode,
                                     bool allowMultipleLobes) const;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_PRIMITIVE_H

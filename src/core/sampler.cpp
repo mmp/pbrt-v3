@@ -37,6 +37,8 @@
 #include "camera.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Sampler Method Definitions
 Sampler::~Sampler() {}
 
@@ -191,3 +193,5 @@ Point2f GlobalSampler::Get2D() {
     dimension += 2;
     return p;
 }
+
+}  // namespace pbrt

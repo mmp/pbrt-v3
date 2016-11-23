@@ -39,6 +39,8 @@
 #include "parallel.h"
 #include <algorithm>
 
+namespace pbrt {
+
 STAT_MEMORY_COUNTER("Memory/BVH tree", treeBytes);
 STAT_RATIO("BVH/Primitives per leaf node", totalPrimitives, totalLeafNodes);
 STAT_COUNTER("BVH/Interior nodes", interiorNodes);
@@ -753,3 +755,5 @@ std::shared_ptr<BVHAccel> CreateBVHAccelerator(
     int maxPrimsInNode = ps.FindOneInt("maxnodeprims", 4);
     return std::make_shared<BVHAccel>(prims, maxPrimsInNode, splitMethod);
 }
+
+}  // namespace pbrt

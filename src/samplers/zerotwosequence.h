@@ -41,6 +41,8 @@
 // samplers/zerotwosequence.h*
 #include "sampler.h"
 
+namespace pbrt {
+
 // ZeroTwoSequenceSampler Declarations
 class ZeroTwoSequenceSampler : public PixelSampler {
   public:
@@ -52,5 +54,7 @@ class ZeroTwoSequenceSampler : public PixelSampler {
 };
 
 ZeroTwoSequenceSampler *CreateZeroTwoSequenceSampler(const ParamSet &params);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SAMPLERS_ZEROTWOSEQUENCE_H

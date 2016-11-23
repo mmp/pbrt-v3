@@ -37,6 +37,8 @@
 #include "shapes/triangle.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // DiffuseAreaLight Method Definitions
 DiffuseAreaLight::DiffuseAreaLight(const Transform &LightToWorld,
                                    const MediumInterface &mediumInterface,
@@ -141,3 +143,5 @@ std::shared_ptr<AreaLight> CreateDiffuseAreaLight(
     return std::make_shared<DiffuseAreaLight>(light2world, medium, L * sc,
                                               nSamples, shape, twoSided);
 }
+
+}  // namespace pbrt

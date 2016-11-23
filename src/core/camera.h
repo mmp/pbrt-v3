@@ -44,6 +44,8 @@
 #include "transform.h"
 #include "film.h"
 
+namespace pbrt {
+
 // Camera Declarations
 class Camera {
   public:
@@ -111,5 +113,7 @@ class ProjectiveCamera : public Camera {
     Transform ScreenToRaster, RasterToScreen;
     Float lensRadius, focalDistance;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_CAMERA_H

@@ -38,6 +38,8 @@
 #include "sampling.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // PointLight Method Definitions
 Spectrum PointLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                Vector3f *wi, Float *pdf,
@@ -84,3 +86,5 @@ std::shared_ptr<PointLight> CreatePointLight(const Transform &light2world,
     Transform l2w = Translate(Vector3f(P.x, P.y, P.z)) * light2world;
     return std::make_shared<PointLight>(l2w, medium, I * sc);
 }
+
+}  // namespace pbrt

@@ -34,6 +34,8 @@
 // textures/checkerboard.cpp*
 #include "textures/checkerboard.h"
 
+namespace pbrt {
+
 // CheckerboardTexture Method Definitions
 Texture<Float> *CreateCheckerboardFloatTexture(const Transform &tex2world,
                                                const TextureParams &tp) {
@@ -148,3 +150,5 @@ Texture<Spectrum> *CreateCheckerboardSpectrumTexture(const Transform &tex2world,
         return new Checkerboard3DTexture<Spectrum>(std::move(map), tex1, tex2);
     }
 }
+
+}  // namespace pbrt

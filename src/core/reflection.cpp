@@ -41,6 +41,8 @@
 #include "stats.h"
 #include <stdarg.h>
 
+namespace pbrt {
+
 // BxDF Utility Functions
 Float FrDielectric(Float cosThetaI, Float etaI, Float etaT) {
     cosThetaI = Clamp(cosThetaI, -1, 1);
@@ -789,3 +791,5 @@ std::string BSDF::ToString() const {
         s += StringPrintf("\n  bxdfs[%d]: ", i) + bxdfs[i]->ToString();
     return s + std::string(" ]");
 }
+
+}  // namespace pbrt

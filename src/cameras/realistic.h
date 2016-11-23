@@ -43,6 +43,8 @@
 #include "camera.h"
 #include "film.h"
 
+namespace pbrt {
+
 // RealisticCamera Declarations
 class RealisticCamera : public Camera {
   public:
@@ -105,5 +107,7 @@ class RealisticCamera : public Camera {
 RealisticCamera *CreateRealisticCamera(const ParamSet &params,
                                        const AnimatedTransform &cam2world,
                                        Film *film, const Medium *medium);
+
+}  // namespace pbrt
 
 #endif  // PBRT_CAMERAS_REALISTIC_H

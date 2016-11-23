@@ -41,6 +41,8 @@
 // media/homogeneous.h*
 #include "medium.h"
 
+namespace pbrt {
+
 // HomogeneousMedium Declarations
 class HomogeneousMedium : public Medium {
   public:
@@ -59,5 +61,7 @@ class HomogeneousMedium : public Medium {
     const Spectrum sigma_a, sigma_s, sigma_t;
     const Float g;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_MEDIA_HOMOGENEOUS_H

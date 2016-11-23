@@ -38,6 +38,8 @@
 #include "sampling.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // OrthographicCamera Definitions
 Float OrthographicCamera::GenerateRay(const CameraSample &sample,
                                       Ray *ray) const {
@@ -158,3 +160,5 @@ OrthographicCamera *CreateOrthographicCamera(const ParamSet &params,
     return new OrthographicCamera(cam2world, screen, shutteropen, shutterclose,
                                   lensradius, focaldistance, film, medium);
 }
+
+}  // namespace pbrt

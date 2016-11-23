@@ -114,6 +114,8 @@
 #include <map>
 #include <stdio.h>
 
+namespace pbrt {
+
 // API Global Variables
 Options PbrtOptions;
 
@@ -1477,8 +1479,10 @@ Camera *RenderOptions::MakeCamera() const {
         Error("Unable to create film.");
         return nullptr;
     }
-    Camera *camera = ::MakeCamera(CameraName, CameraParams, CameraToWorld,
+    Camera *camera = pbrt::MakeCamera(CameraName, CameraParams, CameraToWorld,
                                   renderOptions->transformStartTime,
                                   renderOptions->transformEndTime, film);
     return camera;
 }
+
+}  // namespace pbrt

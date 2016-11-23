@@ -43,6 +43,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // MixTexture Declarations
 template <typename T>
 class MixTexture : public Texture<T> {
@@ -67,5 +69,7 @@ MixTexture<Float> *CreateMixFloatTexture(const Transform &tex2world,
                                          const TextureParams &tp);
 MixTexture<Spectrum> *CreateMixSpectrumTexture(const Transform &tex2world,
                                                const TextureParams &tp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_TEXTURES_MIX_H

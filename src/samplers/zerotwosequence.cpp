@@ -37,6 +37,8 @@
 #include "paramset.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // ZeroTwoSequenceSampler Method Definitions
 ZeroTwoSequenceSampler::ZeroTwoSequenceSampler(int64_t samplesPerPixel,
                                                int nSampledDimensions)
@@ -78,3 +80,5 @@ ZeroTwoSequenceSampler *CreateZeroTwoSequenceSampler(const ParamSet &params) {
     if (PbrtOptions.quickRender) nsamp = 1;
     return new ZeroTwoSequenceSampler(nsamp, sd);
 }
+
+}  // namespace pbrt

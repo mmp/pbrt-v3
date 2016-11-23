@@ -45,6 +45,8 @@
 #include "shape.h"
 #include "spectrum.h"
 
+namespace pbrt {
+
 // Reflection Declarations
 Float FrDielectric(Float cosThetaI, Float etaI, Float etaT);
 Spectrum FrConductor(Float cosThetaI, const Spectrum &etaI,
@@ -523,5 +525,7 @@ inline int BSDF::NumComponents(BxDFType flags) const {
         if (bxdfs[i]->MatchesFlags(flags)) ++num;
     return num;
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_REFLECTION_H

@@ -41,6 +41,8 @@
 // filters/sinc.h*
 #include "filter.h"
 
+namespace pbrt {
+
 // Sinc Filter Declarations
 class LanczosSincFilter : public Filter {
   public:
@@ -65,5 +67,7 @@ class LanczosSincFilter : public Filter {
 };
 
 LanczosSincFilter *CreateSincFilter(const ParamSet &ps);
+
+}  // namespace pbrt
 
 #endif  // PBRT_FILTERS_SINC_H

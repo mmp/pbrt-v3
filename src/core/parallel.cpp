@@ -39,6 +39,8 @@
 #include <thread>
 #include <condition_variable>
 
+namespace pbrt {
+
 // Parallel Local Definitions
 static std::vector<std::thread> threads;
 static bool shutdownThreads = false;
@@ -349,3 +351,5 @@ void MergeWorkerThreadStats() {
 
     reportWorkerStats = false;
 }
+
+}  // namespace pbrt

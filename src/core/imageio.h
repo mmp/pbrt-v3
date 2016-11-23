@@ -43,6 +43,8 @@
 #include "geometry.h"
 #include <cctype>
 
+namespace pbrt {
+
 // ImageIO Declarations
 std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
                                          Point2i *resolution);
@@ -52,5 +54,7 @@ RGBSpectrum *ReadImageEXR(const std::string &name, int *width,
 
 void WriteImage(const std::string &name, const Float *rgb,
                 const Bounds2i &outputBounds, const Point2i &totalResolution);
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_IMAGEIO_H

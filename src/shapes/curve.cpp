@@ -36,6 +36,8 @@
 #include "paramset.h"
 #include "stats.h"
 
+namespace pbrt {
+
 STAT_MEMORY_COUNTER("Memory/Curves", curveBytes);
 STAT_PERCENT("Intersections/Ray-curve intersection tests", nHits, nTests);
 STAT_INT_DISTRIBUTION("Intersections/Curve refinement level", refinementLevel);
@@ -433,3 +435,5 @@ std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,
         return CreateCurve(o2w, w2o, reverseOrientation, cp, width0, width1,
                            type, n, sd);
 }
+
+}  // namespace pbrt

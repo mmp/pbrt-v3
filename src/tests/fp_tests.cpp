@@ -7,6 +7,8 @@
 #include "efloat.h"
 #include "parallel.h"
 
+using namespace pbrt;
+
 static float GetFloat(RNG &rng) {
     float f;
     do {

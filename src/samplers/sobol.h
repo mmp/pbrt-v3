@@ -41,6 +41,8 @@
 // samplers/sobol.h*
 #include "sampler.h"
 
+namespace pbrt {
+
 // SobolSampler Declarations
 class SobolSampler : public GlobalSampler {
   public:
@@ -69,5 +71,7 @@ class SobolSampler : public GlobalSampler {
 
 SobolSampler *CreateSobolSampler(const ParamSet &params,
                                  const Bounds2i &sampleBounds);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SAMPLERS_SOBOL_H

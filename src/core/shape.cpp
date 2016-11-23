@@ -35,6 +35,8 @@
 #include "shape.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Shape Method Definitions
 Shape::~Shape() {}
 
@@ -82,3 +84,5 @@ Float Shape::Pdf(const Interaction &ref, const Vector3f &wi) const {
     if (std::isinf(pdf)) pdf = 0.f;
     return pdf;
 }
+
+}  // namespace pbrt

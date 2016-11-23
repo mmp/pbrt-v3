@@ -5,6 +5,8 @@
 #include "sampling.h"
 #include "medium.h"
 
+using namespace pbrt;
+
 TEST(HenyeyGreenstein, SamplingMatch) {
     RNG rng;
     for (float g = -.75; g <= 0.75; g += 0.25) {

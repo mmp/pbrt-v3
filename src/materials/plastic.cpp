@@ -39,6 +39,8 @@
 #include "texture.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // PlasticMaterial Method Definitions
 void PlasticMaterial::ComputeScatteringFunctions(
     SurfaceInteraction *si, MemoryArena &arena, TransportMode mode,
@@ -79,3 +81,5 @@ PlasticMaterial *CreatePlasticMaterial(const TextureParams &mp) {
     bool remapRoughness = mp.FindBool("remaproughness", true);
     return new PlasticMaterial(Kd, Ks, roughness, bumpMap, remapRoughness);
 }
+
+}  // namespace pbrt

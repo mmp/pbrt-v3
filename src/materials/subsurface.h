@@ -44,6 +44,8 @@
 #include "reflection.h"
 #include "bssrdf.h"
 
+namespace pbrt {
+
 // SubsurfaceMaterial Declarations
 class SubsurfaceMaterial : public Material {
   public:
@@ -87,5 +89,7 @@ class SubsurfaceMaterial : public Material {
 };
 
 SubsurfaceMaterial *CreateSubsurfaceMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_SUBSURFACE_H

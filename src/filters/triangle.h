@@ -41,6 +41,8 @@
 // filters/triangle.h*
 #include "filter.h"
 
+namespace pbrt {
+
 // Triangle Filter Declarations
 class TriangleFilter : public Filter {
   public:
@@ -49,5 +51,7 @@ class TriangleFilter : public Filter {
 };
 
 TriangleFilter *CreateTriangleFilter(const ParamSet &ps);
+
+}  // namespace pbrt
 
 #endif  // PBRT_FILTERS_TRIANGLE_H

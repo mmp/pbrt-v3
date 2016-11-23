@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "pbrt.h"
 
+using namespace pbrt;
+
 TEST(Log2, Basics) {
     for (int i = 0; i < 32; ++i) {
         uint32_t ui = 1u << i;

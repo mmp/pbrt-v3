@@ -140,14 +140,14 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 159 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 160 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
 {
 char string[1024];
 double num;
-ParamArray *ribarray;
+pbrt::ParamArray *ribarray;
 }
 /* Line 1529 of yacc.c.  */
-#line 151 "/Users/mmp/build/pbrt-v3/pbrtparse.hpp"
+#line 151 "/Users/mmp/build/pbrt-v3/pbrtparse.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

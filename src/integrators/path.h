@@ -43,6 +43,8 @@
 #include "integrator.h"
 #include "lightdistrib.h"
 
+namespace pbrt {
+
 // PathIntegrator Declarations
 class PathIntegrator : public SamplerIntegrator {
   public:
@@ -67,5 +69,7 @@ class PathIntegrator : public SamplerIntegrator {
 PathIntegrator *CreatePathIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera);
+
+}  // namespace pbrt
 
 #endif  // PBRT_INTEGRATORS_PATH_H

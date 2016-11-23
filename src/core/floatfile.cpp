@@ -35,6 +35,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+namespace pbrt {
+
 bool ReadFloatFile(const char *filename, std::vector<Float> *values) {
     FILE *f = fopen(filename, "r");
     if (!f) {
@@ -78,3 +80,5 @@ bool ReadFloatFile(const char *filename, std::vector<Float> *values) {
     fclose(f);
     return true;
 }
+
+}  // namespace pbrt

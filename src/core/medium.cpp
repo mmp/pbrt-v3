@@ -37,6 +37,8 @@
 #include "sampler.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // Media Local Definitions
 struct MeasuredSS {
     const char *name;
@@ -211,3 +213,5 @@ Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
 Float HenyeyGreenstein::p(const Vector3f &wo, const Vector3f &wi) const {
     return PhaseHG(Dot(wo, wi), g);
 }
+
+}  // namespace pbrt

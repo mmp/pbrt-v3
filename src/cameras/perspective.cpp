@@ -39,6 +39,8 @@
 #include "light.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // PerspectiveCamera Method Definitions
 PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
                                      const Bounds2f &screenWindow,
@@ -269,3 +271,5 @@ PerspectiveCamera *CreatePerspectiveCamera(const ParamSet &params,
     return new PerspectiveCamera(cam2world, screen, shutteropen, shutterclose,
                                  lensradius, focaldistance, fov, film, medium);
 }
+
+}  // namespace pbrt

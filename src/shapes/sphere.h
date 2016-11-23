@@ -41,6 +41,8 @@
 // shapes/sphere.h*
 #include "shape.h"
 
+namespace pbrt {
+
 // Sphere Declarations
 class Sphere : public Shape {
   public:
@@ -76,5 +78,7 @@ std::shared_ptr<Shape> CreateSphereShape(const Transform *o2w,
                                          const Transform *w2o,
                                          bool reverseOrientation,
                                          const ParamSet &params);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SHAPES_SPHERE_H

@@ -39,6 +39,8 @@
 #include <libgen.h>
 #endif
 
+namespace pbrt {
+
 static std::string searchDirectory;
 
 #ifdef PBRT_IS_WINDOWS
@@ -123,3 +125,5 @@ std::string DirectoryContaining(const std::string &filename) {
 void SetSearchDirectory(const std::string &dirname) {
     searchDirectory = dirname;
 }
+
+}  // namespace pbrt

@@ -43,6 +43,8 @@
 #include "stats.h"
 #include <map>
 
+namespace pbrt {
+
 STAT_MEMORY_COUNTER("Memory/Triangle meshes", triMeshBytes);
 
 // Triangle Declarations
@@ -122,5 +124,7 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
 bool WritePlyFile(const std::string &filename, int nTriangles,
                   const int *vertexIndices, int nVertices, const Point3f *P,
                   const Vector3f *S, const Normal3f *N, const Point2f *UV);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SHAPES_TRIANGLE_H

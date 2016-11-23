@@ -44,6 +44,8 @@
 #include "geometry.h"
 #include "quaternion.h"
 
+namespace pbrt {
+
 // Matrix4x4 Declarations
 struct Matrix4x4 {
     // Matrix4x4 Public Methods
@@ -445,5 +447,7 @@ class AnimatedTransform {
     };
     DerivativeTerm c1[3], c2[3], c3[3], c4[3], c5[3];
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_TRANSFORM_H

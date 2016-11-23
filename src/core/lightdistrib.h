@@ -41,6 +41,8 @@
 #include "pbrt.h"
 #include "sampling.h"
 
+namespace pbrt {
+
 // LightDistribution defines a general interface for classes that provide
 // probability distributions for sampling light sources at a given point in
 // space.
@@ -146,5 +148,7 @@ class SpatialLightDistribution : public LightDistribution {
         std::unordered_map<Point3i, Distribution1D *, Point3iHash>;
     mutable std::vector<std::unique_ptr<LocalBucketHash>> localVoxelDistributions;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_LIGHTDISTRIB_H

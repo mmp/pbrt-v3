@@ -38,6 +38,8 @@
 #include "reflection.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // SpotLight Method Definitions
 SpotLight::SpotLight(const Transform &LightToWorld,
                      const MediumInterface &mediumInterface, const Spectrum &I,
@@ -120,3 +122,5 @@ std::shared_ptr<SpotLight> CreateSpotLight(const Transform &l2w,
     return std::make_shared<SpotLight>(light2world, medium, I * sc, coneangle,
                                        coneangle - conedelta);
 }
+
+}  // namespace pbrt

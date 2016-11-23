@@ -34,6 +34,8 @@
 #include "microfacet.h"
 #include "reflection.h"
 
+namespace pbrt {
+
 // Microfacet Utility Functions
 static void BeckmannSample11(Float cosThetaI, Float U1, Float U2,
                              Float *slope_x, Float *slope_y) {
@@ -340,3 +342,5 @@ Float MicrofacetDistribution::Pdf(const Vector3f &wo,
     else
         return D(wh) * AbsCosTheta(wh);
 }
+
+}  // namespace pbrt

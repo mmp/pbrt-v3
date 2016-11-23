@@ -37,6 +37,8 @@
 #include "sampling.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // GonioPhotometricLight Method Definitions
 Spectrum GonioPhotometricLight::Sample_Li(const Interaction &ref,
                                           const Point2f &u, Vector3f *wi,
@@ -90,3 +92,5 @@ std::shared_ptr<GonioPhotometricLight> CreateGoniometricLight(
     return std::make_shared<GonioPhotometricLight>(light2world, medium, I * sc,
                                                    texname);
 }
+
+}  // namespace pbrt

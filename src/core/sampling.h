@@ -44,6 +44,8 @@
 #include "rng.h"
 #include <algorithm>
 
+namespace pbrt {
+
 // Sampling Declarations
 void StratifiedSample1D(Float *samples, int nsamples, RNG &rng,
                         bool jitter = true);
@@ -170,5 +172,7 @@ inline Float PowerHeuristic(int nf, Float fPdf, int ng, Float gPdf) {
     Float f = nf * fPdf, g = ng * gPdf;
     return (f * f) / (f * f + g * g);
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_SAMPLING_H

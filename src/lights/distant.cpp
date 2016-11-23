@@ -37,6 +37,8 @@
 #include "sampling.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // DistantLight Method Definitions
 DistantLight::DistantLight(const Transform &LightToWorld, const Spectrum &L,
                            const Vector3f &wLight)
@@ -98,3 +100,5 @@ std::shared_ptr<DistantLight> CreateDistantLight(const Transform &light2world,
     Vector3f dir = from - to;
     return std::make_shared<DistantLight>(light2world, L * sc, dir);
 }
+
+}  // namespace pbrt

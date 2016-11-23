@@ -7,6 +7,8 @@
 #include "transform.h"
 #include <sstream>
 
+using namespace pbrt;
+
 TEST(StringPrintf, Basics) {
     EXPECT_EQ(StringPrintf("Hello, world"), "Hello, world");
     EXPECT_EQ(StringPrintf("x = %d", 5), "x = 5");

@@ -45,6 +45,8 @@
 #include "samplers/halton.h"
 #include "stats.h"
 
+namespace pbrt {
+
 STAT_RATIO(
     "Stochastic Progressive Photon Mapping/Visible points checked per photon "
     "intersection",
@@ -506,3 +508,5 @@ Integrator *CreateSPPMIntegrator(const ParamSet &params,
     return new SPPMIntegrator(camera, nIterations, photonsPerIter, maxDepth,
                               radius, writeFreq);
 }
+
+}  // namespace pbrt

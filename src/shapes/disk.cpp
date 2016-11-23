@@ -37,6 +37,8 @@
 #include "sampling.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Disk Method Definitions
 Bounds3f Disk::ObjectBound() const {
     return Bounds3f(Point3f(-radius, -radius, height),
@@ -146,3 +148,5 @@ std::shared_ptr<Disk> CreateDiskShape(const Transform *o2w,
     return std::make_shared<Disk>(o2w, w2o, reverseOrientation, height, radius,
                                   inner_radius, phimax);
 }
+
+}  // namespace pbrt

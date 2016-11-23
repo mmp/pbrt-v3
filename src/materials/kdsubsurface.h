@@ -44,6 +44,8 @@
 #include "material.h"
 #include "bssrdf.h"
 
+namespace pbrt {
+
 // KdSubsurfaceMaterial Declarations
 class KdSubsurfaceMaterial : public Material {
   public:
@@ -87,5 +89,7 @@ class KdSubsurfaceMaterial : public Material {
 };
 
 KdSubsurfaceMaterial *CreateKdSubsurfaceMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_KDSUBSURFACE_H

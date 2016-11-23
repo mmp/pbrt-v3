@@ -42,6 +42,8 @@
 #include "sampler.h"
 #include "lowdiscrepancy.h"
 
+namespace pbrt {
+
 // HaltonSampler Declarations
 class HaltonSampler : public GlobalSampler {
   public:
@@ -72,5 +74,7 @@ class HaltonSampler : public GlobalSampler {
 
 HaltonSampler *CreateHaltonSampler(const ParamSet &params,
                                    const Bounds2i &sampleBounds);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SAMPLERS_HALTON_H

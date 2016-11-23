@@ -45,6 +45,8 @@
 #include "medium.h"
 #include "material.h"
 
+namespace pbrt {
+
 // Interaction Declarations
 struct Interaction {
     // Interaction Public Methods
@@ -147,5 +149,7 @@ class SurfaceInteraction : public Interaction {
     mutable Vector3f dpdx, dpdy;
     mutable Float dudx = 0, dvdx = 0, dudy = 0, dvdy = 0;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_INTERACTION_H

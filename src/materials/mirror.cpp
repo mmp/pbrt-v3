@@ -39,6 +39,8 @@
 #include "texture.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // MirrorMaterial Method Definitions
 void MirrorMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                                 MemoryArena &arena,
@@ -60,3 +62,5 @@ MirrorMaterial *CreateMirrorMaterial(const TextureParams &mp) {
         mp.GetFloatTextureOrNull("bumpmap");
     return new MirrorMaterial(Kr, bumpMap);
 }
+
+}  // namespace pbrt

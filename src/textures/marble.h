@@ -43,6 +43,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // MarbleTexture Declarations
 class MarbleTexture : public Texture<Spectrum> {
   public:
@@ -97,5 +99,7 @@ Texture<Float> *CreateMarbleFloatTexture(const Transform &tex2world,
                                          const TextureParams &tp);
 MarbleTexture *CreateMarbleSpectrumTexture(const Transform &tex2world,
                                            const TextureParams &tp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_TEXTURES_MARBLE_H

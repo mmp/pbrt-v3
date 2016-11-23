@@ -43,6 +43,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // WindyTexture Declarations
 template <typename T>
 class WindyTexture : public Texture<T> {
@@ -66,5 +68,7 @@ WindyTexture<Float> *CreateWindyFloatTexture(const Transform &tex2world,
                                              const TextureParams &tp);
 WindyTexture<Spectrum> *CreateWindySpectrumTexture(const Transform &tex2world,
                                                    const TextureParams &tp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_TEXTURES_WINDY_H

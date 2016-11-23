@@ -37,6 +37,8 @@
 #include "sampling.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // InfiniteAreaLight Method Definitions
 InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
                                      const Spectrum &L, int nSamples,
@@ -181,3 +183,5 @@ std::shared_ptr<InfiniteAreaLight> CreateInfiniteLight(
     return std::make_shared<InfiniteAreaLight>(light2world, L * sc, nSamples,
                                                texmap);
 }
+
+}  // namespace pbrt

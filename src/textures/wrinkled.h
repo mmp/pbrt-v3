@@ -43,6 +43,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // WrinkledTexture Declarations
 template <typename T>
 class WrinkledTexture : public Texture<T> {
@@ -68,5 +70,7 @@ WrinkledTexture<Float> *CreateWrinkledFloatTexture(const Transform &tex2world,
                                                    const TextureParams &tp);
 WrinkledTexture<Spectrum> *CreateWrinkledSpectrumTexture(
     const Transform &tex2world, const TextureParams &tp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_TEXTURES_WRINKLED_H

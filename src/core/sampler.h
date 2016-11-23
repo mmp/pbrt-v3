@@ -44,6 +44,8 @@
 #include "rng.h"
 #include <inttypes.h>
 
+namespace pbrt {
+
 // Sampler Declarations
 class Sampler {
   public:
@@ -120,5 +122,7 @@ class GlobalSampler : public Sampler {
     static const int arrayStartDim = 5;
     int arrayEndDim;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_SAMPLER_H

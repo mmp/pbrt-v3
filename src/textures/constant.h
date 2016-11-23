@@ -43,6 +43,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // ConstantTexture Declarations
 template <typename T>
 class ConstantTexture : public Texture<T> {
@@ -59,5 +61,7 @@ ConstantTexture<Float> *CreateConstantFloatTexture(const Transform &tex2world,
                                                    const TextureParams &tp);
 ConstantTexture<Spectrum> *CreateConstantSpectrumTexture(
     const Transform &tex2world, const TextureParams &tp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_TEXTURES_CONSTANT_H

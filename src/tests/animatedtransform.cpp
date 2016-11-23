@@ -5,6 +5,8 @@
 #include "sampling.h"
 #include "transform.h"
 
+using namespace pbrt;
+
 static Transform RandomTransform(RNG &rng) {
     Transform t;
     auto r = [&rng]() { return -10. + 20. * rng.UniformFloat(); };

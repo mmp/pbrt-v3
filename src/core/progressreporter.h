@@ -44,6 +44,8 @@
 #include <chrono>
 #include <thread>
 
+namespace pbrt {
+
 // ProgressReporter Declarations
 class ProgressReporter {
   public:
@@ -77,5 +79,7 @@ class ProgressReporter {
     std::atomic<bool> exitThread;
     std::thread updateThread;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_PROGRESSREPORTER_H

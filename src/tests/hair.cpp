@@ -37,6 +37,8 @@
 #include "rng.h"
 #include "sampling.h"
 
+using namespace pbrt;
+
 // Hair Tests
 #if 0
 TEST(Hair, Reciprocity) {

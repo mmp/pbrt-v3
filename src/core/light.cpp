@@ -38,6 +38,8 @@
 #include "stats.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 STAT_COUNTER("Scene/Lights", numLights);
 STAT_COUNTER("Scene/AreaLights", numAreaLights);
 
@@ -85,3 +87,5 @@ AreaLight::AreaLight(const Transform &LightToWorld, const MediumInterface &mediu
     : Light((int)LightFlags::Area, LightToWorld, medium, nSamples) {
     ++numAreaLights;
 }
+
+}  // namespace pbrt

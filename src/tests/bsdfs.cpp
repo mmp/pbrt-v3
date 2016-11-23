@@ -13,6 +13,8 @@
 #include "paramset.h"
 #include "shapes/disk.h"
 
+using namespace pbrt;
+
 /* The null hypothesis will be rejected when the associated
    p-value is below the significance level specified here. */
 #define CHI2_SLEVEL 0.01

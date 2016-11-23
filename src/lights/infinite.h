@@ -46,6 +46,8 @@
 #include "scene.h"
 #include "mipmap.h"
 
+namespace pbrt {
+
 // InfiniteAreaLight Declarations
 class InfiniteAreaLight : public Light {
   public:
@@ -76,5 +78,7 @@ class InfiniteAreaLight : public Light {
 
 std::shared_ptr<InfiniteAreaLight> CreateInfiniteLight(
     const Transform &light2world, const ParamSet &paramSet);
+
+}  // namespace pbrt
 
 #endif  // PBRT_LIGHTS_INFINITE_H

@@ -46,6 +46,8 @@
 #include "mipmap.h"
 #include "imageio.h"
 
+namespace pbrt {
+
 // GonioPhotometricLight Declarations
 class GonioPhotometricLight : public Light {
   public:
@@ -91,5 +93,7 @@ class GonioPhotometricLight : public Light {
 std::shared_ptr<GonioPhotometricLight> CreateGoniometricLight(
     const Transform &light2world, const Medium *medium,
     const ParamSet &paramSet);
+
+}  // namespace pbrt
 
 #endif  // PBRT_LIGHTS_GONIOMETRIC_H

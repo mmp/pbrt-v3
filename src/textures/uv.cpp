@@ -34,6 +34,8 @@
 // textures/uv.cpp*
 #include "textures/uv.h"
 
+namespace pbrt {
+
 // UVTexture Method Definitions
 Texture<Float> *CreateUVFloatTexture(const Transform &tex2world,
                                      const TextureParams &tp) {
@@ -66,3 +68,5 @@ UVTexture *CreateUVSpectrumTexture(const Transform &tex2world,
     }
     return new UVTexture(std::move(map));
 }
+
+}  // namespace pbrt

@@ -35,6 +35,8 @@
 #include "spectrum.h"
 #include <algorithm>
 
+namespace pbrt {
+
 // Spectrum Method Definitions
 bool SpectrumSamplesSorted(const Float *lambda, const Float *vals, int n) {
     for (int i = 0; i < n - 1; ++i)
@@ -1167,3 +1169,5 @@ const Float RGBIllum2SpectBlue[nRGB2SpectSamples] = {
     8.8773879881746481e-02,  1.3873621740236541e-01,  1.5535067531939065e-01,
     1.4878477178237029e-01,  1.6624255403475907e-01,  1.6997613960634927e-01,
     1.5769743995852967e-01,  1.9069090525482305e-01};
+
+}  // namespace pbrt

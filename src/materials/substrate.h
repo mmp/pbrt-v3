@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "material.h"
 
+namespace pbrt {
+
 // SubstrateMaterial Declarations
 class SubstrateMaterial : public Material {
   public:
@@ -71,5 +73,7 @@ class SubstrateMaterial : public Material {
 };
 
 SubstrateMaterial *CreateSubstrateMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_SUBSTRATE_H

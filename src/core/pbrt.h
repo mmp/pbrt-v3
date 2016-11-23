@@ -75,6 +75,8 @@
 // Global Macros
 #define ALLOCA(TYPE, COUNT) (TYPE *) alloca((COUNT) * sizeof(TYPE))
 
+namespace pbrt {
+
 // Global Forward Declarations
 class Scene;
 class Integrator;
@@ -450,5 +452,7 @@ inline Float Erf(Float x) {
 
     return sign * y;
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_PBRT_H

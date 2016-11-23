@@ -10,6 +10,8 @@
 #include "samplers/sobol.h"
 #include "samplers/zerotwosequence.h"
 
+using namespace pbrt;
+
 TEST(LowDiscrepancy, RadicalInverse) {
     for (int a = 0; a < 1024; ++a) {
         EXPECT_EQ(ReverseBits32(a) * 2.3283064365386963e-10f,

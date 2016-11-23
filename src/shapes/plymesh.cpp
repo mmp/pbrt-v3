@@ -38,6 +38,8 @@
 #include "ext/rply.h"
 
 #include <iostream>
+
+namespace pbrt {
 using namespace std;
 
 struct CallbackContext {
@@ -264,3 +266,5 @@ std::vector<std::shared_ptr<Shape>> CreatePLYMesh(
                               vertexCount, context.p, nullptr, context.n,
                               context.uv, alphaTex, shadowAlphaTex);
 }
+
+}  // namespace pbrt

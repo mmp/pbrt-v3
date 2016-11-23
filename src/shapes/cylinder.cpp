@@ -37,6 +37,8 @@
 #include "efloat.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Cylinder Method Definitions
 Bounds3f Cylinder::ObjectBound() const {
     return Bounds3f(Point3f(-radius, -radius, zMin),
@@ -229,3 +231,5 @@ std::shared_ptr<Cylinder> CreateCylinderShape(const Transform *o2w,
     return std::make_shared<Cylinder>(o2w, w2o, reverseOrientation, radius,
                                       zmin, zmax, phimax);
 }
+
+}  // namespace pbrt

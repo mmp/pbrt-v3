@@ -41,6 +41,8 @@
 #include "sampler.h"
 #include "stats.h"
 
+namespace pbrt {
+
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
@@ -562,3 +564,5 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
     return new BDPTIntegrator(sampler, camera, maxDepth, visualizeStrategies,
                               visualizeWeights, pixelBounds, lightStrategy);
 }
+
+}  // namespace pbrt

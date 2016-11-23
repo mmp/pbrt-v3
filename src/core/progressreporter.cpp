@@ -43,6 +43,8 @@
 #include <errno.h>
 #endif  // !PBRT_IS_WINDOWS
 
+namespace pbrt {
+
 static int TerminalWidth();
 
 // ProgressReporter Method Definitions
@@ -175,3 +177,5 @@ static int TerminalWidth() {
     return w.ws_col;
 #endif  // PBRT_IS_WINDOWS
 }
+
+}  // namespace pbrt

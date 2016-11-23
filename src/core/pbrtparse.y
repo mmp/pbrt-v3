@@ -42,19 +42,19 @@
 #pragma warning(disable:4018)
 #endif // PBRT_IS_MSVC
 
+void yyerror(const char *str) {
+    pbrt::Error("Parsing error: %s", str);
+    exit(1);
+}
 extern int yylex();
+
+namespace pbrt {
+
 extern void include_push(char *filename);
 int line_num = 0;
 std::string current_file;
 
 #define YYMAXDEPTH 100000000
-
-void yyerror(const char *str) {
-    Error("Parsing error: %s", str);
-    exit(1);
-}
-
-
 
 struct ParamArray {
     ParamArray() {
@@ -153,13 +153,14 @@ static bool lookupType(const char *name, int *type, std::string &sname);
         fprintf ((file), " %f", (value).num); \
 }
 
+}  // namespace pbrt
 
 %}
 
 %union {
 char string[1024];
 double num;
-ParamArray *ribarray;
+pbrt::ParamArray *ribarray;
 }
 
 
@@ -188,24 +189,24 @@ start: pbrt_stmt_list
 
 array_init: %prec HIGH_PRECEDENCE
 {
-    if (cur_array) LOG(FATAL) << "Unexpected error parsing array";
-    cur_array = new ParamArray;
+    CHECK(pbrt::cur_array == nullptr);
+    pbrt::cur_array = new pbrt::ParamArray;
 };
 
 
 
 string_array_init: %prec HIGH_PRECEDENCE
 {
-    cur_array->element_size = sizeof(const char *);
-    cur_array->isString = true;
+    pbrt::cur_array->element_size = sizeof(const char *);
+    pbrt::cur_array->isString = true;
 };
 
 
 
 num_array_init: %prec HIGH_PRECEDENCE
 {
-    cur_array->element_size = sizeof(double);
-    cur_array->isString = false;
+    pbrt::cur_array->element_size = sizeof(double);
+    pbrt::cur_array->isString = false;
 };
 
 
@@ -225,15 +226,15 @@ array: string_array
 
 string_array: array_init LBRACK string_list RBRACK
 {
-    $$ = cur_array;
-    cur_array = nullptr;
+    $$ = pbrt::cur_array;
+    pbrt::cur_array = nullptr;
 }
 
 
 | single_element_string_array
 {
-    $$ = cur_array;
-    cur_array = nullptr;
+    $$ = pbrt::cur_array;
+    pbrt::cur_array = nullptr;
 };
 
 
@@ -258,22 +259,22 @@ string_list: string_list string_list_entry
 string_list_entry: string_array_init STRING
 {
     char *to_add = strdup($2);
-    AddArrayElement(&to_add);
+    pbrt::AddArrayElement(&to_add);
 };
 
 
 
 num_array: array_init LBRACK num_list RBRACK
 {
-    $$ = cur_array;
-    cur_array = nullptr;
+    $$ = pbrt::cur_array;
+    pbrt::cur_array = nullptr;
 }
 
 
 | single_element_num_array
 {
-    $$ = cur_array;
-    cur_array = nullptr;
+    $$ = pbrt::cur_array;
+    pbrt::cur_array = nullptr;
 };
 
 
@@ -298,7 +299,7 @@ num_list: num_list num_list_entry
 num_list_entry: num_array_init NUM
 {
     double to_add = $2;
-    AddArrayElement(&to_add);
+    pbrt::AddArrayElement(&to_add);
 };
 
 
@@ -311,13 +312,13 @@ paramlist: paramlist_init paramlist_contents
 
 paramlist_init: %prec HIGH_PRECEDENCE
 {
-    for (size_t i = 0; i < cur_paramlist.size(); ++i) {
-        if (cur_paramlist[i].isString) {
-            for (size_t j = 0; j < cur_paramlist[i].size; ++j)
-                free(((char **)cur_paramlist[i].arg)[j]);
+    for (size_t i = 0; i < pbrt::cur_paramlist.size(); ++i) {
+        if (pbrt::cur_paramlist[i].isString) {
+            for (size_t j = 0; j < pbrt::cur_paramlist[i].size; ++j)
+                free(((char **)pbrt::cur_paramlist[i].arg)[j]);
         }
     }
-    cur_paramlist.erase(cur_paramlist.begin(), cur_paramlist.end());
+    pbrt::cur_paramlist.erase(pbrt::cur_paramlist.begin(), pbrt::cur_paramlist.end());
 };
 
 
@@ -335,8 +336,8 @@ paramlist_contents: paramlist_entry paramlist_contents
 
 paramlist_entry: STRING array
 {
-    cur_paramlist.push_back(ParamListItem($1, $2));
-    ArrayFree($2);
+    pbrt::cur_paramlist.push_back(pbrt::ParamListItem($1, $2));
+    pbrt::ArrayFree($2);
 };
 
 
@@ -354,296 +355,299 @@ pbrt_stmt_list: pbrt_stmt_list pbrt_stmt
 
 pbrt_stmt: ACCELERATOR STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtAccelerator($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtAccelerator($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | ACTIVETRANSFORM ALL
 {
-    pbrtActiveTransformAll();
+    pbrt::pbrtActiveTransformAll();
 }
 
 
 | ACTIVETRANSFORM ENDTIME
 {
-    pbrtActiveTransformEndTime();
+    pbrt::pbrtActiveTransformEndTime();
 }
 
 
 | ACTIVETRANSFORM STARTTIME
 {
-    pbrtActiveTransformStartTime();
+    pbrt::pbrtActiveTransformStartTime();
 }
 
 
 | AREALIGHTSOURCE STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Illuminant);
-    pbrtAreaLightSource($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Illuminant);
+    pbrt::pbrtAreaLightSource($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | ATTRIBUTEBEGIN
 {
-    pbrtAttributeBegin();
+    pbrt::pbrtAttributeBegin();
 }
 
 
 | ATTRIBUTEEND
 {
-    pbrtAttributeEnd();
+    pbrt::pbrtAttributeEnd();
 }
 
 
 | CAMERA STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtCamera($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtCamera($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | CONCATTRANSFORM num_array
 {
-    if (VerifyArrayLength($2, 16, "ConcatTransform")) {
-        Float m[16];
+    if (pbrt::VerifyArrayLength($2, 16, "ConcatTransform")) {
+        pbrt::Float m[16];
         double *dm = (double *)$2->array;
         std::copy(dm, dm + 16, m);
-        pbrtConcatTransform(m);
+        pbrt::pbrtConcatTransform(m);
     }
-    ArrayFree($2);
+    pbrt::ArrayFree($2);
 }
 
 
 | COORDINATESYSTEM STRING
 {
-    pbrtCoordinateSystem($2);
+    pbrt::pbrtCoordinateSystem($2);
 }
 
 
 | COORDSYSTRANSFORM STRING
 {
-    pbrtCoordSysTransform($2);
+    pbrt::pbrtCoordSysTransform($2);
 }
 
 
 | FILM STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtFilm($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtFilm($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | IDENTITY
 {
-    pbrtIdentity();
+    pbrt::pbrtIdentity();
 }
 
 
 | INCLUDE STRING
 {
-  include_push($2);
+    pbrt::include_push($2);
 }
 
 
 | LIGHTSOURCE STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Illuminant);
-    pbrtLightSource($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Illuminant);
+    pbrt::pbrtLightSource($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | LOOKAT NUM NUM NUM NUM NUM NUM NUM NUM NUM
 {
-    pbrtLookAt($2, $3, $4, $5, $6, $7, $8, $9, $10);
+    pbrt::pbrtLookAt($2, $3, $4, $5, $6, $7, $8, $9, $10);
 }
 
 
 | MAKENAMEDMATERIAL STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtMakeNamedMaterial($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtMakeNamedMaterial($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | MAKENAMEDMEDIUM STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtMakeNamedMedium($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtMakeNamedMedium($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | MATERIAL STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtMaterial($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtMaterial($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | MEDIUMINTERFACE STRING
 {
-    pbrtMediumInterface($2, $2);
+    pbrt::pbrtMediumInterface($2, $2);
 }
 
 
 | MEDIUMINTERFACE STRING STRING
 {
-    pbrtMediumInterface($2, $3);
+    pbrt::pbrtMediumInterface($2, $3);
 }
 
 
 | NAMEDMATERIAL STRING
 {
-    pbrtNamedMaterial($2);
+    pbrt::pbrtNamedMaterial($2);
 }
 
 
 | OBJECTBEGIN STRING
 {
-    pbrtObjectBegin($2);
+    pbrt::pbrtObjectBegin($2);
 }
 
 
 | OBJECTEND
 {
-    pbrtObjectEnd();
+    pbrt::pbrtObjectEnd();
 }
 
 
 | OBJECTINSTANCE STRING
 {
-    pbrtObjectInstance($2);
+    pbrt::pbrtObjectInstance($2);
 }
 
 
 | PIXELFILTER STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtPixelFilter($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtPixelFilter($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | REVERSEORIENTATION
 {
-    pbrtReverseOrientation();
+    pbrt::pbrtReverseOrientation();
 }
 
 
 | ROTATE NUM NUM NUM NUM
 {
-    pbrtRotate($2, $3, $4, $5);
+    pbrt::pbrtRotate($2, $3, $4, $5);
 }
 
 
 | SAMPLER STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtSampler($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtSampler($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | SCALE NUM NUM NUM
 {
-    pbrtScale($2, $3, $4);
+    pbrt::pbrtScale($2, $3, $4);
 }
 
 
 | SHAPE STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtShape($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtShape($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | INTEGRATOR STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtIntegrator($2, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtIntegrator($2, params);
+    pbrt::FreeArgs();
 }
 
 
 | TEXTURE STRING STRING STRING paramlist
 {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtTexture($2, $3, $4, params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtTexture($2, $3, $4, params);
+    pbrt::FreeArgs();
 }
 
 
 | TRANSFORMBEGIN
 {
-    pbrtTransformBegin();
+    pbrt::pbrtTransformBegin();
 }
 
 
 | TRANSFORMEND
 {
-    pbrtTransformEnd();
+    pbrt::pbrtTransformEnd();
 }
 
 
 | TRANSFORMTIMES NUM NUM
 {
-    pbrtTransformTimes($2, $3);
+    pbrt::pbrtTransformTimes($2, $3);
 }
 
 
 | TRANSFORM num_array
 {
-    if (VerifyArrayLength($2, 16, "Transform")) {
-        Float m[16];
+    if (pbrt::VerifyArrayLength($2, 16, "Transform")) {
+        pbrt::Float m[16];
         double *dm = (double *)$2->array;
         std::copy(dm, dm + 16, m);
-        pbrtTransform(m);
+        pbrt::pbrtTransform(m);
     }
-    ArrayFree($2);
+    pbrt::ArrayFree($2);
 }
 
 
 | TRANSLATE NUM NUM NUM
 {
-    pbrtTranslate($2, $3, $4);
+    pbrt::pbrtTranslate($2, $3, $4);
 }
 
 
 | WORLDBEGIN
 {
-    pbrtWorldBegin();
+    pbrt::pbrtWorldBegin();
 }
 
 
 | WORLDEND
 {
-    pbrtWorldEnd();
+    pbrt::pbrtWorldEnd();
 };
 
 
 %%
+
+namespace pbrt {
+
 static const char *paramTypeToName(int type) {
     switch (type) {
     case PARAM_TYPE_INT: return "int";
@@ -887,4 +891,4 @@ static bool lookupType(const char *name, int *type, std::string &sname) {
     return true;
 }
 
-
+}  // namespace pbrt

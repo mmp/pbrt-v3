@@ -39,6 +39,8 @@
 #include "texture.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // SubstrateMaterial Method Definitions
 void SubstrateMaterial::ComputeScatteringFunctions(
     SurfaceInteraction *si, MemoryArena &arena, TransportMode mode,
@@ -77,3 +79,5 @@ SubstrateMaterial *CreateSubstrateMaterial(const TextureParams &mp) {
     return new SubstrateMaterial(Kd, Ks, uroughness, vroughness, bumpMap,
                                  remapRoughness);
 }
+
+}  // namespace pbrt

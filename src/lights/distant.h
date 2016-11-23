@@ -44,6 +44,8 @@
 #include "shape.h"
 #include "scene.h"
 
+namespace pbrt {
+
 // DistantLight Declarations
 class DistantLight : public Light {
   public:
@@ -73,5 +75,7 @@ class DistantLight : public Light {
 
 std::shared_ptr<DistantLight> CreateDistantLight(const Transform &light2world,
                                                  const ParamSet &paramSet);
+
+}  // namespace pbrt
 
 #endif  // PBRT_LIGHTS_DISTANT_H

@@ -37,6 +37,8 @@
 #include "interaction.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // HomogeneousMedium Method Definitions
 Spectrum HomogeneousMedium::Tr(const Ray &ray, Sampler &sampler) const {
     return Exp(-sigma_t * std::min(ray.tMax * ray.d.Length(), MaxFloat));
@@ -69,3 +71,5 @@ Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
     }
     return sampledMedium ? (Tr * sigma_s / pdf) : (Tr / pdf);
 }
+
+}  // namespace pbrt

@@ -37,6 +37,8 @@
 #include "sampling.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // StratifiedSampler Method Definitions
 void StratifiedSampler::StartPixel(const Point2i &p) {
     ProfilePhase _(Prof::StartPixel);
@@ -82,3 +84,5 @@ StratifiedSampler *CreateStratifiedSampler(const ParamSet &params) {
     if (PbrtOptions.quickRender) xsamp = ysamp = 1;
     return new StratifiedSampler(xsamp, ysamp, jitter, sd);
 }
+
+}  // namespace pbrt

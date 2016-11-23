@@ -35,6 +35,8 @@
 #include "transform.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // Matrix4x4 Method Definitions
 bool SolveLinearSystem2x2(const Float A[2][2], const Float B[2], Float *x0,
                           Float *x1) {
@@ -1240,3 +1242,5 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
     }
     return bounds;
 }
+
+}  // namespace pbrt

@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "stringprint.h"
 
+namespace pbrt {
+
 // Spectrum Utility Declarations
 static const int sampledLambdaStart = 400;
 static const int sampledLambdaEnd = 700;
@@ -239,7 +241,7 @@ class CoefficientSpectrum {
     CoefficientSpectrum Clamp(Float low = 0, Float high = Infinity) const {
         CoefficientSpectrum ret;
         for (int i = 0; i < nSpectrumSamples; ++i)
-            ret.c[i] = ::Clamp(c[i], low, high);
+            ret.c[i] = pbrt::Clamp(c[i], low, high);
         DCHECK(!ret.HasNaNs());
         return ret;
     }
@@ -503,5 +505,7 @@ inline SampledSpectrum Lerp(Float t, const SampledSpectrum &s1,
                             const SampledSpectrum &s2) {
     return (1 - t) * s1 + t * s2;
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_SPECTRUM_H

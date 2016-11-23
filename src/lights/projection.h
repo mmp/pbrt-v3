@@ -44,6 +44,8 @@
 #include "shape.h"
 #include "mipmap.h"
 
+namespace pbrt {
+
 // ProjectionLight Declarations
 class ProjectionLight : public Light {
   public:
@@ -76,5 +78,7 @@ class ProjectionLight : public Light {
 std::shared_ptr<ProjectionLight> CreateProjectionLight(
     const Transform &light2world, const Medium *medium,
     const ParamSet &paramSet);
+
+}  // namespace pbrt
 
 #endif  // PBRT_LIGHTS_PROJECTION_H

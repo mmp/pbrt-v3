@@ -45,6 +45,8 @@
 #include "interpolation.h"
 #include <map>
 
+namespace pbrt {
+
 // FourierMaterial Declarations
 class FourierMaterial : public Material {
   public:
@@ -63,5 +65,7 @@ class FourierMaterial : public Material {
 };
 
 FourierMaterial *CreateFourierMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_FOURIER_H

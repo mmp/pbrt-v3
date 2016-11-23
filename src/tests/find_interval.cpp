@@ -3,6 +3,8 @@
 #include "pbrt.h"
 #include <vector>
 
+using namespace pbrt;
+
 TEST(FindInterval, Basics) {
   std::vector<float> a{0,1,2,3,4,5,6,7,8,9};
 

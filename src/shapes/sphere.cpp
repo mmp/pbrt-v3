@@ -38,6 +38,8 @@
 #include "efloat.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Sphere Method Definitions
 Bounds3f Sphere::ObjectBound() const {
     return Bounds3f(Point3f(-radius, -radius, zMin),
@@ -317,3 +319,5 @@ std::shared_ptr<Shape> CreateSphereShape(const Transform *o2w,
     return std::make_shared<Sphere>(o2w, w2o, reverseOrientation, radius, zmin,
                                     zmax, phimax);
 }
+
+}  // namespace pbrt

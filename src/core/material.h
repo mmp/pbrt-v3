@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "memory.h"
 
+namespace pbrt {
+
 // TransportMode Declarations
 enum class TransportMode { Radiance, Importance };
 
@@ -57,5 +59,7 @@ class Material {
     static void Bump(const std::shared_ptr<Texture<Float>> &d,
                      SurfaceInteraction *si);
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_MATERIAL_H

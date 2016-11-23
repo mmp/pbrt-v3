@@ -46,6 +46,8 @@
 #include "stats.h"
 #include "parallel.h"
 
+namespace pbrt {
+
 // FilmTilePixel Declarations
 struct FilmTilePixel {
     Spectrum contribSum = 0.f;
@@ -185,5 +187,7 @@ class FilmTile {
 };
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter);
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_FILM_H

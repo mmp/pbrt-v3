@@ -43,6 +43,8 @@
 #include "port.h"
 #include <list>
 
+namespace pbrt {
+
 // Memory Declarations
 #define ARENA_ALLOC(arena, Type) new ((arena).Alloc(sizeof(Type))) Type
 void *AllocAligned(size_t size);
@@ -176,5 +178,7 @@ class BlockedArray {
     T *data;
     const int uRes, vRes, uBlocks;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_MEMORY_H

@@ -39,6 +39,8 @@
 // Error Reporting Includes
 #include <stdarg.h>
 
+namespace pbrt {
+
 const char *findWordEnd(const char *buf) {
     while (*buf != '\0' && !isspace(*buf)) ++buf;
     return buf;
@@ -103,3 +105,5 @@ void Error(const char *format, ...) {
     processError(format, args, "Error");
     va_end(args);
 }
+
+}  // namespace pbrt

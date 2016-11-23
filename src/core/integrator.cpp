@@ -42,6 +42,9 @@
 #include "progressreporter.h"
 #include "camera.h"
 #include "stats.h"
+
+namespace pbrt {
+
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 
 // Integrator Method Definitions
@@ -421,3 +424,5 @@ Spectrum SamplerIntegrator::SpecularTransmit(
     }
     return L;
 }
+
+}  // namespace pbrt

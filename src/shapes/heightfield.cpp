@@ -36,6 +36,8 @@
 #include "shapes/triangle.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // Heightfield Definitions
 std::vector<std::shared_ptr<Shape>> CreateHeightfield(
     const Transform *ObjectToWorld, const Transform *WorldToObject,
@@ -83,3 +85,5 @@ std::vector<std::shared_ptr<Shape>> CreateHeightfield(
                               ntris, indices.get(), nverts, P.get(), nullptr,
                               nullptr, uvs.get(), nullptr, nullptr);
 }
+
+}  // namespace pbrt

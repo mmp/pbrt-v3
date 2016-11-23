@@ -49,6 +49,8 @@
 #include "sampling.h"
 #include "scene.h"
 
+namespace pbrt {
+
 /// Forward declaration (correction term for adjoint BSDF with shading normals)
 extern Float CorrectShadingNormal(const SurfaceInteraction &isect,
                                   const Vector3f &wo, const Vector3f &wi,
@@ -256,7 +258,7 @@ struct Vertex {
     }
     bool IsDeltaLight() const {
         return type == VertexType::Light && ei.light &&
-               ::IsDeltaLight(ei.light->flags);
+               pbrt::IsDeltaLight(ei.light->flags);
     }
     bool IsInfiniteLight() const {
         return type == VertexType::Light &&
@@ -482,5 +484,7 @@ inline Vertex Vertex::CreateLight(const EndpointInteraction &ei,
     v.pdfFwd = pdf;
     return v;
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_INTEGRATORS_BDPT_H

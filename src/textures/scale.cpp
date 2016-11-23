@@ -34,6 +34,8 @@
 // textures/scale.cpp*
 #include "textures/scale.h"
 
+namespace pbrt {
+
 // ScaleTexture Method Definitions
 ScaleTexture<Float, Float> *CreateScaleFloatTexture(const Transform &tex2world,
                                                     const TextureParams &tp) {
@@ -47,3 +49,5 @@ ScaleTexture<Spectrum, Spectrum> *CreateScaleSpectrumTexture(
         tp.GetSpectrumTexture("tex1", Spectrum(1.f)),
         tp.GetSpectrumTexture("tex2", Spectrum(1.f)));
 }
+
+}  // namespace pbrt

@@ -47,6 +47,8 @@
 #include "rng.h"
 #include <unordered_map>
 
+namespace pbrt {
+
 // MLTSampler Declarations
 class MLTSampler : public Sampler {
   public:
@@ -133,5 +135,7 @@ class MLTIntegrator : public Integrator {
 
 MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,
                                    std::shared_ptr<const Camera> camera);
+
+}  // namespace pbrt
 
 #endif  // PBRT_INTEGRATORS_MLT_H

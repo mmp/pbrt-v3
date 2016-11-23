@@ -30,6 +30,8 @@
 #include "spectrum.h"
 #include "textures/constant.h"
 
+using namespace pbrt;
+
 struct TestScene {
     std::shared_ptr<Scene> scene;
     std::string description;

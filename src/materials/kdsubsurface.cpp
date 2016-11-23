@@ -39,6 +39,8 @@
 #include "paramset.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // KdSubsurfaceMaterial Method Definitions
 void KdSubsurfaceMaterial::ComputeScatteringFunctions(
     SurfaceInteraction *si, MemoryArena &arena, TransportMode mode,
@@ -118,3 +120,5 @@ KdSubsurfaceMaterial *CreateKdSubsurfaceMaterial(const TextureParams &mp) {
     return new KdSubsurfaceMaterial(scale, kd, kr, kt, mfp, g, eta, roughu,
                                     roughv, bumpMap, remapRoughness);
 }
+
+}  // namespace pbrt

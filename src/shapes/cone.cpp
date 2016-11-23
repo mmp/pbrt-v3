@@ -37,6 +37,8 @@
 #include "efloat.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Cone Method Definitions
 Cone::Cone(const Transform *o2w, const Transform *w2o, bool ro, Float height,
            Float radius, Float phiMax)
@@ -215,3 +217,5 @@ std::shared_ptr<Cone> CreateConeShape(const Transform *o2w,
     return std::make_shared<Cone>(o2w, w2o, reverseOrientation, height, radius,
                                   phimax);
 }
+
+}  // namespace pbrt

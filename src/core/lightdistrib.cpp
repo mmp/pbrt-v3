@@ -40,6 +40,8 @@
 #include "stats.h"
 #include <numeric>
 
+namespace pbrt {
+
 LightDistribution::~LightDistribution() {}
 
 std::unique_ptr<LightDistribution> CreateLightSampleDistribution(
@@ -253,3 +255,5 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
 
     return (*localVoxelDistribution)[pi];
 }
+
+}  // namespace pbrt

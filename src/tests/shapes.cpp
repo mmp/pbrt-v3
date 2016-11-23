@@ -13,6 +13,8 @@
 #include "shapes/sphere.h"
 #include "shapes/triangle.h"
 
+using namespace pbrt;
+
 static Float pExp(RNG &rng, Float exp = 8.) {
     Float logu = Lerp(rng.UniformFloat(), -exp, exp);
     return std::pow(10, logu);

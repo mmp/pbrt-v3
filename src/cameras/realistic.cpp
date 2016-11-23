@@ -41,6 +41,8 @@
 #include "stats.h"
 #include "lowdiscrepancy.h"
 
+namespace pbrt {
+
 STAT_PERCENT("Camera/Rays vignetted by lens system", vignettedRays, totalRays);
 
 // RealisticCamera Method Definitions
@@ -718,3 +720,5 @@ RealisticCamera *CreateRealisticCamera(const ParamSet &params,
                                apertureDiameter, focusDistance, simpleWeighting,
                                lensData, film, medium);
 }
+
+}  // namespace pbrt

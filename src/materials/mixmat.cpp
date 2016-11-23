@@ -40,6 +40,8 @@
 #include "texture.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // MixMaterial Method Definitions
 void MixMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                              MemoryArena &arena,
@@ -68,3 +70,5 @@ MixMaterial *CreateMixMaterial(const TextureParams &mp,
         mp.GetSpectrumTexture("amount", Spectrum(0.5f));
     return new MixMaterial(m1, m2, scale);
 }
+
+}  // namespace pbrt

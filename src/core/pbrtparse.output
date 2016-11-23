@@ -1,4 +1,4 @@
-Terminals unused in grammar
+Terminals which are not used
 
    ID
 
@@ -191,7 +191,7 @@ pbrt_stmt (68)
     65, on right: 24 25
 
 
-State 0
+state 0
 
     0 $accept: . start $end
 
@@ -238,14 +238,14 @@ State 0
     pbrt_stmt       go to state 40
 
 
-State 1
+state 1
 
    26 pbrt_stmt: ACCELERATOR . STRING paramlist
 
     STRING  shift, and go to state 41
 
 
-State 2
+state 2
 
    27 pbrt_stmt: ACTIVETRANSFORM . ALL
    28          | ACTIVETRANSFORM . ENDTIME
@@ -256,35 +256,35 @@ State 2
     STARTTIME  shift, and go to state 44
 
 
-State 3
+state 3
 
    30 pbrt_stmt: AREALIGHTSOURCE . STRING paramlist
 
     STRING  shift, and go to state 45
 
 
-State 4
+state 4
 
    31 pbrt_stmt: ATTRIBUTEBEGIN .
 
     $default  reduce using rule 31 (pbrt_stmt)
 
 
-State 5
+state 5
 
    32 pbrt_stmt: ATTRIBUTEEND .
 
     $default  reduce using rule 32 (pbrt_stmt)
 
 
-State 6
+state 6
 
    33 pbrt_stmt: CAMERA . STRING paramlist
 
     STRING  shift, and go to state 46
 
 
-State 7
+state 7
 
    34 pbrt_stmt: CONCATTRANSFORM . num_array
 
@@ -295,77 +295,77 @@ State 7
     single_element_num_array  go to state 49
 
 
-State 8
+state 8
 
    35 pbrt_stmt: COORDINATESYSTEM . STRING
 
     STRING  shift, and go to state 50
 
 
-State 9
+state 9
 
    36 pbrt_stmt: COORDSYSTRANSFORM . STRING
 
     STRING  shift, and go to state 51
 
 
-State 10
+state 10
 
    37 pbrt_stmt: FILM . STRING paramlist
 
     STRING  shift, and go to state 52
 
 
-State 11
+state 11
 
    38 pbrt_stmt: IDENTITY .
 
     $default  reduce using rule 38 (pbrt_stmt)
 
 
-State 12
+state 12
 
    39 pbrt_stmt: INCLUDE . STRING
 
     STRING  shift, and go to state 53
 
 
-State 13
+state 13
 
    40 pbrt_stmt: LIGHTSOURCE . STRING paramlist
 
     STRING  shift, and go to state 54
 
 
-State 14
+state 14
 
    41 pbrt_stmt: LOOKAT . NUM NUM NUM NUM NUM NUM NUM NUM NUM
 
     NUM  shift, and go to state 55
 
 
-State 15
+state 15
 
    42 pbrt_stmt: MAKENAMEDMATERIAL . STRING paramlist
 
     STRING  shift, and go to state 56
 
 
-State 16
+state 16
 
    43 pbrt_stmt: MAKENAMEDMEDIUM . STRING paramlist
 
     STRING  shift, and go to state 57
 
 
-State 17
+state 17
 
    44 pbrt_stmt: MATERIAL . STRING paramlist
 
     STRING  shift, and go to state 58
 
 
-State 18
+state 18
 
    45 pbrt_stmt: MEDIUMINTERFACE . STRING
    46          | MEDIUMINTERFACE . STRING STRING
@@ -373,112 +373,112 @@ State 18
     STRING  shift, and go to state 59
 
 
-State 19
+state 19
 
    47 pbrt_stmt: NAMEDMATERIAL . STRING
 
     STRING  shift, and go to state 60
 
 
-State 20
+state 20
 
    48 pbrt_stmt: OBJECTBEGIN . STRING
 
     STRING  shift, and go to state 61
 
 
-State 21
+state 21
 
    49 pbrt_stmt: OBJECTEND .
 
     $default  reduce using rule 49 (pbrt_stmt)
 
 
-State 22
+state 22
 
    50 pbrt_stmt: OBJECTINSTANCE . STRING
 
     STRING  shift, and go to state 62
 
 
-State 23
+state 23
 
    51 pbrt_stmt: PIXELFILTER . STRING paramlist
 
     STRING  shift, and go to state 63
 
 
-State 24
+state 24
 
    52 pbrt_stmt: REVERSEORIENTATION .
 
     $default  reduce using rule 52 (pbrt_stmt)
 
 
-State 25
+state 25
 
    53 pbrt_stmt: ROTATE . NUM NUM NUM NUM
 
     NUM  shift, and go to state 64
 
 
-State 26
+state 26
 
    54 pbrt_stmt: SAMPLER . STRING paramlist
 
     STRING  shift, and go to state 65
 
 
-State 27
+state 27
 
    55 pbrt_stmt: SCALE . NUM NUM NUM
 
     NUM  shift, and go to state 66
 
 
-State 28
+state 28
 
    56 pbrt_stmt: SHAPE . STRING paramlist
 
     STRING  shift, and go to state 67
 
 
-State 29
+state 29
 
    57 pbrt_stmt: INTEGRATOR . STRING paramlist
 
     STRING  shift, and go to state 68
 
 
-State 30
+state 30
 
    58 pbrt_stmt: TEXTURE . STRING STRING STRING paramlist
 
     STRING  shift, and go to state 69
 
 
-State 31
+state 31
 
    59 pbrt_stmt: TRANSFORMBEGIN .
 
     $default  reduce using rule 59 (pbrt_stmt)
 
 
-State 32
+state 32
 
    60 pbrt_stmt: TRANSFORMEND .
 
     $default  reduce using rule 60 (pbrt_stmt)
 
 
-State 33
+state 33
 
    61 pbrt_stmt: TRANSFORMTIMES . NUM NUM
 
     NUM  shift, and go to state 70
 
 
-State 34
+state 34
 
    62 pbrt_stmt: TRANSFORM . num_array
 
@@ -489,35 +489,35 @@ State 34
     single_element_num_array  go to state 49
 
 
-State 35
+state 35
 
    63 pbrt_stmt: TRANSLATE . NUM NUM NUM
 
     NUM  shift, and go to state 72
 
 
-State 36
+state 36
 
    64 pbrt_stmt: WORLDBEGIN .
 
     $default  reduce using rule 64 (pbrt_stmt)
 
 
-State 37
+state 37
 
    65 pbrt_stmt: WORLDEND .
 
     $default  reduce using rule 65 (pbrt_stmt)
 
 
-State 38
+state 38
 
     0 $accept: start . $end
 
     $end  shift, and go to state 73
 
 
-State 39
+state 39
 
     1 start: pbrt_stmt_list .
    24 pbrt_stmt_list: pbrt_stmt_list . pbrt_stmt
@@ -565,14 +565,14 @@ State 39
     pbrt_stmt  go to state 74
 
 
-State 40
+state 40
 
    25 pbrt_stmt_list: pbrt_stmt .
 
     $default  reduce using rule 25 (pbrt_stmt_list)
 
 
-State 41
+state 41
 
    26 pbrt_stmt: ACCELERATOR STRING . paramlist
 
@@ -582,28 +582,28 @@ State 41
     paramlist_init  go to state 76
 
 
-State 42
+state 42
 
    27 pbrt_stmt: ACTIVETRANSFORM ALL .
 
     $default  reduce using rule 27 (pbrt_stmt)
 
 
-State 43
+state 43
 
    28 pbrt_stmt: ACTIVETRANSFORM ENDTIME .
 
     $default  reduce using rule 28 (pbrt_stmt)
 
 
-State 44
+state 44
 
    29 pbrt_stmt: ACTIVETRANSFORM STARTTIME .
 
     $default  reduce using rule 29 (pbrt_stmt)
 
 
-State 45
+state 45
 
    30 pbrt_stmt: AREALIGHTSOURCE STRING . paramlist
 
@@ -613,7 +613,7 @@ State 45
     paramlist_init  go to state 76
 
 
-State 46
+state 46
 
    33 pbrt_stmt: CAMERA STRING . paramlist
 
@@ -623,7 +623,7 @@ State 46
     paramlist_init  go to state 76
 
 
-State 47
+state 47
 
    13 num_array: array_init . LBRACK num_list RBRACK
    15 single_element_num_array: array_init . num_list_entry
@@ -636,35 +636,35 @@ State 47
     num_list_entry  go to state 81
 
 
-State 48
+state 48
 
    34 pbrt_stmt: CONCATTRANSFORM num_array .
 
     $default  reduce using rule 34 (pbrt_stmt)
 
 
-State 49
+state 49
 
    14 num_array: single_element_num_array .
 
     $default  reduce using rule 14 (num_array)
 
 
-State 50
+state 50
 
    35 pbrt_stmt: COORDINATESYSTEM STRING .
 
     $default  reduce using rule 35 (pbrt_stmt)
 
 
-State 51
+state 51
 
    36 pbrt_stmt: COORDSYSTRANSFORM STRING .
 
     $default  reduce using rule 36 (pbrt_stmt)
 
 
-State 52
+state 52
 
    37 pbrt_stmt: FILM STRING . paramlist
 
@@ -674,14 +674,14 @@ State 52
     paramlist_init  go to state 76
 
 
-State 53
+state 53
 
    39 pbrt_stmt: INCLUDE STRING .
 
     $default  reduce using rule 39 (pbrt_stmt)
 
 
-State 54
+state 54
 
    40 pbrt_stmt: LIGHTSOURCE STRING . paramlist
 
@@ -691,14 +691,14 @@ State 54
     paramlist_init  go to state 76
 
 
-State 55
+state 55
 
    41 pbrt_stmt: LOOKAT NUM . NUM NUM NUM NUM NUM NUM NUM NUM
 
     NUM  shift, and go to state 84
 
 
-State 56
+state 56
 
    42 pbrt_stmt: MAKENAMEDMATERIAL STRING . paramlist
 
@@ -708,7 +708,7 @@ State 56
     paramlist_init  go to state 76
 
 
-State 57
+state 57
 
    43 pbrt_stmt: MAKENAMEDMEDIUM STRING . paramlist
 
@@ -718,7 +718,7 @@ State 57
     paramlist_init  go to state 76
 
 
-State 58
+state 58
 
    44 pbrt_stmt: MATERIAL STRING . paramlist
 
@@ -728,7 +728,7 @@ State 58
     paramlist_init  go to state 76
 
 
-State 59
+state 59
 
    45 pbrt_stmt: MEDIUMINTERFACE STRING .
    46          | MEDIUMINTERFACE STRING . STRING
@@ -738,28 +738,28 @@ State 59
     $default  reduce using rule 45 (pbrt_stmt)
 
 
-State 60
+state 60
 
    47 pbrt_stmt: NAMEDMATERIAL STRING .
 
     $default  reduce using rule 47 (pbrt_stmt)
 
 
-State 61
+state 61
 
    48 pbrt_stmt: OBJECTBEGIN STRING .
 
     $default  reduce using rule 48 (pbrt_stmt)
 
 
-State 62
+state 62
 
    50 pbrt_stmt: OBJECTINSTANCE STRING .
 
     $default  reduce using rule 50 (pbrt_stmt)
 
 
-State 63
+state 63
 
    51 pbrt_stmt: PIXELFILTER STRING . paramlist
 
@@ -769,14 +769,14 @@ State 63
     paramlist_init  go to state 76
 
 
-State 64
+state 64
 
    53 pbrt_stmt: ROTATE NUM . NUM NUM NUM
 
     NUM  shift, and go to state 90
 
 
-State 65
+state 65
 
    54 pbrt_stmt: SAMPLER STRING . paramlist
 
@@ -786,14 +786,14 @@ State 65
     paramlist_init  go to state 76
 
 
-State 66
+state 66
 
    55 pbrt_stmt: SCALE NUM . NUM NUM
 
     NUM  shift, and go to state 92
 
 
-State 67
+state 67
 
    56 pbrt_stmt: SHAPE STRING . paramlist
 
@@ -803,7 +803,7 @@ State 67
     paramlist_init  go to state 76
 
 
-State 68
+state 68
 
    57 pbrt_stmt: INTEGRATOR STRING . paramlist
 
@@ -813,56 +813,56 @@ State 68
     paramlist_init  go to state 76
 
 
-State 69
+state 69
 
    58 pbrt_stmt: TEXTURE STRING . STRING STRING paramlist
 
     STRING  shift, and go to state 95
 
 
-State 70
+state 70
 
    61 pbrt_stmt: TRANSFORMTIMES NUM . NUM
 
     NUM  shift, and go to state 96
 
 
-State 71
+state 71
 
    62 pbrt_stmt: TRANSFORM num_array .
 
     $default  reduce using rule 62 (pbrt_stmt)
 
 
-State 72
+state 72
 
    63 pbrt_stmt: TRANSLATE NUM . NUM NUM
 
     NUM  shift, and go to state 97
 
 
-State 73
+state 73
 
     0 $accept: start $end .
 
     $default  accept
 
 
-State 74
+state 74
 
    24 pbrt_stmt_list: pbrt_stmt_list pbrt_stmt .
 
     $default  reduce using rule 24 (pbrt_stmt_list)
 
 
-State 75
+state 75
 
    26 pbrt_stmt: ACCELERATOR STRING paramlist .
 
     $default  reduce using rule 26 (pbrt_stmt)
 
 
-State 76
+state 76
 
    19 paramlist: paramlist_init . paramlist_contents
 
@@ -874,21 +874,21 @@ State 76
     paramlist_entry     go to state 100
 
 
-State 77
+state 77
 
    30 pbrt_stmt: AREALIGHTSOURCE STRING paramlist .
 
     $default  reduce using rule 30 (pbrt_stmt)
 
 
-State 78
+state 78
 
    33 pbrt_stmt: CAMERA STRING paramlist .
 
     $default  reduce using rule 33 (pbrt_stmt)
 
 
-State 79
+state 79
 
    13 num_array: array_init LBRACK . num_list RBRACK
 
@@ -899,133 +899,133 @@ State 79
     num_list_entry  go to state 102
 
 
-State 80
+state 80
 
    18 num_list_entry: num_array_init . NUM
 
     NUM  shift, and go to state 103
 
 
-State 81
+state 81
 
    15 single_element_num_array: array_init num_list_entry .
 
     $default  reduce using rule 15 (single_element_num_array)
 
 
-State 82
+state 82
 
    37 pbrt_stmt: FILM STRING paramlist .
 
     $default  reduce using rule 37 (pbrt_stmt)
 
 
-State 83
+state 83
 
    40 pbrt_stmt: LIGHTSOURCE STRING paramlist .
 
     $default  reduce using rule 40 (pbrt_stmt)
 
 
-State 84
+state 84
 
    41 pbrt_stmt: LOOKAT NUM NUM . NUM NUM NUM NUM NUM NUM NUM
 
     NUM  shift, and go to state 104
 
 
-State 85
+state 85
 
    42 pbrt_stmt: MAKENAMEDMATERIAL STRING paramlist .
 
     $default  reduce using rule 42 (pbrt_stmt)
 
 
-State 86
+state 86
 
    43 pbrt_stmt: MAKENAMEDMEDIUM STRING paramlist .
 
     $default  reduce using rule 43 (pbrt_stmt)
 
 
-State 87
+state 87
 
    44 pbrt_stmt: MATERIAL STRING paramlist .
 
     $default  reduce using rule 44 (pbrt_stmt)
 
 
-State 88
+state 88
 
    46 pbrt_stmt: MEDIUMINTERFACE STRING STRING .
 
     $default  reduce using rule 46 (pbrt_stmt)
 
 
-State 89
+state 89
 
    51 pbrt_stmt: PIXELFILTER STRING paramlist .
 
     $default  reduce using rule 51 (pbrt_stmt)
 
 
-State 90
+state 90
 
    53 pbrt_stmt: ROTATE NUM NUM . NUM NUM
 
     NUM  shift, and go to state 105
 
 
-State 91
+state 91
 
    54 pbrt_stmt: SAMPLER STRING paramlist .
 
     $default  reduce using rule 54 (pbrt_stmt)
 
 
-State 92
+state 92
 
    55 pbrt_stmt: SCALE NUM NUM . NUM
 
     NUM  shift, and go to state 106
 
 
-State 93
+state 93
 
    56 pbrt_stmt: SHAPE STRING paramlist .
 
     $default  reduce using rule 56 (pbrt_stmt)
 
 
-State 94
+state 94
 
    57 pbrt_stmt: INTEGRATOR STRING paramlist .
 
     $default  reduce using rule 57 (pbrt_stmt)
 
 
-State 95
+state 95
 
    58 pbrt_stmt: TEXTURE STRING STRING . STRING paramlist
 
     STRING  shift, and go to state 107
 
 
-State 96
+state 96
 
    61 pbrt_stmt: TRANSFORMTIMES NUM NUM .
 
     $default  reduce using rule 61 (pbrt_stmt)
 
 
-State 97
+state 97
 
    63 pbrt_stmt: TRANSLATE NUM NUM . NUM
 
     NUM  shift, and go to state 108
 
 
-State 98
+state 98
 
    23 paramlist_entry: STRING . array
 
@@ -1039,14 +1039,14 @@ State 98
     single_element_num_array     go to state 49
 
 
-State 99
+state 99
 
    19 paramlist: paramlist_init paramlist_contents .
 
     $default  reduce using rule 19 (paramlist)
 
 
-State 100
+state 100
 
    21 paramlist_contents: paramlist_entry . paramlist_contents
 
@@ -1058,7 +1058,7 @@ State 100
     paramlist_entry     go to state 100
 
 
-State 101
+state 101
 
    13 num_array: array_init LBRACK num_list . RBRACK
    16 num_list: num_list . num_list_entry
@@ -1071,42 +1071,42 @@ State 101
     num_list_entry  go to state 116
 
 
-State 102
+state 102
 
    17 num_list: num_list_entry .
 
     $default  reduce using rule 17 (num_list)
 
 
-State 103
+state 103
 
    18 num_list_entry: num_array_init NUM .
 
     $default  reduce using rule 18 (num_list_entry)
 
 
-State 104
+state 104
 
    41 pbrt_stmt: LOOKAT NUM NUM NUM . NUM NUM NUM NUM NUM NUM
 
     NUM  shift, and go to state 117
 
 
-State 105
+state 105
 
    53 pbrt_stmt: ROTATE NUM NUM NUM . NUM
 
     NUM  shift, and go to state 118
 
 
-State 106
+state 106
 
    55 pbrt_stmt: SCALE NUM NUM NUM .
 
     $default  reduce using rule 55 (pbrt_stmt)
 
 
-State 107
+state 107
 
    58 pbrt_stmt: TEXTURE STRING STRING STRING . paramlist
 
@@ -1116,14 +1116,14 @@ State 107
     paramlist_init  go to state 76
 
 
-State 108
+state 108
 
    63 pbrt_stmt: TRANSLATE NUM NUM NUM .
 
     $default  reduce using rule 63 (pbrt_stmt)
 
 
-State 109
+state 109
 
     7 string_array: array_init . LBRACK string_list RBRACK
     9 single_element_string_array: array_init . string_list_entry
@@ -1141,77 +1141,77 @@ State 109
     num_list_entry     go to state 81
 
 
-State 110
+state 110
 
    23 paramlist_entry: STRING array .
 
     $default  reduce using rule 23 (paramlist_entry)
 
 
-State 111
+state 111
 
     5 array: string_array .
 
     $default  reduce using rule 5 (array)
 
 
-State 112
+state 112
 
     8 string_array: single_element_string_array .
 
     $default  reduce using rule 8 (string_array)
 
 
-State 113
+state 113
 
     6 array: num_array .
 
     $default  reduce using rule 6 (array)
 
 
-State 114
+state 114
 
    21 paramlist_contents: paramlist_entry paramlist_contents .
 
     $default  reduce using rule 21 (paramlist_contents)
 
 
-State 115
+state 115
 
    13 num_array: array_init LBRACK num_list RBRACK .
 
     $default  reduce using rule 13 (num_array)
 
 
-State 116
+state 116
 
    16 num_list: num_list num_list_entry .
 
     $default  reduce using rule 16 (num_list)
 
 
-State 117
+state 117
 
    41 pbrt_stmt: LOOKAT NUM NUM NUM NUM . NUM NUM NUM NUM NUM
 
     NUM  shift, and go to state 123
 
 
-State 118
+state 118
 
    53 pbrt_stmt: ROTATE NUM NUM NUM NUM .
 
     $default  reduce using rule 53 (pbrt_stmt)
 
 
-State 119
+state 119
 
    58 pbrt_stmt: TEXTURE STRING STRING STRING paramlist .
 
     $default  reduce using rule 58 (pbrt_stmt)
 
 
-State 120
+state 120
 
     7 string_array: array_init LBRACK . string_list RBRACK
    13 num_array: array_init LBRACK . num_list RBRACK
@@ -1227,28 +1227,28 @@ State 120
     num_list_entry     go to state 102
 
 
-State 121
+state 121
 
    12 string_list_entry: string_array_init . STRING
 
     STRING  shift, and go to state 126
 
 
-State 122
+state 122
 
     9 single_element_string_array: array_init string_list_entry .
 
     $default  reduce using rule 9 (single_element_string_array)
 
 
-State 123
+state 123
 
    41 pbrt_stmt: LOOKAT NUM NUM NUM NUM NUM . NUM NUM NUM NUM
 
     NUM  shift, and go to state 127
 
 
-State 124
+state 124
 
     7 string_array: array_init LBRACK string_list . RBRACK
    10 string_list: string_list . string_list_entry
@@ -1261,56 +1261,56 @@ State 124
     string_list_entry  go to state 129
 
 
-State 125
+state 125
 
    11 string_list: string_list_entry .
 
     $default  reduce using rule 11 (string_list)
 
 
-State 126
+state 126
 
    12 string_list_entry: string_array_init STRING .
 
     $default  reduce using rule 12 (string_list_entry)
 
 
-State 127
+state 127
 
    41 pbrt_stmt: LOOKAT NUM NUM NUM NUM NUM NUM . NUM NUM NUM
 
     NUM  shift, and go to state 130
 
 
-State 128
+state 128
 
     7 string_array: array_init LBRACK string_list RBRACK .
 
     $default  reduce using rule 7 (string_array)
 
 
-State 129
+state 129
 
    10 string_list: string_list string_list_entry .
 
     $default  reduce using rule 10 (string_list)
 
 
-State 130
+state 130
 
    41 pbrt_stmt: LOOKAT NUM NUM NUM NUM NUM NUM NUM . NUM NUM
 
     NUM  shift, and go to state 131
 
 
-State 131
+state 131
 
    41 pbrt_stmt: LOOKAT NUM NUM NUM NUM NUM NUM NUM NUM . NUM
 
     NUM  shift, and go to state 132
 
 
-State 132
+state 132
 
    41 pbrt_stmt: LOOKAT NUM NUM NUM NUM NUM NUM NUM NUM NUM .
 

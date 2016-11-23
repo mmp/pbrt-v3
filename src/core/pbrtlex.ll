@@ -38,8 +38,6 @@
 #include "api.h"
 #include "fileutil.h"
 
-struct ParamArray;
-
 #if defined(PBRT_IS_MSVC)
 #include <io.h>
 #pragma warning(disable:4244)
@@ -50,7 +48,14 @@ int isatty(int fd) { return _isatty(fd); }
 #else
 #include <unistd.h>
 #endif  // PBRT_IS_MSVC
+
+namespace pbrt {
+struct ParamArray;
+}
+
 #include "pbrtparse.h"
+
+namespace pbrt {
 
 struct IncludeInfo {
     std::string filename;
@@ -62,6 +67,7 @@ std::vector<IncludeInfo> includeStack;
 
 extern int line_num;
 int str_pos;
+extern int catIndentCount;
 
 void add_string_char(char c) {
     yylval.string[str_pos++] = c;
@@ -109,6 +115,7 @@ void include_pop() {
     includeStack.pop_back();
 }
 
+}  // namespace pbrt
 
 %}
 %option nounput
@@ -117,9 +124,9 @@ NUMBER [-+]?([0-9]+|(([0-9]+\.[0-9]*)|(\.[0-9]+)))([eE][-+]?[0-9]+)?
 IDENT [a-zA-Z_][a-zA-Z_0-9]*
 %x STR COMMENT INCL INCL_FILE
 %%
-"#" { BEGIN COMMENT; extern int catIndentCount; if (PbrtOptions.cat || PbrtOptions.toPly) printf("%*s#", catIndentCount, ""); }
-<COMMENT>. { /* eat it up */ if (PbrtOptions.cat || PbrtOptions.toPly) putchar(yytext[0]); }
-<COMMENT>\n { line_num++; if (PbrtOptions.cat || PbrtOptions.toPly) putchar('\n'); BEGIN INITIAL; }
+"#" { BEGIN COMMENT; if (pbrt::PbrtOptions.cat || pbrt::PbrtOptions.toPly) printf("%*s#", pbrt::catIndentCount, ""); }
+<COMMENT>. { /* eat it up */ if (pbrt::PbrtOptions.cat || pbrt::PbrtOptions.toPly) putchar(yytext[0]); }
+<COMMENT>\n { pbrt::line_num++; if (pbrt::PbrtOptions.cat || pbrt::PbrtOptions.toPly) putchar('\n'); BEGIN INITIAL; }
 Accelerator             { return ACCELERATOR; }
 ActiveTransform         { return ACTIVETRANSFORM; }
 All                     { return ALL; }
@@ -161,7 +168,7 @@ Translate               { return TRANSLATE; }
 WorldBegin              { return WORLDBEGIN; }
 WorldEnd                { return WORLDEND; }
 {WHITESPACE} /* do nothing */
-\n { line_num++; }
+\n { pbrt::line_num++; }
 {NUMBER} {
     yylval.num = atof(yytext);
     return NUM;
@@ -177,33 +184,33 @@ WorldEnd                { return WORLDEND; }
 
 "[" { return LBRACK; }
 "]" { return RBRACK; }
-\" { BEGIN STR; str_pos = 0; yylval.string[0] = '\0'; }
-<STR>\\n {add_string_char('\n');}
-<STR>\\t {add_string_char('\t');}
-<STR>\\r {add_string_char('\r');}
-<STR>\\b {add_string_char('\b');}
-<STR>\\f {add_string_char('\f');}
-<STR>\\\" {add_string_char('\"');}
-<STR>\\\\ {add_string_char('\\');}
+\" { BEGIN STR; pbrt::str_pos = 0; yylval.string[0] = '\0'; }
+<STR>\\n {pbrt::add_string_char('\n');}
+<STR>\\t {pbrt::add_string_char('\t');}
+<STR>\\r {pbrt::add_string_char('\r');}
+<STR>\\b {pbrt::add_string_char('\b');}
+<STR>\\f {pbrt::add_string_char('\f');}
+<STR>\\\" {pbrt::add_string_char('\"');}
+<STR>\\\\ {pbrt::add_string_char('\\');}
 <STR>\\[0-9]{3} {
   int val = atoi(yytext+1);
   while (val > 256)
     val -= 256;
-  add_string_char(val);
+  pbrt::add_string_char(val);
 }
 
 
-<STR>\\\n {line_num++;}
-<STR>\\. { add_string_char(yytext[1]);}
+<STR>\\\n {pbrt::line_num++;}
+<STR>\\. { pbrt::add_string_char(yytext[1]);}
 <STR>\" {BEGIN INITIAL; return STRING;}
-<STR>. {add_string_char(yytext[0]);}
-<STR>\n {Error("Unterminated string!");}
+<STR>. {pbrt::add_string_char(yytext[0]);}
+<STR>\n {pbrt::Error("Unterminated string!");}
 
-. { Error( "Illegal character: %c (0x%x)", yytext[0], int(yytext[0])); }
+. { pbrt::Error("Illegal character: %c (0x%x)", yytext[0], int(yytext[0])); }
 %%
 int yywrap() {
-    if (includeStack.size() == 0) return 1;
-    include_pop();
+    if (pbrt::includeStack.size() == 0) return 1;
+    pbrt::include_pop();
     return 0;
 }
 

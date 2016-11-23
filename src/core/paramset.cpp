@@ -36,6 +36,8 @@
 #include "floatfile.h"
 #include "textures/constant.h"
 
+namespace pbrt {
+
 // ParamSet Macros
 #define ADD_PARAM_TYPE(T, vec) \
     (vec).emplace_back(new ParamSetItem<T>(name, std::move(values), nValues));
@@ -790,3 +792,5 @@ std::shared_ptr<Texture<Float>> TextureParams::GetFloatTextureOrNull(
     if (val) return std::make_shared<ConstantTexture<Float>>(*val);
     return nullptr;
 }
+
+}  // namespace pbrt

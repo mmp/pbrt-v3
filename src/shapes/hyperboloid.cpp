@@ -37,6 +37,8 @@
 #include "efloat.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Hyperboloid Method Definitions
 Hyperboloid::Hyperboloid(const Transform *o2w, const Transform *w2o, bool ro,
                          const Point3f &point1, const Point3f &point2, Float tm)
@@ -257,3 +259,5 @@ std::shared_ptr<Shape> CreateHyperboloidShape(const Transform *o2w,
     return std::make_shared<Hyperboloid>(o2w, w2o, reverseOrientation, p1, p2,
                                          phimax);
 }
+
+}  // namespace pbrt

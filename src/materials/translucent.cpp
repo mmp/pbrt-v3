@@ -39,6 +39,8 @@
 #include "texture.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // TranslucentMaterial Method Definitions
 void TranslucentMaterial::ComputeScatteringFunctions(
     SurfaceInteraction *si, MemoryArena &arena, TransportMode mode,
@@ -94,3 +96,5 @@ TranslucentMaterial *CreateTranslucentMaterial(const TextureParams &mp) {
     return new TranslucentMaterial(Kd, Ks, roughness, reflect, transmit,
                                    bumpMap, remapRoughness);
 }
+
+}  // namespace pbrt

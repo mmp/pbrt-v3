@@ -42,6 +42,8 @@
 #include "texture.h"
 #include "textures/constant.h"
 
+namespace pbrt {
+
 // Hair Local Declarations
 inline Float I0(Float x), LogI0(Float x);
 
@@ -527,3 +529,5 @@ Spectrum HairBSDF::SigmaAFromReflectance(const Spectrum &c, Float beta_n) {
                           0.245f * Pow<5>(beta_n)));
     return sigma_a;
 }
+
+}  // namespace pbrt

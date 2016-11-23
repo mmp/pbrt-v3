@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "stringprint.h"
 
+namespace pbrt {
+
 template <typename T>
 inline bool isNaN(const T x) {
     return std::isnan(x);
@@ -720,8 +722,8 @@ class Bounds2 {
         return b.pMin != pMin || b.pMax != pMax;
     }
     Point2<T> Lerp(const Point2f &t) const {
-        return Point2<T>(::Lerp(t.x, pMin.x, pMax.x),
-                         ::Lerp(t.y, pMin.y, pMax.y));
+        return Point2<T>(pbrt::Lerp(t.x, pMin.x, pMax.x),
+                         pbrt::Lerp(t.y, pMin.y, pMax.y));
     }
     Vector2<T> Offset(const Point2<T> &p) const {
         Vector2<T> o = p - pMin;
@@ -791,9 +793,9 @@ class Bounds3 {
             return 2;
     }
     Point3<T> Lerp(const Point3f &t) const {
-        return Point3<T>(::Lerp(t.x, pMin.x, pMax.x),
-                         ::Lerp(t.y, pMin.y, pMax.y),
-                         ::Lerp(t.z, pMin.z, pMax.z));
+        return Point3<T>(pbrt::Lerp(t.x, pMin.x, pMax.x),
+                         pbrt::Lerp(t.y, pMin.y, pMax.y),
+                         pbrt::Lerp(t.z, pMin.z, pMax.z));
     }
     Vector3<T> Offset(const Point3<T> &p) const {
         Vector3<T> o = p - pMin;
@@ -828,6 +830,7 @@ typedef Bounds2<int> Bounds2i;
 typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
 #include <iterator>
+
 class Bounds2iIterator : public std::forward_iterator_tag {
   public:
     Bounds2iIterator(const Bounds2i &b, const Point2i &pt)
@@ -1474,5 +1477,7 @@ inline Float SphericalPhi(const Vector3f &v) {
     Float p = std::atan2(v.y, v.x);
     return (p < 0) ? (p + 2 * Pi) : p;
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_GEOMETRY_H

@@ -39,6 +39,8 @@
 #include "texture.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // GlassMaterial Method Definitions
 void GlassMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                                MemoryArena &arena,
@@ -105,3 +107,5 @@ GlassMaterial *CreateGlassMaterial(const TextureParams &mp) {
     return new GlassMaterial(Kr, Kt, roughu, roughv, index, bumpMap,
                              remapRoughness);
 }
+
+}  // namespace pbrt

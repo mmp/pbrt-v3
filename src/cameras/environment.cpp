@@ -37,6 +37,8 @@
 #include "sampler.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // EnvironmentCamera Method Definitions
 Float EnvironmentCamera::GenerateRay(const CameraSample &sample,
                                      Ray *ray) const {
@@ -97,3 +99,5 @@ EnvironmentCamera *CreateEnvironmentCamera(const ParamSet &params,
     return new EnvironmentCamera(cam2world, shutteropen, shutterclose, film,
                                  medium);
 }
+
+}  // namespace pbrt

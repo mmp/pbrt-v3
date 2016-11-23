@@ -40,6 +40,8 @@
 #include "paramset.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // SubsurfaceMaterial Method Definitions
 void SubsurfaceMaterial::ComputeScatteringFunctions(
     SurfaceInteraction *si, MemoryArena &arena, TransportMode mode,
@@ -131,3 +133,5 @@ SubsurfaceMaterial *CreateSubsurfaceMaterial(const TextureParams &mp) {
     return new SubsurfaceMaterial(scale, Kr, Kt, sigma_a, sigma_s, g, eta,
                                   roughu, roughv, bumpMap, remapRoughness);
 }
+
+}  // namespace pbrt

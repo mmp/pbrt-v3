@@ -36,6 +36,8 @@
 #include "imageio.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // ImageTexture Method Definitions
 template <typename Tmemory, typename Treturn>
 ImageTexture<Tmemory, Treturn>::ImageTexture(
@@ -182,3 +184,5 @@ ImageTexture<RGBSpectrum, Spectrum> *CreateImageSpectrumTexture(
     return new ImageTexture<RGBSpectrum, Spectrum>(
         std::move(map), filename, trilerp, maxAniso, wrapMode, scale, gamma);
 }
+
+}  // namespace pbrt

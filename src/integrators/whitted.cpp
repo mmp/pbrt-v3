@@ -38,6 +38,8 @@
 #include "film.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // WhittedIntegrator Method Definitions
 Spectrum WhittedIntegrator::Li(const RayDifferential &ray, const Scene &scene,
                                Sampler &sampler, MemoryArena &arena,
@@ -104,3 +106,5 @@ WhittedIntegrator *CreateWhittedIntegrator(
     }
     return new WhittedIntegrator(maxDepth, camera, sampler, pixelBounds);
 }
+
+}  // namespace pbrt

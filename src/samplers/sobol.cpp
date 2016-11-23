@@ -36,6 +36,8 @@
 #include "lowdiscrepancy.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // SobolSampler Method Definitions
 int64_t SobolSampler::GetIndexForSample(int64_t sampleNum) const {
     return SobolIntervalToIndex(log2Resolution, sampleNum,
@@ -66,3 +68,5 @@ SobolSampler *CreateSobolSampler(const ParamSet &params,
     if (PbrtOptions.quickRender) nsamp = 1;
     return new SobolSampler(nsamp, sampleBounds);
 }
+
+}  // namespace pbrt

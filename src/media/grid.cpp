@@ -37,6 +37,8 @@
 #include "sampler.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // GridDensityMedium Method Definitions
 Float GridDensityMedium::Density(const Point3f &p) const {
     // Compute voxel coordinates and offsets for _p_
@@ -98,3 +100,5 @@ Spectrum GridDensityMedium::Tr(const Ray &rWorld, Sampler &sampler) const {
     }
     return Spectrum(Tr);
 }
+
+}  // namespace pbrt

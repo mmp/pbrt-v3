@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "material.h"
 
+namespace pbrt {
+
 // MirrorMaterial Declarations
 class MirrorMaterial : public Material {
   public:
@@ -62,5 +64,7 @@ class MirrorMaterial : public Material {
 };
 
 MirrorMaterial *CreateMirrorMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_MIRROR_H

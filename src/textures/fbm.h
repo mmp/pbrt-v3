@@ -43,6 +43,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // FBmTexture Declarations
 template <typename T>
 class FBmTexture : public Texture<T> {
@@ -67,5 +69,7 @@ FBmTexture<Float> *CreateFBmFloatTexture(const Transform &tex2world,
                                          const TextureParams &tp);
 FBmTexture<Spectrum> *CreateFBmSpectrumTexture(const Transform &tex2world,
                                                const TextureParams &tp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_TEXTURES_FBM_H

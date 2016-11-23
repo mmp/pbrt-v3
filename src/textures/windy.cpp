@@ -34,6 +34,8 @@
 // textures/windy.cpp*
 #include "textures/windy.h"
 
+namespace pbrt {
+
 // WindyTexture Method Definitions
 WindyTexture<Float> *CreateWindyFloatTexture(const Transform &tex2world,
                                              const TextureParams &tp) {
@@ -48,3 +50,5 @@ WindyTexture<Spectrum> *CreateWindySpectrumTexture(const Transform &tex2world,
     std::unique_ptr<TextureMapping3D> map(new IdentityMapping3D(tex2world));
     return new WindyTexture<Spectrum>(std::move(map));
 }
+
+}  // namespace pbrt

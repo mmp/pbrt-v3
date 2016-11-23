@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "material.h"
 
+namespace pbrt {
+
 // TranslucentMaterial Declarations
 class TranslucentMaterial : public Material {
   public:
@@ -75,5 +77,7 @@ class TranslucentMaterial : public Material {
 };
 
 TranslucentMaterial *CreateTranslucentMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_TRANSLUCENT_H

@@ -45,6 +45,8 @@
 #include "sampling.h"
 #include "progressreporter.h"
 
+namespace pbrt {
+
 STAT_PERCENT("Integrator/Acceptance rate", acceptedMutations, totalMutations);
 
 // MLTSampler Constants
@@ -279,3 +281,5 @@ MLTIntegrator *CreateMLTIntegrator(const ParamSet &params,
     return new MLTIntegrator(camera, maxDepth, nBootstrap, nChains,
                              mutationsPerPixel, sigma, largeStepProbability);
 }
+
+}  // namespace pbrt

@@ -37,6 +37,9 @@
 #include "paramset.h"
 #include <set>
 #include <map>
+
+namespace pbrt {
+
 struct SDFace;
 struct SDVertex;
 
@@ -459,3 +462,5 @@ static Point3f weightBoundary(SDVertex *vert, Float beta) {
     p += beta * pRing[valence - 1];
     return p;
 }
+
+}  // namespace pbrt

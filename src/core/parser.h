@@ -40,6 +40,11 @@
 
 // core/parser.h*
 #include "pbrt.h"
+
+namespace pbrt {
+
 bool ParseFile(const std::string &filename);
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_PARSER_H

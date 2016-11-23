@@ -37,6 +37,8 @@
 #include "sampling.h"
 #include "stats.h"
 
+namespace pbrt {
+
 RandomSampler::RandomSampler(int ns, int seed) : Sampler(ns), rng(seed) {}
 
 Float RandomSampler::Get1D() {
@@ -73,3 +75,5 @@ Sampler *CreateRandomSampler(const ParamSet &params) {
     int ns = params.FindOneInt("pixelsamples", 4);
     return new RandomSampler(ns);
 }
+
+}  // namespace pbrt

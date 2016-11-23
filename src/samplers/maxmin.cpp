@@ -36,6 +36,8 @@
 #include "paramset.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // MaxMinDistSampler Method Definitions
 void MaxMinDistSampler::StartPixel(const Point2i &p) {
     ProfilePhase _(Prof::StartPixel);
@@ -74,3 +76,5 @@ MaxMinDistSampler *CreateMaxMinDistSampler(const ParamSet &params) {
     if (PbrtOptions.quickRender) nsamp = 1;
     return new MaxMinDistSampler(nsamp, sd);
 }
+
+}  // namespace pbrt

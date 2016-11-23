@@ -713,8 +713,6 @@ char *yytext;
 #include "api.h"
 #include "fileutil.h"
 
-struct ParamArray;
-
 #if defined(PBRT_IS_MSVC)
 #include <io.h>
 #pragma warning(disable:4244)
@@ -725,7 +723,14 @@ int isatty(int fd) { return _isatty(fd); }
 #else
 #include <unistd.h>
 #endif  // PBRT_IS_MSVC
+
+namespace pbrt {
+struct ParamArray;
+}
+
 #include "pbrtparse.h"
+
+namespace pbrt {
 
 struct IncludeInfo {
     std::string filename;
@@ -737,6 +742,7 @@ std::vector<IncludeInfo> includeStack;
 
 extern int line_num;
 int str_pos;
+extern int catIndentCount;
 
 void add_string_char(char c) {
     yylval.string[str_pos++] = c;
@@ -784,9 +790,10 @@ void include_pop() {
     includeStack.pop_back();
 }
 
+}  // namespace pbrt
 
 
-#line 790 "/Users/mmp/build/pbrt-v3/pbrtlex.cpp"
+#line 797 "/Users/mmp/build/pbrt-v3/pbrtlex.cpp"
 
 #define INITIAL 0
 #define STR 1
@@ -970,9 +977,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 119 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 126 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 
-#line 976 "/Users/mmp/build/pbrt-v3/pbrtlex.cpp"
+#line 983 "/Users/mmp/build/pbrt-v3/pbrtlex.cpp"
 
 	if ( !(yy_init) )
 		{
@@ -1057,234 +1064,234 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 120 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{ BEGIN COMMENT; extern int catIndentCount; if (PbrtOptions.cat || PbrtOptions.toPly) printf("%*s#", catIndentCount, ""); }
+#line 127 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{ BEGIN COMMENT; if (pbrt::PbrtOptions.cat || pbrt::PbrtOptions.toPly) printf("%*s#", pbrt::catIndentCount, ""); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 121 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{ /* eat it up */ if (PbrtOptions.cat || PbrtOptions.toPly) putchar(yytext[0]); }
+#line 128 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{ /* eat it up */ if (pbrt::PbrtOptions.cat || pbrt::PbrtOptions.toPly) putchar(yytext[0]); }
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 122 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{ line_num++; if (PbrtOptions.cat || PbrtOptions.toPly) putchar('\n'); BEGIN INITIAL; }
+#line 129 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{ pbrt::line_num++; if (pbrt::PbrtOptions.cat || pbrt::PbrtOptions.toPly) putchar('\n'); BEGIN INITIAL; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 123 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 130 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return ACCELERATOR; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 124 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 131 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return ACTIVETRANSFORM; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 125 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 132 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return ALL; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 126 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 133 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return AREALIGHTSOURCE; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 127 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 134 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return ATTRIBUTEBEGIN; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 128 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 135 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return ATTRIBUTEEND; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 129 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 136 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return CAMERA; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 130 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 137 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return CONCATTRANSFORM; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 131 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 138 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return COORDINATESYSTEM; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 132 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 139 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return COORDSYSTRANSFORM; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 133 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 140 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return ENDTIME; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 134 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 141 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return FILM; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 135 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 142 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return IDENTITY; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 136 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 143 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return INCLUDE; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 137 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 144 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return LIGHTSOURCE; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 138 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 145 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return LOOKAT; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 139 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 146 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return MAKENAMEDMEDIUM; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 140 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 147 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return MAKENAMEDMATERIAL; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 141 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 148 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return MATERIAL; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 142 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 149 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return MEDIUMINTERFACE; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 143 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 150 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return NAMEDMATERIAL; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 144 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 151 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return OBJECTBEGIN; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 145 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 152 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return OBJECTEND; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 146 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 153 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return OBJECTINSTANCE; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 147 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 154 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return PIXELFILTER; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 148 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 155 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return REVERSEORIENTATION; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 149 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 156 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return ROTATE; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 150 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 157 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return SAMPLER; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 151 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 158 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return SCALE; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 152 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 159 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return SHAPE; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 153 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 160 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return STARTTIME; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 154 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 161 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return INTEGRATOR; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 155 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 162 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return TEXTURE; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 156 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 163 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return TRANSFORMBEGIN; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 157 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 164 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return TRANSFORMEND; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 158 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 165 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return TRANSFORMTIMES; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 159 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 166 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return TRANSFORM; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 160 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 167 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return TRANSLATE; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 161 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 168 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return WORLDBEGIN; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 162 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 169 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return WORLDEND; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 163 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 170 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 /* do nothing */
 	YY_BREAK
 case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
-#line 164 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{ line_num++; }
+#line 171 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{ pbrt::line_num++; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 165 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 172 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 {
     yylval.num = atof(yytext);
     return NUM;
@@ -1292,7 +1299,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 171 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 178 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 {
     yylval.string[0] = '\0';
     strncat(yylval.string, yytext, sizeof(yylval.string) - 1);
@@ -1301,102 +1308,102 @@ YY_RULE_SETUP
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 178 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 185 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return LBRACK; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 179 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 186 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 { return RBRACK; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 180 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{ BEGIN STR; str_pos = 0; yylval.string[0] = '\0'; }
+#line 187 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{ BEGIN STR; pbrt::str_pos = 0; yylval.string[0] = '\0'; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 181 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{add_string_char('\n');}
+#line 188 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::add_string_char('\n');}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 182 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{add_string_char('\t');}
+#line 189 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::add_string_char('\t');}
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 183 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{add_string_char('\r');}
+#line 190 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::add_string_char('\r');}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 184 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{add_string_char('\b');}
+#line 191 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::add_string_char('\b');}
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 185 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{add_string_char('\f');}
+#line 192 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::add_string_char('\f');}
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 186 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{add_string_char('\"');}
+#line 193 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::add_string_char('\"');}
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 187 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{add_string_char('\\');}
+#line 194 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::add_string_char('\\');}
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 188 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 195 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 {
   int val = atoi(yytext+1);
   while (val > 256)
     val -= 256;
-  add_string_char(val);
+  pbrt::add_string_char(val);
 }
 	YY_BREAK
 case 59:
 /* rule 59 can match eol */
 YY_RULE_SETUP
-#line 196 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{line_num++;}
+#line 203 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::line_num++;}
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 197 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{ add_string_char(yytext[1]);}
+#line 204 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{ pbrt::add_string_char(yytext[1]);}
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 198 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 205 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 {BEGIN INITIAL; return STRING;}
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 199 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{add_string_char(yytext[0]);}
+#line 206 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::add_string_char(yytext[0]);}
 	YY_BREAK
 case 63:
 /* rule 63 can match eol */
 YY_RULE_SETUP
-#line 200 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{Error("Unterminated string!");}
+#line 207 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{pbrt::Error("Unterminated string!");}
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 202 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
-{ Error( "Illegal character: %c (0x%x)", yytext[0], int(yytext[0])); }
+#line 209 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+{ pbrt::Error("Illegal character: %c (0x%x)", yytext[0], int(yytext[0])); }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 203 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 210 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 ECHO;
 	YY_BREAK
-#line 1400 "/Users/mmp/build/pbrt-v3/pbrtlex.cpp"
+#line 1407 "/Users/mmp/build/pbrt-v3/pbrtlex.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(STR):
 case YY_STATE_EOF(COMMENT):
@@ -2360,12 +2367,12 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 203 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
+#line 210 "/Users/mmp/pbrt-v3/src/core/pbrtlex.ll"
 
 
 int yywrap() {
-    if (includeStack.size() == 0) return 1;
-    include_pop();
+    if (pbrt::includeStack.size() == 0) return 1;
+    pbrt::include_pop();
     return 0;
 }
 

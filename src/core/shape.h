@@ -45,6 +45,8 @@
 #include "memory.h"
 #include "transform.h"
 
+namespace pbrt {
+
 // Shape Declarations
 class Shape {
   public:
@@ -78,5 +80,7 @@ class Shape {
     const bool reverseOrientation;
     const bool transformSwapsHandedness;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_SHAPE_H

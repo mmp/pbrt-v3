@@ -37,6 +37,8 @@
 #include "interaction.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // Primitive Method Definitions
 Primitive::~Primitive() {}
 const AreaLight *Aggregate::GetAreaLight() const {
@@ -125,3 +127,5 @@ void GeometricPrimitive::ComputeScatteringFunctions(
                                              allowMultipleLobes);
     CHECK_GE(Dot(isect->n, isect->shading.n), 0.);
 }
+
+}  // namespace pbrt

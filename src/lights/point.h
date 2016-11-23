@@ -43,6 +43,8 @@
 #include "light.h"
 #include "shape.h"
 
+namespace pbrt {
+
 // PointLight Declarations
 class PointLight : public Light {
   public:
@@ -71,5 +73,7 @@ class PointLight : public Light {
 std::shared_ptr<PointLight> CreatePointLight(const Transform &light2world,
                                              const Medium *medium,
                                              const ParamSet &paramSet);
+
+}  // namespace pbrt
 
 #endif  // PBRT_LIGHTS_POINT_H

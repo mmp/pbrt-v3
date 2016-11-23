@@ -42,6 +42,8 @@
 #include "sampler.h"
 #include "lowdiscrepancy.h"
 
+namespace pbrt {
+
 // MaxMinDistSampler Declarations
 class MaxMinDistSampler : public PixelSampler {
   public:
@@ -81,5 +83,7 @@ class MaxMinDistSampler : public PixelSampler {
 };
 
 MaxMinDistSampler *CreateMaxMinDistSampler(const ParamSet &params);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SAMPLERS_MAXMIN_H

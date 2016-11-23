@@ -34,6 +34,8 @@
 // core/lowdiscrepancy.cpp*
 #include "lowdiscrepancy.h"
 
+namespace pbrt {
+
 // Low Discrepancy Data Definitions
 const int Primes[PrimeTableSize] = {
     2, 3, 5, 7, 11,
@@ -4569,3 +4571,5 @@ Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm) {
         return 0;
     }
 }
+
+}  // namespace pbrt

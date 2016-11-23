@@ -38,6 +38,8 @@
 #include "texture.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // MetalMaterial Method Definitions
 MetalMaterial::MetalMaterial(const std::shared_ptr<Texture<Spectrum>> &eta,
                              const std::shared_ptr<Texture<Spectrum>> &k,
@@ -130,3 +132,5 @@ MetalMaterial *CreateMetalMaterial(const TextureParams &mp) {
     return new MetalMaterial(eta, k, roughness, uRoughness, vRoughness, bumpMap,
                              remapRoughness);
 }
+
+}  // namespace pbrt

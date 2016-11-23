@@ -43,6 +43,8 @@
 #include "stringprint.h"
 #include "geometry.h"
 
+namespace pbrt {
+
 // Quaternion Declarations
 struct Quaternion {
     // Quaternion Public Methods
@@ -119,5 +121,7 @@ inline Float Dot(const Quaternion &q1, const Quaternion &q2) {
 inline Quaternion Normalize(const Quaternion &q) {
     return q / std::sqrt(Dot(q, q));
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_QUATERNION_H

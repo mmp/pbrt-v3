@@ -41,6 +41,8 @@
 // core/error.h*
 #include "pbrt.h"
 
+namespace pbrt {
+
 // Error Reporting Declarations
 
 // Setup printf format
@@ -51,5 +53,7 @@
 #endif  // __GNUG__
 void Warning(const char *, ...) PRINTF_FUNC;
 void Error(const char *, ...) PRINTF_FUNC;
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_ERROR_H

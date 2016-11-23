@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "material.h"
 
+namespace pbrt {
+
 // GlassMaterial Declarations
 class GlassMaterial : public Material {
   public:
@@ -74,5 +76,7 @@ class GlassMaterial : public Material {
 };
 
 GlassMaterial *CreateGlassMaterial(const TextureParams &mp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_GLASS_H

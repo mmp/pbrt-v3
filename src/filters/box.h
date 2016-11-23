@@ -41,6 +41,8 @@
 // filters/box.h*
 #include "filter.h"
 
+namespace pbrt {
+
 // Box Filter Declarations
 class BoxFilter : public Filter {
   public:
@@ -49,5 +51,7 @@ class BoxFilter : public Filter {
 };
 
 BoxFilter *CreateBoxFilter(const ParamSet &ps);
+
+}  // namespace pbrt
 
 #endif  // PBRT_FILTERS_BOX_H

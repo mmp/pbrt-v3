@@ -34,6 +34,8 @@
 // textures/fbm.cpp*
 #include "textures/fbm.h"
 
+namespace pbrt {
+
 // FBmTexture Method Definitions
 FBmTexture<Float> *CreateFBmFloatTexture(const Transform &tex2world,
                                          const TextureParams &tp) {
@@ -50,3 +52,5 @@ FBmTexture<Spectrum> *CreateFBmSpectrumTexture(const Transform &tex2world,
     return new FBmTexture<Spectrum>(std::move(map), tp.FindInt("octaves", 8),
                                     tp.FindFloat("roughness", .5f));
 }
+
+}  // namespace pbrt

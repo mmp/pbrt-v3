@@ -33,6 +33,8 @@
 // core/interpolation.cpp*
 #include "interpolation.h"
 
+namespace pbrt {
+
 // Spline Interpolation Definitions
 Float CatmullRom(int size, const Float *nodes, const Float *values, Float x) {
     if (!(x >= nodes[0] && x <= nodes[size - 1])) return 0;
@@ -416,3 +418,5 @@ Float SampleFourier(const Float *ak, const Float *recip, int m, Float u,
     *phiPtr = (Float)phi;
     return f;
 }
+
+}  // namespace pbrt

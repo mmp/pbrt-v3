@@ -11,6 +11,8 @@
 #include "paramset.h"
 #include "shapes/disk.h"
 
+using namespace pbrt;
+
 static MemoryArena arena;
 static RNG rng;
 

@@ -36,6 +36,8 @@
 #include "geometry.h"
 #include "shape.h"
 
+namespace pbrt {
+
 // Sampling Function Definitions
 void StratifiedSample1D(Float *samp, int nSamples, RNG &rng, bool jitter) {
     Float invNSamples = (Float)1 / nSamples;
@@ -167,3 +169,5 @@ Distribution2D::Distribution2D(const Float *func, int nu, int nv) {
         marginalFunc.push_back(pConditionalV[v]->funcInt);
     pMarginal.reset(new Distribution1D(&marginalFunc[0], nv));
 }
+
+}  // namespace pbrt

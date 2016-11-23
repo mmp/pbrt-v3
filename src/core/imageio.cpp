@@ -40,6 +40,8 @@
 #include <ImfRgba.h>
 #include <ImfRgbaFile.h>
 
+namespace pbrt {
+
 // ImageIO Local Declarations
 static void WriteImageEXR(const std::string &name, const Float *pixels,
                           int xRes, int yRes, int totalXRes, int totalYRes,
@@ -480,3 +482,5 @@ fail:
     fclose(fp);
     return false;
 }
+
+}  // namespace pbrt

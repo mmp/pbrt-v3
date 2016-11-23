@@ -39,6 +39,8 @@
 #include "film.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // DirectLightingIntegrator Method Definitions
 void DirectLightingIntegrator::Preprocess(const Scene &scene,
                                           Sampler &sampler) {
@@ -127,3 +129,5 @@ DirectLightingIntegrator *CreateDirectLightingIntegrator(
     return new DirectLightingIntegrator(strategy, maxDepth, camera, sampler,
                                         pixelBounds);
 }
+
+}  // namespace pbrt

@@ -34,6 +34,8 @@
 // textures/wrinkled.cpp*
 #include "textures/wrinkled.h"
 
+namespace pbrt {
+
 // WrinkledTexture Method Definitions
 WrinkledTexture<Float> *CreateWrinkledFloatTexture(const Transform &tex2world,
                                                    const TextureParams &tp) {
@@ -51,3 +53,5 @@ WrinkledTexture<Spectrum> *CreateWrinkledSpectrumTexture(
                                          tp.FindInt("octaves", 8),
                                          tp.FindFloat("roughness", .5f));
 }
+
+}  // namespace pbrt

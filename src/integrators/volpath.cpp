@@ -40,6 +40,8 @@
 #include "scene.h"
 #include "stats.h"
 
+namespace pbrt {
+
 STAT_FLOAT_DISTRIBUTION("Integrator/Path length", pathLength);
 STAT_COUNTER("Integrator/Volume interactions", volumeInteractions);
 STAT_COUNTER("Integrator/Surface interactions", surfaceInteractions);
@@ -191,3 +193,5 @@ VolPathIntegrator *CreateVolPathIntegrator(
     return new VolPathIntegrator(maxDepth, camera, sampler, pixelBounds,
                                  rrThreshold, lightStrategy);
 }
+
+}  // namespace pbrt

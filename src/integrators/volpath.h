@@ -43,6 +43,8 @@
 #include "integrator.h"
 #include "lightdistrib.h"
 
+namespace pbrt {
+
 // VolPathIntegrator Declarations
 class VolPathIntegrator : public SamplerIntegrator {
   public:
@@ -70,5 +72,7 @@ class VolPathIntegrator : public SamplerIntegrator {
 VolPathIntegrator *CreateVolPathIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera);
+
+}  // namespace pbrt
 
 #endif  // PBRT_INTEGRATORS_VOLPATH_H

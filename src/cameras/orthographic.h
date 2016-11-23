@@ -43,6 +43,8 @@
 #include "camera.h"
 #include "film.h"
 
+namespace pbrt {
+
 // OrthographicCamera Declarations
 class OrthographicCamera : public ProjectiveCamera {
   public:
@@ -70,5 +72,7 @@ class OrthographicCamera : public ProjectiveCamera {
 OrthographicCamera *CreateOrthographicCamera(const ParamSet &params,
                                              const AnimatedTransform &cam2world,
                                              Film *film, const Medium *medium);
+
+}  // namespace pbrt
 
 #endif  // PBRT_CAMERAS_ORTHOGRAPHIC_H

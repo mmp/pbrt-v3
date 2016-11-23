@@ -40,6 +40,8 @@
 #include "scene.h"
 #include "stats.h"
 
+namespace pbrt {
+
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
@@ -193,3 +195,5 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
     return new PathIntegrator(maxDepth, camera, sampler, pixelBounds,
                               rrThreshold, lightStrategy);
 }
+
+}  // namespace pbrt

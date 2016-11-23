@@ -44,6 +44,8 @@
 #include "camera.h"
 #include "film.h"
 
+namespace pbrt {
+
 // SPPM Declarations
 class SPPMIntegrator : public Integrator {
   public:
@@ -73,5 +75,7 @@ class SPPMIntegrator : public Integrator {
 
 Integrator *CreateSPPMIntegrator(const ParamSet &params,
                                  std::shared_ptr<const Camera> camera);
+
+}  // namespace pbrt
 
 #endif  // PBRT_INTEGRATORS_SPPM_H

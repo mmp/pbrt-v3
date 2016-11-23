@@ -40,6 +40,8 @@
 #include "ext/rply.h"
 #include <array>
 
+namespace pbrt {
+
 STAT_PERCENT("Intersections/Ray-triangle intersection tests", nHits, nTests);
 
 // Triangle Local Definitions
@@ -689,3 +691,5 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
     return CreateTriangleMesh(o2w, w2o, reverseOrientation, nvi / 3, vi, npi, P,
                               S, N, uvs, alphaTex, shadowAlphaTex);
 }
+
+}  // namespace pbrt

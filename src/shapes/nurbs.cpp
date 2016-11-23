@@ -37,6 +37,8 @@
 #include "paramset.h"
 #include "texture.h"
 
+namespace pbrt {
+
 // NURBS Evaluation Functions
 static int KnotOffset(const Float *knot, int order, int np, Float t) {
     int firstKnot = order - 1;
@@ -304,3 +306,5 @@ std::vector<std::shared_ptr<Shape>> CreateNURBS(const Transform *o2w,
                               vertices.get(), nVerts, evalPs.get(), nullptr,
                               evalNs.get(), uvs.get(), nullptr, nullptr);
 }
+
+}  // namespace pbrt

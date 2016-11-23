@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "primitive.h"
 
+namespace pbrt {
+
 // KdTreeAccel Declarations
 struct KdAccelNode;
 struct BoundEdge;
@@ -81,5 +83,7 @@ struct KdToDo {
 
 std::shared_ptr<KdTreeAccel> CreateKdTreeAccelerator(
     const std::vector<std::shared_ptr<Primitive>> &prims, const ParamSet &ps);
+
+}  // namespace pbrt
 
 #endif  // PBRT_ACCELERATORS_KDTREEACCEL_H

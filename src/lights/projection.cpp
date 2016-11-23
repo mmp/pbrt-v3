@@ -39,6 +39,8 @@
 #include "reflection.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // ProjectionLight Method Definitions
 ProjectionLight::ProjectionLight(const Transform &LightToWorld,
                                  const MediumInterface &mediumInterface,
@@ -138,3 +140,5 @@ std::shared_ptr<ProjectionLight> CreateProjectionLight(
     return std::make_shared<ProjectionLight>(light2world, medium, I * sc,
                                              texname, fov);
 }
+
+}  // namespace pbrt

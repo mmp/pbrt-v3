@@ -36,6 +36,8 @@
 #include "paramset.h"
 #include "rng.h"
 
+namespace pbrt {
+
 // HaltonSampler Local Constants
 static PBRT_CONSTEXPR int kMaxResolution = 128;
 
@@ -132,3 +134,5 @@ HaltonSampler *CreateHaltonSampler(const ParamSet &params,
     if (PbrtOptions.quickRender) nsamp = 1;
     return new HaltonSampler(nsamp, sampleBounds);
 }
+
+}  // namespace pbrt

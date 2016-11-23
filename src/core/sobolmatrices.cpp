@@ -64,6 +64,8 @@
 
 #include "sobolmatrices.h"
 
+namespace pbrt {
+
 const uint32_t SobolMatrices32[NumSobolDimensions * SobolMatrixSize] = {
     0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000,
     0x02000000, 0x01000000, 0x00800000, 0x00400000, 0x00200000, 0x00100000,
@@ -27013,3 +27015,5 @@ const uint64_t VdCSobolMatricesInv[][SobolMatrixSize] = {
      0x40000000400ULL, 0x20000000200ULL, 0x10000000100ULL, 0x8000000080ULL,
      0x4000000040ULL, 0x2000000020ULL, 0x1000000010ULL, 0x800000008ULL,
      0x400000004ULL, 0x200000002ULL, 0x100000001ULL}};
+
+}  // namespace pbrt

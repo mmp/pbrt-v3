@@ -42,6 +42,8 @@
 #include "pbrt.h"
 #include "geometry.h"
 
+namespace pbrt {
+
 // Filter Declarations
 class Filter {
   public:
@@ -54,5 +56,7 @@ class Filter {
     // Filter Public Data
     const Vector2f radius, invRadius;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_FILTER_H

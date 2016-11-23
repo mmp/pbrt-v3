@@ -51,6 +51,8 @@ http://pbrt.org/hair.pdf for a description of the implementation here.
 #include "reflection.h"
 #include <array>
 
+namespace pbrt {
+
 // HairMaterial Declarations
 class HairMaterial : public Material {
   public:
@@ -167,5 +169,7 @@ static Point2f DemuxFloat(Float f) {
     uint32_t bits[2] = {Compact1By1(v), Compact1By1(v >> 1)};
     return {bits[0] / Float(1 << 16), bits[1] / Float(1 << 16)};
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_MATERIALS_HAIR_H

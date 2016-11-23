@@ -49,6 +49,8 @@
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif  // __GNUG__
 
+namespace pbrt {
+
 inline void stringPrintfRecursive(std::string *s, const char *fmt) {
     const char *c = fmt;
     // No args left; make sure there aren't any extra formatting
@@ -170,5 +172,7 @@ inline std::string StringPrintf(const char *fmt, Args... args) {
 #ifdef __GNUG__
 #pragma GCC diagnostic pop
 #endif  // __GNUG__
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_STRINGPRINT_H

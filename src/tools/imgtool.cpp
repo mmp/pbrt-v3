@@ -19,6 +19,8 @@ extern "C" {
 }
 #include <glog/logging.h>
 
+using namespace pbrt;
+
 static void usage(const char *msg = nullptr, ...) {
     if (msg) {
         va_list args;

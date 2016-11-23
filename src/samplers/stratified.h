@@ -42,6 +42,8 @@
 #include "sampler.h"
 #include "rng.h"
 
+namespace pbrt {
+
 // StratifiedSampler Declarations
 class StratifiedSampler : public PixelSampler {
   public:
@@ -62,5 +64,7 @@ class StratifiedSampler : public PixelSampler {
 };
 
 StratifiedSampler *CreateStratifiedSampler(const ParamSet &params);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SAMPLERS_STRATIFIED_H

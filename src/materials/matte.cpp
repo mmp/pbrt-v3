@@ -39,6 +39,8 @@
 #include "texture.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // MatteMaterial Method Definitions
 void MatteMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                                MemoryArena &arena,
@@ -67,3 +69,5 @@ MatteMaterial *CreateMatteMaterial(const TextureParams &mp) {
         mp.GetFloatTextureOrNull("bumpmap");
     return new MatteMaterial(Kd, sigma, bumpMap);
 }
+
+}  // namespace pbrt

@@ -43,6 +43,8 @@
 #include "memory.h"
 #include "interaction.h"
 
+namespace pbrt {
+
 // LightFlags Declarations
 enum class LightFlags : int {
     DeltaPosition = 1,
@@ -108,5 +110,7 @@ class AreaLight : public Light {
               int nSamples);
     virtual Spectrum L(const Interaction &intr, const Vector3f &w) const = 0;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_LIGHT_H

@@ -43,6 +43,8 @@
 #include "light.h"
 #include "primitive.h"
 
+namespace pbrt {
+
 // DiffuseAreaLight Declarations
 class DiffuseAreaLight : public AreaLight {
   public:
@@ -78,5 +80,7 @@ class DiffuseAreaLight : public AreaLight {
 std::shared_ptr<AreaLight> CreateDiffuseAreaLight(
     const Transform &light2world, const Medium *medium,
     const ParamSet &paramSet, const std::shared_ptr<Shape> &shape);
+
+}  // namespace pbrt
 
 #endif  // PBRT_LIGHTS_DIFFUSE_H

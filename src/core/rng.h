@@ -41,6 +41,8 @@
 // core/rng.h*
 #include "pbrt.h"
 
+namespace pbrt {
+
 // Random Number Declarations
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
 static const double DoubleOneMinusEpsilon = 0.99999999999999989;
@@ -140,5 +142,7 @@ inline uint32_t RNG::UniformUInt32() {
     uint32_t rot = (uint32_t)(oldstate >> 59u);
     return (xorshifted >> rot) | (xorshifted << ((~rot + 1u) & 31));
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_RNG_H

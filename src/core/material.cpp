@@ -38,6 +38,8 @@
 #include "spectrum.h"
 #include "reflection.h"
 
+namespace pbrt {
+
 // Material Method Definitions
 Material::~Material() {}
 
@@ -79,3 +81,5 @@ void Material::Bump(const std::shared_ptr<Texture<Float>> &d,
     si->SetShadingGeometry(dpdu, dpdv, si->shading.dndu, si->shading.dndv,
                            false);
 }
+
+}  // namespace pbrt

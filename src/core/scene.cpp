@@ -39,6 +39,9 @@
 #include "parallel.h"
 #include "progressreporter.h"
 #include "stats.h"
+
+namespace pbrt {
+
 STAT_COUNTER("Intersections/Regular ray intersection tests",
              nIntersectionTests);
 STAT_COUNTER("Intersections/Shadow ray intersection tests", nShadowTests);
@@ -70,3 +73,5 @@ bool Scene::IntersectTr(Ray ray, Sampler &sampler, SurfaceInteraction *isect,
         ray = isect->SpawnRay(ray.d);
     }
 }
+
+}  // namespace pbrt

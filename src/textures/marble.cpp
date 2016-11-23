@@ -34,6 +34,8 @@
 // textures/marble.cpp*
 #include "textures/marble.h"
 
+namespace pbrt {
+
 // MarbleTexture Method Definitions
 Texture<Float> *CreateMarbleFloatTexture(const Transform &tex2world,
                                          const TextureParams &tp) {
@@ -49,3 +51,5 @@ MarbleTexture *CreateMarbleSpectrumTexture(const Transform &tex2world,
                              tp.FindFloat("scale", 1.f),
                              tp.FindFloat("variation", .2f));
 }
+
+}  // namespace pbrt

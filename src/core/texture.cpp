@@ -35,6 +35,8 @@
 #include "texture.h"
 #include "shape.h"
 
+namespace pbrt {
+
 // Texture Inline Functions
 inline Float SmoothStep(Float min, Float max, Float value) {
     Float v = Clamp((value - min) / (max - min), 0, 1);
@@ -258,3 +260,5 @@ Float Lanczos(Float x, Float tau) {
     Float lanczos = std::sin(x) / x;
     return s * lanczos;
 }
+
+}  // namespace pbrt

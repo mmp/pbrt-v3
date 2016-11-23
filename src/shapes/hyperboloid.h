@@ -41,6 +41,8 @@
 // shapes/hyperboloid.h*
 #include "shape.h"
 
+namespace pbrt {
+
 // Hyperboloid Declarations
 class Hyperboloid : public Shape {
   public:
@@ -67,5 +69,7 @@ std::shared_ptr<Shape> CreateHyperboloidShape(const Transform *o2w,
                                               const Transform *w2o,
                                               bool reverseOrientation,
                                               const ParamSet &params);
+
+}  // namespace pbrt
 
 #endif  // PBRT_SHAPES_HYPERBOLOID_H

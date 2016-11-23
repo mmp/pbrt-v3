@@ -47,6 +47,8 @@
 #include "sampler.h"
 #include "material.h"
 
+namespace pbrt {
+
 // Integrator Declarations
 class Integrator {
   public:
@@ -102,5 +104,7 @@ class SamplerIntegrator : public Integrator {
     std::shared_ptr<Sampler> sampler;
     const Bounds2i pixelBounds;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_INTEGRATOR_H

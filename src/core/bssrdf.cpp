@@ -37,6 +37,8 @@
 #include "parallel.h"
 #include "scene.h"
 
+namespace pbrt {
+
 // BSSRDF Utility Functions
 Float FresnelMoment1(Float eta) {
     Float eta2 = eta * eta, eta3 = eta2 * eta, eta4 = eta3 * eta,
@@ -382,3 +384,5 @@ Float TabulatedBSSRDF::Pdf_Sr(int ch, Float r) const {
     if (rOptical != 0) sr /= 2 * Pi * rOptical;
     return std::max((Float)0, sr * sigma_t[ch] * sigma_t[ch] / rhoEff);
 }
+
+}  // namespace pbrt

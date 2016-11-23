@@ -35,13 +35,16 @@
 #include "parser.h"
 #include "fileutil.h"
 
+extern FILE *yyin;
+extern int yyparse(void);
+extern int yydebug;
+
+namespace pbrt {
+
 // Parsing Global Interface
 bool ParseFile(const std::string &filename) {
-    extern FILE *yyin;
-    extern int yyparse(void);
     extern std::string current_file;
     extern int line_num;
-    extern int yydebug;
 
     LOG(INFO) << "Starting to parse input file " << filename;
 
@@ -65,3 +68,5 @@ bool ParseFile(const std::string &filename) {
     LOG(INFO) << "Done parsing input file " << filename;
     return (yyin != nullptr);
 }
+
+}  // namespace pbrt

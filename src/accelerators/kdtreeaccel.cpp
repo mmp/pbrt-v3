@@ -38,6 +38,8 @@
 #include "stats.h"
 #include <algorithm>
 
+namespace pbrt {
+
 // KdTreeAccel Local Declarations
 struct KdAccelNode {
     // KdAccelNode Methods
@@ -438,3 +440,5 @@ std::shared_ptr<KdTreeAccel> CreateKdTreeAccelerator(
     return std::make_shared<KdTreeAccel>(prims, isectCost, travCost, emptyBonus,
                                          maxPrims, maxDepth);
 }
+
+}  // namespace pbrt

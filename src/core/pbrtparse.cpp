@@ -166,7 +166,7 @@
 
 
 /* Copy the first part of user declarations.  */
-#line 33 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 33 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
 
 #include "api.h"
 #include "pbrt.h"
@@ -179,19 +179,19 @@
 #pragma warning(disable:4018)
 #endif // PBRT_IS_MSVC
 
+void yyerror(const char *str) {
+    pbrt::Error("Parsing error: %s", str);
+    exit(1);
+}
 extern int yylex();
+
+namespace pbrt {
+
 extern void include_push(char *filename);
 int line_num = 0;
 std::string current_file;
 
 #define YYMAXDEPTH 100000000
-
-void yyerror(const char *str) {
-    Error("Parsing error: %s", str);
-    exit(1);
-}
-
-
 
 struct ParamArray {
     ParamArray() {
@@ -290,6 +290,7 @@ static bool lookupType(const char *name, int *type, std::string &sname);
         fprintf ((file), " %f", (value).num); \
 }
 
+}  // namespace pbrt
 
 
 
@@ -313,14 +314,14 @@ static bool lookupType(const char *name, int *type, std::string &sname);
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 159 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 160 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
 {
 char string[1024];
 double num;
-ParamArray *ribarray;
+pbrt::ParamArray *ribarray;
 }
 /* Line 193 of yacc.c.  */
-#line 324 "/Users/mmp/build/pbrt-v3/pbrtparse.cpp"
+#line 325 "/Users/mmp/build/pbrt-v3/pbrtparse.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -333,7 +334,7 @@ ParamArray *ribarray;
 
 
 /* Line 216 of yacc.c.  */
-#line 337 "/Users/mmp/build/pbrt-v3/pbrtparse.cpp"
+#line 338 "/Users/mmp/build/pbrt-v3/pbrtparse.c"
 
 #ifdef short
 # undef short
@@ -645,13 +646,13 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   183,   183,   189,   197,   205,   213,   219,   226,   233,
-     241,   247,   252,   258,   266,   273,   281,   287,   292,   298,
-     306,   312,   325,   331,   336,   344,   349,   355,   364,   370,
-     376,   382,   391,   397,   403,   412,   424,   430,   436,   445,
-     451,   457,   466,   472,   481,   490,   499,   505,   511,   517,
-     523,   529,   535,   544,   550,   556,   565,   571,   580,   589,
-     598,   604,   610,   616,   628,   634,   640
+       0,   184,   184,   190,   198,   206,   214,   220,   227,   234,
+     242,   248,   253,   259,   267,   274,   282,   288,   293,   299,
+     307,   313,   326,   332,   337,   345,   350,   356,   365,   371,
+     377,   383,   392,   398,   404,   413,   425,   431,   437,   446,
+     452,   458,   467,   473,   482,   491,   500,   506,   512,   518,
+     524,   530,   536,   545,   551,   557,   566,   572,   581,   590,
+     599,   605,   611,   617,   629,   635,   641
 };
 #endif
 
@@ -1641,518 +1642,518 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 184 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 185 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 3:
-#line 190 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 191 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    if (cur_array) LOG(FATAL) << "Unexpected error parsing array";
-    cur_array = new ParamArray;
+    CHECK(pbrt::cur_array == nullptr);
+    pbrt::cur_array = new pbrt::ParamArray;
 ;}
     break;
 
   case 4:
-#line 198 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 199 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    cur_array->element_size = sizeof(const char *);
-    cur_array->isString = true;
+    pbrt::cur_array->element_size = sizeof(const char *);
+    pbrt::cur_array->isString = true;
 ;}
     break;
 
   case 5:
-#line 206 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 207 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    cur_array->element_size = sizeof(double);
-    cur_array->isString = false;
+    pbrt::cur_array->element_size = sizeof(double);
+    pbrt::cur_array->isString = false;
 ;}
     break;
 
   case 6:
-#line 214 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 215 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
     (yyval.ribarray) = (yyvsp[(1) - (1)].ribarray);
 ;}
     break;
 
   case 7:
-#line 220 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 221 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
     (yyval.ribarray) = (yyvsp[(1) - (1)].ribarray);
 ;}
     break;
 
   case 8:
-#line 227 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 228 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    (yyval.ribarray) = cur_array;
-    cur_array = nullptr;
+    (yyval.ribarray) = pbrt::cur_array;
+    pbrt::cur_array = nullptr;
 ;}
     break;
 
   case 9:
-#line 234 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 235 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    (yyval.ribarray) = cur_array;
-    cur_array = nullptr;
+    (yyval.ribarray) = pbrt::cur_array;
+    pbrt::cur_array = nullptr;
 ;}
     break;
 
   case 10:
-#line 242 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 243 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 11:
-#line 248 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 249 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 12:
-#line 253 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 254 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 13:
-#line 259 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 260 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
     char *to_add = strdup((yyvsp[(2) - (2)].string));
-    AddArrayElement(&to_add);
+    pbrt::AddArrayElement(&to_add);
 ;}
     break;
 
   case 14:
-#line 267 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 268 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    (yyval.ribarray) = cur_array;
-    cur_array = nullptr;
+    (yyval.ribarray) = pbrt::cur_array;
+    pbrt::cur_array = nullptr;
 ;}
     break;
 
   case 15:
-#line 274 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 275 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    (yyval.ribarray) = cur_array;
-    cur_array = nullptr;
+    (yyval.ribarray) = pbrt::cur_array;
+    pbrt::cur_array = nullptr;
 ;}
     break;
 
   case 16:
-#line 282 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 283 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 17:
-#line 288 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 289 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 18:
-#line 293 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 294 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 19:
-#line 299 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 300 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
     double to_add = (yyvsp[(2) - (2)].num);
-    AddArrayElement(&to_add);
+    pbrt::AddArrayElement(&to_add);
 ;}
     break;
 
   case 20:
-#line 307 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 308 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 21:
-#line 313 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 314 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    for (size_t i = 0; i < cur_paramlist.size(); ++i) {
-        if (cur_paramlist[i].isString) {
-            for (size_t j = 0; j < cur_paramlist[i].size; ++j)
-                free(((char **)cur_paramlist[i].arg)[j]);
+    for (size_t i = 0; i < pbrt::cur_paramlist.size(); ++i) {
+        if (pbrt::cur_paramlist[i].isString) {
+            for (size_t j = 0; j < pbrt::cur_paramlist[i].size; ++j)
+                free(((char **)pbrt::cur_paramlist[i].arg)[j]);
         }
     }
-    cur_paramlist.erase(cur_paramlist.begin(), cur_paramlist.end());
+    pbrt::cur_paramlist.erase(pbrt::cur_paramlist.begin(), pbrt::cur_paramlist.end());
 ;}
     break;
 
   case 22:
-#line 326 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 327 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 23:
-#line 331 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 332 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 24:
-#line 337 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 338 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    cur_paramlist.push_back(ParamListItem((yyvsp[(1) - (2)].string), (yyvsp[(2) - (2)].ribarray)));
-    ArrayFree((yyvsp[(2) - (2)].ribarray));
+    pbrt::cur_paramlist.push_back(pbrt::ParamListItem((yyvsp[(1) - (2)].string), (yyvsp[(2) - (2)].ribarray)));
+    pbrt::ArrayFree((yyvsp[(2) - (2)].ribarray));
 ;}
     break;
 
   case 25:
-#line 345 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 346 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 26:
-#line 350 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 351 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
 ;}
     break;
 
   case 27:
-#line 356 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 357 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtAccelerator((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtAccelerator((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 28:
-#line 365 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 366 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtActiveTransformAll();
+    pbrt::pbrtActiveTransformAll();
 ;}
     break;
 
   case 29:
-#line 371 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 372 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtActiveTransformEndTime();
+    pbrt::pbrtActiveTransformEndTime();
 ;}
     break;
 
   case 30:
-#line 377 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 378 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtActiveTransformStartTime();
+    pbrt::pbrtActiveTransformStartTime();
 ;}
     break;
 
   case 31:
-#line 383 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 384 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Illuminant);
-    pbrtAreaLightSource((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Illuminant);
+    pbrt::pbrtAreaLightSource((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 32:
-#line 392 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 393 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtAttributeBegin();
+    pbrt::pbrtAttributeBegin();
 ;}
     break;
 
   case 33:
-#line 398 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 399 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtAttributeEnd();
+    pbrt::pbrtAttributeEnd();
 ;}
     break;
 
   case 34:
-#line 404 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 405 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtCamera((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtCamera((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 35:
-#line 413 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 414 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    if (VerifyArrayLength((yyvsp[(2) - (2)].ribarray), 16, "ConcatTransform")) {
-        Float m[16];
+    if (pbrt::VerifyArrayLength((yyvsp[(2) - (2)].ribarray), 16, "ConcatTransform")) {
+        pbrt::Float m[16];
         double *dm = (double *)(yyvsp[(2) - (2)].ribarray)->array;
         std::copy(dm, dm + 16, m);
-        pbrtConcatTransform(m);
+        pbrt::pbrtConcatTransform(m);
     }
-    ArrayFree((yyvsp[(2) - (2)].ribarray));
+    pbrt::ArrayFree((yyvsp[(2) - (2)].ribarray));
 ;}
     break;
 
   case 36:
-#line 425 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 426 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtCoordinateSystem((yyvsp[(2) - (2)].string));
+    pbrt::pbrtCoordinateSystem((yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 37:
-#line 431 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 432 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtCoordSysTransform((yyvsp[(2) - (2)].string));
+    pbrt::pbrtCoordSysTransform((yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 38:
-#line 437 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 438 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtFilm((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtFilm((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 39:
-#line 446 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 447 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtIdentity();
+    pbrt::pbrtIdentity();
 ;}
     break;
 
   case 40:
-#line 452 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 453 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-  include_push((yyvsp[(2) - (2)].string));
+    pbrt::include_push((yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 41:
-#line 458 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 459 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Illuminant);
-    pbrtLightSource((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Illuminant);
+    pbrt::pbrtLightSource((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 42:
-#line 467 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 468 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtLookAt((yyvsp[(2) - (10)].num), (yyvsp[(3) - (10)].num), (yyvsp[(4) - (10)].num), (yyvsp[(5) - (10)].num), (yyvsp[(6) - (10)].num), (yyvsp[(7) - (10)].num), (yyvsp[(8) - (10)].num), (yyvsp[(9) - (10)].num), (yyvsp[(10) - (10)].num));
+    pbrt::pbrtLookAt((yyvsp[(2) - (10)].num), (yyvsp[(3) - (10)].num), (yyvsp[(4) - (10)].num), (yyvsp[(5) - (10)].num), (yyvsp[(6) - (10)].num), (yyvsp[(7) - (10)].num), (yyvsp[(8) - (10)].num), (yyvsp[(9) - (10)].num), (yyvsp[(10) - (10)].num));
 ;}
     break;
 
   case 43:
-#line 473 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 474 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtMakeNamedMaterial((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtMakeNamedMaterial((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 44:
-#line 482 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 483 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtMakeNamedMedium((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtMakeNamedMedium((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 45:
-#line 491 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 492 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtMaterial((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtMaterial((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 46:
-#line 500 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 501 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtMediumInterface((yyvsp[(2) - (2)].string), (yyvsp[(2) - (2)].string));
+    pbrt::pbrtMediumInterface((yyvsp[(2) - (2)].string), (yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 47:
-#line 506 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 507 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtMediumInterface((yyvsp[(2) - (3)].string), (yyvsp[(3) - (3)].string));
+    pbrt::pbrtMediumInterface((yyvsp[(2) - (3)].string), (yyvsp[(3) - (3)].string));
 ;}
     break;
 
   case 48:
-#line 512 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 513 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtNamedMaterial((yyvsp[(2) - (2)].string));
+    pbrt::pbrtNamedMaterial((yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 49:
-#line 518 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 519 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtObjectBegin((yyvsp[(2) - (2)].string));
+    pbrt::pbrtObjectBegin((yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 50:
-#line 524 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 525 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtObjectEnd();
+    pbrt::pbrtObjectEnd();
 ;}
     break;
 
   case 51:
-#line 530 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 531 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtObjectInstance((yyvsp[(2) - (2)].string));
+    pbrt::pbrtObjectInstance((yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 52:
-#line 536 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 537 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtPixelFilter((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtPixelFilter((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 53:
-#line 545 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 546 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtReverseOrientation();
+    pbrt::pbrtReverseOrientation();
 ;}
     break;
 
   case 54:
-#line 551 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 552 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtRotate((yyvsp[(2) - (5)].num), (yyvsp[(3) - (5)].num), (yyvsp[(4) - (5)].num), (yyvsp[(5) - (5)].num));
+    pbrt::pbrtRotate((yyvsp[(2) - (5)].num), (yyvsp[(3) - (5)].num), (yyvsp[(4) - (5)].num), (yyvsp[(5) - (5)].num));
 ;}
     break;
 
   case 55:
-#line 557 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 558 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtSampler((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtSampler((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 56:
-#line 566 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 567 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtScale((yyvsp[(2) - (4)].num), (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
+    pbrt::pbrtScale((yyvsp[(2) - (4)].num), (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
 ;}
     break;
 
   case 57:
-#line 572 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 573 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtShape((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtShape((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 58:
-#line 581 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 582 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtIntegrator((yyvsp[(2) - (3)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtIntegrator((yyvsp[(2) - (3)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 59:
-#line 590 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 591 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    ParamSet params;
-    InitParamSet(params, SpectrumType::Reflectance);
-    pbrtTexture((yyvsp[(2) - (5)].string), (yyvsp[(3) - (5)].string), (yyvsp[(4) - (5)].string), params);
-    FreeArgs();
+    pbrt::ParamSet params;
+    pbrt::InitParamSet(params, pbrt::SpectrumType::Reflectance);
+    pbrt::pbrtTexture((yyvsp[(2) - (5)].string), (yyvsp[(3) - (5)].string), (yyvsp[(4) - (5)].string), params);
+    pbrt::FreeArgs();
 ;}
     break;
 
   case 60:
-#line 599 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 600 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtTransformBegin();
+    pbrt::pbrtTransformBegin();
 ;}
     break;
 
   case 61:
-#line 605 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 606 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtTransformEnd();
+    pbrt::pbrtTransformEnd();
 ;}
     break;
 
   case 62:
-#line 611 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 612 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtTransformTimes((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
+    pbrt::pbrtTransformTimes((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
 ;}
     break;
 
   case 63:
-#line 617 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 618 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    if (VerifyArrayLength((yyvsp[(2) - (2)].ribarray), 16, "Transform")) {
-        Float m[16];
+    if (pbrt::VerifyArrayLength((yyvsp[(2) - (2)].ribarray), 16, "Transform")) {
+        pbrt::Float m[16];
         double *dm = (double *)(yyvsp[(2) - (2)].ribarray)->array;
         std::copy(dm, dm + 16, m);
-        pbrtTransform(m);
+        pbrt::pbrtTransform(m);
     }
-    ArrayFree((yyvsp[(2) - (2)].ribarray));
+    pbrt::ArrayFree((yyvsp[(2) - (2)].ribarray));
 ;}
     break;
 
   case 64:
-#line 629 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 630 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtTranslate((yyvsp[(2) - (4)].num), (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
+    pbrt::pbrtTranslate((yyvsp[(2) - (4)].num), (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
 ;}
     break;
 
   case 65:
-#line 635 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 636 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtWorldBegin();
+    pbrt::pbrtWorldBegin();
 ;}
     break;
 
   case 66:
-#line 641 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 642 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
     {
-    pbrtWorldEnd();
+    pbrt::pbrtWorldEnd();
 ;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 2156 "/Users/mmp/build/pbrt-v3/pbrtparse.cpp"
+#line 2157 "/Users/mmp/build/pbrt-v3/pbrtparse.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2366,7 +2367,10 @@ yyreturn:
 }
 
 
-#line 646 "/Users/mmp/pbrt-v3/src/core/pbrtparse.yy"
+#line 647 "/Users/mmp/pbrt-v3/src/core/pbrtparse.y"
+
+
+namespace pbrt {
 
 static const char *paramTypeToName(int type) {
     switch (type) {
@@ -2482,10 +2486,10 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                             "Ignoring last %d of them.", cur_paramlist[i].name,
                             nItems % 3);
                 std::unique_ptr<Vector3f[]> vecs(new Vector3f[nItems / 3]);
-                for (int i = 0; i < nItems / 3; ++i) {
-                    vecs[i].x = ((double *)data)[3 * i];
-                    vecs[i].y = ((double *)data)[3 * i + 1];
-                    vecs[i].z = ((double *)data)[3 * i + 2];
+                for (int j = 0; j < nItems / 3; ++j) {
+                    vecs[j].x = ((double *)data)[3 * j];
+                    vecs[j].y = ((double *)data)[3 * j + 1];
+                    vecs[j].z = ((double *)data)[3 * j + 2];
                 }
                 ps.AddVector3f(name, std::move(vecs), nItems / 3);
             } else if (type == PARAM_TYPE_NORMAL) {
@@ -2494,50 +2498,58 @@ static void InitParamSet(ParamSet &ps, SpectrumType type) {
                             "Ignoring last %d of them.", cur_paramlist[i].name,
                             nItems % 3);
                 std::unique_ptr<Normal3f[]> normals(new Normal3f[nItems / 3]);
-                for (int i = 0; i < nItems / 3; ++i) {
-                    normals[i].x = ((double *)data)[3 * i];
-                    normals[i].y = ((double *)data)[3 * i + 1];
-                    normals[i].z = ((double *)data)[3 * i + 2];
+                for (int j = 0; j < nItems / 3; ++j) {
+                    normals[j].x = ((double *)data)[3 * j];
+                    normals[j].y = ((double *)data)[3 * j + 1];
+                    normals[j].z = ((double *)data)[3 * j + 2];
                 }
                 ps.AddNormal3f(name, std::move(normals), nItems / 3);
             } else if (type == PARAM_TYPE_RGB) {
-                if ((nItems % 3) != 0)
+                if ((nItems % 3) != 0) {
                     Warning("Excess RGB values given with parameter \"%s\". "
                             "Ignoring last %d of them", cur_paramlist[i].name,
                             nItems % 3);
+                    nItems -= nItems % 3;
+                }
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
-                for (int i = 0; i < nItems; ++i)
-                    floats[i] = ((double *)data)[i];
+                for (int j = 0; j < nItems; ++j)
+                    floats[j] = ((double *)data)[j];
                 ps.AddRGBSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_XYZ) {
-                if ((nItems % 3) != 0)
+                if ((nItems % 3) != 0) {
                     Warning("Excess XYZ values given with parameter \"%s\". "
                             "Ignoring last %d of them", cur_paramlist[i].name,
                             nItems % 3);
+                    nItems -= nItems % 3;
+                }
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
-                for (int i = 0; i < nItems; ++i)
-                    floats[i] = ((double *)data)[i];
+                for (int j = 0; j < nItems; ++j)
+                    floats[j] = ((double *)data)[j];
                 ps.AddXYZSpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_BLACKBODY) {
-                if ((nItems % 2) != 0)
+                if ((nItems % 2) != 0) {
                     Warning("Excess value given with blackbody parameter \"%s\". "
                             "Ignoring extra one.", cur_paramlist[i].name);
+                    nItems -= nItems % 2;
+                }
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
-                for (int i = 0; i < nItems; ++i)
-                    floats[i] = ((double *)data)[i];
+                for (int j = 0; j < nItems; ++j)
+                    floats[j] = ((double *)data)[j];
                 ps.AddBlackbodySpectrum(name, std::move(floats), nItems);
             } else if (type == PARAM_TYPE_SPECTRUM) {
                 if (cur_paramlist[i].isString) {
                     ps.AddSampledSpectrumFiles(name, (const char **)data, nItems);
                 }
                 else {
-                    if ((nItems % 2) != 0)
+                    if ((nItems % 2) != 0) {
                         Warning("Non-even number of values given with sampled spectrum "
                                 "parameter \"%s\". Ignoring extra.",
                                 cur_paramlist[i].name);
+                        nItems -= nItems % 2;
+                    }
                     std::unique_ptr<Float[]> floats(new Float[nItems]);
-                    for (int i = 0; i < nItems; ++i)
-                        floats[i] = ((double *)data)[i];
+                    for (int j = 0; j < nItems; ++j)
+                        floats[j] = ((double *)data)[j];
                     ps.AddSampledSpectrum(name, std::move(floats), nItems);
                 }
             } else if (type == PARAM_TYPE_STRING) {
@@ -2603,5 +2615,5 @@ static bool lookupType(const char *name, int *type, std::string &sname) {
     return true;
 }
 
-
+}  // namespace pbrt
 

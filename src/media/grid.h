@@ -42,6 +42,8 @@
 #include "medium.h"
 #include "transform.h"
 
+namespace pbrt {
+
 // GridDensityMedium Declarations
 class GridDensityMedium : public Medium {
   public:
@@ -90,5 +92,7 @@ class GridDensityMedium : public Medium {
     Float sigma_t;
     Float invMaxDensity;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_MEDIA_GRID_H

@@ -46,6 +46,8 @@
 #include <sys/time.h>
 #endif  // !PBRT_IS_WINDOWS
 
+namespace pbrt {
+
 // Statistics Local Variables
 std::vector<std::function<void(StatsAccumulator &)>> *StatRegisterer::funcs;
 static StatsAccumulator statsAccumulator;
@@ -391,3 +393,5 @@ void ReportProfilerResults(FILE *dest) {
     fprintf(dest, "\n");
 #endif
 }
+
+}  // namespace pbrt

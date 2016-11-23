@@ -38,6 +38,8 @@
 #include "shape.h"
 #include "light.h"
 
+namespace pbrt {
+
 // SurfaceInteraction Method Definitions
 SurfaceInteraction::SurfaceInteraction(
     const Point3f &p, const Vector3f &pError, const Point2f &uv,
@@ -148,3 +150,5 @@ Spectrum SurfaceInteraction::Le(const Vector3f &w) const {
     const AreaLight *area = primitive->GetAreaLight();
     return area ? area->L(*this, w) : Spectrum(0.f);
 }
+
+}  // namespace pbrt

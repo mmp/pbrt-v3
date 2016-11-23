@@ -2,6 +2,8 @@
 #include "tests/gtest/gtest.h"
 #include "fileutil.h"
 
+using namespace pbrt;
+
 TEST(FileUtil, HasExtension) {
     EXPECT_TRUE(HasExtension("foo.exr", "exr"));
     EXPECT_TRUE(HasExtension("foo.Exr", "exr"));

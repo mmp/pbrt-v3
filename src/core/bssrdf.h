@@ -43,6 +43,8 @@
 #include "reflection.h"
 #include "stats.h"
 
+namespace pbrt {
+
 // BSSRDF Utility Declarations
 Float FresnelMoment1(Float invEta);
 Float FresnelMoment2(Float invEta);
@@ -174,5 +176,7 @@ void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t);
 void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &rhoEff,
                            const Spectrum &mfp, Spectrum *sigma_a,
                            Spectrum *sigma_s);
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_BSSRDF_H

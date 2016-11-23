@@ -45,6 +45,8 @@
 #include <string>
 #include <functional>
 
+namespace pbrt {
+
 // Statistics Declarations
 class StatsAccumulator;
 class StatRegisterer {
@@ -345,5 +347,7 @@ void CleanupProfiler();
         numVar = denomVar = 0;                                \
     }                                                         \
     static StatRegisterer STATS_REG##numVar(STATS_FUNC##numVar)
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_STATS_H

@@ -46,6 +46,8 @@
 #include <functional>
 #include <atomic>
 
+namespace pbrt {
+
 // Parallel Declarations
 class AtomicFloat {
   public:
@@ -106,5 +108,7 @@ int NumSystemCores();
 void ParallelInit();
 void ParallelCleanup();
 void MergeWorkerThreadStats();
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_PARALLEL_H

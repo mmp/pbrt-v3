@@ -47,6 +47,8 @@
 #include <stdio.h>
 #include <map>
 
+namespace pbrt {
+
 // ParamSet Declarations
 class ParamSet {
   public:
@@ -220,5 +222,7 @@ class TextureParams {
     std::map<std::string, std::shared_ptr<Texture<Spectrum>>> &spectrumTextures;
     const ParamSet &geomParams, &materialParams;
 };
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_PARAMSET_H

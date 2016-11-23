@@ -5,6 +5,8 @@
 #include "spectrum.h"
 #include "imageio.h"
 
+using namespace pbrt;
+
 static void TestRoundTrip(const char *fn, bool gamma) {
     Point2i res(16, 29);
     std::vector<Float> pixels(3 * res[0] * res[1]);

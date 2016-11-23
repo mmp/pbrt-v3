@@ -36,6 +36,8 @@
 #include "sampling.h"
 #include "sampler.h"
 
+namespace pbrt {
+
 // Camera Method Definitions
 Camera::~Camera() { delete film; }
 
@@ -94,3 +96,5 @@ Spectrum Camera::Sample_Wi(const Interaction &ref, const Point2f &u,
     LOG(FATAL) << "Camera::Sample_Wi() is not implemented!";
     return Spectrum(0.f);
 }
+
+}  // namespace pbrt

@@ -41,6 +41,8 @@
 // core/interpolation.h*
 #include "pbrt.h"
 
+namespace pbrt {
+
 // Spline Interpolation Declarations
 Float CatmullRom(int size, const Float *nodes, const Float *values, Float x);
 bool CatmullRomWeights(int size, const Float *nodes, Float x, int *offset,
@@ -60,5 +62,7 @@ Float InvertCatmullRom(int n, const Float *x, const Float *values, Float u);
 Float Fourier(const Float *a, int m, double cosPhi);
 Float SampleFourier(const Float *ak, const Float *recip, int m, Float u,
                     Float *pdf, Float *phiPtr);
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_INTERPOLATION_H

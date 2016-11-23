@@ -43,6 +43,8 @@
 #include "texture.h"
 #include "paramset.h"
 
+namespace pbrt {
+
 // DotsTexture Declarations
 template <typename T>
 class DotsTexture : public Texture<T> {
@@ -85,5 +87,7 @@ DotsTexture<Float> *CreateDotsFloatTexture(const Transform &tex2world,
                                            const TextureParams &tp);
 DotsTexture<Spectrum> *CreateDotsSpectrumTexture(const Transform &tex2world,
                                                  const TextureParams &tp);
+
+}  // namespace pbrt
 
 #endif  // PBRT_TEXTURES_DOTS_H

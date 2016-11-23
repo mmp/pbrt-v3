@@ -44,6 +44,8 @@
 #include "sampling.h"
 #include "sobolmatrices.h"
 
+namespace pbrt {
+
 // Low Discrepancy Declarations
 Float RadicalInverse(int baseIndex, uint64_t a);
 std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng);
@@ -282,5 +284,7 @@ inline double SobolSampleDouble(int64_t a, int dimension, uint64_t scramble) {
     return std::min(result * (1.0 / (1ULL << SobolMatrixSize)),
                     DoubleOneMinusEpsilon);
 }
+
+}  // namespace pbrt
 
 #endif  // PBRT_CORE_LOWDISCREPANCY_H
