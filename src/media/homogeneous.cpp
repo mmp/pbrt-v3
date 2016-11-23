@@ -36,17 +36,20 @@
 #include "sampler.h"
 #include "interaction.h"
 #include "paramset.h"
+#include "stats.h"
 
 namespace pbrt {
 
 // HomogeneousMedium Method Definitions
 Spectrum HomogeneousMedium::Tr(const Ray &ray, Sampler &sampler) const {
+    ProfilePhase _(Prof::MediumTr);
     return Exp(-sigma_t * std::min(ray.tMax * ray.d.Length(), MaxFloat));
 }
 
 Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
                                    MemoryArena &arena,
                                    MediumInteraction *mi) const {
+    ProfilePhase _(Prof::MediumSample);
     // Sample a channel and distance along the ray
     int channel = std::min((int)(sampler.Get1D() * Spectrum::nSamples),
                            Spectrum::nSamples - 1);

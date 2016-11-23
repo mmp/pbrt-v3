@@ -35,6 +35,7 @@
 #include "media/grid.h"
 #include "paramset.h"
 #include "sampler.h"
+#include "stats.h"
 #include "interaction.h"
 
 namespace pbrt {
@@ -59,6 +60,7 @@ Float GridDensityMedium::Density(const Point3f &p) const {
 Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
                                    MemoryArena &arena,
                                    MediumInteraction *mi) const {
+    ProfilePhase _(Prof::MediumSample);
     Ray ray = WorldToMedium(
         Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));
     // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds
@@ -83,6 +85,7 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
 }
 
 Spectrum GridDensityMedium::Tr(const Ray &rWorld, Sampler &sampler) const {
+    ProfilePhase _(Prof::MediumTr);
     Ray ray = WorldToMedium(
         Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));
     // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds

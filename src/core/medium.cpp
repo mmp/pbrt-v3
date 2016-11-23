@@ -35,6 +35,7 @@
 #include "medium.h"
 #include "memory.h"
 #include "sampler.h"
+#include "stats.h"
 #include "interaction.h"
 
 namespace pbrt {
@@ -192,6 +193,7 @@ bool GetMediumScatteringProperties(const std::string &name, Spectrum *sigma_a,
 // HenyeyGreenstein Method Definitions
 Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
                                  const Point2f &u) const {
+    ProfilePhase _(Prof::PhaseFuncSampling);
     // Compute $\cos \theta$ for Henyey--Greenstein sample
     Float cosTheta;
     if (std::abs(g) < 1e-3)
@@ -211,6 +213,7 @@ Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
 }
 
 Float HenyeyGreenstein::p(const Vector3f &wo, const Vector3f &wi) const {
+    ProfilePhase _(Prof::PhaseFuncEvaluation);
     return PhaseHG(Dot(wo, wi), g);
 }
 
