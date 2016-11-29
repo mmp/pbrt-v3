@@ -292,7 +292,7 @@ static RGBSpectrum *ReadImagePNG(const std::string &name, int *width,
  * (http://people.csail.mit.edu/jiawen/)
  */
 
-static bool hostLittleEndian =
+static PBRT_CONSTEXPR bool hostLittleEndian =
 #if defined(__BYTE_ORDER__)
   #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     true
@@ -321,12 +321,10 @@ static inline int isWhitespace(char c) {
     return c == ' ' || c == '\n' || c == '\t';
 }
 
-// reads a "word" from the fp and puts it into buffer
-// and adds a null terminator
-// i.e. it keeps reading until a whitespace is reached
-// returns the number of characters read
-// *not* including the whitespace
-// return -1 on an error
+// Reads a "word" from the fp and puts it into buffer and adds a null
+// terminator.  i.e. it keeps reading until whitespace is reached.  Returns
+// the number of characters read *not* including the whitespace, and
+// returns -1 on an error.
 static int readWord(FILE *fp, char *buffer, int bufferLength) {
     int n;
     int c;
