@@ -41,6 +41,7 @@
 // core/geometry.h*
 #include "pbrt.h"
 #include "stringprint.h"
+#include <iterator>
 
 namespace pbrt {
 
@@ -829,7 +830,6 @@ typedef Bounds2<Float> Bounds2f;
 typedef Bounds2<int> Bounds2i;
 typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
-#include <iterator>
 
 class Bounds2iIterator : public std::forward_iterator_tag {
   public:
