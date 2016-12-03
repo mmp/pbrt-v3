@@ -506,6 +506,10 @@ inline SampledSpectrum Lerp(Float t, const SampledSpectrum &s1,
     return (1 - t) * s1 + t * s2;
 }
 
+void ResampleLinearSpectrum(const Float *lambdaIn, const Float *vIn, int nIn,
+                            Float lambdaMin, Float lambdaMax, int nOut,
+                            Float *vOut);
+
 }  // namespace pbrt
 
 #endif  // PBRT_CORE_SPECTRUM_H
