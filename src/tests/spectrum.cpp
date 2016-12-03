@@ -1,10 +1,45 @@
 
 #include "tests/gtest/gtest.h"
+#include "spectrum.h"
 #include "pbrt.h"
 #include "rng.h"
-#include "spectrum.h"
 
 using namespace pbrt;
+
+TEST(Spectrum, Blackbody) {
+    // Relative error.
+    auto err = [](Float val, Float ref) { return std::abs(val - ref) / ref; };
+
+    // Planck's law.
+    // A few values via
+    // http://www.spectralcalc.com/blackbody_calculator/blackbody.php
+    // lambda, T, expected radiance
+    Float v[][3] = {
+        {483, 6000, 3.1849e13},
+        {600, 6000, 2.86772e13},
+        {500, 3700, 1.59845e12},
+        {600, 4500, 7.46497e12},
+    };
+    int n = sizeof(v) / sizeof(v[0]);
+    for (int i = 0; i < n; ++i) {
+        Float Le;
+        Blackbody(&v[i][0], 1, v[i][1], &Le);
+        EXPECT_LT(err(Le, v[i][2]), .001);
+    }
+
+    // Use Wien's displacement law to compute maximum wavelength for a few
+    // temperatures, then confirm that the value returned by Blackbody() is
+    // consistent with this.
+    for (Float T : {2700, 3000, 4500, 5600, 6000}) {
+        Float lambdaMax = 2.8977721e-3 / T * 1e9;
+        Float lambda[3] = {Float(.999 * lambdaMax), lambdaMax,
+                           Float(1.001 * lambdaMax)};
+        Float Le[3];
+        Blackbody(lambda, 3, T, Le);
+        EXPECT_LT(Le[0], Le[1]);
+        EXPECT_GT(Le[1], Le[2]);
+    }
+}
 
 TEST(Spectrum, LinearUpsampleSimple) {
     // Linear SPD where val(lambda) = 1 + 2 * lambda.
@@ -16,7 +51,8 @@ TEST(Spectrum, LinearUpsampleSimple) {
     // original values.
     Float newVal[nIn];
     ResampleLinearSpectrum(lambda, val, nIn, lambda[0] /* lambdaMin */,
-                     lambda[nIn - 1] /* lambdaMax */, nIn /* nOut */, newVal);
+                           lambda[nIn - 1] /* lambdaMax */, nIn /* nOut */,
+                           newVal);
 
     for (int i = 0; i < 5; ++i) EXPECT_EQ(val[i], newVal[i]);
 }
@@ -32,7 +68,7 @@ TEST(Spectrum, LinearUpsampleSubset) {
     const int nOut = 3;
     Float newVal[nOut];
     ResampleLinearSpectrum(lambda, val, nIn, lambda[1] /* lambdaMin */,
-                     lambda[3] /* lambdaMax */, nOut, newVal);
+                           lambda[3] /* lambdaMax */, nOut, newVal);
 
     for (int i = 0; i < 3; ++i) EXPECT_EQ(val[i + 1], newVal[i]);
 }
@@ -48,7 +84,7 @@ TEST(Spectrum, LinearUpsample2x) {
     const int nOut = 9;
     Float newVal[nOut];
     ResampleLinearSpectrum(lambda, val, nIn, lambda[0], lambda[nIn - 1], nOut,
-                     newVal);
+                           newVal);
 
     for (int i = 0; i < nOut; ++i) EXPECT_EQ(i + 1, newVal[i]);
 }
@@ -64,7 +100,7 @@ TEST(Spectrum, LinearUpsampleHigher) {
     const int nOut = 20;
     Float newVal[nOut];
     ResampleLinearSpectrum(lambda, val, nIn, lambda[1] /* lambdaMin */,
-                     lambda[3] /* lambdaMax */, nOut, newVal);
+                           lambda[3] /* lambdaMax */, nOut, newVal);
 
     for (int i = 0; i < nOut; ++i) {
         Float t = i / Float(nOut - 1);
@@ -83,7 +119,8 @@ TEST(Spectrum, LinearUpsampling) {
     const int nOut = 40;
     Float newVal[nOut];
     const Float lambdaMin = 1.5, lambdaMax = 3.75;
-    ResampleLinearSpectrum(lambda, val, nIn, lambdaMin, lambdaMax, nOut, newVal);
+    ResampleLinearSpectrum(lambda, val, nIn, lambdaMin, lambdaMax, nOut,
+                           newVal);
 
     for (int i = 0; i < nOut; ++i) {
         Float t = i / Float(nOut - 1);
@@ -104,8 +141,8 @@ TEST(Spectrum, LinearIrregularResample) {
     const int nOut = 30;
     const Float lambdaMin = -.5, lambdaMax = 14;
     Float newVal[nOut];
-    ResampleLinearSpectrum(lambdaIrreg, valIrreg, nIn, lambdaMin, lambdaMax, nOut,
-                     newVal);
+    ResampleLinearSpectrum(lambdaIrreg, valIrreg, nIn, lambdaMin, lambdaMax,
+                           nOut, newVal);
 
     // The result should be generally close to lambda^2, though there will
     // be some differences due to the fact that in the places where we are
@@ -128,7 +165,8 @@ TEST(Spectrum, LinearDownsampleBasic) {
     const int nOut = 3;
     Float newVal[nOut];
     const Float lambdaMin = 0, lambdaMax = 4;
-    ResampleLinearSpectrum(lambda, val, nIn, lambdaMin, lambdaMax, nOut, newVal);
+    ResampleLinearSpectrum(lambda, val, nIn, lambdaMin, lambdaMax, nOut,
+                           newVal);
 
     // We expect the computed values to be the averages over lambda=[-1,1],
     // then [1,3], then [3,5]. For the endpoints, recall that we model the
@@ -147,7 +185,8 @@ TEST(Spectrum, LinearDownsampleOffset) {
     const int nOut = 4;
     Float newVal[nOut];
     const Float lambdaMin = 0.5, lambdaMax = 3.5;
-    ResampleLinearSpectrum(lambda, val, nIn, lambdaMin, lambdaMax, nOut, newVal);
+    ResampleLinearSpectrum(lambda, val, nIn, lambdaMin, lambdaMax, nOut,
+                           newVal);
 
     // The spacing between samples in the destination SPD is 1, so we expect
     // to get back averages over [0,1], [1,2], [2,3], and [3,4].
@@ -172,8 +211,9 @@ TEST(Spectrum, LinearDownsampleIrreg) {
     const int nOut = 10;
     Float newVal[nOut];
     const Float lambdaMin = -5, lambdaMax = 20;
-    ResampleLinearSpectrum(lambdaIrreg.data(), valIrreg.data(), lambdaIrreg.size(),
-                     lambdaMin, lambdaMax, nOut, newVal);
+    ResampleLinearSpectrum(lambdaIrreg.data(), valIrreg.data(),
+                           lambdaIrreg.size(), lambdaMin, lambdaMax, nOut,
+                           newVal);
 
     // As with the IrregularResample test, we need a enough of an error
     // tolerance so that we account for the averaging over ranges of the
