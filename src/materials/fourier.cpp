@@ -32,8 +32,8 @@
 
 // materials/fourier.cpp*
 #include "materials/fourier.h"
-#include "paramset.h"
 #include "interaction.h"
+#include "paramset.h"
 
 std::map<std::string, std::unique_ptr<FourierBSDFTable>>
     FourierMaterial::loadedBSDFs;
@@ -96,6 +96,11 @@ inline bool IsBigEndian() {
     return (c[0] == 1);
 }
 
+static inline uint32_t ByteSwap32(uint32_t x) {
+    return ((((x)&0xFF) << 24) | (((x)&0xFF00) << 8) | (((x)&0xFF0000) >> 8) |
+            (((x)&0xFF000000) >> 24));
+}
+
 bool FourierBSDFTable::Read(const std::string &filename,
                             FourierBSDFTable *bsdfTable) {
     bsdfTable->mu = bsdfTable->cdf = bsdfTable->a = nullptr;
@@ -114,11 +119,7 @@ bool FourierBSDFTable::Read(const std::string &filename,
         if (IsBigEndian()) {
             int32_t *tmp = (int32_t *)target;
             for (size_t i = 0; i < count; ++i) {
-#ifndef PBRT_IS_MSVC
-                tmp[i] = __builtin_bswap32(tmp[i]);
-#else
-                tmp[i] = _byteswap_ulong(tmp[i]);
-#endif
+                tmp[i] = ByteSwap32(tmp[i]);
             }
         }
         return true;
