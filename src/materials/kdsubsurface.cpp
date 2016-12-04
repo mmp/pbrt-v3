@@ -102,7 +102,7 @@ KdSubsurfaceMaterial *CreateKdSubsurfaceMaterial(const TextureParams &mp) {
     std::shared_ptr<Texture<Spectrum>> kd =
         mp.GetSpectrumTexture("Kd", Spectrum::FromRGB(Kd));
     std::shared_ptr<Texture<Spectrum>> mfp =
-        mp.GetSpectrumTexture("mfp", Spectrum::FromRGB(Kd));
+        mp.GetSpectrumTexture("mfp", Spectrum(1.f));
     std::shared_ptr<Texture<Spectrum>> kr =
         mp.GetSpectrumTexture("Kr", Spectrum(1.f));
     std::shared_ptr<Texture<Spectrum>> kt =
