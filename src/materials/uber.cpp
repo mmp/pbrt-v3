@@ -115,7 +115,8 @@ UberMaterial *CreateUberMaterial(const TextureParams &mp) {
         mp.GetFloatTextureOrNull("uroughness");
     std::shared_ptr<Texture<Float>> vroughness =
         mp.GetFloatTextureOrNull("vroughness");
-    std::shared_ptr<Texture<Float>> eta = mp.GetFloatTexture("index", 1.5f);
+    std::shared_ptr<Texture<Float>> eta = mp.GetFloatTextureOrNull("eta");
+    if (!eta) eta = mp.GetFloatTexture("index", 1.5f);
     std::shared_ptr<Texture<Spectrum>> opacity =
         mp.GetSpectrumTexture("opacity", 1.f);
     std::shared_ptr<Texture<Float>> bumpMap =
