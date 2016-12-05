@@ -46,7 +46,8 @@ STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
 // PathIntegrator Method Definitions
-PathIntegrator::PathIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
+PathIntegrator::PathIntegrator(int maxDepth,
+                               std::shared_ptr<const Camera> camera,
                                std::shared_ptr<Sampler> sampler,
                                const Bounds2i &pixelBounds, Float rrThreshold,
                                const std::string &lightSampleStrategy)
@@ -56,8 +57,8 @@ PathIntegrator::PathIntegrator(int maxDepth, std::shared_ptr<const Camera> camer
       lightSampleStrategy(lightSampleStrategy) {}
 
 void PathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
-    lightDistribution = CreateLightSampleDistribution(lightSampleStrategy,
-                                                      scene);
+    lightDistribution =
+        CreateLightSampleDistribution(lightSampleStrategy, scene);
 }
 
 Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
@@ -68,10 +69,19 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     RayDifferential ray(r);
     bool specularBounce = false;
     int bounces;
+    // Added after book publication: etaScale tracks the accumulated effect
+    // of radiance scaling due to rays passing through refractive
+    // boundaries (see the derivation on p. 527 of the third edition). We
+    // track this value in order to remove it from beta when we apply
+    // Russian roulette; this is worthwhile, since it lets us sometimes
+    // avoid terminating refracted rays that are about to be refracted back
+    // out of a medium and thus have their beta value increased.
+    Float etaScale = 1;
+
     for (bounces = 0;; ++bounces) {
         // Find next path vertex and accumulate contribution
-        VLOG(2) << "Path tracer bounce " << bounces << ", current L = " << L <<
-            ", beta = " << beta;
+        VLOG(2) << "Path tracer bounce " << bounces << ", current L = " << L
+                << ", beta = " << beta;
 
         // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
@@ -109,9 +119,8 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         if (isect.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) >
             0) {
             ++totalPaths;
-            Spectrum Ld =
-                beta * UniformSampleOneLight(isect, scene, arena, sampler, false,
-                                             distrib);
+            Spectrum Ld = beta * UniformSampleOneLight(isect, scene, arena,
+                                                       sampler, false, distrib);
             VLOG(2) << "Sampled direct lighting Ld = " << Ld;
             if (Ld.IsBlack()) ++zeroRadiancePaths;
             CHECK_GE(Ld.y(), 0.f);
@@ -131,6 +140,13 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         CHECK_GE(beta.y(), 0.f);
         DCHECK(!std::isinf(beta.y()));
         specularBounce = (flags & BSDF_SPECULAR) != 0;
+        if ((flags & BSDF_SPECULAR) && (flags & BSDF_TRANSMISSION)) {
+            Float eta = isect.bsdf->eta;
+            // Update the term that tracks radiance scaling for refraction
+            // depending on whether the ray is entering or leaving the
+            // medium.
+            etaScale *= (Dot(wo, isect.n) > 0) ? (eta * eta) : 1 / (eta * eta);
+        }
         ray = isect.SpawnRay(wi);
 
         // Account for subsurface scattering, if applicable
@@ -157,13 +173,13 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             ray = pi.SpawnRay(wi);
         }
 
-        // Possibly terminate the path with Russian roulette
-        if (beta.y() < rrThreshold && bounces > 3) {
-            Float q = std::max((Float).05, 1 - beta.MaxComponentValue());
-            VLOG(2) << "RR termination probability q = " << q;
+        // Possibly terminate the path with Russian roulette.
+        // Factor out radiance scaling due to refraction in rrBeta.
+        Spectrum rrBeta = beta * etaScale;
+        if (rrBeta.MaxComponentValue() < rrThreshold && bounces > 3) {
+            Float q = std::max((Float).05, 1 - rrBeta.MaxComponentValue());
             if (sampler.Get1D() < q) break;
             beta /= 1 - q;
-            VLOG(2) << "After RR survival, beta = " << beta;
             DCHECK(!std::isinf(beta.y()));
         }
     }
@@ -190,8 +206,8 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
         }
     }
     Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
-    std::string lightStrategy = params.FindOneString("lightsamplestrategy",
-                                                     "spatial");
+    std::string lightStrategy =
+        params.FindOneString("lightsamplestrategy", "spatial");
     return new PathIntegrator(maxDepth, camera, sampler, pixelBounds,
                               rrThreshold, lightStrategy);
 }
