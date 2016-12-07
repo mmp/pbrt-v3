@@ -40,6 +40,8 @@
 
 namespace pbrt {
 
+STAT_RATIO("Media/Grid steps per Tr() call", nTrSteps, nTrCalls);
+
 // GridDensityMedium Method Definitions
 Float GridDensityMedium::Density(const Point3f &p) const {
     // Compute voxel coordinates and offsets for _p_
@@ -86,6 +88,8 @@ Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
 
 Spectrum GridDensityMedium::Tr(const Ray &rWorld, Sampler &sampler) const {
     ProfilePhase _(Prof::MediumTr);
+    ++nTrCalls;
+
     Ray ray = WorldToMedium(
         Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));
     // Compute $[\tmin, \tmax]$ interval of _ray_'s overlap with medium bounds
@@ -96,10 +100,19 @@ Spectrum GridDensityMedium::Tr(const Ray &rWorld, Sampler &sampler) const {
     // Perform ratio tracking to estimate the transmittance value
     Float Tr = 1, t = tMin;
     while (true) {
+        ++nTrSteps;
         t -= std::log(1 - sampler.Get1D()) * invMaxDensity / sigma_t;
         if (t >= tMax) break;
         Float density = Density(ray(t));
         Tr *= 1 - std::max((Float)0, density * invMaxDensity);
+        // Added after book publication: when transmittance gets low,
+        // start applying Russian roulette to terminate sampling.
+        const Float rrThreshold = .1;
+        if (Tr < rrThreshold) {
+            Float q = std::max((Float).05, 1 - Tr);
+            if (sampler.Get1D() < q) return 0;
+            Tr /= 1 - q;
+        }
     }
     return Spectrum(Tr);
 }
