@@ -75,6 +75,13 @@ class Shape {
                                Float *pdf) const;
     virtual Float Pdf(const Interaction &ref, const Vector3f &wi) const;
 
+    // Returns the solid angle subtended by the shape w.r.t. the reference
+    // point p, given in world space. Some shapes compute this value in
+    // closed-form, while the default implementation uses Monte Carlo
+    // integration; the nSamples parameter determines how many samples are
+    // used in this case.
+    virtual Float SolidAngle(const Point3f &p, int nSamples = 512) const;
+
     // Shape Public Data
     const Transform *ObjectToWorld, *WorldToObject;
     const bool reverseOrientation;

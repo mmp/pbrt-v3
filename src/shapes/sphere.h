@@ -66,6 +66,7 @@ class Sphere : public Shape {
     Interaction Sample(const Interaction &ref, const Point2f &u,
                        Float *pdf) const;
     Float Pdf(const Interaction &ref, const Vector3f &wi) const;
+    Float SolidAngle(const Point3f &p, int nSamples) const;
 
   private:
     // Sphere Private Data

@@ -88,7 +88,7 @@ class Triangle : public Shape {
 
     // Returns the solid angle subtended by the triangle w.r.t. the given
     // reference point p.
-    Float SolidAngle(const Point3f &p) const;
+    Float SolidAngle(const Point3f &p, int nSamples = 0) const;
 
   private:
     // Triangle Private Methods

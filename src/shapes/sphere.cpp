@@ -305,6 +305,15 @@ Float Sphere::Pdf(const Interaction &ref, const Vector3f &wi) const {
     return UniformConePdf(cosThetaMax);
 }
 
+Float Sphere::SolidAngle(const Point3f &p, int nSamples) const {
+    Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
+    if (DistanceSquared(p, pCenter) <= radius * radius)
+        return 4 * Pi;
+    Float sinTheta2 = radius * radius / DistanceSquared(p, pCenter);
+    Float cosTheta = std::sqrt(std::max((Float)0, 1 - sinTheta2));
+    return (2 * Pi * (1 - cosTheta));
+}
+
 std::shared_ptr<Shape> CreateSphereShape(const Transform *o2w,
                                          const Transform *w2o,
                                          bool reverseOrientation,
