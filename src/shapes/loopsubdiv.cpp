@@ -403,7 +403,8 @@ std::vector<std::shared_ptr<Shape>> CreateLoopSubdiv(const Transform *o2w,
                                                      const Transform *w2o,
                                                      bool reverseOrientation,
                                                      const ParamSet &params) {
-    int nLevels = params.FindOneInt("nlevels", 3);
+    int nLevels = params.FindOneInt("levels",
+                                    params.FindOneInt("nlevels", 3));
     int nps, nIndices;
     const int *vertexIndices = params.FindInt("indices", &nIndices);
     const Point3f *P = params.FindPoint3f("P", &nps);

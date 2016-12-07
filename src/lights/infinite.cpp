@@ -178,7 +178,8 @@ std::shared_ptr<InfiniteAreaLight> CreateInfiniteLight(
     Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
     Spectrum sc = paramSet.FindOneSpectrum("scale", Spectrum(1.0));
     std::string texmap = paramSet.FindOneFilename("mapname", "");
-    int nSamples = paramSet.FindOneInt("nsamples", 1);
+    int nSamples = paramSet.FindOneInt("samples",
+                                       paramSet.FindOneInt("nsamples", 1));
     if (PbrtOptions.quickRender) nSamples = std::max(1, nSamples / 4);
     return std::make_shared<InfiniteAreaLight>(light2world, L * sc, nSamples,
                                                texmap);

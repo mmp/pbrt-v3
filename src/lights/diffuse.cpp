@@ -137,7 +137,8 @@ std::shared_ptr<AreaLight> CreateDiffuseAreaLight(
     const ParamSet &paramSet, const std::shared_ptr<Shape> &shape) {
     Spectrum L = paramSet.FindOneSpectrum("L", Spectrum(1.0));
     Spectrum sc = paramSet.FindOneSpectrum("scale", Spectrum(1.0));
-    int nSamples = paramSet.FindOneInt("nsamples", 1);
+    int nSamples = paramSet.FindOneInt("samples",
+                                       paramSet.FindOneInt("nsamples", 1));
     bool twoSided = paramSet.FindOneBool("twosided", false);
     if (PbrtOptions.quickRender) nSamples = std::max(1, nSamples / 4);
     return std::make_shared<DiffuseAreaLight>(light2world, medium, L * sc,
