@@ -426,7 +426,7 @@ static void TestReintersectConvex(Shape &shape, RNG &rng) {
 }
 
 TEST(FullSphere, Reintersect) {
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 100; ++i) {
         RNG rng(i);
         Transform identity;
         Float radius = pExp(rng, 4);
@@ -440,7 +440,7 @@ TEST(FullSphere, Reintersect) {
 }
 
 TEST(ParialSphere, Normal) {
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 100; ++i) {
         RNG rng(i);
         Transform identity;
         Float radius = pExp(rng, 4);
@@ -479,7 +479,7 @@ TEST(ParialSphere, Normal) {
 }
 
 TEST(PartialSphere, Reintersect) {
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 100; ++i) {
         RNG rng(i);
         Transform identity;
         Float radius = pExp(rng, 4);
@@ -498,7 +498,7 @@ TEST(PartialSphere, Reintersect) {
 }
 
 TEST(Cylinder, Reintersect) {
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 100; ++i) {
         RNG rng(i);
         Transform identity;
         Float radius = pExp(rng, 4);
