@@ -274,18 +274,15 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u,
     Float sinAlpha = std::sqrt(std::max((Float)0, 1 - cosAlpha * cosAlpha));
 
     // Compute surface normal and sampled point on sphere
-    Vector3f nObj =
+    Vector3f nWorld =
         SphericalDirection(sinAlpha, cosAlpha, phi, -wcX, -wcY, -wc);
-    Point3f pObj = radius * Point3f(nObj.x, nObj.y, nObj.z);
+    Point3f pWorld = pCenter + radius * Point3f(nWorld.x, nWorld.y, nWorld.z);
 
     // Return _Interaction_ for sampled point on sphere
     Interaction it;
-
-    // Reproject _pObj_ to sphere surface and compute _pObjError_
-    pObj *= radius / Distance(pObj, Point3f(0, 0, 0));
-    Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
-    it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
-    it.n = (*ObjectToWorld)(Normal3f(nObj));
+    it.p = pWorld;
+    it.pError = gamma(5) * Abs((Vector3f)pWorld);
+    it.n = Normal3f(nWorld);
     if (reverseOrientation) it.n *= -1;
 
     // Uniform cone PDF.
