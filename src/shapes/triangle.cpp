@@ -549,12 +549,15 @@ Interaction Triangle::Sample(const Point2f &u, Float *pdf) const {
     Interaction it;
     it.p = b[0] * p0 + b[1] * p1 + (1 - b[0] - b[1]) * p2;
     // Compute surface normal for sampled point on triangle
-    if (mesh->n)
-        it.n = Normalize(b[0] * mesh->n[v[0]] + b[1] * mesh->n[v[1]] +
-                         (1 - b[0] - b[1]) * mesh->n[v[2]]);
-    else
-        it.n = Normalize(Normal3f(Cross(p1 - p0, p2 - p0)));
-    if (reverseOrientation) it.n *= -1;
+    it.n = Normalize(Normal3f(Cross(p1 - p0, p2 - p0)));
+    // Ensure correct orientation of the geometric normal; follow the same
+    // approach as was used in Triangle::Intersect().
+    if (mesh->n) {
+        Normal3f ns(b[0] * mesh->n[v[0]] + b[1] * mesh->n[v[1]] +
+                    (1 - b[0] - b[1]) * mesh->n[v[2]]);
+        it.n = Faceforward(it.n, ns);
+    } else if (reverseOrientation ^ transformSwapsHandedness)
+        it.n *= -1;
 
     // Compute error bounds for sampled point on triangle
     Point3f pAbsSum =
