@@ -2,7 +2,7 @@ pbrt, Version 3
 ===============
 
 [![Build Status](https://travis-ci.org/mmp/pbrt-v3.svg?branch=master)](https://travis-ci.org/mmp/pbrt-v3)
-[![Build status](https://ci.appveyor.com/api/projects/status/mlm9g91ejxlcn67s?svg=true)](https://ci.appveyor.com/project/mmp/pbrt-v3)
+[![Build status](https://ci.appveyor.com/api/projects/status/mlm9g91ejxlcn67s/branch/master?svg=true)](https://ci.appveyor.com/project/mmp/pbrt-v3/branch/master)
 
 This repository holds the source code to the new version of pbrt that will
 be described in the forthcoming third edition of *Physically Based
