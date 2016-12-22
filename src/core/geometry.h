@@ -686,7 +686,7 @@ class Bounds2 {
         pMin = Point2<T>(maxNum, maxNum);
         pMax = Point2<T>(minNum, minNum);
     }
-    Bounds2(const Point2<T> &p) : pMin(p), pMax(p) {}
+    explicit Bounds2(const Point2<T> &p) : pMin(p), pMax(p) {}
     Bounds2(const Point2<T> &p1, const Point2<T> &p2) {
         pMin = Point2<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y));
         pMax = Point2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
@@ -755,7 +755,7 @@ class Bounds3 {
         pMin = Point3<T>(maxNum, maxNum, maxNum);
         pMax = Point3<T>(minNum, minNum, minNum);
     }
-    Bounds3(const Point3<T> &p) : pMin(p), pMax(p) {}
+    explicit Bounds3(const Point3<T> &p) : pMin(p), pMax(p) {}
     Bounds3(const Point3<T> &p1, const Point3<T> &p2)
         : pMin(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
                std::min(p1.z, p2.z)),
