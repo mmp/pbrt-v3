@@ -1393,6 +1393,7 @@ void pbrtWorldEnd() {
             ClearProfiler();
         }
 
+        CHECK_EQ(CurrentProfilerState(), ProfToBits(Prof::IntegratorRender));
         ProfilerState = ProfToBits(Prof::SceneConstruction);
     }
 
