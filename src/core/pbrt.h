@@ -135,6 +135,7 @@ class VisibilityTester;
 class AreaLight;
 struct Distribution1D;
 class Distribution2D;
+//#define PBRT_FLOAT_AS_DOUBLE
 #ifdef PBRT_FLOAT_AS_DOUBLE
 typedef double Float;
 #else
