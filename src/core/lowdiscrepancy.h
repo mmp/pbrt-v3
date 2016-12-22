@@ -100,10 +100,10 @@ inline uint32_t MultiplyGenerator(const uint32_t *C, uint32_t a) {
 inline Float SampleGeneratorMatrix(const uint32_t *C, uint32_t a,
                                    uint32_t scramble = 0) {
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
-    return std::min((MultiplyGenerator(C, a) ^ scramble) * 2.3283064365386963e-10f,
+    return std::min((MultiplyGenerator(C, a) ^ scramble) * Float(2.3283064365386963e-10),
                     OneMinusEpsilon);
 #else
-    return std::min((MultiplyGenerator(C, a) ^ scramble) * 0x1p-32f,
+    return std::min((MultiplyGenerator(C, a) ^ scramble) * Float(0x1p-32),
                     OneMinusEpsilon);
 #endif
 }
@@ -115,10 +115,10 @@ inline void GrayCodeSample(const uint32_t *C, uint32_t n, uint32_t scramble,
     uint32_t v = scramble;
     for (uint32_t i = 0; i < n; ++i) {
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
-        p[i] = std::min(v * 2.3283064365386963e-10f /* 1/2^32 */,
+        p[i] = std::min(v * Float(2.3283064365386963e-10) /* 1/2^32 */,
                         OneMinusEpsilon);
 #else
-        p[i] = std::min(v * 0x1p-32f /* 1/2^32 */,
+        p[i] = std::min(v * Float(0x1p-32) /* 1/2^32 */,
                         OneMinusEpsilon);
 #endif
         v ^= C[CountTrailingZeros(i + 1)];
@@ -130,11 +130,11 @@ inline void GrayCodeSample(const uint32_t *C0, const uint32_t *C1, uint32_t n,
     uint32_t v[2] = {(uint32_t)scramble.x, (uint32_t)scramble.y};
     for (uint32_t i = 0; i < n; ++i) {
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
-        p[i].x = std::min(v[0] * 2.3283064365386963e-10f, OneMinusEpsilon);
-        p[i].y = std::min(v[1] * 2.3283064365386963e-10f, OneMinusEpsilon);
+        p[i].x = std::min(v[0] * Float(2.3283064365386963e-10), OneMinusEpsilon);
+        p[i].y = std::min(v[1] * Float(2.3283064365386963e-10), OneMinusEpsilon);
 #else
-        p[i].x = std::min(v[0] * 0x1p-32f, OneMinusEpsilon);
-        p[i].y = std::min(v[1] * 0x1p-32f, OneMinusEpsilon);
+        p[i].x = std::min(v[0] * Float(0x1p-32), OneMinusEpsilon);
+        p[i].y = std::min(v[1] * Float(0x1p-32), OneMinusEpsilon);
 #endif
         v[0] ^= C0[CountTrailingZeros(i + 1)];
         v[1] ^= C1[CountTrailingZeros(i + 1)];

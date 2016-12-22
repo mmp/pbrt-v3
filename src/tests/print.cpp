@@ -22,8 +22,8 @@ TEST(StringPrintf, Basics) {
 TEST(OperatorLeftShiftPrint, Basics) {
     {
         std::ostringstream os;
-        os << Point2f(105.5, -12.8);
-        EXPECT_EQ(os.str(), "[ 105.5, -12.8000002 ]");
+        os << Point2f(105.5, -12.75);
+        EXPECT_EQ(os.str(), "[ 105.5, -12.75 ]");
     }
     {
         std::ostringstream os;
@@ -42,8 +42,8 @@ TEST(OperatorLeftShiftPrint, Basics) {
     }
     {
         std::ostringstream os;
-        os << Vector2f(105.5, -12.8);
-        EXPECT_EQ(os.str(), "[ 105.5, -12.8000002 ]");
+        os << Vector2f(105.5, -12.75);
+        EXPECT_EQ(os.str(), "[ 105.5, -12.75 ]");
     }
     {
         std::ostringstream os;
@@ -68,12 +68,12 @@ TEST(OperatorLeftShiftPrint, Basics) {
     {
         std::ostringstream os;
         Quaternion q;
-        q.v = Vector3f(1.25, -8.3, 14.75);
+        q.v = Vector3f(1.25, -8.25, 14.75);
         q.w = -0.5;
         os << q;
         EXPECT_EQ(
             os.str(),
-            "[ 1.25, -8.30000019, 14.75, -0.5 ]");
+            "[ 1.25, -8.25, 14.75, -0.5 ]");
     }
     {
         std::ostringstream os;
@@ -113,17 +113,17 @@ TEST(OperatorLeftShiftPrint, Basics) {
     {
         std::ostringstream os;
         Transform t =
-            Translate(Vector3f(-1.25, 3.5, 7.875)) * Scale(2., -3., -4.75);
+            Translate(Vector3f(-1.25, 3.5, 7.875)) * Scale(2., -8., 1);
         os << t;
         EXPECT_EQ(
             os.str(),
             "t=[ [ 2, 0, 0, -1.25 ] "
-            "[ 0, -3, 0, 3.5 ] "
-            "[ 0, 0, -4.75, 7.875 ] "
+            "[ 0, -8, 0, 3.5 ] "
+            "[ 0, 0, 1, 7.875 ] "
             "[ 0, 0, 0, 1 ] ], "
             "inv=[ [ 0.5, 0, 0, 0.625 ] "
-            "[ 0, -0.333333343, 0, 1.16666675 ] "
-            "[ 0, 0, -0.210526317, 1.65789473 ] "
+            "[ 0, -0.125, 0, 0.4375 ] "
+            "[ 0, 0, 1, -7.875 ] "
             "[ 0, 0, 0, 1 ] ]");
     }
 }
