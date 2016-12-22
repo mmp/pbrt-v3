@@ -18,7 +18,7 @@ additional information about working with pbrt.
 Example scenes
 --------------
 
-Over 6GB of example scenes are available for download. (Many are new and
+Over 10GB of example scenes are available for download. (Many are new and
 weren't available with previous versions of pbrt.) We're trying an
 experiment and making them available via git. Run:
 ```
