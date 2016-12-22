@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
     }
     pbrtInit(options);
     // Process scene description
-    if (filenames.size() == 0) {
+    if (filenames.empty()) {
         // Parse scene from standard input
         ParseFile("-");
     } else {

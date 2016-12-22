@@ -1168,7 +1168,7 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         std::vector<std::shared_ptr<Shape>> shapes =
             MakeShapes(name, ObjToWorld, WorldToObj,
                        graphicsState.reverseOrientation, params);
-        if (shapes.size() == 0) return;
+        if (shapes.empty()) return;
         std::shared_ptr<Material> mtl = graphicsState.CreateMaterial(params);
         params.ReportUnused();
         MediumInterface mi = graphicsState.CreateMediumInterface();
@@ -1195,7 +1195,7 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         transformCache.Lookup(Transform(), &identity, nullptr);
         std::vector<std::shared_ptr<Shape>> shapes = MakeShapes(
             name, identity, identity, graphicsState.reverseOrientation, params);
-        if (shapes.size() == 0) return;
+        if (shapes.empty()) return;
 
         // Create _GeometricPrimitive_(s) for animated shape
         std::shared_ptr<Material> mtl = graphicsState.CreateMaterial(params);
@@ -1328,7 +1328,7 @@ void pbrtObjectInstance(const std::string &name) {
     }
     std::vector<std::shared_ptr<Primitive>> &in =
         renderOptions->instances[name];
-    if (in.size() == 0) return;
+    if (in.empty()) return;
     ++nObjectInstancesUsed;
     if (in.size() > 1) {
         // Create aggregate for instance _Primitive_s
@@ -1465,7 +1465,7 @@ Integrator *RenderOptions::MakeIntegrator() const {
 
     IntegratorParams.ReportUnused();
     // Warn if no light sources are defined
-    if (lights.size() == 0)
+    if (lights.empty())
         Warning(
             "No light sources defined in scene; "
             "rendering a black image.");

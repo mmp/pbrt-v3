@@ -186,7 +186,7 @@ void ParallelFor(std::function<void(int64_t)> func, int64_t count,
     CHECK(threads.size() > 0 || MaxThreadIndex() == 1);
 
     // Run iterations immediately if not using threads or if _count_ is small
-    if (threads.size() == 0 || count < chunkSize) {
+    if (threads.empty() || count < chunkSize) {
         for (int64_t i = 0; i < count; ++i) func(i);
         return;
     }
@@ -247,7 +247,7 @@ int MaxThreadIndex() {
 void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
     CHECK(threads.size() > 0 || MaxThreadIndex() == 1);
 
-    if (threads.size() == 0) {
+    if (threads.empty()) {
         for (int y = 0; y < count.y; ++y)
             for (int x = 0; x < count.x; ++x) func(Point2i(x, y));
         return;
@@ -322,7 +322,7 @@ void ParallelInit() {
 }
 
 void ParallelCleanup() {
-    if (threads.size() == 0) return;
+    if (threads.empty()) return;
 
     {
         std::lock_guard<std::mutex> lock(workListMutex);

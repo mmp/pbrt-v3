@@ -2371,7 +2371,7 @@ void yyfree (void * ptr )
 
 
 int yywrap() {
-    if (pbrt::includeStack.size() == 0) return 1;
+    if (pbrt::includeStack.empty()) return 1;
     pbrt::include_pop();
     return 0;
 }

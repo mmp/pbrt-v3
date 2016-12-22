@@ -65,7 +65,7 @@ static void extendedGCD(uint64_t a, uint64_t b, int64_t *x, int64_t *y) {
 HaltonSampler::HaltonSampler(int samplesPerPixel, const Bounds2i &sampleBounds)
     : GlobalSampler(samplesPerPixel) {
     // Generate random digit permutations for Halton sampler
-    if (radicalInversePermutations.size() == 0) {
+    if (radicalInversePermutations.empty()) {
         RNG rng;
         radicalInversePermutations = ComputeRadicalInversePermutations(rng);
     }

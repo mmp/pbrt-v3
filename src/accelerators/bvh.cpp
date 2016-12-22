@@ -186,7 +186,7 @@ BVHAccel::BVHAccel(const std::vector<std::shared_ptr<Primitive>> &p,
       splitMethod(splitMethod),
       primitives(p) {
     ProfilePhase _(Prof::AccelConstruction);
-    if (primitives.size() == 0) return;
+    if (primitives.empty()) return;
     // Build BVH from _primitives_
 
     // Initialize _primitiveInfo_ array for primitives
