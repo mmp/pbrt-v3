@@ -76,7 +76,7 @@ class ParallelForLoop {
         nX = count.x;
     }
 
-  public:
+  private:
     // ParallelForLoop Private Data
     std::function<void(int64_t)> func1D;
     std::function<void(Point2i)> func2D;
