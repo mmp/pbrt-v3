@@ -350,7 +350,7 @@ void ReportProfilerResults(FILE *dest) {
                 s += ProfNames[b];
             }
         }
-        hierarchicalResults[s] = ps.count;
+        hierarchicalResults[s] += ps.count;
 
         int nameIndex = Log2Int(ps.profilerState);
         DCHECK_LT(nameIndex, NumProfCategories);
