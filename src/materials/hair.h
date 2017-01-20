@@ -111,7 +111,7 @@ class HairBSDF : public BxDF {
     // HairBSDF Private Data
     const Float h, gammaO, eta;
     const Spectrum sigma_a;
-    const Float beta_m, beta_n, alpha;
+    const Float beta_m, beta_n;
     Float v[pMax + 1];
     Float s;
     Float sin2kAlpha[3], cos2kAlpha[3];
