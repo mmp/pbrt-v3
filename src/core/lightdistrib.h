@@ -33,13 +33,14 @@
 #ifndef PBRT_CORE_LIGHTDISTRIB_H
 #define PBRT_CORE_LIGHTDISTRIB_H
 
+#include "pbrt.h"
+#include "geometry.h"
+#include "sampling.h"
+#include <atomic>
 #include <functional>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
-#include "geometry.h"
-#include "pbrt.h"
-#include "sampling.h"
 
 namespace pbrt {
 
@@ -92,21 +93,6 @@ class PowerLightDistribution : public LightDistribution {
     std::unique_ptr<Distribution1D> distrib;
 };
 
-// Helper struct to compute a hash function of an integer 3D point.
-//
-// TODO: This can almost certainly be be improved. Review
-// e.g. https://github.com/aappleby/smhasher and
-// http://stackoverflow.com/questions/8513911/how-to-create-a-good-hash-combine-with-64-bit-output-inspired-by-boosthash-co.
-struct Point3iHash {
-    size_t operator()(const Point3i &p) const {
-        std::hash<int> hasher;
-        size_t h = hasher(p.x);
-        h ^= hasher(p.y ^ 0xfa60a2bc);
-        h ^= hasher(p.z ^ 0x7051259b);
-        return h;
-    }
-};
-
 // A spatially-varying light distribution that adjusts the probability of
 // sampling a light source based on an estimate of its contribution to a
 // region of space.  A fixed voxel grid is imposed over the scene bounds
@@ -118,35 +104,24 @@ class SpatialLightDistribution : public LightDistribution {
     const Distribution1D *Lookup(const Point3f &p) const;
 
   private:
-    static const int nBuckets = 32;
-#ifndef PBRT_IS_MSVC2013
-    static_assert(IsPowerOf2(nBuckets),
-                  "nBuckets must be an exact power of two");
-#endif // !PBRT_IS_MSVC2013
+    // Compute the sampling distribution for the voxel with integer
+    // coordiantes given by "pi".
+    Distribution1D *ComputeDistribution(Point3i pi) const;
 
     const Scene &scene;
     int nVoxels[3];
 
-    // The main challenge with the implementation of this approach is good
-    // scalability with multiple threads--we only compute sampling
-    // distributions for a voxel when needed, but then want to make them
-    // available to all threads. Therefore, we have implemented a two-level
-    // hash table: the first hash table is of fixed size, nBuckets. Each
-    // bucket in it is protected by the corresponding mutex in mutexes. In
-    // turn, each hash table bucket is itself a hash table that goes from
-    // integer voxel coordinates to light sampling distributions.
-    mutable std::mutex mutexes[nBuckets];
-    using BucketHash =
-        std::unordered_map<Point3i, std::unique_ptr<Distribution1D>,
-                           Point3iHash>;
-    mutable BucketHash voxelDistribution[nBuckets];
-
-    // For efficiency, we keep a per-thread cache of computed light
-    // distributions; we can look up values from this without locking or other
-    // coordination across threads.
-    using LocalBucketHash =
-        std::unordered_map<Point3i, Distribution1D *, Point3iHash>;
-    mutable std::vector<std::unique_ptr<LocalBucketHash>> localVoxelDistributions;
+    // The hash table is a fixed number of HashEntry structs (where we
+    // allocate more than enough entries in the SpatialLightDistribution
+    // constructor). During rendering, the table is allocated without
+    // locks, using atomic operations. (See the Lookup() method
+    // implementation for details.)
+    struct HashEntry {
+        std::atomic<uint64_t> packedPos;
+        std::atomic<Distribution1D *> distribution;
+    };
+    mutable std::unique_ptr<HashEntry[]> hashTable;
+    size_t hashTableSize;
 };
 
 }  // namespace pbrt

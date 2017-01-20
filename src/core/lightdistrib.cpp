@@ -84,9 +84,13 @@ const Distribution1D *PowerLightDistribution::Lookup(const Point3f &p) const {
 // SpatialLightDistribution
 
 STAT_COUNTER("SpatialLightDistribution/Distributions created", nCreated);
-STAT_INT_DISTRIBUTION("SpatialLightDistribution/Hash bucket load",
-                      hashBucketLoad);
 STAT_RATIO("SpatialLightDistribution/Lookups per distribution", nLookups, nDistributions);
+STAT_INT_DISTRIBUTION("SpatialLightDistribution/Hash probes per lookup", nProbesPerLookup);
+
+// Voxel coordinates are packed into a uint64_t for hash table lookups;
+// 10 bits are allocated to each coordinate.  invalidPackedPos is an impossible
+// packed coordinate value, which we use to represent
+static const uint64_t invalidPackedPos = 0xffffffffffffffff;
 
 SpatialLightDistribution::SpatialLightDistribution(const Scene &scene,
                                                    int maxVoxels)
@@ -97,30 +101,33 @@ SpatialLightDistribution::SpatialLightDistribution(const Scene &scene,
     Bounds3f b = scene.WorldBound();
     Vector3f diag = b.Diagonal();
     Float bmax = diag[b.MaximumExtent()];
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 3; ++i) {
         nVoxels[i] = std::max(1, int(std::round(diag[i] / bmax * maxVoxels)));
+        // In the Lookup() method, we require that 20 or fewer bits be
+        // sufficient to represent each coordinate value. It's fairly hard
+        // to imagine that this would ever be a problem.
+        CHECK_LT(nVoxels[i], 1 << 20);
+    }
+
+    hashTableSize = 4 * nVoxels[0] * nVoxels[1] * nVoxels[2];
+    hashTable.reset(new HashEntry[hashTableSize]);
+    for (int i = 0; i < hashTableSize; ++i) {
+        hashTable[i].packedPos.store(invalidPackedPos);
+        hashTable[i].distribution.store(nullptr);
+    }
 
     LOG(INFO) << "SpatialLightDistribution: scene bounds " << b <<
         ", voxel res (" << nVoxels[0] << ", " << nVoxels[1] << ", " <<
         nVoxels[2] << ")";
-
-    // It's important to pre-size the localVoxelDistributions vector, to
-    // avoid race conditions with one thread resizing the vector while
-    // another is reading from it.
-    localVoxelDistributions.resize(MaxThreadIndex());
 }
 
 SpatialLightDistribution::~SpatialLightDistribution() {
     // Gather statistics about how well the computed distributions are across
     // the buckets.
-    // This is slightly ugly: we are depending on the destructor running
-    // before statistics are reported (which is currently the case at least).
-    for (size_t i = 0; i < nBuckets; ++i) {
-        LOG(INFO) << "Bucket " << i << ", size " << voxelDistribution[i].size()
-                  << ", bucket count " << voxelDistribution[i].bucket_count()
-                  << ", load factor " << voxelDistribution[i].load_factor()
-                  << ", max load factor " << voxelDistribution[i].max_load_factor();
-        ReportValue(hashBucketLoad, voxelDistribution[i].size());
+    for (size_t i = 0; i < hashTableSize; ++i) {
+        HashEntry &entry = hashTable[i];
+        if (entry.distribution.load())
+            delete entry.distribution.load();
     }
 }
 
@@ -128,61 +135,107 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     ProfilePhase _(Prof::LightDistribLookup);
     ++nLookups;
 
-    // Compute integer voxel coordinates for the given point |p| with
-    // respect to the overall voxel grid.
+    // First, compute integer voxel coordinates for the given point |p|
+    // with respect to the overall voxel grid.
     Vector3f offset = scene.WorldBound().Offset(p);  // offset in [0,1].
     Point3i pi;
-    for (int i = 0; i < 3; ++i) pi[i] = int(offset[i] * nVoxels[i]);
+    for (int i = 0; i < 3; ++i)
+        // The clamp should almost never be necessary, but is there to be
+        // robust to computed intersection points being slightly outside
+        // the scene bounds due to floating-point roundoff error.
+        pi[i] = Clamp(int(offset[i] * nVoxels[i]), 0, nVoxels[i] - 1);
 
-    // Create the per-thread cache of sampling distributions if needed.
-    LocalBucketHash *localVoxelDistribution =
-        localVoxelDistributions[ThreadIndex].get();
-    if (!localVoxelDistribution) {
-        LOG(INFO) << "Created per-thread SpatialLightDistribution for thread" <<
-            ThreadIndex;
-        localVoxelDistribution = new LocalBucketHash;
-        localVoxelDistributions[ThreadIndex].reset(localVoxelDistribution);
+    // Pack the 3D integer voxel coordinates into a single 64-bit value.
+    uint64_t packedPos = (uint64_t(pi[0]) << 40) | (uint64_t(pi[1]) << 20) | pi[2];
+    CHECK_NE(packedPos, invalidPackedPos);
+
+    // Compute a hash value from the packed voxel coordinates.  We could
+    // just take packedPos mod the hash table size, but since packedPos
+    // isn't necessarily well distributed on its own, it's worthwhile to do
+    // a little work to make sure that its bits values are individually
+    // fairly random. For details of and motivation for the following, see:
+    // http://zimbry.blogspot.ch/2011/09/better-bit-mixing-improving-on.html
+    uint64_t hash = packedPos;
+    hash ^= (hash >> 31);
+    hash *= 0x7fb5d329728ea185;
+    hash ^= (hash >> 27);
+    hash *= 0x81dadef4bc2dd44d;
+    hash ^= (hash >> 33);
+    hash %= hashTableSize;
+    CHECK_GE(hash, 0);
+
+    // Now, see if the hash table already has an entry for the voxel. We'll
+    // use quadratic probing when the hash table entry is already used for
+    // another value; step stores the square root of the probe step.
+    int step = 1;
+    int nProbes = 0;
+    while (true) {
+        ++nProbes;
+        HashEntry &entry = hashTable[hash];
+        // Does the hash table entry at offset |hash| match the current point?
+        uint64_t entryPackedPos = entry.packedPos.load(std::memory_order_acquire);
+        if (entryPackedPos == packedPos) {
+            // Yes! Most of the time, there should already by a light
+            // sampling distribution available.
+            Distribution1D *dist = entry.distribution.load(std::memory_order_acquire);
+            if (dist == nullptr) {
+                // Rarely, another thread will have already done a lookup
+                // at this point, found that there isn't a sampling
+                // distribution, and will already be computing the
+                // distribution for the point.  In this case, we spin until
+                // the sampling distribution is ready.  We assume that this
+                // is a rare case, so don't do anything more sophisticated
+                // than spinning.
+                ProfilePhase _(Prof::LightDistribSpinWait);
+                while ((dist = entry.distribution.load(std::memory_order_acquire)) ==
+                       nullptr)
+                    // spin :-(. If we were fancy, we'd have any threads
+                    // that hit this instead help out with computing the
+                    // distribution for the voxel...
+                    ;
+            }
+            // We have a valid sampling distribution.
+            ReportValue(nProbesPerLookup, nProbes);
+            return dist;
+        } else if (entryPackedPos != invalidPackedPos) {
+            // The hash table entry we're checking has already been
+            // allocated for another voxel. Advance to the next entry with
+            // quadratic probing.
+            hash += step * step;
+            if (hash >= hashTableSize)
+                hash %= hashTableSize;
+            ++step;
+        } else {
+            // We have found an invalid entry. (Though this may have
+            // changed since the load into entryPackedPos above.)  Use an
+            // atomic compare/exchange to try to claim this entry for the
+            // current position.
+            uint64_t invalid = invalidPackedPos;
+            if (entry.packedPos.compare_exchange_weak(invalid, packedPos)) {
+                // Success; we've claimed this position for this voxel's
+                // distribution. Now compute the sampling distribution and
+                // add it to the hash table. As long as packedPos has been
+                // set but the entry's distribution pointer is nullptr, any
+                // other threads looking up the distribution for this voxel
+                // will spin wait until the distribution pointer is
+                // written.
+                Distribution1D *dist = ComputeDistribution(pi);
+                entry.distribution.store(dist, std::memory_order_release);
+                ReportValue(nProbesPerLookup, nProbes);
+                return dist;
+            }
+        }
     }
-    else {
-        // Otherwise see if we have a sampling distribution for the voxel
-        // that |p| is in already available in the local cache.
-        auto iter = localVoxelDistribution->find(pi);
-        if (iter != localVoxelDistribution->end())
-            return iter->second;
-    }
+}
 
-    // Now we need to either get the distribution from the shared hash
-    // table (if another thread has already created it), or create it
-    // ourselves and add it to the shared table.
-    ProfilePhase __(Prof::LightDistribLookupL2);
-
-    // First, compute a hash into the first-level hash table.
-    size_t hash = std::hash<int>{}(pi[0] + nVoxels[0] * pi[1] +
-                                   nVoxels[0] * nVoxels[1] * pi[2]);
-    hash &= (nBuckets - 1);
-
-    // Acquire the lock for the corresponding second-level hash table.
-    std::lock_guard<std::mutex> lock(mutexes[hash]);
-    // See if we can find it.
-    auto iter = voxelDistribution[hash].find(pi);
-    if (iter != voxelDistribution[hash].end()) {
-        // Success. Add the pointer to the thread-specific hash table so
-        // that we can look up this distribution more efficiently in the
-        // future.
-        (*localVoxelDistribution)[pi] = iter->second.get();
-        return iter->second.get();
-    }
-
-    // We need to compute a new sampling distriibution for this voxel. Note
-    // that we're holding the lock for the first-level hash table bucket
-    // throughout the following; in general, we'd like to do the following
-    // quickly so that other threads don't get held up waiting for that
-    // lock (for this or other voxels that share it).
-    ProfilePhase ___(Prof::LightDistribCreation);
+Distribution1D *
+SpatialLightDistribution::ComputeDistribution(Point3i pi) const {
+    ProfilePhase _(Prof::LightDistribCreation);
     ++nCreated;
     ++nDistributions;
 
-    // Compute the world-space bounding box of the voxel.
+    // Compute the world-space bounding box of the voxel corresponding to
+    // |pi|.
     Point3f p0(Float(pi[0]) / Float(nVoxels[0]),
                Float(pi[1]) / Float(nVoxels[1]),
                Float(pi[2]) / Float(nVoxels[2]));
@@ -241,19 +294,8 @@ const Distribution1D *SpatialLightDistribution::Lookup(const Point3f &p) const {
     LOG(INFO) << "Initialized light distribution in voxel pi= " <<  pi <<
         ", avgContrib = " << avgContrib;
 
-    // Compute a sampling distribution from the accumulated
-    // contributions.
-    std::unique_ptr<Distribution1D> distrib(
-        new Distribution1D(&lightContrib[0], lightContrib.size()));
-
-    // Store a pointer to it in the per-thread cache for the future.
-    (*localVoxelDistribution)[pi] = distrib.get();
-
-    // Store the canonical unique_ptr for it in the global hash table so
-    // other threads can use it.
-    voxelDistribution[hash][pi] = std::move(distrib);
-
-    return (*localVoxelDistribution)[pi];
+    // Compute a sampling distribution from the accumulated contributions.
+    return new Distribution1D(&lightContrib[0], lightContrib.size());
 }
 
 }  // namespace pbrt
