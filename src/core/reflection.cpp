@@ -514,7 +514,6 @@ std::string FresnelSpecular::ToString() const {
     return std::string("[ FresnelSpecular R: ") + R.ToString() +
            std::string(" T: ") + T.ToString() +
            StringPrintf(" etaA: %f etaB: %f ", etaA, etaB) +
-           std::string(" fresnel: ") + fresnel.ToString() +
            std::string(" mode : ") +
            (mode == TransportMode::Radiance ? std::string("RADIANCE")
                                             : std::string("IMPORTANCE")) +
