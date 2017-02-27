@@ -34,7 +34,7 @@ static void usage(const char *msg = nullptr, ...) {
 commands: assemble, cat, convert, diff, info, makesky
 
 assemble option:
-    --outflie          Output image filename.
+    --outfile          Output image filename.
 
 cat option:
     --sort             Sort output by pixel luminance.
