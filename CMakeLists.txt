@@ -319,15 +319,6 @@ TARGET_LINK_LIBRARIES ( imgtool
   glog
   )
 
-TARGET_LINK_LIBRARIES ( obj2pbrt
-  pbrt
-  ${CMAKE_THREAD_LIBS_INIT}
-  )
-
-#TARGET_LINK_LIBRARIES ( cyhair2pbrt
-#  ${CMAKE_THREAD_LIBS_INIT}
-#  )
-
 # Unit test
 
 FILE ( GLOB PBRT_TEST_SOURCE
