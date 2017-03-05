@@ -35,7 +35,7 @@
 #include "integrators/sppm.h"
 #include "parallel.h"
 #include "scene.h"
-#include "imageio.h"
+#include "image.h"
 #include "spectrum.h"
 #include "rng.h"
 #include "paramset.h"
@@ -461,8 +461,7 @@ void SPPMIntegrator::Render(const Scene &scene) {
             camera->film->WriteImage();
             // Write SPPM radius image, if requested
             if (getenv("SPPM_RADIUS")) {
-                std::unique_ptr<Float[]> rimg(
-                    new Float[3 * pixelBounds.Area()]);
+                Image rimg(PixelFormat::Y32, Point2i(pixelBounds.Diagonal()));
                 Float minrad = 1e30f, maxrad = 0;
                 for (int y = pixelBounds.pMin.y; y < pixelBounds.pMax.y; ++y) {
                     for (int x = x0; x < x1; ++x) {
@@ -483,14 +482,11 @@ void SPPMIntegrator::Render(const Scene &scene) {
                             pixels[(y - pixelBounds.pMin.y) * (x1 - x0) +
                                    (x - x0)];
                         Float v = 1.f - (p.radius - minrad) / (maxrad - minrad);
-                        rimg[offset++] = v;
-                        rimg[offset++] = v;
-                        rimg[offset++] = v;
+                        rimg.SetY({x - x0, y - pixelBounds.pMin.y}, v);
                     }
                 }
-                Point2i res(pixelBounds.pMax.x - pixelBounds.pMin.x,
-                            pixelBounds.pMax.y - pixelBounds.pMin.y);
-                WriteImage("sppm_radius.png", rimg.get(), pixelBounds, res);
+                rimg.Write("sppm_radius.png", pixelBounds,
+                           camera->film->fullResolution);
             }
         }
     }

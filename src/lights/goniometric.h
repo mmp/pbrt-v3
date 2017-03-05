@@ -42,9 +42,7 @@
 #include "pbrt.h"
 #include "light.h"
 #include "shape.h"
-#include "scene.h"
-#include "mipmap.h"
-#include "imageio.h"
+#include "image.h"
 
 namespace pbrt {
 
@@ -60,11 +58,10 @@ class GonioPhotometricLight : public Light {
         : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
           pLight(LightToWorld(Point3f(0, 0, 0))),
           I(I) {
-        // Create _mipmap_ for _GonioPhotometricLight_
-        Point2i resolution;
-        std::unique_ptr<RGBSpectrum[]> texels = ReadImage(texname, &resolution);
-        if (texels)
-            mipmap.reset(new MIPMap<RGBSpectrum>(resolution, texels.get()));
+        if (!Image::Read(texname, &image)) {
+            std::vector<Float> one = {(Float)1};
+            image = Image(std::move(one), PixelFormat::Y32, {1, 1});
+        }
     }
     Spectrum Scale(const Vector3f &w) const {
         Vector3f wp = Normalize(WorldToLight(w));
@@ -72,8 +69,7 @@ class GonioPhotometricLight : public Light {
         Float theta = SphericalTheta(wp);
         Float phi = SphericalPhi(wp);
         Point2f st(phi * Inv2Pi, theta * InvPi);
-        return !mipmap ? RGBSpectrum(1.f)
-                       : Spectrum(mipmap->Lookup(st), SpectrumType::Illuminant);
+        return I * image.BilerpSpectrum(st, SpectrumType::Illuminant);
     }
     Spectrum Power() const;
     Float Pdf_Li(const Interaction &, const Vector3f &) const;
@@ -87,7 +83,7 @@ class GonioPhotometricLight : public Light {
     // GonioPhotometricLight Private Data
     const Point3f pLight;
     const Spectrum I;
-    std::unique_ptr<MIPMap<RGBSpectrum>> mipmap;
+    Image image;
 };
 
 std::shared_ptr<GonioPhotometricLight> CreateGoniometricLight(

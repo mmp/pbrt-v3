@@ -30,7 +30,6 @@
 
  */
 
-
 // lights/spot.cpp*
 #include "lights/spot.h"
 #include "paramset.h"

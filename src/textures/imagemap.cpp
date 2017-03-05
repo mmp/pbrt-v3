@@ -39,70 +39,45 @@
 namespace pbrt {
 
 // ImageTexture Method Definitions
-template <typename Tmemory, typename Treturn>
-ImageTexture<Tmemory, Treturn>::ImageTexture(
+template <typename T>
+ImageTexture<T>::ImageTexture(
     std::unique_ptr<TextureMapping2D> mapping, const std::string &filename,
-    bool doTrilinear, Float maxAniso, ImageWrap wrapMode, Float scale,
+    const std::string &filter, Float maxAniso, WrapMode wrapMode, Float scale,
     bool gamma)
-    : mapping(std::move(mapping)) {
+    : mapping(std::move(mapping)), scale(scale) {
     mipmap =
-        GetTexture(filename, doTrilinear, maxAniso, wrapMode, scale, gamma);
+        GetTexture(filename, filter, maxAniso, wrapMode, gamma);
 }
 
-template <typename Tmemory, typename Treturn>
-MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
-    const std::string &filename, bool doTrilinear, Float maxAniso,
-    ImageWrap wrap, Float scale, bool gamma) {
+template <typename T>
+MIPMap *ImageTexture<T>::GetTexture(
+    const std::string &filename, const std::string &filter, Float maxAniso,
+    WrapMode wrap, bool gamma) {
     // Return _MIPMap_ from texture cache if present
-    TexInfo texInfo(filename, doTrilinear, maxAniso, wrap, scale, gamma);
+    TexInfo texInfo(filename, filter, maxAniso, wrap, gamma);
     if (textures.find(texInfo) != textures.end())
         return textures[texInfo].get();
 
     // Create _MIPMap_ for _filename_
     ProfilePhase _(Prof::TextureLoading);
-    Point2i resolution;
-    std::unique_ptr<RGBSpectrum[]> texels = ReadImage(filename, &resolution);
-    if (!texels) {
-        Warning("Creating a constant grey texture to replace \"%s\".",
-                filename.c_str());
-        resolution.x = resolution.y = 1;
-        RGBSpectrum *rgb = new RGBSpectrum[1];
-        *rgb = RGBSpectrum(0.5f);
-        texels.reset(rgb);
-    }
-
-    // Flip image in y; texture coordinate space has (0,0) at the lower
-    // left corner.
-    for (int y = 0; y < resolution.y / 2; ++y)
-        for (int x = 0; x < resolution.x; ++x) {
-            int o1 = y * resolution.x + x;
-            int o2 = (resolution.y - 1 - y) * resolution.x + x;
-            std::swap(texels[o1], texels[o2]);
-        }
-
-    MIPMap<Tmemory> *mipmap = nullptr;
-    if (texels) {
-        // Convert texels to type _Tmemory_ and create _MIPMap_
-        std::unique_ptr<Tmemory[]> convertedTexels(
-            new Tmemory[resolution.x * resolution.y]);
-        for (int i = 0; i < resolution.x * resolution.y; ++i)
-            convertIn(texels[i], &convertedTexels[i], scale, gamma);
-        mipmap = new MIPMap<Tmemory>(resolution, convertedTexels.get(),
-                                     doTrilinear, maxAniso, wrap);
-    } else {
-        // Create one-valued _MIPMap_
-        Tmemory oneVal = scale;
-        mipmap = new MIPMap<Tmemory>(Point2i(1, 1), &oneVal);
-    }
-    textures[texInfo].reset(mipmap);
-    return mipmap;
+    MIPMapFilterOptions options;
+    options.maxAnisotropy = maxAniso;
+    if (!ParseFilter(filter, &options.filter))
+        Warning("%s: filter function unknown", filter.c_str());
+    std::unique_ptr<MIPMap> mipmap =
+        MIPMap::CreateFromFile(filename, options, wrap, gamma);
+    if (mipmap) {
+        textures[texInfo] = std::move(mipmap);
+        return textures[texInfo].get();
+    } else
+        return nullptr;
 }
 
-template <typename Tmemory, typename Treturn>
-std::map<TexInfo, std::unique_ptr<MIPMap<Tmemory>>>
-    ImageTexture<Tmemory, Treturn>::textures;
-ImageTexture<Float, Float> *CreateImageFloatTexture(const Transform &tex2world,
-                                                    const TextureParams &tp) {
+template <typename T>
+std::map<TexInfo, std::unique_ptr<MIPMap>> ImageTexture<T>::textures;
+
+ImageTexture<Float> *CreateImageFloatTexture(const Transform &tex2world,
+                                             const TextureParams &tp) {
     // Initialize 2D texture mapping _map_ from _tp_
     std::unique_ptr<TextureMapping2D> map;
     std::string type = tp.FindString("mapping", "uv");
@@ -128,22 +103,21 @@ ImageTexture<Float, Float> *CreateImageFloatTexture(const Transform &tex2world,
 
     // Initialize _ImageTexture_ parameters
     Float maxAniso = tp.FindFloat("maxanisotropy", 8.f);
-    bool trilerp = tp.FindBool("trilinear", false);
+    std::string filter = tp.FindString("filter", "bilinear");
     std::string wrap = tp.FindString("wrap", "repeat");
-    ImageWrap wrapMode = ImageWrap::Repeat;
-    if (wrap == "black")
-        wrapMode = ImageWrap::Black;
-    else if (wrap == "clamp")
-        wrapMode = ImageWrap::Clamp;
+    WrapMode wrapMode;
+    std::string wrapString = tp.FindString("wrap", "repeat");
+    if (!ParseWrapMode(wrapString.c_str(), &wrapMode))
+        Warning("%s: wrap mode unknown", wrapString.c_str());
     Float scale = tp.FindFloat("scale", 1.f);
     std::string filename = tp.FindFilename("filename");
     bool gamma = tp.FindBool("gamma", HasExtension(filename, ".tga") ||
                                           HasExtension(filename, ".png"));
-    return new ImageTexture<Float, Float>(std::move(map), filename, trilerp,
-                                          maxAniso, wrapMode, scale, gamma);
+    return new ImageTexture<Float>(std::move(map), filename, filter,
+                                   maxAniso, wrapMode, scale, gamma);
 }
 
-ImageTexture<RGBSpectrum, Spectrum> *CreateImageSpectrumTexture(
+ImageTexture<Spectrum> *CreateImageSpectrumTexture(
     const Transform &tex2world, const TextureParams &tp) {
     // Initialize 2D texture mapping _map_ from _tp_
     std::unique_ptr<TextureMapping2D> map;
@@ -170,19 +144,18 @@ ImageTexture<RGBSpectrum, Spectrum> *CreateImageSpectrumTexture(
 
     // Initialize _ImageTexture_ parameters
     Float maxAniso = tp.FindFloat("maxanisotropy", 8.f);
-    bool trilerp = tp.FindBool("trilinear", false);
+    std::string filter = tp.FindString("filter", "bilinear");
     std::string wrap = tp.FindString("wrap", "repeat");
-    ImageWrap wrapMode = ImageWrap::Repeat;
-    if (wrap == "black")
-        wrapMode = ImageWrap::Black;
-    else if (wrap == "clamp")
-        wrapMode = ImageWrap::Clamp;
+    WrapMode wrapMode;
+    std::string wrapString = tp.FindString("wrap", "repeat");
+    if (!ParseWrapMode(wrapString.c_str(), &wrapMode))
+        Warning("%s: wrap mode unknown", wrapString.c_str());
     Float scale = tp.FindFloat("scale", 1.f);
     std::string filename = tp.FindFilename("filename");
     bool gamma = tp.FindBool("gamma", HasExtension(filename, ".tga") ||
                                           HasExtension(filename, ".png"));
-    return new ImageTexture<RGBSpectrum, Spectrum>(
-        std::move(map), filename, trilerp, maxAniso, wrapMode, scale, gamma);
+    return new ImageTexture<Spectrum>(
+        std::move(map), filename, filter, maxAniso, wrapMode, scale, gamma);
 }
 
 }  // namespace pbrt

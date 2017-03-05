@@ -183,7 +183,8 @@ static void workerThreadFunc(int tIndex, std::shared_ptr<Barrier> barrier) {
 // Parallel Definitions
 void ParallelFor(std::function<void(int64_t)> func, int64_t count,
                  int chunkSize) {
-    CHECK(threads.size() > 0 || MaxThreadIndex() == 1);
+    if (threads.size() == 0 && MaxThreadIndex() > 1)
+      LOG(WARNING) << "Threads not launched; ParallelFor will run serially";
 
     // Run iterations immediately if not using threads or if _count_ is small
     if (threads.empty() || count < chunkSize) {
@@ -245,7 +246,8 @@ int MaxThreadIndex() {
 }
 
 void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count) {
-    CHECK(threads.size() > 0 || MaxThreadIndex() == 1);
+    if (threads.size() == 0 && MaxThreadIndex() > 1)
+        LOG(WARNING) << "Threads not launched; ParallelFor will run serially";
 
     if (threads.empty() || count.x * count.y <= 1) {
         for (int y = 0; y < count.y; ++y)

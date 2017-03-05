@@ -44,7 +44,7 @@
 #include "texture.h"
 #include "shape.h"
 #include "scene.h"
-#include "mipmap.h"
+#include "image.h"
 
 namespace pbrt {
 
@@ -70,7 +70,8 @@ class InfiniteAreaLight : public Light {
 
   private:
     // InfiniteAreaLight Private Data
-    std::unique_ptr<MIPMap<RGBSpectrum>> Lmap;
+    Image image;
+    Spectrum Lscale;
     Point3f worldCenter;
     Float worldRadius;
     std::unique_ptr<Distribution2D> distribution;

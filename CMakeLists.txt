@@ -158,6 +158,7 @@ SET ( PBRT_CORE_SOURCE
   src/core/filter.cpp
   src/core/floatfile.cpp
   src/core/geometry.cpp
+  src/core/image.cpp
   src/core/imageio.cpp
   src/core/integrator.cpp
   src/core/interaction.cpp
@@ -169,6 +170,7 @@ SET ( PBRT_CORE_SOURCE
   src/core/medium.cpp
   src/core/memory.cpp
   src/core/microfacet.cpp
+  src/core/mipmap.cpp
   src/core/parallel.cpp
   src/core/paramset.cpp
   src/core/parser.cpp
@@ -183,6 +185,7 @@ SET ( PBRT_CORE_SOURCE
   src/core/sobolmatrices.cpp
   src/core/spectrum.cpp
   src/core/stats.cpp
+  src/core/texcache.cpp
   src/core/texture.cpp
   src/core/transform.cpp
   )

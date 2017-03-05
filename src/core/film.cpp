@@ -36,6 +36,7 @@
 #include "paramset.h"
 #include "imageio.h"
 #include "stats.h"
+#include "image.h"
 
 namespace pbrt {
 
@@ -169,44 +170,35 @@ void Film::WriteImage(Float splatScale) {
     // Convert image to RGB and compute final pixel values
     LOG(INFO) <<
         "Converting image to RGB and computing final weighted pixel values";
-    std::unique_ptr<Float[]> rgb(new Float[3 * croppedPixelBounds.Area()]);
-    int offset = 0;
+    Image rgb32(PixelFormat::RGB32, Point2i(croppedPixelBounds.Diagonal()));
     for (Point2i p : croppedPixelBounds) {
         // Convert pixel XYZ color to RGB
         Pixel &pixel = GetPixel(p);
-        XYZToRGB(pixel.xyz, &rgb[3 * offset]);
-
+        std::array<Float, 3> xyz = { Float(0), Float(0), Float(0) };
         // Normalize pixel with weight sum
         Float filterWeightSum = pixel.filterWeightSum;
         if (filterWeightSum != 0) {
             Float invWt = (Float)1 / filterWeightSum;
-            rgb[3 * offset] = std::max((Float)0, rgb[3 * offset] * invWt);
-            rgb[3 * offset + 1] =
-                std::max((Float)0, rgb[3 * offset + 1] * invWt);
-            rgb[3 * offset + 2] =
-                std::max((Float)0, rgb[3 * offset + 2] * invWt);
+            for (int c = 0; c < 3; ++c)
+              xyz[c] = pixel.xyz[c] * invWt;
         }
-
         // Add splat value at pixel
-        Float splatRGB[3];
-        Float splatXYZ[3] = {pixel.splatXYZ[0], pixel.splatXYZ[1],
-                             pixel.splatXYZ[2]};
-        XYZToRGB(splatXYZ, splatRGB);
-        rgb[3 * offset] += splatScale * splatRGB[0];
-        rgb[3 * offset + 1] += splatScale * splatRGB[1];
-        rgb[3 * offset + 2] += splatScale * splatRGB[2];
+        for (int c = 0; c < 3; ++c)
+          xyz[c] += splatScale * pixel.splatXYZ[c];
 
         // Scale pixel value by _scale_
-        rgb[3 * offset] *= scale;
-        rgb[3 * offset + 1] *= scale;
-        rgb[3 * offset + 2] *= scale;
-        ++offset;
+        for (int c = 0; c < 3; ++c)
+          xyz[c] *= scale;
+
+        Point2i pOffset(p.x - croppedPixelBounds.pMin.x,
+                        p.y - croppedPixelBounds.pMin.y);
+        rgb32.SetSpectrum(pOffset, Spectrum::FromXYZ(&xyz[0]));
     }
 
     // Write RGB image
     LOG(INFO) << "Writing image " << filename << " with bounds " <<
         croppedPixelBounds;
-    pbrt::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution);
+    rgb32.Write(filename, croppedPixelBounds, fullResolution);
 }
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {

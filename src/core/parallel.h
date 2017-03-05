@@ -41,6 +41,7 @@
 // core/parallel.h*
 #include "pbrt.h"
 #include "geometry.h"
+#include "stats.h"
 #include <mutex>
 #include <condition_variable>
 #include <functional>

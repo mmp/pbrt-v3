@@ -30,7 +30,6 @@
 
  */
 
-
 // lights/distant.cpp*
 #include "lights/distant.h"
 #include "paramset.h"
