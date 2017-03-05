@@ -126,7 +126,8 @@ bool RealisticCamera::TraceLensesFromFilm(const Ray &rCamera, Ray *rOut) const {
             Float etaT = (i > 0 && elementInterfaces[i - 1].eta != 0)
                              ? elementInterfaces[i - 1].eta
                              : 1;
-            if (!Refract(Normalize(-rLens.d), n, etaI / etaT, &w)) return false;
+            if (!Refract(Normalize(-rLens.d), n, etaI / etaT, &w) || w.z > 0)
+                return false;
             rLens.d = w;
         }
     }
