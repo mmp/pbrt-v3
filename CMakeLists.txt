@@ -1,5 +1,8 @@
 CMAKE_MINIMUM_REQUIRED ( VERSION 2.8 )
 
+# For sanitizers
+SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
 PROJECT ( PBRT-V3 )
 
 ENABLE_TESTING()
@@ -58,6 +61,7 @@ IF(MSVC)
   ADD_DEFINITIONS (/D YY_NO_UNISTD_H)
 ENDIF()
 
+FIND_PACKAGE ( Sanitizers )
 FIND_PACKAGE ( Threads )
 
 IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
@@ -251,6 +255,7 @@ ADD_LIBRARY ( pbrt STATIC
   ${PBRT_CORE_HEADERS}
   ${PBRT_SOURCE}
   )
+ADD_SANITIZERS ( pbrt )
 
 IF (WIN32)
   # Avoid a name clash when building on Visual Studio
@@ -260,12 +265,11 @@ IF (WIN32)
     )
 ENDIF()
 
-FIND_PACKAGE ( Threads )
-
 # Main renderer
 ADD_EXECUTABLE ( pbrt_exe
   src/main/pbrt.cpp
   )
+ADD_SANITIZERS ( pbrt_exe )
 
 SET_TARGET_PROPERTIES ( pbrt_exe
   PROPERTIES
@@ -279,22 +283,27 @@ TARGET_LINK_LIBRARIES ( pbrt_exe
   glog
   )
 
+
 # Tools
 ADD_EXECUTABLE ( bsdftest
   src/tools/bsdftest.cpp
   )
+ADD_SANITIZERS ( bsdftest )
 
 ADD_EXECUTABLE ( imgtool
   src/tools/imgtool.cpp
   )
+ADD_SANITIZERS ( imgtool )
 
 ADD_EXECUTABLE ( obj2pbrt
   src/tools/obj2pbrt.cpp
   )
+ADD_SANITIZERS ( obj2pbrt )
 
 ADD_EXECUTABLE ( cyhair2pbrt
   src/tools/cyhair2pbrt.cpp
   )
+ADD_SANITIZERS ( cyhair2pbrt )
 
 TARGET_LINK_LIBRARIES ( bsdftest
   pbrt
@@ -310,16 +319,6 @@ TARGET_LINK_LIBRARIES ( imgtool
   glog
   )
 
-TARGET_LINK_LIBRARIES ( obj2pbrt
-  pbrt
-  ${CMAKE_THREAD_LIBS_INIT}
-  )
-
-TARGET_LINK_LIBRARIES ( cyhair2pbrt
-  pbrt
-  ${CMAKE_THREAD_LIBS_INIT}
-  )
-
 # Unit test
 
 FILE ( GLOB PBRT_TEST_SOURCE
@@ -330,6 +329,7 @@ FILE ( GLOB PBRT_TEST_SOURCE
 ADD_EXECUTABLE ( pbrt_test
   ${PBRT_TEST_SOURCE}
   )
+ADD_SANITIZERS ( pbrt_test )
 
 TARGET_LINK_LIBRARIES ( pbrt_test
   pbrt
