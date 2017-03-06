@@ -35,23 +35,29 @@
 #define PBRT_CORE_HALF_H
 
 #include "pbrt.h"
-
-//#define __F16C__ 1
-// #include <x86intrin.h>
+#include <stdint.h>
 
 namespace pbrt {
 
 // TODO: define a small Half struct/class?
 
+#ifdef PBRT_HAVE_BINARY_CONSTANTS
 static const int kHalfExponentMask = 0b0111110000000000;
 static const int kHalfSignificandMask = 0b1111111111;
-
 static const int kHalfNegativeZero = 0b1000000000000000;
 static const int kHalfPositiveZero = 0;
-
 // Exponent all 1s, significand zero
 static const int kHalfNegativeInfinity = 0b1111110000000000;
 static const int kHalfPositiveInfinity = 0b0111110000000000;
+#else
+static const int kHalfExponentMask = 0x7c00;
+static const int kHalfSignificandMask = 0x3ff;
+static const int kHalfNegativeZero = 0x8000;
+static const int kHalfPositiveZero = 0;
+// Exponent all 1s, significand zero
+static const int kHalfNegativeInfinity = 0xfc00;
+static const int kHalfPositiveInfinity = 0x7c00;
+#endif
 
 inline bool HalfIsInf(uint16_t h) {
     return h == kHalfPositiveInfinity || h == kHalfNegativeInfinity;
