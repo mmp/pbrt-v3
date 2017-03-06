@@ -2,7 +2,7 @@
 #include "tests/gtest/gtest.h"
 
 #include "pbrt.h"
-#include "core/half.h"
+#include "core/fp16.h"
 #include "rng.h"
 
 using namespace pbrt;

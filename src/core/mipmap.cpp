@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <array>
 #include "fileutil.h"
-#include "half.h"
+#include "fp16.h"
 #include "imageio.h"
 #include "parallel.h"
 #include "stats.h"

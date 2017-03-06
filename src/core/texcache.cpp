@@ -35,6 +35,10 @@
 #if defined(PBRT_IS_LINUX) || defined(PBRT_IS_OSX)
 #include <sys/resource.h>
 #endif
+#ifdef PBRT_IS_WINDOWS
+#include <io.h>
+#endif
+
 #include <ratio>
 #include <set>
 #include <thread>
@@ -582,12 +586,20 @@ FdEntry *FdCache::Lookup(int fileId, const std::string &filename) {
     // Open file to get fd for _filename_
     if (entry->fd >= 0) {
         LOG(INFO) << "Closing fd " << entry->fd;
+#ifdef PBRT_IS_WINDOWS
+        CHECK_EQ(0, _close(entry->fd)) << strerror(errno);
+#else
         CHECK_EQ(0, close(entry->fd)) << strerror(errno);
+#endif
     }
     entry->fileId = fileId;
     LOG(INFO) << "Opening file for " << filename;
     ++fileOpens;
+#ifdef PBRT_IS_WINDOWS
+    entry->fd = _open(filename.c_str(), O_RDONLY);
+#else
     entry->fd = open(filename.c_str(), O_RDONLY);
+#endif
     CHECK_NE(entry->fd, -1) << "Couldn't open " << filename << ", "
                             << strerror(errno) << ". Try \"ulimit -n 65536\".";
     return entry;
@@ -806,7 +818,11 @@ void TextureCache::ReadTile(TileId tileId, TextureTile *tile) {
     int64_t offset = tex.FileOffset(tileId.level(), tileId.p());
     CHECK_EQ(0, offset & (TileDiskAlignment - 1)) << offset;
     FdEntry *fdEntry = fdCache.Lookup(tileId.texId(), tex.filename);
+#ifdef PBRT_IS_WINDOWS
+    if (_lseeki64(fdEntry->fd, offset, SEEK_SET) == -1)
+#else
     if (lseek(fdEntry->fd, offset, SEEK_SET) == -1)
+#endif
         Error("%s: seek error %s", tex.filename.c_str(), strerror(errno));
 
     // Read texel data and return file descriptor
@@ -816,7 +832,11 @@ void TextureCache::ReadTile(TileId tileId, TextureTile *tile) {
     CHECK(tileId.p()[0] < nt[0]);
     CHECK(tileId.p()[1] < nt[1]);
     ++tilesRead;
+#ifdef PBRT_IS_WINDOWS
+    if (_read(fdEntry->fd, tile->texels, tileBytes) != tileBytes)
+#else
     if (read(fdEntry->fd, tile->texels, tileBytes) != tileBytes)
+#endif
         Error("%s: read error %s", tex.filename.c_str(), strerror(errno));
 
     using DurationMS = std::chrono::duration<float, std::milli>;

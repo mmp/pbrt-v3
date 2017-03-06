@@ -36,6 +36,7 @@
 #include "image.h"
 #include "fileutil.h"
 #include "spectrum.h"
+#include "fp16.h"
 
 #include "ext/lodepng.h"
 #include "ext/targa.h"

@@ -41,7 +41,7 @@
 // core/image.h*
 #include "pbrt.h"
 #include "geometry.h"
-#include "half.h"
+#include "fp16.h"
 #include "spectrum.h"
 #include <array>
 
