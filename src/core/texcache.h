@@ -66,11 +66,11 @@ class TileHashTable;
 
 // Texture Cache Constants
 static const uint32_t tiledFileMagic = 0x65028088;
-static constexpr int TileDiskAlignment = 4096;
+static PBRT_CONSTEXPR int TileDiskAlignment = 4096;
 #ifdef PBRT_IS_LINUX
-static constexpr int MaxOpenFiles = 4000;
+static PBRT_CONSTEXPR int MaxOpenFiles = 4000;
 #else
-static constexpr int MaxOpenFiles = 200;  // TODO: how big?
+static PBRT_CONSTEXPR int MaxOpenFiles = 200;  // TODO: how big?
 #endif
 
 // ActiveFlag Declarations
@@ -219,7 +219,7 @@ class TextureCache {
     void FreeTiles();
 
     // TextureCache Private Data
-    static constexpr int TileAllocSize = 3 * 64 * 64;
+    static PBRT_CONSTEXPR int TileAllocSize = 3 * 64 * 64;
     std::unique_ptr<char[]> tileMemAlloc;
     std::unique_ptr<TextureTile[]> allTilesAlloc;
     std::mutex freeTilesMutex;
