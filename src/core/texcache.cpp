@@ -36,7 +36,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
-#ifdef PBRT_IS_WINDOWS
+#ifdef PBRT_IS_MSVC
+#include <sys/types.h>
 #include <io.h>
 #endif
 
@@ -512,7 +513,11 @@ FdCache::~FdCache() {
     for (size_t i = 0; i < hashTable.size(); ++i) {
         FdEntry *entry = hashTable[i];
         while (entry) {
+#ifdef PBRT_IS_WINDOWS
+            CHECK_EQ(0, _close(entry->fd)) << strerror(errno);
+#else
             CHECK_EQ(0, close(entry->fd)) << strerror(errno);
+#endif
             entry = entry->next;
         }
     }
@@ -597,7 +602,7 @@ FdEntry *FdCache::Lookup(int fileId, const std::string &filename) {
     LOG(INFO) << "Opening file for " << filename;
     ++fileOpens;
 #ifdef PBRT_IS_WINDOWS
-    entry->fd = _open(filename.c_str(), O_RDONLY);
+    entry->fd = _open(filename.c_str(), _O_RDONLY);
 #else
     entry->fd = open(filename.c_str(), O_RDONLY);
 #endif
