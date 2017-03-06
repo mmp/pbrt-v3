@@ -77,7 +77,7 @@ static PBRT_CONSTEXPR int MaxOpenFiles = 200;  // TODO: how big?
 #ifdef PBRT_HAVE_ALIGNAS
 struct alignas(PBRT_L1_CACHE_LINE_SIZE) ActiveFlag {
 #else
-struct ActiveFlag { char pad[PBRT_L1_CACHE_LILNE_SIZE];
+struct ActiveFlag { char pad[PBRT_L1_CACHE_LINE_SIZE];
 #endif
     std::atomic<bool> flag{false};
 };
@@ -232,7 +232,14 @@ class TextureCache {
     TileHashTable *freeHashTable;
     std::vector<TiledImagePyramid> textures;
     std::vector<ActiveFlag> threadActiveFlags;
-    alignas(PBRT_L1_CACHE_LINE_SIZE) std::mutex outstandingReadsMutex;
+
+#ifdef PBRT_HAVE_ALIGNAS
+    alignas(PBRT_L1_CACHE_LINE_SIZE)
+#else
+    char pad[PBRT_L1_CACHE_LINE_SIZE];
+#endif
+    std::mutex outstandingReadsMutex;
+
     std::vector<TileId> outstandingReads;
     std::condition_variable outstandingReadsCondition;
     FdCache fdCache;
