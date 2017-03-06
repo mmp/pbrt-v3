@@ -33,6 +33,7 @@
 // core/texcache.cpp*
 #include <fcntl.h>
 #if defined(PBRT_IS_LINUX) || defined(PBRT_IS_OSX)
+#include <sys/time.h>
 #include <sys/resource.h>
 #endif
 #ifdef PBRT_IS_WINDOWS
