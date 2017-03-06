@@ -32,7 +32,9 @@
 
 // core/texcache.cpp*
 #include <fcntl.h>
+#if defined(PBRT_IS_LINUX) || defined(PBRT_IS_OSX)
 #include <sys/resource.h>
+#endif
 #include <ratio>
 #include <set>
 #include <thread>
@@ -467,6 +469,7 @@ FdCache::FdCache(int fdsSpared) {
 
     // Determine maximum number of file descriptors, _maxFds_ to use for
     // textures
+#if defined(PBRT_IS_LINUX) || defined(PBRT_IS_OSX)
     struct rlimit rlim;
     CHECK_EQ(0, getrlimit(RLIMIT_NOFILE, &rlim)) << strerror(errno);
     LOG(INFO) << "Current limit open files " << rlim.rlim_cur << ", max "
@@ -480,7 +483,10 @@ FdCache::FdCache(int fdsSpared) {
     CHECK_EQ(0, setrlimit(RLIMIT_NOFILE, &rlim)) << strerror(errno);
     LOG(INFO) << "Max open files now = " << rlim.rlim_cur;
     int maxFds = rlim.rlim_cur - fdsSpared;
-    // int maxFds = rlim.rlim_cur - fdsSpared;
+#else
+    // TODO: figure out the right thing to do here, especially for windows.
+    int maxFds = 500;
+#endif
     allocPtr.reset(new FdEntry[maxFds]);
     for (int i = 0; i < maxFds; ++i) {
         FdEntry *entry = &allocPtr[i];

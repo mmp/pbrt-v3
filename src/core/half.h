@@ -99,21 +99,21 @@ inline uint16_t NextHalfDown(uint16_t v) {
 
 // https://gist.github.com/rygorous/2156668
 union FP32 {
-    uint u;
+    uint32_t u;
     float f;
     struct {
-        uint Mantissa : 23;
-        uint Exponent : 8;
-        uint Sign : 1;
+        unsigned int Mantissa : 23;
+        unsigned int Exponent : 8;
+        unsigned int Sign : 1;
     };
 };
 
 union FP16 {
-    unsigned short u;
+    uint16_t u;
     struct {
-        uint Mantissa : 10;
-        uint Exponent : 5;
-        uint Sign : 1;
+        unsigned int Mantissa : 10;
+        unsigned int Exponent : 5;
+        unsigned int Sign : 1;
     };
 };
 
@@ -124,10 +124,10 @@ inline uint16_t FloatToHalf(float ff) {
     FP32 f32infty = {255 << 23};
     FP32 f16max = {(127 + 16) << 23};
     FP32 denorm_magic = {((127 - 15) + (23 - 10) + 1) << 23};
-    uint sign_mask = 0x80000000u;
+    unsigned int sign_mask = 0x80000000u;
     FP16 o = {0};
 
-    uint sign = f.u & sign_mask;
+    unsigned int sign = f.u & sign_mask;
     f.u ^= sign;
 
     // NOTE all the integer compares in this function can be safely
@@ -150,7 +150,7 @@ inline uint16_t FloatToHalf(float ff) {
             // float!
             o.u = f.u - denorm_magic.u;
         } else {
-            uint mant_odd = (f.u >> 13) & 1;  // resulting mantissa is odd
+            unsigned int mant_odd = (f.u >> 13) & 1;  // resulting mantissa is odd
 
             // update exponent, rounding bias part 1
             f.u += (uint32_t(15 - 127) << 23) + 0xfff;
@@ -169,11 +169,11 @@ inline float HalfToFloat(uint16_t hh) {
     FP16 h;
     h.u = hh;
     static const FP32 magic = {113 << 23};
-    static const uint shifted_exp = 0x7c00 << 13;  // exponent mask after shift
+    static const unsigned int shifted_exp = 0x7c00 << 13;  // exponent mask after shift
     FP32 o;
 
     o.u = (h.u & 0x7fff) << 13;    // exponent/mantissa bits
-    uint exp = shifted_exp & o.u;  // just the exponent
+    unsigned int exp = shifted_exp & o.u;  // just the exponent
     o.u += (127 - 15) << 23;       // exponent adjust
 
     // handle exponent special cases
