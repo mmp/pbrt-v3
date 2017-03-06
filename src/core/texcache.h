@@ -74,7 +74,11 @@ static PBRT_CONSTEXPR int MaxOpenFiles = 200;  // TODO: how big?
 #endif
 
 // ActiveFlag Declarations
+#ifdef PBRT_HAVE_ALIGNAS
 struct alignas(PBRT_L1_CACHE_LINE_SIZE) ActiveFlag {
+#else
+struct ActiveFlag { char pad[PBRT_L1_CACHE_LILNE_SIZE];
+#endif
     std::atomic<bool> flag{false};
 };
 
