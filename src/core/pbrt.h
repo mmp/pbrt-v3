@@ -326,8 +326,8 @@ inline int Log2Int(uint64_t v) {
         lz += 32;
     else
         _BitScanReverse(&lz, v & 0xffffffff);
-    return lz;
 #endif // _WIN64
+    return lz;
 #else  // PBRT_IS_MSVC
     return 63 - __builtin_clzll(v);
 #endif
