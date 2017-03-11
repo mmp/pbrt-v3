@@ -319,9 +319,16 @@ inline int Log2Int(int32_t v) { return Log2Int((uint32_t)v); }
 inline int Log2Int(uint64_t v) {
 #if defined(PBRT_IS_MSVC)
     unsigned long lz = 0;
-    if (_BitScanReverse64(&lz, v)) return lz;
-    return 0;
+#if defined(_WIN64)
+    _BitScanReverse64(&lz, v);
 #else
+    if  (_BitScanReverse(&lz, v >> 32))
+        lz += 32;
+    else
+        _BitScanReverse(&lz, v & 0xffffffff);
+    return lz;
+#endif // _WIN64
+#else  // PBRT_IS_MSVC
     return 63 - __builtin_clzll(v);
 #endif
 }
