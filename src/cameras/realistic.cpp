@@ -493,10 +493,9 @@ Float RealisticCamera::FocusDistance(Float filmDistance) {
 
     Ray ray;
 
-    // Try some different (decreasing) scaling factor to find focus ray
-    // For example, when aperture stop is too small(e.g. 2 [mm] in
-    // dgauss.50mm.dat),
-    // `0.1` will fail to find focus ray, but `0.01` will success.
+    // Try some different and decreasing scaling factor to find focus ray
+    // more quickly when `aperturediameter` is too small.
+    // (e.g. 2 [mm] for `aperturediameter` with wide.22mm.dat),
     bool foundFocusRay = false;
     for (auto &scale : scaleFactors) {
         lu = scale * bounds.pMax[0];
