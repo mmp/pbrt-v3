@@ -65,6 +65,128 @@ Float FresnelMoment2(Float eta) {
     }
 }
 
+Float getRealDr(Float zb, Float D, Float sigma_t, Float r, Float xw, Float mu){
+    Float numerator = r * r - xw * xw;
+    Float cos_beta = -std::sqrt(numerator / (r * r + zb * zb));
+    if (mu > 0) 
+        return std::sqrt(D * mu * (D * mu - zb * cos_beta * 2) + r * r);
+    return std::sqrt(1 / (9 * sigma_t * sigma_t) + r * r);
+}
+
+Float DirectionalMonopole(Vector3f x, Vector3f w, Float r, Normal3f n, 
+                          Float sigma_tr, Float D, Float eta){
+    Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
+    Float cPhi = .25f * (1 - 2 * fm1), cE = .5f * (1 - 3 * fm2);
+
+    Float str_r = sigma_tr * r;
+    Float str_r_one = str_r + 1;
+
+    Float x_dot_w = Dot(x, w);
+    Float r_sqr = r * r;
+	
+    Float t0 = (1 / (4 * Pi)) * std::exp(-str_r) / (r * r_sqr);
+    Float t1 = r_sqr / D + 3 * str_r_one * x_dot_w;
+    Float t2 = 3 * D * str_r_one * Dot(w, n);
+    Float t3 = (str_r_one + 3 * D * (3 * str_r_one + str_r * str_r) 
+               / r_sqr * x_dot_w) * Dot(x, n);
+    return t0 * (cPhi * t1 - cE * (t2 - t3));
+}
+
+Float DirectionalDipole(Float sigma_s, Float sigma_a, Float g, Float eta, 
+                        Point3f xi, Point3f xo, Vector3f wi, Normal3f ni, 
+                        Normal3f no){
+    // Compute reduced scattering coefficients $\sigmaps, \sigmapt$ and albedo
+    // $\rhop$
+    Float sigma_t = sigma_a + sigma_s;
+    Float sigmap_s = sigma_s * (1.0 - g);
+    Float sigmap_t = sigma_a + sigmap_s;
+    Float rhop = sigmap_s / sigmap_t;
+
+    // Compute non-classical diffusion coefficient $D_\roman{G}$ using
+    // Equation (15.24)
+    Float D_g = ( 2 * sigma_a + sigmap_s) / (3 * sigmap_t * sigmap_t);
+
+    // Compute effective transport coefficient $\sigmatr$ based on $D_\roman{G}$
+    Float sigma_tr = std::sqrt(sigma_a / D_g);
+
+    // Determine linear extrapolation distance $\depthextrapolation$ using
+    // Equation (15.28)
+    Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
+    Float A = (1 + 3 * fm2) / (1 - 2 * fm1);
+    Float zb = 2 * D_g * A;
+
+    Normal3f ni_ast = xo == xi ? ni : 
+        Normal3f(Cross(Normalize(xo-xi), Normalize(Cross(ni, xo-xi))));
+    Vector3f wr = -1.0 * wi;
+    Vector3f wv = Reflect(wv, ni_ast);
+    Vector3f x = xo-xi;
+    Float dr = getRealDr(zb, D_g, sigma_t, x.Length(), Dot(x, wr), 
+                         Dot(-no, wr));
+    Float kappa = 1 - std::exp(-sigma_t * dr);
+ 
+    Vector3f xoxv = xo - (xi + Vector3f(ni_ast * (2 * zb)));
+    Float dv = xoxv.Length();
+
+    Float positiveMonopole = DirectionalMonopole(xo-xi, wr, dr, no, sigma_tr,
+                                                 D_g, eta);
+    Float negativeMonopole = DirectionalMonopole(xoxv, wv, dv, no, sigma_tr, 
+                                                 D_g, eta);
+    return rhop * kappa * (positiveMonopole - negativeMonopole);    
+}
+
+Float DirectionalMultipole(Float sigma_s, Float sigma_a, Float g, Float eta, 
+                           Point3f xi, Point3f xo, Vector3f wi, Normal3f ni, 
+                           Normal3f no){
+    // Compute reduced scattering coefficients $\sigmaps, \sigmapt$ and albedo
+    // $\rhop$
+    Float sigma_t = sigma_a + sigma_s;
+    Float sigmap_s = sigma_s * (1 - g);
+    Float sigmap_t = sigma_a + sigmap_s;
+
+    // Compute non-classical diffusion coefficient $D_\roman{G}$ using
+    // Equation (15.24)
+    Float D_g = (2 * sigma_a + sigmap_s) / (3 * sigmap_t * sigmap_t);
+
+    // Compute effective transport coefficient $\sigmatr$ based on $D_\roman{G}$
+    Float sigma_tr = std::sqrt(sigma_a / D_g);
+
+    // Determine linear extrapolation distance $\depthextrapolation$ using
+    // Equation (15.28)
+    Float fm1 = FresnelMoment1(eta), fm2 = FresnelMoment2(eta);
+    Float zb = 2 * D_g * (1 + 3 * fm2) / (1 - 2 * fm1);
+
+    Normal3f ni_ast = xo == xi ? ni : 
+        Normal3f(Cross(Normalize(xo-xi), Normalize(Cross(ni, xo-xi))));
+    Vector3f wr = -1.0 * wi;
+    Vector3f wv = Reflect(wv, ni_ast);
+    
+    Point3f xr0 = xi;
+    Vector3f x = xo-xi;
+    Float dr0 = getRealDr(zb, D_g, sigma_t, x.Length(), Dot(x, wr), 
+                          Dot(-no, wr));
+    Float d = Distance(xi, xo);
+ 
+    int nSamples = 100;
+    Float totalRadiance = 0;
+    for(int i = 0; i < nSamples; ++i){
+	    Point3f xr = xr0 + Vector3f((2 * i * (d + 2*zb)) * ni_ast);
+	    Point3f xv = -xr0 + Vector3f((2 * i * (d + 2*zb) - 2 * zb) * ni_ast);
+        Vector3f xoxr = xo - xr;
+        Vector3f xoxv = xo - xv;
+        Float dr = i == 0 ? dr0 : xoxr.Length(); 
+        Float dv = xoxv.Length();
+
+    	Float posMonopole = DirectionalMonopole(xoxr, wr, dr, no, sigma_tr, D_g,
+                                                eta);
+    	Float negMonopole = DirectionalMonopole(xoxv, wv, dv, no, sigma_tr, D_g,
+                                                eta);
+       	totalRadiance += (posMonopole - negMonopole); 
+    }
+    return totalRadiance;
+}
+
+
+
 Float BeamDiffusionMS(Float sigma_s, Float sigma_a, Float g, Float eta,
                       Float r) {
     const int nSamples = 100;
@@ -142,6 +264,18 @@ Float BeamDiffusionSS(Float sigma_s, Float sigma_a, Float g, Float eta,
     return Ess / nSamples;
 }
 
+Float DirpoleDiffusionMS(Float sigma_s, Float sigma_a, Float g, Float eta,
+                         Float r) {
+    Point3f xi = Point3f(0.0f, 0.0f, 0.0f);
+    Point3f xo = Point3f(1.0f, 0.0f, 0.0f) * r;
+
+    Vector3f wi = Vector3f(0.0f, 1.0f, 0.0f);
+    Normal3f ni = Normal3f(0.0f, 1.0f, 0.0f);
+    Normal3f no = Normal3f(0.0f, 1.0f, 0.0f);
+
+    return DirectionalDipole(sigma_s, sigma_a, g, eta, xi, xo, wi, ni, no); 
+}
+
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
     // Choose radius values of the diffusion profile discretization
     t->radiusSamples[0] = 0;
@@ -163,6 +297,38 @@ void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
             t->profile[i * t->nRadiusSamples + j] =
                 2 * Pi * r * (BeamDiffusionSS(rho, 1 - rho, g, eta, r) +
                               BeamDiffusionMS(rho, 1 - rho, g, eta, r));
+        }
+
+        // Compute effective albedo $\rho_{\roman{eff}}$ and CDF for importance
+        // sampling
+        t->rhoEff[i] =
+            IntegrateCatmullRom(t->nRadiusSamples, t->radiusSamples.get(),
+                                &t->profile[i * t->nRadiusSamples],
+                                &t->profileCDF[i * t->nRadiusSamples]);
+    }, t->nRhoSamples);
+}
+
+void ComputeDirpoleBSSRDF(Float g, Float eta, BSSRDFTable *t) {
+    // Choose radius values of the diffusion profile discretization
+    t->radiusSamples[0] = 0;
+    t->radiusSamples[1] = 2.5e-3f;
+    for (int i = 2; i < t->nRadiusSamples; ++i)
+        t->radiusSamples[i] = t->radiusSamples[i - 1] * 1.2f;
+
+    // Choose albedo values of the diffusion profile discretization
+    for (int i = 0; i < t->nRhoSamples; ++i)
+        t->rhoSamples[i] =
+            (1 - std::exp(-8 * i / (Float)(t->nRhoSamples - 1))) /
+            (1 - std::exp(-8));
+    ParallelFor([&](int i) {
+        // Compute the diffusion profile for the _i_th albedo sample
+
+        // Compute scattering profile for chosen albedo $\rho$
+        for (int j = 0; j < t->nRadiusSamples; ++j) {
+            Float rho = t->rhoSamples[i], r = t->radiusSamples[j];
+            Float ss = BeamDiffusionSS(rho, 1 - rho, g, eta, r); 
+            Float ms = DirpoleDiffusionMS(rho, 1 - rho, g, eta, r);
+            t->profile[i * t->nRadiusSamples + j] = 2 * Pi * r * (ms); // ms+ss!
         }
 
         // Compute effective albedo $\rho_{\roman{eff}}$ and CDF for importance
