@@ -551,4 +551,141 @@ Float TabulatedBSSRDF::Pdf_Sr(int ch, Float r) const {
     return std::max((Float)0, sr * sigma_t[ch] * sigma_t[ch] / rhoEff);
 }
 
+Spectrum TabulatedSamplingBSSRDF::S(const SurfaceInteraction &pi, 
+                                    const Vector3f &wi) const {
+    Spectrum Sr(0.f);
+    for (int c = 0; c < Spectrum::nSamples; ++c){
+        Float rOptical = Distance(po.p, pi.p) * sigma_t[c];
+        Point3f pos_i = pi.p + Normalize(pi.p - po.p) * rOptical;
+        Sr[c] = DirectionalDipole(rho[c], 1-rho[c], g, eta, pos_i, 
+                                        po.p, wi, pi.n, po.n);
+    }
+    Sr *= sigma_t * sigma_t;
+    return Sr.Clamp();
+}
+
+Spectrum TabulatedSamplingBSSRDF::Sample_S(const Scene &scene, Float u1,
+                                   const Point2f &u2, MemoryArena &arena,
+                                   SurfaceInteraction *si, Float *pdf) const {
+    ProfilePhase pp(Prof::BSSRDFEvaluation);
+    Spectrum Sp = Sample_Sp(scene, u1, u2, arena, si, pdf);
+    if (!Sp.IsBlack()) {
+        // Initialize material model at sampled surface interaction
+        si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
+        si->bsdf->Add(ARENA_ALLOC(arena, SeparableBSSRDFAdapter)(this));
+        si->wo = Vector3f(si->shading.n);
+    }
+    return Sp;
+}
+
+Spectrum TabulatedSampling::Sample_Sp(const Scene &scene, Float u1, const Point2f &u2,
+                       		MemoryArena &arena, SurfaceInteraction *pi,
+                       		Float *pdf) const {
+    ProfilePhase pp(Prof::BSSRDFEvaluation);
+    // Choose projection axis for BSSRDF sampling
+    Vector3f vx, vy, vz;
+    if (u1 < .5f) {
+        vx = ss;
+        vy = ts;
+        vz = Vector3f(ns);
+        u1 *= 2;
+    } else if (u1 < .75f) {
+        // Prepare for sampling rays with respect to _ss_
+        vx = ts;
+        vy = Vector3f(ns);
+        vz = ss;
+        u1 = (u1 - .5f) * 4;
+    } else {
+        // Prepare for sampling rays with respect to _ts_
+        vx = Vector3f(ns);
+        vy = ss;
+        vz = ts;
+        u1 = (u1 - .75f) * 4;
+    }
+
+    // Choose spectral channel for BSSRDF sampling
+    int ch = Clamp((int)(u1 * Spectrum::nSamples), 0, Spectrum::nSamples - 1);
+    u1 = u1 * Spectrum::nSamples - ch;
+
+    // Sample BSSRDF profile in polar coordinates
+    Float r = Sample_Sr(ch, u2[0]);
+    if (r < 0) return Spectrum(0.f);
+    Float phi = 2 * Pi * u2[1];
+
+    // Compute BSSRDF profile bounds and intersection height
+    Float rMax = Sample_Sr(ch, 0.99999f);
+    if (r > rMax) return Spectrum(0.f);
+    Float l = 2 * std::sqrt(rMax * rMax - r * r);
+
+    // Compute BSSRDF sampling ray segment
+    Interaction base;
+    base.p =
+        po.p + r * (vx * std::cos(phi) + vy * std::sin(phi)) - l * vz * 0.5f;
+    base.time = po.time;
+    Point3f pTarget = base.p + l * vz;
+
+    // Intersect BSSRDF sampling ray against the scene geometry
+
+    // Declare _IntersectionChain_ and linked list
+    struct IntersectionChain {
+        SurfaceInteraction si;
+        IntersectionChain *next = nullptr;
+    };
+    IntersectionChain *chain = ARENA_ALLOC(arena, IntersectionChain)();
+
+    // Accumulate chain of intersections along ray
+    IntersectionChain *ptr = chain;
+    int nFound = 0;
+    while (scene.Intersect(base.SpawnRayTo(pTarget), &ptr->si)) {
+        base = ptr->si;
+        // Append admissible intersection to _IntersectionChain_
+        if (ptr->si.primitive->GetMaterial() == this->material) {
+            IntersectionChain *next = ARENA_ALLOC(arena, IntersectionChain)();
+            ptr->next = next;
+            ptr = next;
+            nFound++;
+        }
+    }
+
+    // Randomly choose one of several intersections during BSSRDF sampling
+    if (nFound == 0) return Spectrum(0.0f);
+    int selected = Clamp((int)(u1 * nFound), 0, nFound - 1);
+    while (selected-- > 0) chain = chain->next;
+    *pi = chain->si;
+
+    Vector3f wi = CosineSampleHemisphere(u2);
+    if (pi->wo.z < 0) wi.z *= -1;
+    Float wiPdf = SameHemisphere(pi->wo, wi) ? AbsCosTheta(wi) * InvPi : 0;
+    wi = -wi;
+    
+    // Compute sample PDF and return the spatial BSSRDF term $\Sp$
+    *pdf = this->Pdf_Sp(*pi) / nFound * wiPdf;
+    return this->Sp(*pi, wi);
+}
+
+Float TabulatedSamplingBSSRDF::Sample_Sr(int ch, Float u) const {
+    // importance sample average distance before exiting using exponential falloff
+    u = 1.0 - u;
+    //if (sigma_t[ch] == 0) return -1;
+    return -(std::log(u)); // sigma_t[ch]; 
+}
+
+Float TabulatedSamplingBSSRDF::Pdf_Sr(int ch, Float r) const {
+    // Calculate importance sampling function pdf
+    return /*sigma_t[ch] * */ std::exp(-sigma_t[ch] * r);
+}
+
+Spectrum TabulatedSamplingBSSRDF::Sp(const SurfaceInteraction &pi, 
+                               const Vector3f wi) const {
+    Spectrum Sr(0.f);
+    for (int c = 0; c < Spectrum::nSamples; ++c){
+        Float rOptical = Distance(po.p, pi.p) * sigma_t[c];
+        Point3f pos_i = pi.p + Normalize(pi.p - po.p) * rOptical;
+        Sr[c] = DirectionalDipole(rho[c], 1 - rho[c], g, eta, pos_i, 
+                                  po.p, wi, pi.n, po.n);
+    }
+    Sr *= sigma_t * sigma_t;
+    return Sr.Clamp();
+}
+
 }  // namespace pbrt

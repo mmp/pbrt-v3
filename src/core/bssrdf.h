@@ -134,6 +134,40 @@ class TabulatedBSSRDF : public SeparableBSSRDF {
     Spectrum sigma_t, rho;
 };
 
+class TabulatedSamplingBSSRDF : public SeparableBSSRDF {
+  public:
+    // TabulatedSamplingBSSRDF Public Methods
+    TabulatedSamplingBSSRDF(const SurfaceInteraction &po,
+                    const Material *material,
+                    TransportMode mode, Float eta, const Spectrum &sigma_a,
+                    const Spectrum &sigma_s, const BSSRDFTable &table)
+        : SeparableBSSRDF(po, eta, material, mode), table(table) {
+        sigma_t = sigma_a + sigma_s;
+        for (int c = 0; c < Spectrum::nSamples; ++c)
+            rho[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0;
+    }
+    Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) const;
+    Spectrum Sp(const SurfaceInteraction &pi, const Vector3f wi) const; 
+    Spectrum Sample_S(const Scene &scene, Float u1, const Point2f &u2,
+                      MemoryArena &arena, SurfaceInteraction *si,
+                      Float *pdf) const;
+    Spectrum Sample_Sp(const Scene &scene, Float u1, const Point2f &u2,
+                       MemoryArena &arena, SurfaceInteraction *si,
+                       Float *pdf) const;
+    Spectrum Sr(Float distance) const {
+        return Spectrum(0);
+    }
+    Float Sample_Sr(int ch, Float sample) const;
+    Float Pdf_Sr(int ch, Float distance) const;
+
+  private:
+    // TabulatedBSSRDF Private Data
+    const BSSRDFTable &table;
+    Spectrum sigma_t, rho;
+};
+
+
+
 struct BSSRDFTable {
     // BSSRDFTable Public Data
     const int nRhoSamples, nRadiusSamples;
@@ -173,6 +207,7 @@ Float BeamDiffusionSS(Float sigma_s, Float sigma_a, Float g, Float eta,
 Float BeamDiffusionMS(Float sigma_s, Float sigma_a, Float g, Float eta,
                       Float r);
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t);
+void ComputeDirpoleBSSRDF(Float g, Float eta, BSSRDFTable *t);
 void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &rhoEff,
                            const Spectrum &mfp, Spectrum *sigma_a,
                            Spectrum *sigma_s);
