@@ -69,6 +69,7 @@ class SubsurfaceDirpoleMaterial : public Material {
           vRoughness(vRoughness),
           bumpMap(bumpMap),
           eta(eta),
+          g(g),
           remapRoughness(remapRoughness),
           table(100, 64) {
         ComputeDirpoleBSSRDF(g, eta, &table);
@@ -84,6 +85,7 @@ class SubsurfaceDirpoleMaterial : public Material {
     std::shared_ptr<Texture<Float>> uRoughness, vRoughness;
     std::shared_ptr<Texture<Float>> bumpMap;
     const Float eta;
+    const Float g;
     const bool remapRoughness;
     BSSRDFTable table;
 };

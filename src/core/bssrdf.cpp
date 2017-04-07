@@ -36,6 +36,7 @@
 #include "interpolation.h"
 #include "parallel.h"
 #include "scene.h"
+#include "sampling.h"
 
 namespace pbrt {
 
