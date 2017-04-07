@@ -578,7 +578,7 @@ Spectrum TabulatedSamplingBSSRDF::Sample_S(const Scene &scene, Float u1,
     return Sp;
 }
 
-Spectrum TabulatedSampling::Sample_Sp(const Scene &scene, Float u1, 
+Spectrum TabulatedSamplingBSSRDF::Sample_Sp(const Scene &scene, Float u1, 
                             const Point2f &u2, MemoryArena &arena, 
                             SurfaceInteraction *pi, Float *pdf) const {
     ProfilePhase pp(Prof::BSSRDFEvaluation);

@@ -105,7 +105,7 @@ class SeparableBSSRDF : public BSSRDF {
     virtual Float Sample_Sr(int ch, Float u) const = 0;
     virtual Float Pdf_Sr(int ch, Float r) const = 0;
 
-  private:
+  protected:
     // SeparableBSSRDF Private Data
     const Normal3f ns;
     const Vector3f ss, ts;

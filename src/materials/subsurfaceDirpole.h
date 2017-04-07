@@ -35,8 +35,8 @@
 #pragma once
 #endif
 
-#ifndef PBRT_MATERIALS_SUBSURFACE_H
-#define PBRT_MATERIALS_SUBSURFACE_H
+#ifndef PBRT_MATERIALS_SUBSURFACE_DIRPOLE_H
+#define PBRT_MATERIALS_SUBSURFACE_DIRPOLE_H
 
 // materials/subsurfaceDirpole.h*
 #include "pbrt.h"
@@ -71,7 +71,7 @@ class SubsurfaceDirpoleMaterial : public Material {
           eta(eta),
           remapRoughness(remapRoughness),
           table(100, 64) {
-        ComputeDirpoleDiffusionBSSRDF(g, eta, &table);
+        ComputeDirpoleBSSRDF(g, eta, &table);
     }
     void ComputeScatteringFunctions(SurfaceInteraction *si, MemoryArena &arena,
                                     TransportMode mode,
@@ -93,4 +93,4 @@ SubsurfaceDirpoleMaterial *CreateSubsurfaceDirpoleMaterial(
 
 }  // namespace pbrt
 
-#endif  // PBRT_MATERIALS_SUBSURFACE_H
+#endif  // PBRT_MATERIALS_SUBSURFACE_DIRPOLE_H
