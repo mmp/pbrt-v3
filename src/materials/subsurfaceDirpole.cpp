@@ -95,7 +95,7 @@ void SubsurfaceDirpoleMaterial::ComputeScatteringFunctions(
     Spectrum sig_s = scale * sigma_s->Evaluate(*si).Clamp();
     si->bssrdf = ARENA_ALLOC(arena, TabulatedSamplingBSSRDF)(*si, this, mode, 
                                                              eta, sig_a, sig_s, 
-                                                             table);
+                                                             g, table);
 }
 
 SubsurfaceDirpoleMaterial *CreateSubsurfaceDirpoleMaterial(

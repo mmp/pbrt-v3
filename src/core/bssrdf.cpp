@@ -578,9 +578,9 @@ Spectrum TabulatedSamplingBSSRDF::Sample_S(const Scene &scene, Float u1,
     return Sp;
 }
 
-Spectrum TabulatedSampling::Sample_Sp(const Scene &scene, Float u1, const Point2f &u2,
-                       		MemoryArena &arena, SurfaceInteraction *pi,
-                       		Float *pdf) const {
+Spectrum TabulatedSampling::Sample_Sp(const Scene &scene, Float u1, 
+                            const Point2f &u2, MemoryArena &arena, 
+                            SurfaceInteraction *pi, Float *pdf) const {
     ProfilePhase pp(Prof::BSSRDFEvaluation);
     // Choose projection axis for BSSRDF sampling
     Vector3f vx, vy, vz;
@@ -664,15 +664,42 @@ Spectrum TabulatedSampling::Sample_Sp(const Scene &scene, Float u1, const Point2
 }
 
 Float TabulatedSamplingBSSRDF::Sample_Sr(int ch, Float u) const {
-    // importance sample average distance before exiting using exponential falloff
-    u = 1.0 - u;
-    //if (sigma_t[ch] == 0) return -1;
-    return -(std::log(u)); // sigma_t[ch]; 
+    if (sigma_t[ch] == 0) return -1;
+    return SampleCatmullRom2D(table.nRhoSamples, table.nRadiusSamples,
+                              table.rhoSamples.get(), table.radiusSamples.get(),
+                              table.profile.get(), table.profileCDF.get(),
+                              rho[ch], u) /
+           sigma_t[ch];
 }
 
 Float TabulatedSamplingBSSRDF::Pdf_Sr(int ch, Float r) const {
-    // Calculate importance sampling function pdf
-    return /*sigma_t[ch] * */ std::exp(-sigma_t[ch] * r);
+    // Convert $r$ into unitless optical radius $r_{\roman{optical}}$
+    Float rOptical = r * sigma_t[ch];
+
+    // Compute spline weights to interpolate BSSRDF density on channel _ch_
+    int rhoOffset, radiusOffset;
+    Float rhoWeights[4], radiusWeights[4];
+    if (!CatmullRomWeights(table.nRhoSamples, table.rhoSamples.get(), rho[ch],
+                           &rhoOffset, rhoWeights) ||
+        !CatmullRomWeights(table.nRadiusSamples, table.radiusSamples.get(),
+                           rOptical, &radiusOffset, radiusWeights))
+        return 0.f;
+
+    // Return BSSRDF profile density for channel _ch_
+    Float sr = 0, rhoEff = 0;
+    for (int i = 0; i < 4; ++i) {
+        if (rhoWeights[i] == 0) continue;
+        rhoEff += table.rhoEff[rhoOffset + i] * rhoWeights[i];
+        for (int j = 0; j < 4; ++j) {
+            if (radiusWeights[j] == 0) continue;
+            sr += table.EvalProfile(rhoOffset + i, radiusOffset + j) *
+                  rhoWeights[i] * radiusWeights[j];
+        }
+    }
+
+    // Cancel marginal PDF factor from tabulated BSSRDF profile
+    if (rOptical != 0) sr /= 2 * Pi * rOptical;
+    return std::max((Float)0, sr * sigma_t[ch] * sigma_t[ch] / rhoEff);
 }
 
 Spectrum TabulatedSamplingBSSRDF::Sp(const SurfaceInteraction &pi, 

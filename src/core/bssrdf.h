@@ -139,9 +139,10 @@ class TabulatedSamplingBSSRDF : public SeparableBSSRDF {
     // TabulatedSamplingBSSRDF Public Methods
     TabulatedSamplingBSSRDF(const SurfaceInteraction &po,
                     const Material *material,
-                    TransportMode mode, Float eta, const Spectrum &sigma_a,
+                    TransportMode mode, Float eta, Float g,
+                    const Spectrum &sigma_a,
                     const Spectrum &sigma_s, const BSSRDFTable &table)
-        : SeparableBSSRDF(po, eta, material, mode), table(table) {
+        : SeparableBSSRDF(po, eta, material, mode), table(table), g(g) {
         sigma_t = sigma_a + sigma_s;
         for (int c = 0; c < Spectrum::nSamples; ++c)
             rho[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0;
@@ -164,6 +165,7 @@ class TabulatedSamplingBSSRDF : public SeparableBSSRDF {
     // TabulatedBSSRDF Private Data
     const BSSRDFTable &table;
     Spectrum sigma_t, rho;
+    Float g;
 };
 
 
