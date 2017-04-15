@@ -610,8 +610,8 @@ Float FourierBSDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     if (!bsdfTable.GetWeightsAndOffset(muI, &offsetI, weightsI) ||
         !bsdfTable.GetWeightsAndOffset(muO, &offsetO, weightsO))
         return 0;
-    Float *ak = ALLOCA(Float, bsdfTable.mMax * bsdfTable.nChannels);
-    memset(ak, 0, bsdfTable.mMax * bsdfTable.nChannels * sizeof(Float));
+    Float *ak = ALLOCA(Float, bsdfTable.mMax);
+    memset(ak, 0, bsdfTable.mMax * sizeof(Float));
     int mMax = 0;
     for (int o = 0; o < 4; ++o) {
         for (int i = 0; i < 4; ++i) {
