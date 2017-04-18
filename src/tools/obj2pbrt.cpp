@@ -941,9 +941,11 @@ void LoadMtl(std::map<std::string, int> &material_map,
     }
   }
   // flush last material.
-  material_map.insert(std::pair<std::string, int>(
-      material.name, static_cast<int>(materials.size())));
-  materials.push_back(material);
+  if (!material.name.empty()) {
+    material_map.insert(std::pair<std::string, int>(
+        material.name, static_cast<int>(materials.size())));
+    materials.push_back(material);
+  }
 }
 
 bool MaterialFileReader::operator()(const std::string &matId,
