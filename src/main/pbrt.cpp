@@ -47,6 +47,7 @@ static void usage(const char *msg = nullptr) {
     fprintf(stderr, R"(usage: pbrt [<options>] <filename.pbrt...>
 Rendering options:
   --help               Print this help text.
+  --texcachemb <num>   Texture cache size in MB.
   --nthreads <num>     Use specified number of threads for rendering.
   --outfile <filename> Write the final image to the given filename.
   --quick              Automatically reduce a number of quality settings to
@@ -85,6 +86,16 @@ int main(int argc, char *argv[]) {
             options.nThreads = atoi(argv[++i]);
         } else if (!strncmp(argv[i], "--nthreads=", 11)) {
             options.nThreads = atoi(&argv[i][11]);
+        } else if (!strcmp(argv[i], "--texcachemb") || !strcmp(argv[i], "-texcachemb")) {
+            if (i + 1 == argc)
+                usage("missing value after --texcachemb argument");
+            options.texCacheMB = atoi(argv[++i]);
+            CHECK_GT(options.texCacheMB, 0);
+        } else if (!strcmp(argv[i], "--texreadms") || !strcmp(argv[i], "-texreadms")) {
+            if (i + 1 == argc)
+                usage("missing value after --texreadms argument");
+            options.texReadMinMS = atoi(argv[++i]);
+            CHECK_GT(options.texCacheMB, 0);
         } else if (!strcmp(argv[i], "--outfile") || !strcmp(argv[i], "-outfile")) {
             if (i + 1 == argc)
                 usage("missing value after --outfile argument");

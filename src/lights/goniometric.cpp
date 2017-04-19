@@ -30,7 +30,6 @@
 
  */
 
-
 // lights/goniometric.cpp*
 #include "lights/goniometric.h"
 #include "paramset.h"
@@ -49,13 +48,20 @@ Spectrum GonioPhotometricLight::Sample_Li(const Interaction &ref,
     *pdf = 1.f;
     *vis =
         VisibilityTester(ref, Interaction(pLight, ref.time, mediumInterface));
-    return I * Scale(-*wi) / DistanceSquared(pLight, ref.p);
+    return Scale(-*wi) / DistanceSquared(pLight, ref.p);
 }
 
 Spectrum GonioPhotometricLight::Power() const {
-    return 4 * Pi * I * Spectrum(mipmap ? mipmap->Lookup(Point2f(.5f, .5f), .5f)
-                                        : RGBSpectrum(1.f),
-                                 SpectrumType::Illuminant);
+    Spectrum sumL(0.);
+    int width = image.resolution.x, height = image.resolution.y;
+    for (int v = 0; v < height; ++v) {
+        Float sinTheta = std::sin(Pi * Float(v + .5f) / Float(height));
+        for (int u = 0; u < width; ++u) {
+            sumL +=
+                image.GetSpectrum({u, v}, SpectrumType::Illuminant) * sinTheta;
+        }
+    }
+    return 4 * Pi * sumL / (width * height);
 }
 
 Float GonioPhotometricLight::Pdf_Li(const Interaction &,
@@ -73,7 +79,7 @@ Spectrum GonioPhotometricLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     *nLight = (Normal3f)ray->d;
     *pdfPos = 1.f;
     *pdfDir = UniformSpherePdf();
-    return I * Scale(ray->d);
+    return Scale(ray->d);
 }
 
 void GonioPhotometricLight::Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,

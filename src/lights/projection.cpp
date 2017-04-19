@@ -30,12 +30,10 @@
 
  */
 
-
 // lights/projection.cpp*
 #include "lights/projection.h"
 #include "sampling.h"
 #include "paramset.h"
-#include "imageio.h"
 #include "reflection.h"
 #include "stats.h"
 
@@ -50,14 +48,13 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
       pLight(LightToWorld(Point3f(0, 0, 0))),
       I(I) {
     // Create _ProjectionLight_ MIP map
-    Point2i resolution;
-    std::unique_ptr<RGBSpectrum[]> texels = ReadImage(texname, &resolution);
-    if (texels)
-        projectionMap.reset(new MIPMap<RGBSpectrum>(resolution, texels.get()));
+    if (!Image::Read(texname, &image)) {
+        std::vector<Float> one = {(Float)1};
+        image = Image(std::move(one), PixelFormat::Y32, {1, 1});
+    }
 
     // Initialize _ProjectionLight_ projection matrix
-    Float aspect =
-        projectionMap ? (Float(resolution.x) / Float(resolution.y)) : 1;
+    Float aspect = Float(image.resolution.x) / Float(image.resolution.y);
     if (aspect > 1)
         screenBounds = Bounds2f(Point2f(-aspect, -1), Point2f(aspect, 1));
     else
@@ -81,7 +78,7 @@ Spectrum ProjectionLight::Sample_Li(const Interaction &ref, const Point2f &u,
     *pdf = 1;
     *vis =
         VisibilityTester(ref, Interaction(pLight, ref.time, mediumInterface));
-    return I * Projection(-*wi) / DistanceSquared(pLight, ref.p);
+    return Projection(-*wi) / DistanceSquared(pLight, ref.p);
 }
 
 Spectrum ProjectionLight::Projection(const Vector3f &w) const {
@@ -92,17 +89,17 @@ Spectrum ProjectionLight::Projection(const Vector3f &w) const {
     // Project point onto projection plane and compute light
     Point3f p = lightProjection(Point3f(wl.x, wl.y, wl.z));
     if (!Inside(Point2f(p.x, p.y), screenBounds)) return 0.f;
-    if (!projectionMap) return 1;
     Point2f st = Point2f(screenBounds.Offset(Point2f(p.x, p.y)));
-    return Spectrum(projectionMap->Lookup(st), SpectrumType::Illuminant);
+    return I * image.BilerpSpectrum(st, SpectrumType::Illuminant);
 }
 
 Spectrum ProjectionLight::Power() const {
-    return (projectionMap
-                ? Spectrum(projectionMap->Lookup(Point2f(.5f, .5f), .5f),
-                           SpectrumType::Illuminant)
-                : Spectrum(1.f)) *
-           I * 2 * Pi * (1.f - cosTotalWidth);
+    Spectrum sum(0.f);
+    for (int v = 0; v < image.resolution.y; ++v)
+        for (int u = 0; u < image.resolution.x; ++u)
+            sum += image.GetSpectrum({u, v}, SpectrumType::Illuminant);
+    return I * 2 * Pi * (1.f - cosTotalWidth) * sum /
+           (image.resolution.x * image.resolution.y);
 }
 
 Float ProjectionLight::Pdf_Li(const Interaction &, const Vector3f &) const {
@@ -118,7 +115,7 @@ Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     *nLight = (Normal3f)ray->d;  /// same here
     *pdfPos = 1.f;
     *pdfDir = UniformConePdf(cosTotalWidth);
-    return I * Projection(ray->d);
+    return Projection(ray->d);
 }
 
 void ProjectionLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,

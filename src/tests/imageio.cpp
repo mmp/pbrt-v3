@@ -1,40 +1,38 @@
 
 #include "tests/gtest/gtest.h"
 #include "pbrt.h"
+#include "image.h"
 #include "fileutil.h"
 #include "spectrum.h"
-#include "imageio.h"
 
 using namespace pbrt;
 
 static void TestRoundTrip(const char *fn, bool gamma) {
     Point2i res(16, 29);
-    std::vector<Float> pixels(3 * res[0] * res[1]);
+    Image image(PixelFormat::RGB32, res);
     for (int y = 0; y < res[1]; ++y)
         for (int x = 0; x < res[0]; ++x) {
-            int offset = 3 * (y * res[0] + x);
-            pixels[offset] = Float(x) / Float(res[0] - 1);
-            pixels[offset + 1] = Float(y) / Float(res[1] - 1);
-            pixels[offset + 2] = -1.5f;
+            Float rgb[3] = {Float(x) / Float(res[0] - 1),
+                            Float(y) / Float(res[1] - 1), Float(-1.5)};
+            Spectrum s = Spectrum::FromRGB(rgb);
+            image.SetSpectrum({x, y}, s);
         }
 
-    WriteImage(fn, &pixels[0], Bounds2i({0, 0}, res), res);
+    ASSERT_TRUE(image.Write(fn));
 
     Point2i readRes;
-    auto readPixels = ReadImage(fn, &readRes);
-    ASSERT_TRUE(readPixels.get() != nullptr);
-    EXPECT_EQ(readRes, res);
+    Image readImage;
+    ASSERT_TRUE(Image::Read(fn, &readImage));
+    ASSERT_EQ(readImage.resolution, res);
 
     for (int y = 0; y < res[1]; ++y)
         for (int x = 0; x < res[0]; ++x) {
+            Spectrum s = readImage.GetSpectrum({x, y});
             Float rgb[3];
-            readPixels[y * res[0] + x].ToRGB(rgb);
+            s.ToRGB(rgb);
 
             for (int c = 0; c < 3; ++c) {
-                if (gamma)
-                    rgb[c] = InverseGammaCorrect(rgb[c]);
-
-                float wrote = pixels[3 * (y * res[0] + x) + c];
+                float wrote = image.GetChannel({x, y}, c);
                 float delta = wrote - rgb[c];
                 if (HasExtension(fn, "pfm")) {
                     // Everything should come out exact.
@@ -72,6 +70,8 @@ static void TestRoundTrip(const char *fn, bool gamma) {
                 }
             }
         }
+
+    EXPECT_EQ(0, remove(fn));
 }
 
 TEST(ImageIO, RoundTripEXR) { TestRoundTrip("out.exr", false); }

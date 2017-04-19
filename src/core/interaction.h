@@ -133,6 +133,10 @@ class SurfaceInteraction : public Interaction {
     void ComputeDifferentials(const RayDifferential &r) const;
     Spectrum Le(const Vector3f &w) const;
 
+    using Interaction::SpawnRay;
+    RayDifferential SpawnRay(const RayDifferential &rayi, const Vector3f &wi,
+                             int bxdfType, Float eta) const;
+
     // SurfaceInteraction Public Data
     Point2f uv;
     Vector3f dpdu, dpdv;

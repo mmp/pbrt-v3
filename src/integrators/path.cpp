@@ -147,7 +147,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             // medium.
             etaScale *= (Dot(wo, isect.n) > 0) ? (eta * eta) : 1 / (eta * eta);
         }
-        ray = isect.SpawnRay(wi);
+        ray = isect.SpawnRay(ray, wi, flags, isect.bsdf->eta);
 
         // Account for subsurface scattering, if applicable
         if (isect.bssrdf && (flags & BSDF_TRANSMISSION)) {

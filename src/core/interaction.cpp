@@ -30,13 +30,13 @@
 
  */
 
-
 // core/interaction.cpp*
 #include "interaction.h"
-#include "transform.h"
-#include "primitive.h"
-#include "shape.h"
 #include "light.h"
+#include "primitive.h"
+#include "reflection.h"
+#include "shape.h"
+#include "transform.h"
 
 namespace pbrt {
 
@@ -149,6 +149,65 @@ void SurfaceInteraction::ComputeDifferentials(
 Spectrum SurfaceInteraction::Le(const Vector3f &w) const {
     const AreaLight *area = primitive->GetAreaLight();
     return area ? area->L(*this, w) : Spectrum(0.f);
+}
+
+RayDifferential SurfaceInteraction::SpawnRay(const RayDifferential &rayi,
+                                             const Vector3f &wi, int bxdfType,
+                                             Float eta) const {
+    RayDifferential rd = SpawnRay(wi);
+
+    rd.hasDifferentials = true;
+    rd.rxOrigin = p + dpdx;
+    rd.ryOrigin = p + dpdy;
+
+    if (bxdfType & BSDF_DIFFUSE) {
+        Vector3f v[2];
+        CoordinateSystem(wi, &v[0], &v[1]);
+        rd.rxDirection = Normalize(wi + .2f * v[0]);
+        rd.ryDirection = Normalize(wi + .2f * v[1]);
+    } else if (bxdfType & BSDF_GLOSSY) {
+        Vector3f v[2];
+        CoordinateSystem(wi, &v[0], &v[1]);
+        rd.rxDirection = Normalize(wi + .1f * v[0]);
+        rd.ryDirection = Normalize(wi + .1f * v[1]);
+    } else if (bxdfType == BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)) {
+        rd.rxOrigin = p + dpdx;
+        rd.ryOrigin = p + dpdy;
+        // Compute differential reflected directions
+        Normal3f dndx = shading.dndu * dudx + shading.dndv * dvdx;
+        Normal3f dndy = shading.dndu * dudy + shading.dndv * dvdy;
+        Vector3f dwodx = -rayi.rxDirection - wo, dwody = -rayi.ryDirection - wo;
+        Normal3f ns = shading.n;
+        Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
+        Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
+        rd.rxDirection =
+            wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
+        rd.ryDirection =
+            wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
+    } else if (bxdfType == BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {
+        rd.rxOrigin = p + dpdx;
+        rd.ryOrigin = p + dpdy;
+
+        Vector3f w = -wo;
+        Normal3f ns = shading.n;
+        if (Dot(wo, ns) < 0) eta = 1.f / eta;
+
+        Normal3f dndx = shading.dndu * dudx + shading.dndv * dvdx;
+        Normal3f dndy = shading.dndu * dudy + shading.dndv * dvdy;
+
+        Vector3f dwodx = -rayi.rxDirection - wo, dwody = -rayi.ryDirection - wo;
+        Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
+        Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
+
+        Float mu = eta * Dot(w, ns) - Dot(wi, ns);
+        Float dmudx = (eta - (eta * eta * Dot(w, ns)) / Dot(wi, ns)) * dDNdx;
+        Float dmudy = (eta - (eta * eta * Dot(w, ns)) / Dot(wi, ns)) * dDNdy;
+
+        rd.rxDirection = wi + eta * dwodx - Vector3f(mu * dndx + dmudx * ns);
+        rd.ryDirection = wi + eta * dwody - Vector3f(mu * dndy + dmudy * ns);
+    }
+
+    return rd;
 }
 
 }  // namespace pbrt

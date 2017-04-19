@@ -39,6 +39,7 @@
 #include "film.h"
 #include "medium.h"
 #include "stats.h"
+#include "texcache.h"
 
 // API Additional Headers
 #include "accelerators/bvh.h"
@@ -1384,6 +1385,12 @@ void pbrtWorldEnd() {
 
         if (scene && integrator) integrator->Render(*scene);
 
+        // FIXME: yuck
+        if (CachedTexelProvider::textureCache) {
+            delete CachedTexelProvider::textureCache;
+            CachedTexelProvider::textureCache = nullptr;
+        }
+
         MergeWorkerThreadStats();
         ReportThreadStats();
         if (!PbrtOptions.quiet) {
@@ -1406,8 +1413,8 @@ void pbrtWorldEnd() {
     activeTransformBits = AllTransformsBits;
     namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
                                  namedCoordinateSystems.end());
-    ImageTexture<Float, Float>::ClearCache();
-    ImageTexture<RGBSpectrum, Spectrum>::ClearCache();
+    ImageTexture<Float>::ClearCache();
+    ImageTexture<Spectrum>::ClearCache();
 }
 
 Scene *RenderOptions::MakeScene() {

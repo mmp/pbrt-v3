@@ -32,100 +32,75 @@
 
 // core/imageio.cpp*
 #include "imageio.h"
-#include "ext/lodepng.h"
-#include "ext/targa.h"
+#include "geometry.h"
+#include "image.h"
 #include "fileutil.h"
 #include "spectrum.h"
+#include "fp16.h"
 
+#include "ext/lodepng.h"
+#include "ext/targa.h"
 #include <ImfRgba.h>
 #include <ImfRgbaFile.h>
 
 namespace pbrt {
 
 // ImageIO Local Declarations
-static void WriteImageEXR(const std::string &name, const Float *pixels,
-                          int xRes, int yRes, int totalXRes, int totalYRes,
-                          int xOffset, int yOffset);
-static void WriteImageTGA(const std::string &name, const uint8_t *pixels,
-                          int xRes, int yRes, int totalXRes, int totalYRes,
-                          int xOffset, int yOffset);
-static RGBSpectrum *ReadImageTGA(const std::string &name, int *w, int *h);
-static RGBSpectrum *ReadImagePNG(const std::string &name, int *w, int *h);
-static bool WriteImagePFM(const std::string &filename, const Float *rgb,
-                          int xres, int yres);
-static RGBSpectrum *ReadImagePFM(const std::string &filename, int *xres,
-                                 int *yres);
+static bool ReadImageEXR(const std::string &name, Image *image,
+                         Bounds2i *dataWindow, Bounds2i *displayWindow);
+static bool ReadImageTGA(const std::string &name, bool gamma, Image *image);
+static bool ReadImagePNG(const std::string &name, bool gamma, Image *image);
+static bool ReadImagePFM(const std::string &filename, Image *image);
 
 // ImageIO Function Definitions
-std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
-                                         Point2i *resolution) {
+bool Image::Read(const std::string &name, Image *image, bool gamma,
+                 Bounds2i *dataWindow, Bounds2i *displayWindow) {
     if (HasExtension(name, ".exr"))
-        return std::unique_ptr<RGBSpectrum[]>(
-            ReadImageEXR(name, &resolution->x, &resolution->y));
-    else if (HasExtension(name, ".tga"))
-        return std::unique_ptr<RGBSpectrum[]>(
-            ReadImageTGA(name, &resolution->x, &resolution->y));
+        return ReadImageEXR(name, image, dataWindow, displayWindow);
+
+    LOG_IF(ERROR, dataWindow != nullptr || displayWindow != nullptr) <<
+        "Data window and display window not available for non-EXR images.";
+
+    if (HasExtension(name, ".tga"))
+        return ReadImageTGA(name, gamma, image);
     else if (HasExtension(name, ".png"))
-        return std::unique_ptr<RGBSpectrum[]>(
-            ReadImagePNG(name, &resolution->x, &resolution->y));
+        return ReadImagePNG(name, gamma, image);
     else if (HasExtension(name, ".pfm"))
-        return std::unique_ptr<RGBSpectrum[]>(
-            ReadImagePFM(name, &resolution->x, &resolution->y));
-    Error("Unable to load image stored in format \"%s\" for filename \"%s\".",
-          strrchr(name.c_str(), '.') ? (strrchr(name.c_str(), '.') + 1)
-                                     : "(unknown)",
-          name.c_str());
-    return nullptr;
-}
-
-void WriteImage(const std::string &name, const Float *rgb,
-                const Bounds2i &outputBounds, const Point2i &totalResolution) {
-    Vector2i resolution = outputBounds.Diagonal();
-    if (HasExtension(name, ".exr")) {
-        WriteImageEXR(name, rgb, resolution.x, resolution.y, totalResolution.x,
-                      totalResolution.y, outputBounds.pMin.x,
-                      outputBounds.pMin.y);
-    } else if (HasExtension(name, ".pfm")) {
-        WriteImagePFM(name, rgb, resolution.x, resolution.y);
-    } else if (HasExtension(name, ".tga") || HasExtension(name, ".png")) {
-        // 8-bit formats; apply gamma
-        Vector2i resolution = outputBounds.Diagonal();
-        std::unique_ptr<uint8_t[]> rgb8(
-            new uint8_t[3 * resolution.x * resolution.y]);
-        uint8_t *dst = rgb8.get();
-        for (int y = 0; y < resolution.y; ++y) {
-            for (int x = 0; x < resolution.x; ++x) {
-#define TO_BYTE(v) (uint8_t) Clamp(255.f * GammaCorrect(v) + 0.5f, 0.f, 255.f)
-                dst[0] = TO_BYTE(rgb[3 * (y * resolution.x + x) + 0]);
-                dst[1] = TO_BYTE(rgb[3 * (y * resolution.x + x) + 1]);
-                dst[2] = TO_BYTE(rgb[3 * (y * resolution.x + x) + 2]);
-#undef TO_BYTE
-                dst += 3;
-            }
-        }
-
-        if (HasExtension(name, ".tga"))
-            WriteImageTGA(name, rgb8.get(), resolution.x, resolution.y,
-                          totalResolution.x, totalResolution.y,
-                          outputBounds.pMin.x, outputBounds.pMin.y);
-        else {
-            unsigned int error = lodepng_encode24_file(
-                name.c_str(), rgb8.get(), resolution.x, resolution.y);
-            if (error != 0)
-                Error("Error writing PNG \"%s\": %s", name.c_str(),
-                      lodepng_error_text(error));
-        }
-    } else {
-        Error("Can't determine image file type from suffix of filename \"%s\"",
+        return ReadImagePFM(name, image);
+    else {
+        Error("%s: no support for reading images with this extension",
               name.c_str());
+        return false;
     }
 }
 
-RGBSpectrum *ReadImageEXR(const std::string &name, int *width, int *height,
-                          Bounds2i *dataWindow, Bounds2i *displayWindow) {
+bool Image::Write(const std::string &name) const {
+    return Write(name, Bounds2i({0, 0}, resolution), resolution);
+}
+
+bool Image::Write(const std::string &name, const Bounds2i &pixelBounds,
+                  Point2i fullResolution) const {
+    if (HasExtension(name, ".exr"))
+        return WriteEXR(name, pixelBounds, fullResolution);
+    else if (HasExtension(name, ".pfm"))
+        return WritePFM(name);
+    else if (HasExtension(name, ".png"))
+        return WritePNG(name);
+    else if (HasExtension(name, ".tga"))
+        return WriteTGA(name);
+    else {
+        Error("Can't determine image file type from suffix of filename \"%s\"",
+              name.c_str());
+        return false;
+    }
+}
+
+static bool ReadImageEXR(const std::string &name, Image *image,
+                         Bounds2i *dataWindow, Bounds2i *displayWindow) {
     using namespace Imf;
     using namespace Imath;
     try {
+        // TODO: handle single channel EXRs directly...
         RgbaInputFile file(name.c_str());
         Box2i dw = file.dataWindow();
 
@@ -138,155 +113,257 @@ RGBSpectrum *ReadImageEXR(const std::string &name, int *width, int *height,
             *displayWindow = {{dispw.min.x, dispw.min.y},
                               {dispw.max.x + 1, dispw.max.y + 1}};
         }
-        *width = dw.max.x - dw.min.x + 1;
-        *height = dw.max.y - dw.min.y + 1;
 
-        std::vector<Rgba> pixels(*width * *height);
-        file.setFrameBuffer(&pixels[0] - dw.min.x - dw.min.y * *width, 1,
-                            *width);
+        int width = dw.max.x - dw.min.x + 1;
+        int height = dw.max.y - dw.min.y + 1;
+        std::vector<Rgba> pixels(width * height);
+        file.setFrameBuffer(&pixels[0] - dw.min.x - dw.min.y * width, 1, width);
         file.readPixels(dw.min.y, dw.max.y);
 
-        RGBSpectrum *ret = new RGBSpectrum[*width * *height];
-        for (int i = 0; i < *width * *height; ++i) {
-            Float frgb[3] = {pixels[i].r, pixels[i].g, pixels[i].b};
-            ret[i] = RGBSpectrum::FromRGB(frgb);
+        std::vector<uint16_t> rgb(3 * width * height);
+        for (int i = 0; i < width * height; ++i) {
+            memcpy(&rgb[3 * i], &pixels[i].r, sizeof(half));
+            memcpy(&rgb[3 * i + 1], &pixels[i].g, sizeof(half));
+            memcpy(&rgb[3 * i + 2], &pixels[i].b, sizeof(half));
         }
-        LOG(INFO) << StringPrintf("Read EXR image %s (%d x %d)",
-                                  name.c_str(), *width, *height);
-        return ret;
+        LOG(INFO) << StringPrintf("Read EXR image %s (%d x %d)", name.c_str(),
+                                  width, height);
+        *image =
+            Image(std::move(rgb), PixelFormat::RGB16, Point2i(width, height));
+        return true;
     } catch (const std::exception &e) {
         Error("Unable to read image file \"%s\": %s", name.c_str(), e.what());
     }
 
-    return NULL;
+    return false;
 }
 
-static void WriteImageEXR(const std::string &name, const Float *pixels,
-                          int xRes, int yRes, int totalXRes, int totalYRes,
-                          int xOffset, int yOffset) {
+bool Image::WriteEXR(const std::string &name, const Bounds2i &pixelBounds,
+                     Point2i fullResolution) const {
     using namespace Imf;
     using namespace Imath;
 
-    Rgba *hrgba = new Rgba[xRes * yRes];
-    for (int i = 0; i < xRes * yRes; ++i)
-        hrgba[i] = Rgba(pixels[3 * i], pixels[3 * i + 1], pixels[3 * i + 2]);
+    // FIXME: if we have RGB32, it seems like we should write out float32;
+    // require the caller to explicitly downcast/ask for float16 if
+    // desired?
 
-    // OpenEXR uses inclusive pixel bounds.
-    Box2i displayWindow(V2i(0, 0), V2i(totalXRes - 1, totalYRes - 1));
-    Box2i dataWindow(V2i(xOffset, yOffset),
-                     V2i(xOffset + xRes - 1, yOffset + yRes - 1));
+    std::unique_ptr<Rgba[]> hrgba(new Rgba[resolution.x * resolution.y]);
+    for (int y = 0; y < resolution.y; ++y)
+        for (int x = 0; x < resolution.x; ++x)
+            // TODO: skip the half -> float -> half round trip...
+            hrgba[y * resolution.x + x] =
+                Rgba(GetChannel({x, y}, 0), GetChannel({x, y}, 1),
+                     GetChannel({x, y}, 2));
+
+    Box2i displayWindow(V2i(0, 0),
+                        V2i(fullResolution.x - 1, fullResolution.y - 1));
+    Box2i dataWindow(V2i(pixelBounds.pMin.x, pixelBounds.pMin.y),
+                     V2i(pixelBounds.pMax.x - 1, pixelBounds.pMax.y - 1));
 
     try {
         RgbaOutputFile file(name.c_str(), displayWindow, dataWindow,
                             WRITE_RGBA);
-        file.setFrameBuffer(hrgba - xOffset - yOffset * xRes, 1, xRes);
-        file.writePixels(yRes);
+        file.setFrameBuffer(hrgba.get() - pixelBounds.pMin.x -
+                            pixelBounds.pMin.y * resolution.x,
+                            1, resolution.x);
+        file.writePixels(resolution.y);
     } catch (const std::exception &exc) {
         Error("Error writing \"%s\": %s", name.c_str(), exc.what());
+        return false;
     }
 
-    delete[] hrgba;
+    return true;
 }
 
-// TGA Function Definitions
-void WriteImageTGA(const std::string &name, const uint8_t *pixels, int xRes,
-                   int yRes, int totalXRes, int totalYRes, int xOffset,
-                   int yOffset) {
-    // Reformat to BGR layout.
-    std::unique_ptr<uint8_t[]> outBuf(new uint8_t[3 * xRes * yRes]);
-    uint8_t *dst = outBuf.get();
-    const uint8_t *src = pixels;
-    for (int y = 0; y < yRes; ++y) {
-        for (int x = 0; x < xRes; ++x) {
-            dst[0] = src[2];
-            dst[1] = src[1];
-            dst[2] = src[0];
-            dst += 3;
-            src += 3;
-        }
-    }
+///////////////////////////////////////////////////////////////////////////
+// PNG Function Definitions
 
-    tga_result result;
-    if ((result = tga_write_bgr(name.c_str(), outBuf.get(), xRes, yRes, 24)) !=
-        TGA_NOERR)
-        Error("Unable to write output file \"%s\" (%s)",
-              name.c_str(), tga_error(result));
+static inline uint8_t FloatToSRGB(Float v) {
+    return uint8_t(Clamp(255.f * GammaCorrect(v) + 0.5f, 0.f, 255.f));
 }
 
-static RGBSpectrum *ReadImageTGA(const std::string &name, int *width,
-                                 int *height) {
-    tga_image img;
-    tga_result result;
-    if ((result = tga_read(&img, name.c_str())) != TGA_NOERR) {
-        Error("Unable to read from TGA file \"%s\" (%s)",
-              name.c_str(), tga_error(result));
-        return nullptr;
-    }
-
-    if (tga_is_right_to_left(&img)) tga_flip_horiz(&img);
-    if (!tga_is_top_to_bottom(&img)) tga_flip_vert(&img);
-    if (tga_is_colormapped(&img)) tga_color_unmap(&img);
-
-    *width = img.width;
-    *height = img.height;
-
-    // "Unpack" the pixels (origin in the lower left corner).
-    // TGA pixels are in BGRA format.
-    RGBSpectrum *ret = new RGBSpectrum[*width * *height];
-    RGBSpectrum *dst = ret;
-    for (int y = 0; y < *height; y++)
-        for (int x = 0; x < *width; x++) {
-            uint8_t *src = tga_find_pixel(&img, x, y);
-            if (tga_is_mono(&img))
-                *dst++ = RGBSpectrum(*src / 255.f);
-            else {
-                Float c[3];
-                c[2] = src[0] / 255.f;
-                c[1] = src[1] / 255.f;
-                c[0] = src[2] / 255.f;
-                *dst++ = RGBSpectrum::FromRGB(c);
-            }
-        }
-
-    tga_free_buffers(&img);
-    LOG(INFO) << StringPrintf("Read TGA image %s (%d x %d)",
-                              name.c_str(), *width, *height);
-
-    return ret;
-}
-
-static RGBSpectrum *ReadImagePNG(const std::string &name, int *width,
-                                 int *height) {
+static bool ReadImagePNG(const std::string &name, bool gamma, Image *image) {
     unsigned char *rgb;
-    unsigned w, h;
-    unsigned int error = lodepng_decode24_file(&rgb, &w, &h, name.c_str());
+    unsigned width, height;
+    unsigned int error =
+        lodepng_decode24_file(&rgb, &width, &height, name.c_str());
     if (error != 0) {
         Error("Error reading PNG \"%s\": %s", name.c_str(),
               lodepng_error_text(error));
-        return nullptr;
+        return false;
     }
-    *width = w;
-    *height = h;
 
-    RGBSpectrum *ret = new RGBSpectrum[*width * *height];
+    std::vector<uint8_t> rgb8(3 * width * height);
     unsigned char *src = rgb;
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x, src += 3) {
-            Float c[3];
-            c[0] = src[0] / 255.f;
-            c[1] = src[1] / 255.f;
-            c[2] = src[2] / 255.f;
-            ret[y * *width + x] = RGBSpectrum::FromRGB(c);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x, src += 3) {
+            for (int c = 0; c < 3; ++c)
+                rgb8[3 * ((y * width) + x) + c] = src[c];
         }
     }
 
+    PixelFormat format = gamma ? PixelFormat::SRGB8 : PixelFormat::RGB8;
+    *image = Image(std::move(rgb8), format, Point2i(width, height));
     free(rgb);
-    LOG(INFO) << StringPrintf("Read PNG image %s (%d x %d)",
-                              name.c_str(), *width, *height);
-    return ret;
+    return true;
 }
 
+bool Image::WritePNG(const std::string &name) const {
+    unsigned int error = 0;
+    switch (format) {
+    case PixelFormat::SRGB8:
+        error = lodepng_encode24_file(name.c_str(), &p8[0], resolution.x,
+                                      resolution.y);
+        break;
+    case PixelFormat::SY8:
+        error = lodepng_encode_file(name.c_str(), &p8[0], resolution.x,
+                                    resolution.y, LCT_GREY, 8 /* bitdepth */);
+        break;
+    case PixelFormat::RGB8:
+    case PixelFormat::RGB16:
+    case PixelFormat::RGB32: {
+        std::unique_ptr<uint8_t[]> rgb8(
+            new uint8_t[3 * resolution.x * resolution.y]);
+        for (int y = 0; y < resolution.y; ++y)
+            for (int x = 0; x < resolution.x; ++x)
+                for (int c = 0; c < 3; ++c)
+                    rgb8[3 * (y * resolution.x + x) + c] =
+                        FloatToSRGB(GetChannel({x, y}, c));
+
+        error = lodepng_encode24_file(name.c_str(), rgb8.get(), resolution.x,
+                                      resolution.y);
+        break;
+    }
+    case PixelFormat::Y8:
+    case PixelFormat::Y16:
+    case PixelFormat::Y32: {
+        std::unique_ptr<uint8_t[]> y8(new uint8_t[resolution.x * resolution.y]);
+        for (int y = 0; y < resolution.y; ++y)
+            for (int x = 0; x < resolution.x; ++x)
+                y8[y * resolution.x + x] = FloatToSRGB(GetChannel({x, y}, 0));
+
+        error = lodepng_encode_file(name.c_str(), y8.get(), resolution.x,
+                                    resolution.y, LCT_GREY, 8 /* bitdepth */);
+        break;
+    }
+    }
+
+    if (error != 0) {
+        Error("Error writing PNG \"%s\": %s", name.c_str(),
+              lodepng_error_text(error));
+        return false;
+    }
+    return true;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// TGA Function Definitions
+
+bool Image::WriteTGA(const std::string &name) const {
+    int nc = nChannels();
+    std::unique_ptr<uint8_t[]> outBuf(
+        new uint8_t[nc * resolution.x * resolution.y]);
+    uint8_t *dst = outBuf.get();
+    for (int y = 0; y < resolution.y; ++y) {
+        for (int x = 0; x < resolution.x; ++x) {
+            switch (format) {
+            case PixelFormat::SRGB8:
+                // Reformat to 8-bit BGR layout.
+                dst[0] = p8[3 * (y * resolution.x + x) + 2];
+                dst[1] = p8[3 * (y * resolution.x + x) + 1];
+                dst[2] = p8[3 * (y * resolution.x + x)];
+                dst += 3;
+                break;
+            case PixelFormat::SY8:
+                *dst++ = p8[x * resolution.x + x];
+                break;
+            case PixelFormat::Y8:
+            case PixelFormat::Y16:
+            case PixelFormat::Y32:
+                *dst++ = FloatToSRGB(GetChannel({x, y}, 0));
+                break;
+            case PixelFormat::RGB8:
+            case PixelFormat::RGB16:
+            case PixelFormat::RGB32:
+                // Again, reorder to BGR...
+                dst[0] = FloatToSRGB(GetChannel({x, y}, 2));
+                dst[1] = FloatToSRGB(GetChannel({x, y}, 1));
+                dst[2] = FloatToSRGB(GetChannel({x, y}, 0));
+                dst += 3;
+                break;
+            default:
+                LOG(FATAL) << "Unhandled pixel format in WriteTGA";
+            }
+        }
+    }
+
+    tga_result result;
+    if (nc == 1)
+        result = tga_write_mono(name.c_str(), outBuf.get(), resolution.x,
+                                resolution.y);
+    else
+        result = tga_write_bgr(name.c_str(), outBuf.get(), resolution.x,
+                               resolution.y, 24);
+
+    if (result != TGA_NOERR) {
+        Error("Unable to write output file \"%s\" (%s)", name.c_str(),
+              tga_error(result));
+        return false;
+    }
+    return true;
+}
+
+static bool ReadImageTGA(const std::string &name, bool gamma, Image *image) {
+    tga_image img;
+    tga_result result;
+    if ((result = tga_read(&img, name.c_str())) != TGA_NOERR) {
+        Error("Unable to read from TGA file \"%s\" (%s)", name.c_str(),
+              tga_error(result));
+        return false;
+    }
+
+    if (tga_is_right_to_left(&img)) tga_flip_horiz(&img);
+    if (tga_is_top_to_bottom(&img)) tga_flip_vert(&img);
+    if (tga_is_colormapped(&img)) tga_color_unmap(&img);
+
+    int nChannels = tga_is_mono(&img) ? 1 : 3;
+    std::vector<uint8_t> pixels(img.width * img.height * nChannels);
+
+    // "Unpack" the pixels (origin in the lower left corner).
+    uint8_t *dst = &pixels[0];
+    for (int y = 0; y < img.height; y++)
+        for (int x = 0; x < img.width; x++) {
+            uint8_t *src = tga_find_pixel(&img, x, y);
+            if (nChannels == 1)
+                *dst++ = *src;
+            else {
+                // TGA pixels are in BGRA format.
+                *dst++ = src[2];
+                *dst++ = src[1];
+                *dst++ = src[0];
+            }
+        }
+
+    LOG(INFO) << StringPrintf("Read TGA image %s (%d x %d)",
+                              name.c_str(), img.width, img.height);
+
+    PixelFormat format;
+    if (nChannels == 3)
+      format = gamma ? PixelFormat::SRGB8 : PixelFormat::RGB8;
+    else {
+        CHECK_EQ(1, nChannels);
+        format = gamma ? PixelFormat::SY8 : PixelFormat::Y8;
+    }
+    *image = Image(std::move(pixels), format,
+                   Point2i(img.width, img.height));
+
+    tga_free_buffers(&img);
+    return true;
+}
+
+///////////////////////////////////////////////////////////////////////////
 // PFM Function Definitions
+
 /*
  * PFM reader/writer code courtesy Jiawen "Kevin" Chen
  * (http://people.csail.mit.edu/jiawen/)
@@ -347,10 +424,8 @@ static int readWord(FILE *fp, char *buffer, int bufferLength) {
     return -1;
 }
 
-static RGBSpectrum *ReadImagePFM(const std::string &filename, int *xres,
-                                 int *yres) {
-    float *data = nullptr;
-    RGBSpectrum *rgb = nullptr;
+static bool ReadImagePFM(const std::string &filename, Image *image) {
+    std::vector<float> rgb32;
     char buffer[BUFFER_SIZE];
     unsigned int nFloats;
     int nChannels, width, height;
@@ -374,12 +449,10 @@ static RGBSpectrum *ReadImagePFM(const std::string &filename, int *xres,
     // read width
     if (readWord(fp, buffer, BUFFER_SIZE) == -1) goto fail;
     width = atoi(buffer);
-    *xres = width;
 
     // read height
     if (readWord(fp, buffer, BUFFER_SIZE) == -1) goto fail;
     height = atoi(buffer);
-    *yres = height;
 
     // read scale
     if (readWord(fp, buffer, BUFFER_SIZE) == -1) goto fail;
@@ -387,55 +460,42 @@ static RGBSpectrum *ReadImagePFM(const std::string &filename, int *xres,
 
     // read the data
     nFloats = nChannels * width * height;
-    data = new float[nFloats];
-    // Flip in Y, as P*M has the origin at the lower left.
-    for (int y = height - 1; y >= 0; --y) {
-        if (fread(&data[y * nChannels * width], sizeof(float),
-                  nChannels * width, fp) != nChannels * width)
-            goto fail;
-    }
+    rgb32.resize(nFloats);
+    for (int y = height - 1; y >= 0; --y)
+      if (fread(&rgb32[nChannels * y * width], sizeof(float),
+                nChannels * width, fp) != nChannels * width) goto fail;
 
     // apply endian conversian and scale if appropriate
     fileLittleEndian = (scale < 0.f);
     if (hostLittleEndian ^ fileLittleEndian) {
         uint8_t bytes[4];
         for (unsigned int i = 0; i < nFloats; ++i) {
-            memcpy(bytes, &data[i], 4);
+            memcpy(bytes, &rgb32[i], 4);
             std::swap(bytes[0], bytes[3]);
             std::swap(bytes[1], bytes[2]);
-            memcpy(&data[i], bytes, 4);
+            memcpy(&rgb32[i], bytes, 4);
         }
     }
     if (std::abs(scale) != 1.f)
-        for (unsigned int i = 0; i < nFloats; ++i) data[i] *= std::abs(scale);
+        for (unsigned int i = 0; i < nFloats; ++i) rgb32[i] *= std::abs(scale);
 
     // create RGBs...
-    rgb = new RGBSpectrum[width * height];
-    if (nChannels == 1) {
-        for (int i = 0; i < width * height; ++i) rgb[i] = RGBSpectrum(data[i]);
-    } else {
-        for (int i = 0; i < width * height; ++i) {
-            Float frgb[3] = {data[3 * i], data[3 * i + 1], data[3 * i + 2]};
-            rgb[i] = RGBSpectrum::FromRGB(frgb);
-        }
-    }
-
-    delete[] data;
+    *image = Image(std::move(rgb32),
+                   nChannels == 1 ? PixelFormat::Y32 : PixelFormat::RGB32,
+                   Point2i(width, height));
     fclose(fp);
+
     LOG(INFO) << StringPrintf("Read PFM image %s (%d x %d)",
-                              filename.c_str(), *xres, *yres);
-    return rgb;
+                              filename.c_str(), width, height);
+    return true;
 
 fail:
     Error("Error reading PFM file \"%s\"", filename.c_str());
     if (fp) fclose(fp);
-    delete[] data;
-    delete[] rgb;
-    return nullptr;
+    return false;
 }
 
-static bool WriteImagePFM(const std::string &filename, const Float *rgb,
-                          int width, int height) {
+bool Image::WritePFM(const std::string &filename) const {
     FILE *fp;
     float scale;
 
@@ -445,13 +505,13 @@ static bool WriteImagePFM(const std::string &filename, const Float *rgb,
         return false;
     }
 
-    std::unique_ptr<float[]> scanline(new float[3 * width]);
+    std::unique_ptr<float[]> scanline(new float[3 * resolution.x]);
 
     // only write 3 channel PFMs here...
     if (fprintf(fp, "PF\n") < 0) goto fail;
 
     // write the width and height, which must be positive
-    if (fprintf(fp, "%d %d\n", width, height) < 0) goto fail;
+    if (fprintf(fp, "%d %d\n", resolution.x, resolution.y) < 0) goto fail;
 
     // write the scale, which encodes endianness
     scale = hostLittleEndian ? -1.f : 1.f;
@@ -462,13 +522,17 @@ static bool WriteImagePFM(const std::string &filename, const Float *rgb,
     // The raster is a sequence of pixels, packed one after another, with no
     // delimiters of any kind. They are grouped by row, with the pixels in each
     // row ordered left to right and the rows ordered bottom to top.
-    for (int y = height - 1; y >= 0; y--) {
-        // in case Float is 'double', copy into a staging buffer that's
-        // definitely a 32-bit float...
-        for (int x = 0; x < 3 * width; ++x)
-            scanline[x] = rgb[y * width * 3 + x];
-        if (fwrite(&scanline[0], sizeof(float), width * 3, fp) <
-            (size_t)(width * 3))
+    for (int y = resolution.y - 1; y >= 0; y--) {
+        for (int x = 0; x < resolution.x; ++x) {
+            Spectrum s = GetSpectrum({x, y});
+            Float rgb[3];
+            s.ToRGB(rgb);
+            for (int c = 0; c < 3; ++c)
+                // Assign element-wise in case Float is typedefed as 'double'.
+                scanline[3 * x + c] = rgb[c];
+        }
+        if (fwrite(&scanline[0], sizeof(float), 3 * resolution.x, fp) <
+            (size_t)(3 * resolution.x))
             goto fail;
     }
 

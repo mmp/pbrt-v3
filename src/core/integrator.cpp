@@ -282,8 +282,12 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     RayDifferential ray;
                     Float rayWeight =
                         camera->GenerateRayDifferential(cameraSample, &ray);
+                    // Don't let the ray differentials get too small; after
+                    // a point, it doens't help, and it leads to
+                    // unnecessary pressure on the texture cache from
+                    // accessing too-detailed texture LODs.
                     ray.ScaleDifferentials(
-                        1 / std::sqrt((Float)tileSampler->samplesPerPixel));
+                        std::max(Float(.125), 1 / std::sqrt((Float)tileSampler->samplesPerPixel)));
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray

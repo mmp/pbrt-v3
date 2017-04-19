@@ -179,8 +179,12 @@ enum class Prof {
     AddFilmSample,
     StartPixel,
     GetSample,
-    TexFiltTrilerp,
+    TexFiltBasic,
     TexFiltEWA,
+    TexCacheGetTexel,
+    TexCacheGetTile,
+    TexCacheReadTile,
+    TexCacheFree,
     NumProfCategories
 };
 
@@ -233,8 +237,12 @@ static const char *ProfNames[] = {
     "Film::AddSample()",
     "Sampler::StartPixelSample()",
     "Sampler::GetSample[12]D()",
-    "MIPMap::Lookup() (trilinear)",
+    "MIPMap::Lookup() (basic)",
     "MIPMap::Lookup() (EWA)",
+    "TextureCache::Texel()",
+    "TextureCache::GetTile()",
+    "TextureCache::ReadTile()",
+    "TextureCache::FreeMemory()",
 };
 
 static_assert((int)Prof::NumProfCategories ==

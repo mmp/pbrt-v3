@@ -32,9 +32,9 @@
 
 // lights/infinite.cpp*
 #include "lights/infinite.h"
-#include "imageio.h"
-#include "paramset.h"
 #include "sampling.h"
+#include "paramset.h"
+#include "parallel.h"
 #include "stats.h"
 
 namespace pbrt {
@@ -42,57 +42,54 @@ namespace pbrt {
 // InfiniteAreaLight Method Definitions
 InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
                                      const Spectrum &L, int nSamples,
-                                     const std::string &texmap)
+                                     const std::string &filename)
     : Light((int)LightFlags::Infinite, LightToWorld, MediumInterface(),
-            nSamples) {
-    // Read texel data from _texmap_ and initialize _Lmap_
-    Point2i resolution;
-    std::unique_ptr<RGBSpectrum[]> texels(nullptr);
-    if (texmap != "") {
-        texels = ReadImage(texmap, &resolution);
-        if (texels)
-            for (int i = 0; i < resolution.x * resolution.y; ++i)
-                texels[i] *= L.ToRGBSpectrum();
+            nSamples),
+      Lscale(L) {
+    if (!Image::Read(filename, &image)) {
+        std::vector<Float> one = {(Float)1};
+        image = Image(std::move(one), PixelFormat::Y32, {1, 1});
     }
-    if (!texels) {
-        resolution.x = resolution.y = 1;
-        texels = std::unique_ptr<RGBSpectrum[]>(new RGBSpectrum[1]);
-        texels[0] = L.ToRGBSpectrum();
-    }
-    Lmap.reset(new MIPMap<RGBSpectrum>(resolution, texels.get()));
 
     // Initialize sampling PDFs for infinite area light
 
     // Compute scalar-valued image _img_ from environment map
-    int width = 2 * Lmap->Width(), height = 2 * Lmap->Height();
+    int width = 2 * image.resolution.x, height = 2 * image.resolution.y;
     std::unique_ptr<Float[]> img(new Float[width * height]);
     float fwidth = 0.5f / std::min(width, height);
     ParallelFor(
         [&](int64_t v) {
             Float vp = (v + .5f) / (Float)height;
-            Float sinTheta = std::sin(Pi * (v + .5f) / height);
+            Float sinTheta = std::sin(Pi * Float(v + .5f) / Float(height));
             for (int u = 0; u < width; ++u) {
                 Float up = (u + .5f) / (Float)width;
-                img[u + v * width] = Lmap->Lookup(Point2f(up, vp), fwidth).y();
+                img[u + v * width] = image.BilerpY({up, vp});
                 img[u + v * width] *= sinTheta;
             }
-        },
-        height, 32);
+        }, height, 32);
 
     // Compute sampling distributions for rows and columns of image
     distribution.reset(new Distribution2D(img.get(), width, height));
 }
 
 Spectrum InfiniteAreaLight::Power() const {
-    return Pi * worldRadius * worldRadius *
-           Spectrum(Lmap->Lookup(Point2f(.5f, .5f), .5f),
-                    SpectrumType::Illuminant);
+    Spectrum sumL(0.);
+
+    int width = image.resolution.x, height = image.resolution.y;
+    for (int v = 0; v < height; ++v) {
+        Float sinTheta = std::sin(Pi * Float(v + .5f) / Float(height));
+        for (int u = 0; u < width; ++u) {
+            sumL +=
+                image.GetSpectrum({u, v}, SpectrumType::Illuminant) * sinTheta;
+        }
+    }
+    return Pi * worldRadius * worldRadius * Lscale * sumL / (width * height);
 }
 
 Spectrum InfiniteAreaLight::Le(const RayDifferential &ray) const {
     Vector3f w = Normalize(WorldToLight(ray.d));
     Point2f st(SphericalPhi(w) * Inv2Pi, SphericalTheta(w) * InvPi);
-    return Spectrum(Lmap->Lookup(st), SpectrumType::Illuminant);
+    return Lscale * image.BilerpSpectrum(st, SpectrumType::Illuminant);
 }
 
 Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
@@ -118,7 +115,7 @@ Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
     // Return radiance value for infinite light direction
     *vis = VisibilityTester(ref, Interaction(ref.p + *wi * (2 * worldRadius),
                                              ref.time, mediumInterface));
-    return Spectrum(Lmap->Lookup(uv), SpectrumType::Illuminant);
+    return Lscale * image.BilerpSpectrum(uv, SpectrumType::Illuminant);
 }
 
 Float InfiniteAreaLight::Pdf_Li(const Interaction &, const Vector3f &w) const {
@@ -159,7 +156,7 @@ Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     // Compute _InfiniteAreaLight_ ray PDFs
     *pdfDir = sinTheta == 0 ? 0 : mapPdf / (2 * Pi * Pi * sinTheta);
     *pdfPos = 1 / (Pi * worldRadius * worldRadius);
-    return Spectrum(Lmap->Lookup(uv), SpectrumType::Illuminant);
+    return Lscale * image.BilerpSpectrum(uv, SpectrumType::Illuminant);
 }
 
 void InfiniteAreaLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,

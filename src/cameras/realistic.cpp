@@ -36,7 +36,7 @@
 #include "sampler.h"
 #include "sampling.h"
 #include "floatfile.h"
-#include "imageio.h"
+#include "image.h"
 #include "reflection.h"
 #include "stats.h"
 #include "lowdiscrepancy.h"
@@ -546,8 +546,7 @@ void RealisticCamera::RenderExitPupil(Float sx, Float sy,
     Point3f pFilm(sx, sy, 0);
 
     const int nSamples = 2048;
-    Float *image = new Float[3 * nSamples * nSamples];
-    Float *imagep = image;
+    Image image(PixelFormat::Y32, {nSamples, nSamples});
 
     for (int y = 0; y < nSamples; ++y) {
         Float fy = (Float)y / (Float)(nSamples - 1);
@@ -558,27 +557,17 @@ void RealisticCamera::RenderExitPupil(Float sx, Float sy,
 
             Point3f pRear(lx, ly, LensRearZ());
 
-            if (lx * lx + ly * ly > RearElementRadius() * RearElementRadius()) {
-                *imagep++ = 1;
-                *imagep++ = 1;
-                *imagep++ = 1;
-            } else if (TraceLensesFromFilm(Ray(pFilm, pRear - pFilm),
-                                           nullptr)) {
-                *imagep++ = 0.5f;
-                *imagep++ = 0.5f;
-                *imagep++ = 0.5f;
-            } else {
-                *imagep++ = 0.f;
-                *imagep++ = 0.f;
-                *imagep++ = 0.f;
-            }
+            if (lx * lx + ly * ly > RearElementRadius() * RearElementRadius())
+                image.SetY({x, y}, 1.);
+            else if (TraceLensesFromFilm(Ray(pFilm, pRear - pFilm),
+                                         nullptr))
+                image.SetY({x, y}, 0.5);
+            else
+                image.SetY({x, y}, 0.);
         }
     }
 
-    WriteImage(filename, image,
-               Bounds2i(Point2i(0, 0), Point2i(nSamples, nSamples)),
-               Point2i(nSamples, nSamples));
-    delete[] image;
+    image.Write(filename);
 }
 
 Point3f RealisticCamera::SampleExitPupil(const Point2f &pFilm,

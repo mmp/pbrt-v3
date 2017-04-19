@@ -152,6 +152,8 @@ template <typename T>
 struct ParamSetItem;
 struct Options {
     int nThreads = 0;
+    int texCacheMB = 96;
+    int texReadMinMS = 0;
     bool quickRender = false;
     bool quiet = false;
     bool cat = false, toPly = false;

@@ -30,7 +30,6 @@
 
  */
 
-
 // lights/point.cpp*
 #include "lights/point.h"
 #include "scene.h"

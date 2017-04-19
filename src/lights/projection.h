@@ -42,7 +42,7 @@
 #include "pbrt.h"
 #include "light.h"
 #include "shape.h"
-#include "mipmap.h"
+#include "image.h"
 
 namespace pbrt {
 
@@ -66,7 +66,7 @@ class ProjectionLight : public Light {
 
   private:
     // ProjectionLight Private Data
-    std::unique_ptr<MIPMap<RGBSpectrum>> projectionMap;
+    Image image;
     const Point3f pLight;
     const Spectrum I;
     Transform lightProjection;

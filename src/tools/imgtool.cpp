@@ -11,9 +11,10 @@
 #include <algorithm>
 #include "fileutil.h"
 #include "imageio.h"
+#include "mipmap.h"
+#include "parallel.h"
 #include "pbrt.h"
 #include "spectrum.h"
-#include "parallel.h"
 extern "C" {
 #include "ext/ArHosekSkyModel.h"
 }
@@ -31,7 +32,7 @@ static void usage(const char *msg = nullptr, ...) {
     }
     fprintf(stderr, R"(usage: imgtool <command> [options] <filenames...>
 
-commands: assemble, cat, convert, diff, info, makesky
+commands: assemble, cat, convert, diff, info, makesky, maketiled
 
 assemble option:
     --outfile          Output image filename.
@@ -79,6 +80,10 @@ makesky options:
     --resolution <r>   Vertical resolution of generated environment map.
                        (Horizontal resolution is twice this value.)
                        Default: 2048
+
+maketiled options:
+    --wrapmode <mode>  Image wrap mode used for out-of-bounds texture accesses.
+                       Options: "clamp", "repeat", "black". Default: "clamp".
 
 )");
     exit(1);
@@ -154,35 +159,41 @@ int makesky(int argc, char *argv[]) {
     Vector3f sunDir(0., std::sin(elevation), std::cos(elevation));
 
     int nTheta = resolution, nPhi = 2 * nTheta;
-    std::vector<Float> img(3 * nTheta * nPhi, 0.f);
+    Image img(PixelFormat::RGB32, {nPhi, nTheta});
+
     ParallelInit();
-    ParallelFor([&](int64_t t) {
-        Float theta = float(t + 0.5) / nTheta * Pi;
-        if (theta > Pi / 2.) return;
-        for (int p = 0; p < nPhi; ++p) {
-            Float phi = float(p + 0.5) / nPhi * 2. * Pi;
+    ParallelFor(
+        [&](int64_t t) {
+            Float theta = float(t + 0.5) / nTheta * Pi;
+            if (theta > Pi / 2.) return;
+            for (int p = 0; p < nPhi; ++p) {
+                Float phi = float(p + 0.5) / nPhi * 2. * Pi;
 
-            // Vector corresponding to the direction for this pixel.
-            Vector3f v(std::cos(phi) * std::sin(theta), std::cos(theta),
-                       std::sin(phi) * std::sin(theta));
-            // Compute the angle between the pixel's direction and the sun
-            // direction.
-            Float gamma = std::acos(Clamp(Dot(v, sunDir), -1, 1));
-            CHECK(gamma >= 0 && gamma <= Pi);
+                // Vector corresponding to the direction for this pixel.
+                Vector3f v(std::cos(phi) * std::sin(theta), std::cos(theta),
+                           std::sin(phi) * std::sin(theta));
+                // Compute the angle between the pixel's direction and the sun
+                // direction.
+                Float gamma = std::acos(Clamp(Dot(v, sunDir), -1, 1));
+                CHECK(gamma >= 0 && gamma <= Pi);
 
-            for (int c = 0; c < num_channels; ++c) {
-                float val = arhosekskymodel_solar_radiance(
-                    skymodel_state[c], theta, gamma, lambda[c]);
-                // For each of red, green, and blue, average the three
-                // values for the three wavelengths for the color.
-                // TODO: do a better spectral->RGB conversion.
-                img[3 * (t * nPhi + p) + c / 3] += val / 3.f;
+                Float rgb[3] = {Float(0), Float(0), Float(0)};
+                for (int c = 0; c < num_channels; ++c) {
+                    float val = arhosekskymodel_solar_radiance(
+                        skymodel_state[c], theta, gamma, lambda[c]);
+                    // For each of red, green, and blue, average the three
+                    // values for the three wavelengths for the color.
+                    // TODO: do a better spectral->RGB conversion.
+                    rgb[c / 3] += val / 3.f;
+                }
+                for (int c = 0; c < 3; ++c)
+                    img.SetChannel({p, (int)t}, c, rgb[c]);
             }
-        }
-    }, nTheta, 32);
+        },
+        nTheta, 32);
 
-    WriteImage(outfile, (Float *)&img[0], Bounds2i({0, 0}, {nPhi, nTheta}),
-               {nPhi, nTheta});
+    CHECK(img.Write(outfile));
+
     ParallelCleanup();
     return 0;
 }
@@ -204,7 +215,7 @@ int assemble(int argc, char *argv[]) {
 
     if (!outfile) usage("--outfile not provided for \"assemble\"");
 
-    std::unique_ptr<RGBSpectrum[]> fullImg;
+    Image fullImage;
     std::vector<bool> seenPixel;
     int seenMultiple = 0;
     Point2i fullRes;
@@ -217,14 +228,13 @@ int assemble(int argc, char *argv[]) {
 
         Bounds2i dataWindow, dspw;
         Point2i res;
-        std::unique_ptr<RGBSpectrum[]> img(
-            ReadImageEXR(file, &res.x, &res.y, &dataWindow, &dspw));
-        if (!img) continue;
+        Image img;
+        if (!Image::Read(file, &img, true, &dataWindow, &dspw)) continue;
 
-        if (!fullImg) {
+        if (fullImage.resolution == Point2i(0, 0)) {
             // First image read.
             fullRes = Point2i(dspw.pMax - dspw.pMin);
-            fullImg.reset(new RGBSpectrum[fullRes.x * fullRes.y]);
+            fullImage = Image(img.format, fullRes);
             seenPixel.resize(fullRes.x * fullRes.y);
             displayWindow = dspw;
         } else {
@@ -253,6 +263,12 @@ int assemble(int argc, char *argv[]) {
                         displayWindow.pMax.x, displayWindow.pMax.y);
                 continue;
             }
+            if (fullImage.nChannels() != img.nChannels()) {
+                fprintf(stderr,
+                        "%s: %d channel image; expecting %d channels.\n", file,
+                        img.nChannels(), fullImage.nChannels());
+                continue;
+            }
         }
 
         // Copy pixels.
@@ -260,9 +276,11 @@ int assemble(int argc, char *argv[]) {
             for (int x = 0; x < res.x; ++x) {
                 int fullOffset = (y + dataWindow.pMin.y) * fullRes.x +
                                  (x + dataWindow.pMin.x);
-                fullImg[fullOffset] = img[y * res.x + x];
                 if (seenPixel[fullOffset]) ++seenMultiple;
                 seenPixel[fullOffset] = true;
+                Point2i fullXY{x + dataWindow.pMin.x, y + dataWindow.pMin.y};
+                for (int c = 0; c < fullImage.nChannels(); ++c)
+                    fullImage.SetChannel(fullXY, c, img.GetChannel({x, y}, c));
             }
     }
 
@@ -278,8 +296,7 @@ int assemble(int argc, char *argv[]) {
         fprintf(stderr, "%s: %d pixels not present in any images.\n", outfile,
                 unseenPixels);
 
-    // TODO: fix yet another bad cast here.
-    WriteImage(outfile, (Float *)fullImg.get(), displayWindow, fullRes);
+    fullImage.Write(outfile);
 
     return 0;
 }
@@ -294,34 +311,42 @@ int cat(int argc, char *argv[]) {
             continue;
         }
 
-        Point2i res;
-        std::unique_ptr<RGBSpectrum[]> img = ReadImage(argv[i], &res);
-        if (!img) continue;
+        Image img;
+        if (!Image::Read(argv[i], &img)) {
+            fprintf(stderr, "imgtool: couldn't open \"%s\".\n", argv[i]);
+            continue;
+        }
+
         if (sort) {
-            std::vector<std::pair<int, RGBSpectrum>> sorted;
-            sorted.reserve(res.x * res.y);
-            for (int y = 0; y < res.y; ++y) {
-                for (int x = 0; x < res.x; ++x) {
-                    int offset = y * res.x + x;
-                    sorted.push_back({offset, img[offset]});
+            std::vector<std::tuple<int, int, std::array<Float, 3>>> sorted;
+            sorted.reserve(img.resolution.x * img.resolution.y);
+            for (int y = 0; y < img.resolution.y; ++y)
+                for (int x = 0; x < img.resolution.x; ++x) {
+                    Spectrum s = img.GetSpectrum({x, y});
+                    std::array<Float, 3> rgb;
+                    s.ToRGB(&rgb[0]);
+                    sorted.push_back(std::make_tuple(x, y, rgb));
                 }
-            }
+
             std::sort(sorted.begin(), sorted.end(),
-                      [](const std::pair<int, RGBSpectrum> &a,
-                         const std::pair<int, RGBSpectrum> &b) {
-                          return a.second.y() < b.second.y();
+                      [](const std::tuple<int, int, std::array<Float, 3>> &a,
+                         const std::tuple<int, int, std::array<Float, 3>> &b) {
+                          const std::array<Float, 3> ac = std::get<2>(a);
+                          const std::array<Float, 3> bc = std::get<2>(b);
+                          return (ac[0] + ac[1] + ac[2]) <
+                                 (bc[0] + bc[1] + bc[2]);
                       });
             for (const auto &v : sorted) {
-                Float rgb[3];
-                v.second.ToRGB(rgb);
-                printf("(%d, %d): (%.9g %.9g %.9g)\n", v.first / res.x,
-                       v.first % res.x, rgb[0], rgb[1], rgb[2]);
+                const std::array<Float, 3> &rgb = std::get<2>(v);
+                printf("(%d, %d): (%.9g %.9g %.9g)\n", std::get<0>(v),
+                       std::get<1>(v), rgb[0], rgb[1], rgb[2]);
             }
         } else {
-            for (int y = 0; y < res.y; ++y) {
-                for (int x = 0; x < res.x; ++x) {
-                    Float rgb[3];
-                    img[y * res.x + x].ToRGB(rgb);
+            for (int y = 0; y < img.resolution.y; ++y) {
+                for (int x = 0; x < img.resolution.x; ++x) {
+                    Spectrum s = img.GetSpectrum({x, y});
+                    std::array<Float, 3> rgb;
+                    s.ToRGB(&rgb[0]);
                     printf("(%d, %d): (%.9g %.9g %.9g)\n", x, y, rgb[0], rgb[1],
                            rgb[2]);
                 }
@@ -367,57 +392,54 @@ int diff(int argc, char *argv[]) {
         usage("excess filenames provided to \"diff\"");
 
     const char *filename[2] = {argv[i], argv[i + 1]};
-    Point2i res[2];
-    std::unique_ptr<RGBSpectrum[]> imgs[2] = {ReadImage(filename[0], &res[0]),
-                                              ReadImage(filename[1], &res[1])};
-    if (!imgs[0]) {
-        fprintf(stderr, "%s: unable to read image\n", filename[0]);
-        return 1;
-    }
-    if (!imgs[1]) {
-        fprintf(stderr, "%s: unable to read image\n", filename[1]);
-        return 1;
-    }
-    if (res[0] != res[1]) {
+    Image img[2];
+    for (int i = 0; i < 2; ++i)
+        if (!Image::Read(filename[i], &img[i])) {
+            fprintf(stderr, "%s: unable to read image\n", filename[i]);
+            return 1;
+        }
+
+    if (img[0].resolution != img[1].resolution) {
         fprintf(stderr,
                 "imgtool: image resolutions don't match \"%s\": (%d, %d) "
                 "\"%s\": (%d, %d)\n",
-                filename[0], res[0].x, res[0].y, filename[1], res[1].x,
-                res[1].y);
+                filename[0], img[0].resolution.x, img[0].resolution.y,
+                filename[1], img[1].resolution.x, img[1].resolution.y);
         return 1;
     }
 
-    std::unique_ptr<RGBSpectrum[]> diffImage;
-    if (outfile) diffImage.reset(new RGBSpectrum[res[0].x * res[0].y]);
+    Point2i res = img[0].resolution;
+    Image diffImage(PixelFormat::RGB32, res);
 
     double sum[2] = {0., 0.};
     int smallDiff = 0, bigDiff = 0;
     double mse = 0.f;
-    for (int i = 0; i < res[0].x * res[0].y; ++i) {
-        Float rgb[2][3];
-        imgs[0][i].ToRGB(rgb[0]);
-        imgs[1][i].ToRGB(rgb[1]);
+    for (int y = 0; y < res.y; ++y) {
+        for (int x = 0; x < res.x; ++x) {
+            Spectrum s[2] = {img[0].GetSpectrum({x, y}),
+                             img[1].GetSpectrum({x, y})};
+            Spectrum diff;
 
-        Float diffRGB[3];
-        for (int c = 0; c < 3; ++c) {
-            Float c0 = rgb[0][c], c1 = rgb[1][c];
-            diffRGB[c] = std::abs(c0 - c1);
+            for (int c = 0; c < Spectrum::nSamples; ++c) {
+                Float c0 = s[0][c], c1 = s[1][c];
+                diff[c] = std::abs(c0 - c1);
 
-            if (c0 == 0 && c1 == 0) continue;
+                if (c0 == 0 && c1 == 0) continue;
 
-            sum[0] += c0;
-            sum[1] += c1;
+                sum[0] += c0;
+                sum[1] += c1;
 
-            float d = std::abs(c0 - c1) / c0;
-            mse += (c0 - c1) * (c0 - c1);
-            if (d > .005) ++smallDiff;
-            if (d > .05) ++bigDiff;
+                float d = std::abs(c0 - c1) / c0;
+                mse += (c0 - c1) * (c0 - c1);
+                if (d > .005) ++smallDiff;
+                if (d > .05) ++bigDiff;
+            }
+            diffImage.SetSpectrum({x, y}, diff);
         }
-        if (diffImage) diffImage[i].FromRGB(diffRGB);
     }
 
-    double avg[2] = {sum[0] / (3. * res[0].x * res[0].y),
-                     sum[1] / (3. * res[0].x * res[0].y)};
+    double avg[2] = {sum[0] / (Spectrum::nSamples * res.x * res.y),
+                     sum[1] / (Spectrum::nSamples * res.x * res.y)};
     double avgDelta = (avg[0] - avg[1]) / std::min(avg[0], avg[1]);
     if ((tol == 0. && (bigDiff > 0 || smallDiff > 0)) ||
         (tol > 0. && 100.f * std::abs(avgDelta) > tol)) {
@@ -426,14 +448,14 @@ int diff(int argc, char *argv[]) {
             "\tavg 1 = %g, avg2 = %g (%f%% delta)\n"
             "\tMSE = %g, RMS = %.3f%%\n",
             filename[0], filename[1], bigDiff,
-            100.f * float(bigDiff) / (3 * res[0].x * res[0].y), smallDiff,
-            100.f * float(smallDiff) / (3 * res[0].x * res[0].y), avg[0],
-            avg[1], 100. * avgDelta, mse / (3. * res[0].x * res[0].y),
-            100. * sqrt(mse / (3. * res[0].x * res[0].y)));
+            100.f * float(bigDiff) / (3 * res.x * res.y), smallDiff,
+            100.f * float(smallDiff) / (3 * res.x * res.y), avg[0], avg[1],
+            100. * avgDelta, mse / (3. * res.x * res.y),
+            100. * sqrt(mse / (3. * res.x * res.y)));
         if (outfile) {
-            // FIXME: diffImage cast is bad.
-            WriteImage(outfile, (Float *)diffImage.get(),
-                       Bounds2i(Point2i(0, 0), res[0]), res[0]);
+            if (!diffImage.Write(outfile))
+                fprintf(stderr, "imgtool: unable to write \"%s\": %s\n",
+                        outfile, strerror(errno));
         }
         return 1;
     }
@@ -441,71 +463,113 @@ int diff(int argc, char *argv[]) {
     return 0;
 }
 
-int info(int argc, char *argv[]) {
-    int err = 0;
-    for (int i = 0; i < argc; ++i) {
-        Point2i res;
-        std::unique_ptr<RGBSpectrum[]> image = ReadImage(argv[i], &res);
-        if (!image) {
-            fprintf(stderr, "%s: unable to load image.\n", argv[i]);
-            err = 1;
-            continue;
-        }
+static void printImageStats(const char *name, const Image &image) {
+    printf("%s: resolution %d, %d\n", name, image.resolution.x,
+           image.resolution.y);
+    Float min[3] = {Infinity, Infinity, Infinity};
+    Float max[3] = {-Infinity, -Infinity, -Infinity};
+    double sum[3] = {0., 0., 0.};
+    double logYSum = 0.;
+    int nNaN = 0, nInf = 0, nValid = 0;
+    int nc = image.nChannels();
+    CHECK_LE(nc, 3);  // fixed-sized arrays above...
+    for (int y = 0; y < image.resolution.y; ++y)
+        for (int x = 0; x < image.resolution.x; ++x) {
+            Float lum = image.GetY({x, y});
+            if (!std::isnan(lum) && !std::isinf(lum))
+                logYSum += std::log(Float(1e-6) + lum);
 
-        printf("%s: resolution %d, %d\n", argv[i], res.x, res.y);
-        Float min[3] = {Infinity, Infinity, Infinity};
-        Float max[3] = {-Infinity, -Infinity, -Infinity};
-        double sum[3] = {0., 0., 0.};
-        double logYSum = 0.;
-        int nNaN = 0, nInf = 0, nValid = 0;
-        for (int i = 0; i < res.x * res.y; ++i) {
-            Float y = image[i].y();
-            if (!std::isnan(y) && !std::isinf(y))
-                logYSum += std::log(Float(1e-6) + y);
-
-            Float rgb[3];
-            image[i].ToRGB(rgb);
-            for (int c = 0; c < 3; ++c) {
-                if (std::isnan(rgb[c]))
+            for (int c = 0; c < nc; ++c) {
+                Float v = image.GetChannel({x, y}, c);
+                if (std::isnan(v))
                     ++nNaN;
-                else if (std::isinf(rgb[c]))
+                else if (std::isinf(v))
                     ++nInf;
                 else {
-                    min[c] = std::min(min[c], rgb[c]);
-                    max[c] = std::max(max[c], rgb[c]);
-                    sum[c] += rgb[c];
+                    min[c] = std::min(min[c], v);
+                    max[c] = std::max(max[c], v);
+                    sum[c] += v;
                     ++nValid;
                 }
             }
         }
-        printf("%s: %d infinite pixel components, %d NaN, %d valid.\n", argv[i],
-               nInf, nNaN, nValid);
-        printf("%s: log average luminance %f\n", argv[i],
-               std::exp(logYSum / (res.x * res.y)));
-        printf("%s: min rgb (%f, %f, %f)\n", argv[i], min[0], min[1], min[2]);
-        printf("%s: max rgb (%f, %f, %f)\n", argv[i], max[0], max[1], max[2]);
-        printf("%s: avg rgb (%f, %f, %f)\n", argv[i], sum[0] / nValid,
-               sum[1] / nValid, sum[2] / nValid);
+
+    printf("%s: %d infinite pixel components, %d NaN, %d valid.\n", name, nInf,
+           nNaN, nValid);
+    printf("%s: log average luminance %f\n", name,
+           std::exp(logYSum / (image.resolution.x * image.resolution.y)));
+    printf("%s: min channel:", name);
+    for (int c = 0; c < nc; ++c)
+        printf(" %f%c", min[c], (c < nc - 1) ? ',' : ' ');
+    printf("\n");
+    printf("%s: max channel:", name);
+    for (int c = 0; c < nc; ++c)
+        printf(" %f%c", max[c], (c < nc - 1) ? ',' : ' ');
+    printf("\n");
+    printf("%s: avg channel:", name);
+    for (int c = 0; c < nc; ++c)
+        printf(" %f%c", sum[c] / nValid, (c < nc - 1) ? ',' : ' ');
+    printf("\n");
+}
+
+int info(int argc, char *argv[]) {
+    int err = 0;
+    for (int i = 0; i < argc; ++i) {
+        if (HasExtension(argv[i], "txp")) {
+            std::unique_ptr<TextureCache> cache(new TextureCache);
+            int id = cache->AddTexture(argv[i]);
+            if (id < 0) {
+                err = 1;
+                continue;
+            }
+            printf("%s: wrap mode \"%s\"\n", argv[i],
+                   WrapModeString(cache->GetWrapMode(id)));
+
+            for (int level = 0; level < cache->Levels(id); ++level) {
+                Image image = cache->GetLevelImage(id, level);
+                printImageStats(
+                    StringPrintf("%s-level%d", argv[i], level).c_str(), image);
+            }
+        } else {
+            Point2i res;
+            Image image;
+            if (!Image::Read(argv[i], &image)) {
+                fprintf(stderr, "%s: unable to load image.\n", argv[i]);
+                err = 1;
+                continue;
+            }
+
+            printImageStats(argv[i], image);
+        }
     }
     return err;
 }
 
-std::unique_ptr<RGBSpectrum[]> bloom(std::unique_ptr<RGBSpectrum[]> image,
-                                     const Point2i &res, Float level, int width,
-                                     Float scale, int iters) {
-    std::vector<std::unique_ptr<RGBSpectrum[]>> blurred;
+Image bloom(Image image, Float level, int width, Float scale, int iters) {
+    std::vector<Image> blurred;
+    CHECK(image.nChannels() == 1 || image.nChannels() == 3);
+    PixelFormat format =
+        image.nChannels() == 1 ? PixelFormat::Y32 : PixelFormat::RGB32;
 
     // First, threshold the source image
     int nSurvivors = 0;
-    std::unique_ptr<RGBSpectrum[]> thresholded(new RGBSpectrum[res.x * res.y]);
-    for (int i = 0; i < res.x * res.y; ++i) {
-        Float rgb[3];
-        image[i].ToRGB(rgb);
-        if (rgb[0] > level || rgb[1] > level || rgb[2] > level) {
-            ++nSurvivors;
-            thresholded[i] = image[i];
-        } else
-            thresholded[i] = 0.f;
+    Point2i res = image.resolution;
+    int nc = image.nChannels();
+    Image thresholdedImage(format, image.resolution);
+    for (int y = 0; y < res.y; ++y) {
+        for (int x = 0; x < res.x; ++x) {
+            bool overThreshold = false;
+            for (int c = 0; c < nc; ++c)
+                if (image.GetChannel({x, y}, c) > level) overThreshold = true;
+            if (overThreshold) {
+                ++nSurvivors;
+                for (int c = 0; c < nc; ++c)
+                    thresholdedImage.SetChannel({x, y}, c,
+                                                image.GetChannel({x, y}, c));
+            } else
+                for (int c = 0; c < nc; ++c)
+                    thresholdedImage.SetChannel({x, y}, c, 0.f);
+        }
     }
     if (nSurvivors == 0) {
         fprintf(stderr,
@@ -513,7 +577,7 @@ std::unique_ptr<RGBSpectrum[]> bloom(std::unique_ptr<RGBSpectrum[]> image,
                 level);
         return image;
     }
-    blurred.push_back(std::move(thresholded));
+    blurred.push_back(std::move(thresholdedImage));
 
     if ((width % 2) == 0) {
         ++width;
@@ -536,50 +600,53 @@ std::unique_ptr<RGBSpectrum[]> bloom(std::unique_ptr<RGBSpectrum[]> image,
     // Normalize filter weights.
     for (int i = 0; i < width; ++i) wts[i] /= wtSum;
 
-    auto getTexel = [&](const std::unique_ptr<RGBSpectrum[]> &img, Point2i p) {
-        // Clamp at boundaries
-        if (p.x < 0) p.x = 0;
-        if (p.x >= res.x) p.x = res.x - 1;
-        if (p.y < 0) p.y = 0;
-        if (p.y >= res.y) p.y = res.y - 1;
-        return img[p.y * res.x + p.x];
-    };
-
     // Now successively blur the thresholded image.
-    std::unique_ptr<RGBSpectrum[]> blurx(new RGBSpectrum[res.x * res.y]);
+    Image blurx(format, res);
     for (int iter = 0; iter < iters; ++iter) {
         // Separable blur; first blur in x into blurx
         for (int y = 0; y < res.y; ++y) {
             for (int x = 0; x < res.x; ++x) {
-                RGBSpectrum result = 0;
-                for (int r = -radius; r <= radius; ++r)
-                    result +=
-                        wts[r + radius] * getTexel(blurred.back(), {x + r, y});
-                blurx[y * res.x + x] = result;
+                for (int c = 0; c < nc; ++c) {
+                    Float result = 0;
+                    for (int r = -radius; r <= radius; ++r)
+                        result += wts[r + radius] *
+                                  blurred.back().GetChannel({x + r, y}, c);
+                    blurx.SetChannel({x, y}, c, result);
+                }
             }
         }
 
         // Now blur in y from blur x to the result
-        std::unique_ptr<RGBSpectrum[]> blury(new RGBSpectrum[res.x * res.y]);
+        Image blury(format, res);
         for (int y = 0; y < res.y; ++y) {
             for (int x = 0; x < res.x; ++x) {
-                RGBSpectrum result = 0;
-                for (int r = -radius; r <= radius; ++r)
-                    result += wts[r + radius] * getTexel(blurx, {x, y + r});
-                blury[y * res.x + x] = result;
+                for (int c = 0; c < nc; ++c) {
+                    Float result = 0;
+                    for (int r = -radius; r <= radius; ++r)
+                        result +=
+                            wts[r + radius] * blurx.GetChannel({x, y + r}, c);
+                    blury.SetChannel({x, y}, c, result);
+                }
             }
         }
         blurred.push_back(std::move(blury));
     }
 
     // Finally, add all of the blurred images, scaled, to the original.
-    for (int i = 0; i < res.x * res.y; ++i) {
-        RGBSpectrum blurredSum = 0.f;
-        // Skip the thresholded image, since it's already present in the
-        // original; just add pixels from the blurred ones.
-        for (size_t j = 1; j < blurred.size(); ++j) blurredSum += blurred[j][i];
-        image[i] += (scale / iters) * blurredSum;
+    for (int y = 0; y < res.y; ++y) {
+        for (int x = 0; x < res.x; ++x) {
+            for (int c = 0; c < nc; ++c) {
+                Float blurredSum = 0.f;
+                // Skip the thresholded image, since it's already
+                // present in the original; just add pixels from the
+                // blurred ones.
+                for (size_t j = 1; j < blurred.size(); ++j)
+                    blurredSum += blurred[j].GetChannel({x, y}, c);
+                image.SetChannel({x, y}, c, (scale / iters) * blurredSum);
+            }
+        }
     }
+
     return image;
 }
 
@@ -621,7 +688,8 @@ int convert(int argc, char *argv[]) {
             flipy = !flipy;
         else if (!strcmp(argv[i], "--tonemap") || !strcmp(argv[i], "-tonemap"))
             tonemap = !tonemap;
-        else if (!strcmp(argv[i], "--preservecolors") || !strcmp(argv[i], "-preservecolors"))
+        else if (!strcmp(argv[i], "--preservecolors") ||
+                 !strcmp(argv[i], "-preservecolors"))
             preserveColors = !preserveColors;
         else {
             std::pair<std::string, double> arg = parseArg();
@@ -657,36 +725,74 @@ int convert(int argc, char *argv[]) {
         usage("missing filenames for \"convert\"");
 
     const char *inFilename = argv[i], *outFilename = argv[i + 1];
-    Point2i res;
-    std::unique_ptr<RGBSpectrum[]> image(ReadImage(inFilename, &res));
-    if (!image) {
+    Image image;
+    if (HasExtension(inFilename, "txp")) {
+        std::unique_ptr<TextureCache> cache(new TextureCache);
+        int id = cache->AddTexture(inFilename);
+        if (id < 0) {
+            fprintf(stderr, "%s: unable to read image\n", inFilename);
+            return 1;
+        }
+
+        std::vector<Image> levelImages;
+        int sumWidth = 0, maxHeight = 0;
+        for (int level = 0; level < cache->Levels(id); ++level) {
+            levelImages.push_back(cache->GetLevelImage(id, level));
+            sumWidth += levelImages.back().resolution[0];
+            maxHeight = std::max(maxHeight, levelImages.back().resolution[1]);
+            if (level > 0)
+                CHECK(levelImages[level].format == levelImages[0].format);
+        }
+
+        image = Image(levelImages[0].format, {sumWidth, maxHeight});
+        int xStart = 0;
+        int nc = image.nChannels();
+        for (const auto &im : levelImages) {
+            for (int y = 0; y < im.resolution[1]; ++y)
+                for (int x = 0; x < im.resolution[0]; ++x)
+                    for (int c = 0; c < nc; ++c)
+                        image.SetChannel({x + xStart, y}, c,
+                                         im.GetChannel({x, y}, c));
+            xStart += im.resolution[0];
+        }
+    } else if (!Image::Read(inFilename, &image)) {
         fprintf(stderr, "%s: unable to read image\n", inFilename);
         return 1;
     }
+    Point2i res = image.resolution;
+    int nc = image.nChannels();
 
-    for (int i = 0; i < res.x * res.y; ++i) image[i] *= scale;
+    // Convert to a 32-bit format for maximum accuracy in the following
+    // processing.
+    if (!Is32Bit(image.format)) {
+        CHECK(nc == 1 || nc == 3);
+        image = image.ConvertToFormat(nc == 1 ? PixelFormat::Y32
+                                              : PixelFormat::RGB32);
+    }
+
+    for (int y = 0; y < res.y; ++y)
+        for (int x = 0; x < res.x; ++x)
+            for (int c = 0; c < nc; ++c)
+                image.SetChannel({x, y}, c,
+                                 scale * image.GetChannel({x, y}, c));
 
     if (despikeLimit < Infinity) {
-        std::unique_ptr<RGBSpectrum[]> filteredImg(
-            new RGBSpectrum[res.x * res.y]);
+        Image filteredImg = image;
         int despikeCount = 0;
         for (int y = 0; y < res.y; ++y) {
             for (int x = 0; x < res.x; ++x) {
-                if (image[y * res.x + x].y() < despikeLimit) {
-                    filteredImg[y * res.x + x] = image[y * res.x + x];
-                    continue;
-                }
+                if (image.GetY({x, y}) < despikeLimit) continue;
 
                 // Copy all of the valid neighbor pixels into neighbors[].
                 ++despikeCount;
                 int validNeighbors = 0;
-                RGBSpectrum neighbors[9];
+                Spectrum neighbors[9];
                 for (int dy = -1; dy <= 1; ++dy) {
                     if (y + dy < 0 || y + dy >= res.y) continue;
                     for (int dx = -1; dx <= 1; ++dx) {
                         if (x + dx < 0 || x + dx > res.x) continue;
-                        int offset = (y + dy) * res.x + x + dx;
-                        neighbors[validNeighbors++] = image[offset];
+                        neighbors[validNeighbors++] =
+                            image.GetSpectrum({x + dx, y + dy});
                     }
                 }
 
@@ -694,10 +800,10 @@ int convert(int argc, char *argv[]) {
                 int mid = validNeighbors / 2;
                 std::nth_element(
                     &neighbors[0], &neighbors[mid], &neighbors[validNeighbors],
-                    [](const RGBSpectrum &a, const RGBSpectrum &b) -> bool {
+                    [](const Spectrum &a, const Spectrum &b) -> bool {
                         return a.y() < b.y();
                     });
-                filteredImg[y * res.x + x] = neighbors[mid];
+                filteredImg.SetSpectrum({x, y}, neighbors[mid]);
             }
         }
         std::swap(image, filteredImg);
@@ -705,66 +811,111 @@ int convert(int argc, char *argv[]) {
     }
 
     if (bloomLevel < Infinity)
-        image = bloom(std::move(image), res, bloomLevel, bloomWidth, bloomScale,
+        image = bloom(std::move(image), bloomLevel, bloomWidth, bloomScale,
                       bloomIters);
 
     if (tonemap) {
-        for (int i = 0; i < res.x * res.y; ++i) {
-            Float y = image[i].y();
-            // Reinhard et al. photographic tone mapping operator.
-            Float scale = (1 + y / (maxY * maxY)) / (1 + y);
-            image[i] *= scale;
-        }
+        for (int y = 0; y < res.y; ++y)
+            for (int x = 0; x < res.x; ++x) {
+                Float lum = image.GetY({x, y});
+                // Reinhard et al. photographic tone mapping operator.
+                Float scale = (1 + lum / (maxY * maxY)) / (1 + lum);
+                for (int c = 0; c < nc; ++c)
+                    image.SetChannel({x, y}, c,
+                                     scale * image.GetChannel({x, y}, c));
+            }
     }
 
     if (preserveColors) {
-        for (int i = 0; i < res.x * res.y; ++i) {
-            Float rgb[3];
-            image[i].ToRGB(rgb);
-            Float m = std::max(rgb[0], std::max(rgb[1], rgb[2]));
-            if (m > 1) {
-                rgb[0] /= m;
-                rgb[1] /= m;
-                rgb[2] /= m;
-                image[i] = Spectrum::FromRGB(rgb);
+        for (int y = 0; y < res.y; ++y)
+            for (int x = 0; x < res.x; ++x) {
+                Float m = image.GetChannel({x, y}, 0);
+                for (int c = 1; c < nc; ++c)
+                    m = std::max(m, image.GetChannel({x, y}, c));
+                if (m > 1) {
+                    for (int c = 0; c < nc; ++c)
+                        image.SetChannel({x, y}, c,
+                                         image.GetChannel({x, y}, c) / m);
+                }
             }
-        }
     }
 
     if (repeat > 1) {
-        std::unique_ptr<RGBSpectrum[]> rscale(
-            new RGBSpectrum[repeat * res.x * repeat * res.y]);
-        RGBSpectrum *rsp = rscale.get();
+        Image scaledImage(image.format,
+                          Point2i(res.x * repeat, res.y * repeat));
         for (int y = 0; y < repeat * res.y; ++y) {
             int yy = y / repeat;
             for (int x = 0; x < repeat * res.x; ++x) {
                 int xx = x / repeat;
-                *rsp++ = image[yy * res.x + xx];
+                for (int c = 0; c < nc; ++c)
+                    scaledImage.SetChannel({x, y}, c,
+                                           image.GetChannel({xx, yy}, c));
             }
         }
-        res.x *= repeat;
-        res.y *= repeat;
-        image = std::move(rscale);
+        image = std::move(scaledImage);
+        res = image.resolution;
     }
 
-    if (flipy) {
-        for (int y = 0; y < res.y / 2; ++y) {
-            int yo = res.y - 1 - y;
-            for (int x = 0; x < res.x; ++x)
-                std::swap(image[y * res.x + x], image[yo * res.x + x]);
-        }
+    if (flipy) image.FlipY();
+
+    if (!image.Write(outFilename)) {
+        fprintf(stderr, "imgtool: couldn't write to \"%s\".\n", outFilename);
+        return 1;
     }
 
-    // FIXME: another bad RGBSpectrum -> Float cast.
-    WriteImage(outFilename, (Float *)image.get(), Bounds2i(Point2i(0, 0), res),
-               res);
+    return 0;
+}
 
+int maketiled(int argc, char *argv[]) {
+    ParallelInit();
+    WrapMode wrapMode = WrapMode::Clamp;
+
+    int i;
+    for (i = 0; i < argc; ++i) {
+        if (argv[i][0] != '-') break;
+        if (!strcmp(argv[i], "--wrapmode") || !strcmp(argv[i], "-wrapmode")) {
+            if (i + 1 == argc)
+                usage("missing wrap mode after %s option", argv[i]);
+            ++i;
+            if (!ParseWrapMode(argv[i], &wrapMode))
+                usage(
+                    "unknown wrap mode %s. Expected \"clamp\", \"repeat\", "
+                    "or \"black\".",
+                    argv[i]);
+        } else if (!strncmp(argv[i], "--wrapmode=", 11)) {
+            if (!ParseWrapMode(argv[i] + 11, &wrapMode))
+                usage(
+                    "unknown wrap mode %s. Expected \"clamp\", \"repeat\", "
+                    "or \"black\".",
+                    argv[i] + 11);
+        } else
+            usage("unknown \"maketiled\" option \"%s\"", argv[i]);
+    }
+    if (i + 2 != argc) {
+        usage("expecting input and output filenames as arguments");
+    }
+    const char *infile = argv[i], *outfile = argv[i + 1];
+
+    Image image;
+    if (!Image::Read(infile, &image)) {
+        fprintf(stderr, "imgtool: unable to read image \"%s\"\n", infile);
+        return 1;
+    }
+
+    std::vector<Image> mips = image.GenerateMIPMap(wrapMode);
+    int tileSize = TextureCache::TileSize(image.format);
+    if (!TiledImagePyramid::Create(std::move(mips), outfile, wrapMode, tileSize)) {
+        fprintf(stderr, "imgtool: unable to create tiled image \"%s\"\n",
+                outfile);
+        return 1;
+    }
+    ParallelCleanup();
     return 0;
 }
 
 int main(int argc, char *argv[]) {
     google::InitGoogleLogging(argv[0]);
-    FLAGS_stderrthreshold = 1; // Warning and above.
+    FLAGS_stderrthreshold = 1;  // Warning and above.
 
     if (argc < 2) usage();
 
@@ -780,6 +931,8 @@ int main(int argc, char *argv[]) {
         return info(argc - 2, argv + 2);
     else if (!strcmp(argv[1], "makesky"))
         return makesky(argc - 2, argv + 2);
+    else if (!strcmp(argv[1], "maketiled"))
+        return maketiled(argc - 2, argv + 2);
     else
         usage("unknown command \"%s\"", argv[1]);
 
