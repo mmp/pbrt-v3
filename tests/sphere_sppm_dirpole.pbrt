@@ -1,0 +1,25 @@
+Integrator "sss_sppm" "integer numiterations" [256] "float radius" [5]
+Film "image" "integer xresolution" [256] "integer yresolution" [128]
+    "string filename" "sphere_sppm_dirpole.exr"
+
+# Bug Fix of old scene
+# Scale -1 1 1
+# LookAt CAM POSITION, LOOK AT POSITION, UP DIRECTION
+LookAt 5 5 15 0 0 0 0 1 0
+Camera "perspective" "float fov" [30]
+
+WorldBegin
+AttributeBegin
+    CoordSysTransform "camera"
+    LightSource "point" "color I" [300 300 300]
+AttributeEnd
+AttributeBegin
+    Material "subsurfaceSPPM" 
+       "float eta" [1.3]
+       "string name" ["Ketchup"]
+       "float scale" [50]
+#    Material "matte" "color Kd" [.9 .1 .1]
+    Shape "sphere" "float radius" [3]
+AttributeEnd
+
+WorldEnd

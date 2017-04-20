@@ -1,0 +1,40 @@
+#Integrator "path" "integer maxdepth" [3]
+Integrator "sss_sppm" "integer numiterations" [128] "float radius" [5]
+
+Sampler "halton" "integer pixelsamples" [1024]
+
+PixelFilter "gaussian"
+
+Film "image" "integer xresolution" [1366] "integer yresolution" [1024]
+    "string filename" "dragon_50_ourtest.exr"
+
+Scale -1 1 1
+LookAt 3.69558 -3.46243 3.25463 3.04072 -2.85176 2.80939 -0.317366 0.312466 0.895346
+Camera "perspective" "float fov" [28.8415038750464]
+
+WorldBegin
+AttributeBegin
+    ConcatTransform [-0.224951 0.0 -0.97437 0.0 -0.97437 0.0 0.224951 0.0 0.0 1.0 0.0 8.87 0.0 0.0 0.0 1.0]
+    ConcatTransform [0 0 -1 0 1 0 0 0 0 1 0 0 0 0 0 1]
+    LightSource "infinite" "string mapname" ["textures/envmap.exr"]
+AttributeEnd
+
+AttributeBegin
+    Translate 0.2 0.3 0.78
+    Rotate 90.0 1.0 0.0 0.0
+    Rotate -90.0 0.0 1.0 0.0
+    Scale 0.02 0.02 0.02
+    Material "subsurfaceSPPM" 
+       "float eta" [1.5]
+       "string name" ["Skin1"]
+       "float scale" [50]
+    Shape "plymesh" "string filename" ["geometry/dragon.ply"]
+AttributeEnd
+
+Texture "checkers" "color" "checkerboard" "color tex1" [0.4 0.4 0.4] "color tex2" [0.2 0.2 0.2] "float vscale" [16.0] "float uscale" [16.0]
+
+AttributeBegin
+    Material "matte" "texture Kd" "checkers"
+    Shape "plymesh" "string filename" ["geometry/meshes_0.ply"]
+AttributeEnd
+WorldEnd
