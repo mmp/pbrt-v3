@@ -183,6 +183,40 @@ struct BSSRDFTable {
     inline Float EvalProfile(int rhoIndex, int radiusIndex) const {
         return profile[rhoIndex * nRadiusSamples + radiusIndex];
     }
+
+    inline void printTable(){
+        printf("Rho Table:\n");
+        for(int i = 0; i < nRhoSamples; i++)
+            printf("%.3f " % rhoSamples[i]);
+        printf("\n");
+        printf("\n");
+
+        printf("Radius Table:\n");
+        for(int i = 0; i < nRadiusSamples; i++)
+            printf("%.3f " % radiusSamples[i]);
+        printf("\n");
+        printf("\n");
+
+        printf("Profile Table:\n");
+        for(int i = 0; i < nRhoSamples; i++){
+            for(int j = 0;j < nRadiusSamples; j++)
+                printf("%.3f " % profile[i * nRadiusSamples + j]);
+            printf("\n");
+        }
+
+        printf("RhoEff Table:\n");
+        for(int i = 0; i < nRadiusSamples; i++)
+            printf("%.3f " % rhoEff[i]);
+        printf("\n");
+        printf("\n");
+
+        printf("CDF Table:\n");
+        for(int i = 0; i < nRhoSamples; i++){
+            for(int j = 0;j < nRadiusSamples; j++)
+                printf("%.3f " % profileCDF[i * nRadiusSamples + j]);
+            printf("\n");
+        }
+    }
 };
 
 class SeparableBSSRDFAdapter : public BxDF {
