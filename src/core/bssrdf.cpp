@@ -307,6 +307,7 @@ void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t) {
                                 &t->profile[i * t->nRadiusSamples],
                                 &t->profileCDF[i * t->nRadiusSamples]);
     }, t->nRhoSamples);
+    t->printTable();
 }
 
 void ComputeDirpoleBSSRDF(Float g, Float eta, BSSRDFTable *t) {
@@ -339,6 +340,7 @@ void ComputeDirpoleBSSRDF(Float g, Float eta, BSSRDFTable *t) {
                                 &t->profile[i * t->nRadiusSamples],
                                 &t->profileCDF[i * t->nRadiusSamples]);
     }, t->nRhoSamples);
+    t->printTable();
 }
 
 void SubsurfaceFromDiffuse(const BSSRDFTable &t, const Spectrum &rhoEff,
