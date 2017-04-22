@@ -726,7 +726,7 @@ int convert(int argc, char *argv[]) {
                 rgb[0] /= m;
                 rgb[1] /= m;
                 rgb[2] /= m;
-                image[i] = Spectrum::FromRGB(rgb);
+                image[i] = RGBSpectrum::FromRGB(rgb);
             }
         }
     }
