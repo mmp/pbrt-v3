@@ -42,9 +42,9 @@
 #include <type_traits>
 #include "parallel.h"
 #include "stringprint.h"
-#ifndef PBRT_IS_WINDOWS
+#ifdef PBRT_HAVE_ITIMER
 #include <sys/time.h>
-#endif  // !PBRT_IS_WINDOWS
+#endif  // PBRT_HAVE_ITIMER
 
 namespace pbrt {
 
@@ -71,9 +71,9 @@ static std::array<ProfileSample, profileHashSize> profileSamples;
 
 static std::chrono::system_clock::time_point profileStartTime;
 
-#ifndef PBRT_IS_WINDOWS
+#ifdef PBRT_HAVE_ITIMER
 static void ReportProfileSample(int, siginfo_t *, void *);
-#endif  // !PBRT_IS_WINDOWS
+#endif  // PBRT_HAVE_ITIMER
 
 // Statistics Definitions
 void ReportThreadStats() {
@@ -217,7 +217,7 @@ void InitProfiler() {
 
     profileStartTime = std::chrono::system_clock::now();
 // Set timer to periodically interrupt the system for profiling
-#ifndef PBRT_IS_WINDOWS
+#ifdef PBRT_HAVE_ITIMER
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_sigaction = ReportProfileSample;
@@ -243,7 +243,7 @@ void SuspendProfiler() { ++profilerSuspendCount; }
 void ResumeProfiler() { CHECK_GE(--profilerSuspendCount, 0); }
 
 void ProfilerWorkerThreadInit() {
-#ifndef PBRT_IS_WINDOWS
+#ifdef PBRT_HAVE_ITIMER
     // The per-thread initialization in the worker threads has to happen
     // *before* the profiling signal handler is installed.
     CHECK(!profilerRunning || profilerSuspendCount > 0);
@@ -254,7 +254,7 @@ void ProfilerWorkerThreadInit() {
     // happen now, rather than in the signal handler, where this isn't
     // allowed.
     ProfilerState = ProfToBits(Prof::SceneConstruction);
-#endif  // !PBRT_IS_WINDOWS
+#endif  // PBRT_HAVE_ITIMER
 }
 
 void ClearProfiler() {
@@ -266,7 +266,7 @@ void ClearProfiler() {
 
 void CleanupProfiler() {
     CHECK(profilerRunning);
-#ifndef PBRT_IS_WINDOWS
+#ifdef PBRT_HAVE_ITIMER
     static struct itimerval timer;
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 0;
@@ -274,11 +274,11 @@ void CleanupProfiler() {
 
     CHECK_EQ(setitimer(ITIMER_PROF, &timer, NULL), 0)
         << "Timer could not be disabled: " << strerror(errno);
-#endif  // !PBRT_IS_WINDOWS
+#endif  // PBRT_HAVE_ITIMER
     profilerRunning = false;
 }
 
-#ifndef PBRT_IS_WINDOWS
+#ifdef PBRT_HAVE_ITIMER
 static void ReportProfileSample(int, siginfo_t *, void *) {
     if (profilerSuspendCount > 0) return;
     if (ProfilerState == 0) return;  // A ProgressReporter thread, most likely.
@@ -296,7 +296,7 @@ static void ReportProfileSample(int, siginfo_t *, void *) {
     profileSamples[h].profilerState = ProfilerState;
     ++profileSamples[h].count;
 }
-#endif  // !PBRT_IS_WINDOWS
+#endif  // PBRT_HAVE_ITIMER
 
 static std::string timeString(float pct, std::chrono::system_clock::time_point now) {
     pct /= 100.;  // remap passed value to to [0,1]
@@ -316,7 +316,7 @@ static std::string timeString(float pct, std::chrono::system_clock::time_point n
 }
 
 void ReportProfilerResults(FILE *dest) {
-#ifndef PBRT_IS_WINDOWS
+#ifdef PBRT_HAVE_ITIMER
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
     PBRT_CONSTEXPR int NumProfCategories = (int)Prof::NumProfCategories;
