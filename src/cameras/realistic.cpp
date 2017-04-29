@@ -452,7 +452,7 @@ Float RealisticCamera::FocusThickLens(Float focusDistance) {
     // Compute translation of lens, _delta_, to focus at _focusDistance_
     Float f = fz[0] - pz[0];
     Float z = -focusDistance;
-    Float c = (pz[1] - z - pz[0]) * (pz[1] - z * 4 * f - pz[0]);
+    Float c = (pz[1] - z - pz[0]) * (pz[1] - z - 4 * f - pz[0]);
     CHECK_GT(c, 0) << "Coefficient must be positive. It looks focusDistance: " << focusDistance << " is too short for a given lenses configuration";
     Float delta =
         0.5f * (pz[1] - z + pz[0] - std::sqrt(c));
