@@ -413,7 +413,7 @@ int diff(int argc, char *argv[]) {
             if (d > .005) ++smallDiff;
             if (d > .05) ++bigDiff;
         }
-        if (diffImage) diffImage[i].FromRGB(diffRGB);
+        if (diffImage) diffImage[i] = RGBSpectrum::FromRGB(diffRGB);
     }
 
     double avg[2] = {sum[0] / (3. * res[0].x * res[0].y),
