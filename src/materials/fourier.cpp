@@ -183,7 +183,9 @@ bool FourierBSDFTable::Read(const std::string &filename,
     }
 
     bsdfTable->recip = new Float[bsdfTable->mMax];
-    for (int i = 0; i < bsdfTable->mMax; ++i)
+    if( bsdfTable->mMax > 0 )
+        bsdfTable->recip[0] = 0.0f;
+    for (int i = 1; i < bsdfTable->mMax; ++i)
         bsdfTable->recip[i] = 1 / (Float)i;
 
     fclose(f);
