@@ -2,8 +2,7 @@
 src/build
 src/bin
 src/objs
-tests/images
-tests/results
+tests
 .DS_Store
 .sconsign.dblite
 debug*
