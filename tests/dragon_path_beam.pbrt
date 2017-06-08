@@ -5,7 +5,7 @@ Sampler "halton" "integer pixelsamples" [1024]
 PixelFilter "gaussian"
 
 Film "image" "integer xresolution" [1366] "integer yresolution" [1024]
-    "string filename" "dragon_path_beam.exr"
+    "string filename" "dragon_path_beam_real.exr"
 
 Scale -1 1 1
 LookAt 3.69558 -3.46243 3.25463 3.04072 -2.85176 2.80939 -0.317366 0.312466 0.895346

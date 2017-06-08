@@ -37,6 +37,7 @@
 #include "parallel.h"
 #include "scene.h"
 #include "sampling.h"
+#include "assert.h"
 
 namespace pbrt {
 
@@ -330,7 +331,7 @@ void ComputeDirpoleBSSRDF(Float g, Float eta, BSSRDFTable *t) {
             Float rho = t->rhoSamples[i], r = t->radiusSamples[j];
             Float ss = BeamDiffusionSS(rho, 1 - rho, g, eta, r); 
             Float ms = DirpoleDiffusionMS(rho, 1 - rho, g, eta, r);
-            t->profile[i * t->nRadiusSamples + j] = 2 * Pi * r * (ms); // ms+ss!
+            t->profile[i * t->nRadiusSamples + j] = 2 * Pi * r * (ms + ss); 
         }
 
         // Compute effective albedo $\rho_{\roman{eff}}$ and CDF for importance
@@ -557,11 +558,12 @@ Float TabulatedBSSRDF::Pdf_Sr(int ch, Float r) const {
 Spectrum TabulatedSamplingBSSRDF::S(const SurfaceInteraction &pi, 
                                     const Vector3f &wi) const {
     Spectrum Sr(0.f);
+    Float r = Distance(po.p, pi.p);
     for (int c = 0; c < Spectrum::nSamples; ++c){
-        Float rOptical = Distance(po.p, pi.p) * sigma_t[c];
-        Point3f pos_i = pi.p + Normalize(pi.p - po.p) * rOptical;
-        Sr[c] = DirectionalDipole(rho[c], 1-rho[c], g, eta, pos_i, 
-                                        po.p, wi, pi.n, po.n);
+        Float rOptical = r * sigma_t[c];
+        Point3f pos_i = po.p + Normalize(pi.p - po.p) * rOptical;
+        Sr[c] = DirectionalDipole(rho[c], 1 - rho[c], g, eta, pos_i, 
+                                  po.p, wi, pi.n, po.n);
     }
     Sr *= sigma_t * sigma_t;
     return Sr.Clamp();
@@ -626,7 +628,6 @@ Spectrum TabulatedSamplingBSSRDF::Sample_Sp(const Scene &scene, Float u1,
         po.p + r * (vx * std::cos(phi) + vy * std::sin(phi)) - l * vz * 0.5f;
     base.time = po.time;
     Point3f pTarget = base.p + l * vz;
-
     // Intersect BSSRDF sampling ray against the scene geometry
 
     // Declare _IntersectionChain_ and linked list
@@ -658,12 +659,10 @@ Spectrum TabulatedSamplingBSSRDF::Sample_Sp(const Scene &scene, Float u1,
 
     Vector3f wi = CosineSampleHemisphere(u2);
     if (pi->wo.z < 0) wi.z *= -1;
-    Float wiPdf = SameHemisphere(pi->wo, wi) ? AbsCosTheta(wi) * InvPi : 0;
-    wi = -wi;
     
     // Compute sample PDF and return the spatial BSSRDF term $\Sp$
-    *pdf = this->Pdf_Sp(*pi) / nFound * wiPdf;
-    return this->Sp(*pi, wi);
+    *pdf = this->Pdf_Sp(*pi) / nFound;
+    return this->Sp(*pi, -wi);
 }
 
 Float TabulatedSamplingBSSRDF::Sample_Sr(int ch, Float u) const {
@@ -710,7 +709,7 @@ Spectrum TabulatedSamplingBSSRDF::Sp(const SurfaceInteraction &pi,
     Spectrum Sr(0.f);
     for (int c = 0; c < Spectrum::nSamples; ++c){
         Float rOptical = Distance(po.p, pi.p) * sigma_t[c];
-        Point3f pos_i = pi.p + Normalize(pi.p - po.p) * rOptical;
+        Point3f pos_i = po.p + Normalize(pi.p - po.p) * rOptical;
         Sr[c] = DirectionalDipole(rho[c], 1 - rho[c], g, eta, pos_i, 
                                   po.p, wi, pi.n, po.n);
     }

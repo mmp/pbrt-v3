@@ -156,6 +156,7 @@ class TabulatedSamplingBSSRDF : public SeparableBSSRDF {
                        MemoryArena &arena, SurfaceInteraction *si,
                        Float *pdf) const;
     Spectrum Sr(Float distance) const {
+        printf ("ERROR!: This should not be called\n");
         return Spectrum(0);
     }
     Float Sample_Sr(int ch, Float sample) const;
