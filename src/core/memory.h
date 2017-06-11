@@ -42,6 +42,7 @@
 #include "pbrt.h"
 #include "port.h"
 #include <list>
+#include <cstddef>
 
 namespace pbrt {
 
@@ -69,7 +70,11 @@ alignas(PBRT_L1_CACHE_LINE_SIZE)
     }
     void *Alloc(size_t nBytes) {
         // Round up _nBytes_ to minimum machine alignment
-        nBytes = ((nBytes + 15) & (~15));
+        const int align = alignof(std::max_align_t);
+#ifndef PBRT_IS_MSVC2013
+        static_assert(IsPowerOf2(align), "Minimum alignment not a power of two");
+#endif
+        nBytes = (nBytes + align - 1) & ~(align - 1);
         if (currentBlockPos + nBytes > currentAllocSize) {
             // Add current block to _usedBlocks_ list
             if (currentBlock) {
