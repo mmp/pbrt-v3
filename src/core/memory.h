@@ -70,7 +70,14 @@ alignas(PBRT_L1_CACHE_LINE_SIZE)
     }
     void *Alloc(size_t nBytes) {
         // Round up _nBytes_ to minimum machine alignment
+#if __GNUC__ == 4 && __GNUC_MINOR__ < 9
+        // gcc bug: max_align_t wasn't in std:: until 4.9.0
+        const int align = alignof(::max_align_t);
+#elif !defined(PBRT_HAVE_ALIGNOF)
+        const int align = 16;
+#else
         const int align = alignof(std::max_align_t);
+#endif
 #ifndef PBRT_IS_MSVC2013
         static_assert(IsPowerOf2(align), "Minimum alignment not a power of two");
 #endif

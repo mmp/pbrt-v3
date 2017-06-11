@@ -94,6 +94,7 @@
 
 #if !defined(PBRT_IS_MSVC2013)
   #define PBRT_HAVE_ALIGNAS
+  #define PBRT_HAVE_ALIGNOF
 #endif
 
 #ifdef PBRT_IS_MSVC2013
