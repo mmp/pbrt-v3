@@ -40,6 +40,7 @@
 #include "reflection.h"
 #include "stats.h"
 #include "lowdiscrepancy.h"
+#include <array>
 
 namespace pbrt {
 
@@ -483,11 +484,27 @@ Float RealisticCamera::FocusBinarySearch(Float focusDistance) {
 Float RealisticCamera::FocusDistance(Float filmDistance) {
     // Find offset ray from film center through lens
     Bounds2f bounds = BoundExitPupil(0, .001 * film->diagonal);
-    Float lu = 0.1f * bounds.pMax[0];
+
+    const std::array<Float, 3> scaleFactors = {0.1f, 0.01f, 0.001f};
+    Float lu = 0.0f;
+
     Ray ray;
-    if (!TraceLensesFromFilm(Ray(Point3f(0, 0, LensRearZ() - filmDistance),
-                                 Vector3f(lu, 0, filmDistance)),
-                             &ray)) {
+
+    // Try some different and decreasing scaling factor to find focus ray
+    // more quickly when `aperturediameter` is too small.
+    // (e.g. 2 [mm] for `aperturediameter` with wide.22mm.dat),
+    bool foundFocusRay = false;
+    for (Float scale : scaleFactors) {
+        lu = scale * bounds.pMax[0];
+        if (TraceLensesFromFilm(Ray(Point3f(0, 0, LensRearZ() - filmDistance),
+                                    Vector3f(lu, 0, filmDistance)),
+                                &ray)) {
+            foundFocusRay = true;
+            break;
+        }
+    }
+
+    if (!foundFocusRay) {
         Error(
             "Focus ray at lens pos(%f,0) didn't make it through the lenses "
             "with film distance %f?!??\n",
@@ -501,6 +518,7 @@ Float RealisticCamera::FocusDistance(Float filmDistance) {
     if (zFocus < 0) zFocus = Infinity;
     return zFocus;
 }
+
 
 Bounds2f RealisticCamera::BoundExitPupil(Float pFilmX0, Float pFilmX1) const {
     Bounds2f pupilBounds;
