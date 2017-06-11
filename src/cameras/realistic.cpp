@@ -104,9 +104,13 @@ bool RealisticCamera::TraceLensesFromFilm(const Ray &rCamera, Ray *rOut) const {
         Float t;
         Normal3f n;
         bool isStop = (element.curvatureRadius == 0);
-        if (isStop)
+        if (isStop) {
+            // The refracted ray computed in the previous lens element
+            // interface may be pointed towards film plane(+z) in some
+            // extreme situations; in such cases, 't' becomes negative.
+            if (rLens.d.z >= 0.0) return false;
             t = (elementZ - rLens.o.z) / rLens.d.z;
-        else {
+        } else {
             Float radius = element.curvatureRadius;
             Float zCenter = elementZ + element.curvatureRadius;
             if (!IntersectSphericalElement(radius, zCenter, rLens, &t, &n))
