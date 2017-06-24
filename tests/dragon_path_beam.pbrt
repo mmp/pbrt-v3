@@ -25,7 +25,7 @@ AttributeBegin
     Scale 0.02 0.02 0.02
     Material "subsurface" 
        "float eta" [1.5]
-       "string name" ["Skin1"]
+       "string name" ["Marble"]
        "float scale" [50]
     Shape "plymesh" "string filename" ["geometry/dragon.ply"]
 AttributeEnd

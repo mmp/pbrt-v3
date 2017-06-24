@@ -113,6 +113,39 @@ class SeparableBSSRDF : public BSSRDF {
     const TransportMode mode;
 };
 
+class DirectionalBSSRDF : public SeparableBSSRDF {
+  public:
+    DirectionalBSSRDF(const SurfaceInteraction &po, const Material *material, 
+                    TransportMode mode, Float eta, Float g, 
+                    const Spectrum &sigma_a, const Spectrum &sigma_s, 
+                    const BSSRDFTable &table)
+        : SeparableBSSRDF(po, eta, material, mode), table(table), g(g){
+          sigma_t = sigma_a + sigma_s;
+          for (int c=0; c < Spectrum::nSamples; c++)
+              rho[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0;
+    }
+    Spectrum Sample_S(const Scene &scene, Float u1, const Point2f &u2,
+                      MemoryArena &arena, SurfaceInteraction *si,
+                      Float *pdf) const;
+    Spectrum Sample_Sp(const Scene &scene, Float u1, const Point2f &u2,
+                       MemoryArena &arena, SurfaceInteraction *si,
+                       Float *pdf) const;
+    Float Pdf_Sp(const SurfaceInteraction &si) const;
+    Spectrum Sp(const SurfaceInteraction &pi) const;
+    Spectrum Sr(Float distance) const {
+        printf ("ERROR!: This should not be called\n");
+        return Spectrum(0);
+    }
+    Float Pdf_Sr(int ch, Float r) const;
+    Float Sample_Sr(int ch, Float u) const;
+
+  protected:
+    const BSSRDFTable &table;
+    Spectrum sigma_t, rho;
+    Float g;
+};
+
+
 class TabulatedBSSRDF : public SeparableBSSRDF {
   public:
     // TabulatedBSSRDF Public Methods
@@ -186,6 +219,7 @@ struct BSSRDFTable {
     }
 
     inline void printTable(){
+        /*
         printf("Rho Table:\n");
         for(int i = 0; i < nRhoSamples; i++)
             printf("%.8f ", rhoSamples[i]);
@@ -205,7 +239,6 @@ struct BSSRDFTable {
             printf("\n");
         }
 
-        /*
         printf("RhoEff Table:\n");
         for(int i = 0; i < nRadiusSamples; i++)
             printf("%.8f ", rhoEff[i]);

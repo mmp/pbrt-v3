@@ -1,6 +1,6 @@
 Integrator "path" "integer maxdepth" [3]
-Sampler "halton" "integer pixelsamples" [4]
-Film "image" "integer xresolution" [256] "integer yresolution" [128]
+Sampler "halton" "integer pixelsamples" [128]
+Film "image" "integer xresolution" [512] "integer yresolution" [512]
     "string filename" "sphere_path_dirpole.exr"
 
 # Bug Fix of old scene
@@ -17,7 +17,7 @@ AttributeEnd
 AttributeBegin
     Material "subsurfaceDirpole" 
        "float eta" [1.3]
-       "string name" ["Ketchup"]
+       "string name" ["Lowfat Milk"]
        "float scale" [50]
     Shape "sphere" "float radius" [3]
 AttributeEnd
