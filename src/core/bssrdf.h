@@ -105,13 +105,46 @@ class SeparableBSSRDF : public BSSRDF {
     virtual Float Sample_Sr(int ch, Float u) const = 0;
     virtual Float Pdf_Sr(int ch, Float r) const = 0;
 
-  private:
+  protected:
     // SeparableBSSRDF Private Data
     const Normal3f ns;
     const Vector3f ss, ts;
     const Material *material;
     const TransportMode mode;
 };
+
+class DirectionalBSSRDF : public SeparableBSSRDF {
+  public:
+    DirectionalBSSRDF(const SurfaceInteraction &po, const Material *material, 
+                    TransportMode mode, Float eta, Float g, 
+                    const Spectrum &sigma_a, const Spectrum &sigma_s, 
+                    const BSSRDFTable &table)
+        : SeparableBSSRDF(po, eta, material, mode), table(table), g(g){
+          sigma_t = sigma_a + sigma_s;
+          for (int c=0; c < Spectrum::nSamples; c++)
+              rho[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0;
+    }
+    Spectrum Sample_S(const Scene &scene, Float u1, const Point2f &u2,
+                      MemoryArena &arena, SurfaceInteraction *si,
+                      Float *pdf) const;
+    Spectrum Sample_Sp(const Scene &scene, Float u1, const Point2f &u2,
+                       MemoryArena &arena, SurfaceInteraction *si,
+                       Float *pdf) const;
+    Float Pdf_Sp(const SurfaceInteraction &si) const;
+    Spectrum Sp(const SurfaceInteraction &pi) const;
+    Spectrum Sr(Float distance) const {
+        printf ("ERROR!: This should not be called\n");
+        return Spectrum(0);
+    }
+    Float Pdf_Sr(int ch, Float r) const;
+    Float Sample_Sr(int ch, Float u) const;
+
+  protected:
+    const BSSRDFTable &table;
+    Spectrum sigma_t, rho;
+    Float g;
+};
+
 
 class TabulatedBSSRDF : public SeparableBSSRDF {
   public:
@@ -134,6 +167,43 @@ class TabulatedBSSRDF : public SeparableBSSRDF {
     Spectrum sigma_t, rho;
 };
 
+class TabulatedSamplingBSSRDF : public SeparableBSSRDF {
+  public:
+    // TabulatedSamplingBSSRDF Public Methods
+    TabulatedSamplingBSSRDF(const SurfaceInteraction &po,
+                    const Material *material,
+                    TransportMode mode, Float eta, Float g,
+                    const Spectrum &sigma_a,
+                    const Spectrum &sigma_s, const BSSRDFTable &table)
+        : SeparableBSSRDF(po, eta, material, mode), table(table), g(g) {
+        sigma_t = sigma_a + sigma_s;
+        for (int c = 0; c < Spectrum::nSamples; ++c)
+            rho[c] = sigma_t[c] != 0 ? (sigma_s[c] / sigma_t[c]) : 0;
+    }
+    Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi) const;
+    Spectrum Sp(const SurfaceInteraction &pi, const Vector3f wi) const; 
+    Spectrum Sample_S(const Scene &scene, Float u1, const Point2f &u2,
+                      MemoryArena &arena, SurfaceInteraction *si,
+                      Float *pdf) const;
+    Spectrum Sample_Sp(const Scene &scene, Float u1, const Point2f &u2,
+                       MemoryArena &arena, SurfaceInteraction *si,
+                       Float *pdf) const;
+    Spectrum Sr(Float distance) const {
+        printf ("ERROR!: This should not be called\n");
+        return Spectrum(0);
+    }
+    Float Sample_Sr(int ch, Float sample) const;
+    Float Pdf_Sr(int ch, Float distance) const;
+
+  private:
+    // TabulatedBSSRDF Private Data
+    const BSSRDFTable &table;
+    Spectrum sigma_t, rho;
+    Float g;
+};
+
+
+
 struct BSSRDFTable {
     // BSSRDFTable Public Data
     const int nRhoSamples, nRadiusSamples;
@@ -146,6 +216,42 @@ struct BSSRDFTable {
     BSSRDFTable(int nRhoSamples, int nRadiusSamples);
     inline Float EvalProfile(int rhoIndex, int radiusIndex) const {
         return profile[rhoIndex * nRadiusSamples + radiusIndex];
+    }
+
+    inline void printTable(){
+        /*
+        printf("Rho Table:\n");
+        for(int i = 0; i < nRhoSamples; i++)
+            printf("%.8f ", rhoSamples[i]);
+        printf("\n");
+        printf("\n");
+
+        printf("Radius Table:\n");
+        for(int i = 0; i < nRadiusSamples; i++)
+            printf("%.8f ", radiusSamples[i]);
+        printf("\n");
+        printf("\n");
+
+        printf("Profile Table:\n");
+        for(int i = 0; i < nRhoSamples; i++){
+            for(int j = 0;j < nRadiusSamples; j++)
+                printf("%.8f ", profile[i * nRadiusSamples + j]);
+            printf("\n");
+        }
+
+        printf("RhoEff Table:\n");
+        for(int i = 0; i < nRadiusSamples; i++)
+            printf("%.8f ", rhoEff[i]);
+        printf("\n");
+        printf("\n");
+
+        printf("CDF Table:\n");
+        for(int i = 0; i < nRhoSamples; i++){
+            for(int j = 0;j < nRadiusSamples; j++)
+                printf("%.8f ", profileCDF[i * nRadiusSamples + j]);
+            printf("\n");
+        }
+        */
     }
 };
 
@@ -173,6 +279,7 @@ Float BeamDiffusionSS(Float sigma_s, Float sigma_a, Float g, Float eta,
 Float BeamDiffusionMS(Float sigma_s, Float sigma_a, Float g, Float eta,
                       Float r);
 void ComputeBeamDiffusionBSSRDF(Float g, Float eta, BSSRDFTable *t);
+void ComputeDirpoleBSSRDF(Float g, Float eta, BSSRDFTable *t);
 void SubsurfaceFromDiffuse(const BSSRDFTable &table, const Spectrum &rhoEff,
                            const Spectrum &mfp, Spectrum *sigma_a,
                            Spectrum *sigma_s);

@@ -1,0 +1,25 @@
+Integrator "path" "integer maxdepth" [3]
+Sampler "halton" "integer pixelsamples" [128]
+Film "image" "integer xresolution" [512] "integer yresolution" [512]
+    "string filename" "sphere_path_dirpole.exr"
+
+# Bug Fix of old scene
+# Scale -1 1 1
+# LookAt CAM POSITION, LOOK AT POSITION, UP DIRECTION
+LookAt 5 5 15 0 0 0 0 1 0
+Camera "perspective" "float fov" [30]
+
+WorldBegin
+AttributeBegin
+    CoordSysTransform "camera"
+    LightSource "point" "color I" [300 300 300]
+AttributeEnd
+AttributeBegin
+    Material "subsurfaceDirpole" 
+       "float eta" [1.3]
+       "string name" ["Lowfat Milk"]
+       "float scale" [50]
+    Shape "sphere" "float radius" [3]
+AttributeEnd
+
+WorldEnd

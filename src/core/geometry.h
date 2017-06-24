@@ -1235,6 +1235,11 @@ Normal3<T> Abs(const Normal3<T> &v) {
 }
 
 template <typename T>
+Vector3<T> Reflect(Vector3<T> &v, Normal3<T> &n){
+    return v - Vector3<T>(2 * Dot(v, n) * n); 
+}
+
+template <typename T>
 inline const Point3<T> &Bounds3<T>::operator[](int i) const {
     DCHECK(i == 0 || i == 1);
     return (i == 0) ? pMin : pMax;
