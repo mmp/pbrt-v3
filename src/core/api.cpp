@@ -67,6 +67,7 @@
 #include "lights/point.h"
 #include "lights/projection.h"
 #include "lights/spot.h"
+#include "materials/disney.h"
 #include "materials/fourier.h"
 #include "materials/glass.h"
 #include "materials/hair.h"
@@ -423,6 +424,8 @@ std::shared_ptr<Material> MakeMaterial(const std::string &name,
         material = CreateMirrorMaterial(mp);
     else if (name == "hair")
         material = CreateHairMaterial(mp);
+    else if (name == "disney")
+        material = CreateDisneyMaterial(mp);
     else if (name == "mix") {
         std::string m1 = mp.FindString("namedmaterial1", "");
         std::string m2 = mp.FindString("namedmaterial2", "");
