@@ -27,6 +27,13 @@ if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/glog")
     "\"git submodule update --init --recursive\"")
 endif()
 
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/ptex")
+  message(FATAL_ERROR "The ptex submodule directory is missing! "
+    "You probably did not clone the project with --recursive, or first checked out "
+    "pbrt before it was added. It is possible to recover by running "
+    "\"git submodule update --init --recursive\"")
+endif()
+
 IF(CMAKE_COMPILER_IS_GNUCXX)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion-null")
@@ -145,6 +152,13 @@ SET_PROPERTY(TARGET glog PROPERTY FOLDER "dependencies")
 INCLUDE_DIRECTORIES (
   src/ext/glog/src
   ${CMAKE_BINARY_DIR}/src/ext/glog
+)
+
+SET(CMAKE_MACOSX_RPATH 1)
+ADD_SUBDIRECTORY(src/ext/ptex)
+SET_PROPERTY(TARGET Ptex_static PROPERTY FOLDER "dependencies")
+INCLUDE_DIRECTORIES (
+  src/ext/ptex/src/ptex
 )
 
 SET ( PBRT_CORE_SOURCE
@@ -281,6 +295,7 @@ TARGET_LINK_LIBRARIES ( pbrt_exe
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
   glog
+  Ptex_static
   )
 
 
@@ -310,6 +325,7 @@ TARGET_LINK_LIBRARIES ( bsdftest
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
   glog
+  Ptex_static
   )
 
 TARGET_LINK_LIBRARIES ( imgtool
@@ -317,6 +333,7 @@ TARGET_LINK_LIBRARIES ( imgtool
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
   glog
+  Ptex_static
   )
 
 # Unit test
@@ -336,6 +353,7 @@ TARGET_LINK_LIBRARIES ( pbrt_test
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
   glog
+  Ptex_static
   )
 
 ADD_TEST ( pbrt_unit_test

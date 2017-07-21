@@ -181,6 +181,7 @@ enum class Prof {
     GetSample,
     TexFiltTrilerp,
     TexFiltEWA,
+    TexFiltPtex,
     NumProfCategories
 };
 
@@ -235,6 +236,7 @@ static const char *ProfNames[] = {
     "Sampler::GetSample[12]D()",
     "MIPMap::Lookup() (trilinear)",
     "MIPMap::Lookup() (EWA)",
+    "Ptex lookup",
 };
 
 static_assert((int)Prof::NumProfCategories ==

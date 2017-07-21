@@ -54,7 +54,8 @@ struct TriangleMesh {
                  const int *vertexIndices, int nVertices, const Point3f *P,
                  const Vector3f *S, const Normal3f *N, const Point2f *uv,
                  const std::shared_ptr<Texture<Float>> &alphaMask,
-                 const std::shared_ptr<Texture<Float>> &shadowAlphaMask);
+                 const std::shared_ptr<Texture<Float>> &shadowAlphaMask,
+                 const int *faceIndices);
 
     // TriangleMesh Data
     const int nTriangles, nVertices;
@@ -64,6 +65,7 @@ struct TriangleMesh {
     std::unique_ptr<Vector3f[]> s;
     std::unique_ptr<Point2f[]> uv;
     std::shared_ptr<Texture<Float>> alphaMask, shadowAlphaMask;
+    std::vector<int> faceIndices;
 };
 
 class Triangle : public Shape {
@@ -75,6 +77,7 @@ class Triangle : public Shape {
         : Shape(ObjectToWorld, WorldToObject, reverseOrientation), mesh(mesh) {
         v = &mesh->vertexIndices[3 * triNumber];
         triMeshBytes += sizeof(*this);
+        faceIndex = mesh->faceIndices.size() ? mesh->faceIndices[triNumber] : 0;
     }
     Bounds3f ObjectBound() const;
     Bounds3f WorldBound() const;
@@ -107,6 +110,7 @@ class Triangle : public Shape {
     // Triangle Private Data
     std::shared_ptr<TriangleMesh> mesh;
     const int *v;
+    int faceIndex;
 };
 
 std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
@@ -114,7 +118,8 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
     int nTriangles, const int *vertexIndices, int nVertices, const Point3f *p,
     const Vector3f *s, const Normal3f *n, const Point2f *uv,
     const std::shared_ptr<Texture<Float>> &alphaTexture,
-    const std::shared_ptr<Texture<Float>> &shadowAlphaTexture);
+    const std::shared_ptr<Texture<Float>> &shadowAlphaTexture,
+    const int *faceIndices = nullptr);
 std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
     const Transform *o2w, const Transform *w2o, bool reverseOrientation,
     const ParamSet &params,

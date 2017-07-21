@@ -55,7 +55,8 @@ TriangleMesh::TriangleMesh(
     const Transform &ObjectToWorld, int nTriangles, const int *vertexIndices,
     int nVertices, const Point3f *P, const Vector3f *S, const Normal3f *N,
     const Point2f *UV, const std::shared_ptr<Texture<Float>> &alphaMask,
-    const std::shared_ptr<Texture<Float>> &shadowAlphaMask)
+    const std::shared_ptr<Texture<Float>> &shadowAlphaMask,
+    const int *fIndices)
     : nTriangles(nTriangles),
       nVertices(nVertices),
       vertexIndices(vertexIndices, vertexIndices + 3 * nTriangles),
@@ -84,6 +85,9 @@ TriangleMesh::TriangleMesh(
         s.reset(new Vector3f[nVertices]);
         for (int i = 0; i < nVertices; ++i) s[i] = ObjectToWorld(S[i]);
     }
+
+    if (fIndices)
+        faceIndices = std::vector<int>(fIndices, fIndices + nTriangles);
 }
 
 std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
@@ -91,10 +95,11 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
     bool reverseOrientation, int nTriangles, const int *vertexIndices,
     int nVertices, const Point3f *p, const Vector3f *s, const Normal3f *n,
     const Point2f *uv, const std::shared_ptr<Texture<Float>> &alphaMask,
-    const std::shared_ptr<Texture<Float>> &shadowAlphaMask) {
+    const std::shared_ptr<Texture<Float>> &shadowAlphaMask,
+    const int *faceIndices) {
     std::shared_ptr<TriangleMesh> mesh = std::make_shared<TriangleMesh>(
         *ObjectToWorld, nTriangles, vertexIndices, nVertices, p, s, n, uv,
-        alphaMask, shadowAlphaMask);
+        alphaMask, shadowAlphaMask, faceIndices);
     std::vector<std::shared_ptr<Shape>> tris;
     tris.reserve(nTriangles);
     for (int i = 0; i < nTriangles; ++i)
@@ -322,7 +327,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     // Fill in _SurfaceInteraction_ from triangle hit
     *isect = SurfaceInteraction(pHit, pError, uvHit, -ray.d, dpdu, dpdv,
                                 Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time,
-                                this);
+                                this, faceIndex);
 
     // Override surface normal in _isect_ for triangle
     isect->n = isect->shading.n = Normal3f(Normalize(Cross(dp02, dp12)));
@@ -667,6 +672,14 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
             return std::vector<std::shared_ptr<Shape>>();
         }
 
+    int nfi;
+    const int *faceIndices = params.FindInt("faceIndices", &nfi);
+    if (faceIndices && nfi != nvi / 3) {
+        Error("Number of face indices, %d, doesn't match number of faces, %d",
+              nfi, nvi / 3);
+        faceIndices = nullptr;
+    }
+
     std::shared_ptr<Texture<Float>> alphaTex;
     std::string alphaTexName = params.FindTexture("alpha");
     if (alphaTexName != "") {
@@ -692,7 +705,7 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMeshShape(
         shadowAlphaTex.reset(new ConstantTexture<Float>(0.f));
 
     return CreateTriangleMesh(o2w, w2o, reverseOrientation, nvi / 3, vi, npi, P,
-                              S, N, uvs, alphaTex, shadowAlphaTex);
+                              S, N, uvs, alphaTex, shadowAlphaTex, faceIndices);
 }
 
 }  // namespace pbrt
