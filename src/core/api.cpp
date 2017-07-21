@@ -1388,6 +1388,19 @@ void pbrtWorldEnd() {
 
         if (scene && integrator) integrator->Render(*scene);
 
+        CHECK_EQ(CurrentProfilerState(), ProfToBits(Prof::IntegratorRender));
+        ProfilerState = ProfToBits(Prof::SceneConstruction);
+    }
+
+    // Clean up after rendering. Do this before reporting stats so that
+    // destructors can run and update stats as needed.
+    graphicsState = GraphicsState();
+    transformCache.Clear();
+    currentApiState = APIState::OptionsBlock;
+    ImageTexture<Float, Float>::ClearCache();
+    ImageTexture<RGBSpectrum, Spectrum>::ClearCache();
+
+    if (!PbrtOptions.cat && !PbrtOptions.toPly) {
         MergeWorkerThreadStats();
         ReportThreadStats();
         if (!PbrtOptions.quiet) {
@@ -1396,22 +1409,12 @@ void pbrtWorldEnd() {
             ClearStats();
             ClearProfiler();
         }
-
-        CHECK_EQ(CurrentProfilerState(), ProfToBits(Prof::IntegratorRender));
-        ProfilerState = ProfToBits(Prof::SceneConstruction);
     }
-
-    // Clean up after rendering
-    graphicsState = GraphicsState();
-    transformCache.Clear();
-    currentApiState = APIState::OptionsBlock;
 
     for (int i = 0; i < MaxTransforms; ++i) curTransform[i] = Transform();
     activeTransformBits = AllTransformsBits;
     namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
                                  namedCoordinateSystems.end());
-    ImageTexture<Float, Float>::ClearCache();
-    ImageTexture<RGBSpectrum, Spectrum>::ClearCache();
 }
 
 Scene *RenderOptions::MakeScene() {
