@@ -473,7 +473,6 @@ TARGET_COMPILE_FEATURES ( pbrt PRIVATE
   cxx_lambdas
   cxx_nullptr
   cxx_range_for
-  cxx_rvalue_references
   cxx_static_assert
 )
 
