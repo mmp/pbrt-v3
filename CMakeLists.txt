@@ -469,7 +469,6 @@ ADD_SANITIZERS ( pbrt )
 # (constexpr, etc.), so don't test for that stuff here
 TARGET_COMPILE_FEATURES ( pbrt PRIVATE
   cxx_auto_type
-  cxx_deleted_functions
   cxx_explicit_conversions
   cxx_lambdas
   cxx_nullptr
