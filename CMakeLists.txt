@@ -241,7 +241,7 @@ __thread int x; int main() { }
 IF ( HAVE_THREAD_LOCAL )
   ADD_DEFINITIONS ( -D PBRT_THREAD_LOCAL=thread_local )
 ELSEIF ( HAVE_DECLSPEC_THREAD )
-  ADD_DEFINITIONS ( -D "PBRT_THREAD_LOCAL=__declspec\\(thread\\)" )
+  ADD_DEFINITIONS ( -D "PBRT_THREAD_LOCAL=__declspec(thread)" )
 ELSEIF ( HAVE___THREAD )
   ADD_DEFINITIONS ( -D PBRT_THREAD_LOCAL=__thread )
 ELSE ()
