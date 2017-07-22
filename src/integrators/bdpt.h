@@ -156,11 +156,11 @@ struct Vertex {
     // Vertex Public Data
     VertexType type;
     Spectrum beta;
-#ifdef PBRT_IS_MSVC2013
-    struct {
-#else
+#ifdef PBRT_HAVE_NONPOD_IN_UNIONS
     union {
-#endif  // PBRT_IS_MSVC2013
+#else
+    struct {
+#endif  // PBRT_HAVE_NONPOD_IN_UNIONS
         EndpointInteraction ei;
         MediumInteraction mi;
         SurfaceInteraction si;
