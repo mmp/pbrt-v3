@@ -65,7 +65,7 @@ Float SpotLight::Falloff(const Vector3f &w) const {
     Vector3f wl = Normalize(WorldToLight(w));
     Float cosTheta = wl.z;
     if (cosTheta < cosTotalWidth) return 0;
-    if (cosTheta > cosFalloffStart) return 1;
+    if (cosTheta >= cosFalloffStart) return 1;
     // Compute falloff inside spotlight cone
     Float delta =
         (cosTheta - cosTotalWidth) / (cosFalloffStart - cosTotalWidth);
