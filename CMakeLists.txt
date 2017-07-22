@@ -138,7 +138,6 @@ INCLUDE_DIRECTORIES (
   ${CMAKE_BINARY_DIR}/src/ext/openexr/IlmBase/config
   ${CMAKE_BINARY_DIR}/src/ext/openexr/OpenEXR/config
 )
-
 IF(WIN32)
   SET(OPENEXR_LIBS IlmImf Imath Half zlibstatic)
 ELSE()
@@ -155,6 +154,10 @@ INCLUDE_DIRECTORIES (
 )
 
 SET(CMAKE_MACOSX_RPATH 1)
+IF ( WIN32 )
+  ADD_DEFINITIONS ( /D PTEX_STATIC)
+ENDIF ()
+SET(ZLIB_LIBRARIES zlibstatic)
 ADD_SUBDIRECTORY(src/ext/ptex)
 SET_PROPERTY(TARGET Ptex_static PROPERTY FOLDER "dependencies")
 INCLUDE_DIRECTORIES (
