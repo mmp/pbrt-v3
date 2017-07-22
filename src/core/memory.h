@@ -40,7 +40,6 @@
 
 // core/memory.h*
 #include "pbrt.h"
-#include "port.h"
 #include <list>
 #include <cstddef>
 
@@ -78,7 +77,7 @@ alignas(PBRT_L1_CACHE_LINE_SIZE)
 #else
         const int align = alignof(std::max_align_t);
 #endif
-#ifndef PBRT_IS_MSVC2013
+#ifdef PBRT_HAVE_CONSTEXPR
         static_assert(IsPowerOf2(align), "Minimum alignment not a power of two");
 #endif
         nBytes = (nBytes + align - 1) & ~(align - 1);
