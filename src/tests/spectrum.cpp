@@ -73,7 +73,7 @@ TEST(Spectrum, LinearUpsampleSubset) {
     for (int i = 0; i < 3; ++i) EXPECT_EQ(val[i + 1], newVal[i]);
 }
 
-#ifndef PBRT_IS_MSVC2013
+#if !defined(PBRT_IS_MSVC) || _MSC_VER > 1800
 // FIXME: the i=0 case fails with MSVC 2013; it returns 1.125 instead of 1.
 // Should chase this down to figure out if it's an edge-case in our
 // implementation that happens to work out for other compilers but is
