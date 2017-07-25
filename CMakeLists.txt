@@ -347,6 +347,10 @@ INCLUDE_DIRECTORIES (
 ###########################################################################
 # ptex
 
+# work around https://github.com/wdas/ptex/issues/28
+STRING ( TOLOWER ${CMAKE_BUILD_TYPE} LOWER_BUILD_TYPE )
+SET ( ENV{FLAVOR} ${LOWER_BUILD_TYPE} )
+
 SET(CMAKE_MACOSX_RPATH 1)
 IF ( WIN32 )
   ADD_DEFINITIONS ( /D PTEX_STATIC)
