@@ -348,8 +348,10 @@ INCLUDE_DIRECTORIES (
 # ptex
 
 # work around https://github.com/wdas/ptex/issues/28
-STRING ( TOLOWER ${CMAKE_BUILD_TYPE} LOWER_BUILD_TYPE )
-SET ( ENV{FLAVOR} ${LOWER_BUILD_TYPE} )
+IF ( CMAKE_BUILD_TYPE )
+  STRING ( TOLOWER ${CMAKE_BUILD_TYPE} LOWER_BUILD_TYPE )
+  SET ( ENV{FLAVOR} ${LOWER_BUILD_TYPE} )
+ENDIF ()
 
 SET(CMAKE_MACOSX_RPATH 1)
 IF ( WIN32 )
@@ -477,7 +479,7 @@ ADD_SANITIZERS ( pbrt )
 # A non-exhaustive but pretty representative set..
 # Note that we work-around shoddy c++11 support in MSVC2013
 # (constexpr, etc.), so don't test for that stuff here
-TARGET_COMPILE_FEATURES ( pbrt PRIVATE
+SET ( PBRT_CXX11_FEATURES
   cxx_auto_type
   cxx_explicit_conversions
   cxx_lambdas
@@ -485,6 +487,7 @@ TARGET_COMPILE_FEATURES ( pbrt PRIVATE
   cxx_range_for
   cxx_static_assert
 )
+TARGET_COMPILE_FEATURES ( pbrt PRIVATE ${PBRT_CXX11_FEATURES} )
 
 IF (WIN32)
   # Avoid a name clash when building on Visual Studio
@@ -505,25 +508,25 @@ ADD_EXECUTABLE ( pbrt_exe src/main/pbrt.cpp )
 ADD_SANITIZERS ( pbrt_exe )
 
 SET_TARGET_PROPERTIES ( pbrt_exe PROPERTIES OUTPUT_NAME pbrt )
-
+TARGET_COMPILE_FEATURES ( pbrt_exe PRIVATE ${PBRT_CXX11_FEATURES} )
 TARGET_LINK_LIBRARIES ( pbrt_exe ${ALL_PBRT_LIBS} )
 
 # Tools
 ADD_EXECUTABLE ( bsdftest src/tools/bsdftest.cpp )
 ADD_SANITIZERS ( bsdftest )
+TARGET_COMPILE_FEATURES ( bsdftest PRIVATE ${PBRT_CXX11_FEATURES} )
+TARGET_LINK_LIBRARIES ( bsdftest ${ALL_PBRT_LIBS} )
 
 ADD_EXECUTABLE ( imgtool src/tools/imgtool.cpp )
 ADD_SANITIZERS ( imgtool )
+TARGET_COMPILE_FEATURES ( imgtool PRIVATE ${PBRT_CXX11_FEATURES} )
+TARGET_LINK_LIBRARIES ( imgtool ${ALL_PBRT_LIBS} )
 
 ADD_EXECUTABLE ( obj2pbrt src/tools/obj2pbrt.cpp )
 ADD_SANITIZERS ( obj2pbrt )
 
 ADD_EXECUTABLE ( cyhair2pbrt src/tools/cyhair2pbrt.cpp )
 ADD_SANITIZERS ( cyhair2pbrt )
-
-TARGET_LINK_LIBRARIES ( bsdftest ${ALL_PBRT_LIBS} )
-
-TARGET_LINK_LIBRARIES ( imgtool ${ALL_PBRT_LIBS} )
 
 # Unit test
 
@@ -534,7 +537,7 @@ FILE ( GLOB PBRT_TEST_SOURCE
 
 ADD_EXECUTABLE ( pbrt_test ${PBRT_TEST_SOURCE} )
 ADD_SANITIZERS ( pbrt_test )
-
+TARGET_COMPILE_FEATURES ( pbrt_test PRIVATE ${PBRT_CXX11_FEATURES} )
 TARGET_LINK_LIBRARIES ( pbrt_test ${ALL_PBRT_LIBS} )
 
 ADD_TEST ( pbrt_unit_test pbrt_test )
