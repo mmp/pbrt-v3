@@ -346,6 +346,20 @@ class DisneyFresnel : public Fresnel {
 };
 
 ///////////////////////////////////////////////////////////////////////////
+// DisneyMicrofacetDistribution
+
+class DisneyMicrofacetDistribution : public TrowbridgeReitzDistribution {
+public:
+    DisneyMicrofacetDistribution(Float alphax, Float alphay)
+        : TrowbridgeReitzDistribution(alphax, alphay) {}
+
+    Float G(const Vector3f &wo, const Vector3f &wi) const {
+        // Disney uses the separable masking-shadowing model.
+        return G1(wo) * G1(wo);
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////
 // DisneyBSSRDF
 
 // Implementation of the empirical BSSRDF described in "Extending the
@@ -529,7 +543,7 @@ void DisneyMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
     Float ax = std::max(Float(.001), sqr(rough) / aspect);
     Float ay = std::max(Float(.001), sqr(rough) * aspect);
     MicrofacetDistribution *distrib =
-        ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(ax, ay);
+        ARENA_ALLOC(arena, DisneyMicrofacetDistribution)(ax, ay);
 
     // Specular is Trowbridge-Reitz with a modified Fresnel function.
     Float specTint = specularTint->Evaluate(*si);

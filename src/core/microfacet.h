@@ -55,7 +55,7 @@ class MicrofacetDistribution {
         //    if (Dot(w, wh) * CosTheta(w) < 0.) return 0.;
         return 1 / (1 + Lambda(w));
     }
-    Float G(const Vector3f &wo, const Vector3f &wi) const {
+    virtual Float G(const Vector3f &wo, const Vector3f &wi) const {
         return 1 / (1 + Lambda(wo) + Lambda(wi));
     }
     virtual Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const = 0;
