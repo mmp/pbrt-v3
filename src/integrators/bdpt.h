@@ -373,7 +373,7 @@ struct Vertex {
 
             // Compute sampling density for non-infinite light sources
             Float pdfPos, pdfDir;
-            light->Pdf_Le(Ray(p(), w, time()), ng(), &pdfPos, &pdfDir);
+            light->Pdf_Le(Ray(p(), w, Infinity, time()), ng(), &pdfPos, &pdfDir);
             pdf = pdfDir * invDist2;
         }
         if (v.IsOnSurface()) pdf *= AbsDot(v.ng(), w);
@@ -406,7 +406,7 @@ struct Vertex {
                 }
             }
             Assert(pdfChoice != 0);
-            light->Pdf_Le(Ray(p(), w, time()), ng(), &pdfPos, &pdfDir);
+            light->Pdf_Le(Ray(p(), w, Infinity, time()), ng(), &pdfPos, &pdfDir);
             return pdfPos * pdfChoice;
         }
     }
