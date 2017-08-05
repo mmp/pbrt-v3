@@ -384,7 +384,7 @@ struct Vertex {
 
             // Compute sampling density for non-infinite light sources
             Float pdfPos, pdfDir;
-            light->Pdf_Le(Ray(p(), w, time()), ng(), &pdfPos, &pdfDir);
+            light->Pdf_Le(Ray(p(), w, Infinity, time()), ng(), &pdfPos, &pdfDir);
             pdf = pdfDir * invDist2;
         }
         if (v.IsOnSurface()) pdf *= AbsDot(v.ng(), w);
@@ -417,7 +417,7 @@ struct Vertex {
             size_t index = lightToDistrIndex.find(light)->second;
             pdfChoice = lightDistr.DiscretePDF(index);
 
-            light->Pdf_Le(Ray(p(), w, time()), ng(), &pdfPos, &pdfDir);
+            light->Pdf_Le(Ray(p(), w, Infinity, time()), ng(), &pdfPos, &pdfDir);
             return pdfPos * pdfChoice;
         }
     }
