@@ -194,7 +194,7 @@ void MLTIntegrator::Render(const Scene &scene) {
                     L(scene, arena, lightDistr, lightToIndex, sampler, depth, &pRaster).y();
                 arena.Reset();
             }
-            if ((i + 1 % 256) == 0) progress.Update();
+            if ((i + 1) % 256 == 0) progress.Update();
         }, nBootstrap, chunkSize);
         progress.Done();
     }
