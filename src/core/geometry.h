@@ -1267,12 +1267,14 @@ Bounds3<T> Union(const Bounds3<T> &b1, const Bounds3<T> &b2) {
 
 template <typename T>
 Bounds3<T> Intersect(const Bounds3<T> &b1, const Bounds3<T> &b2) {
-    return Bounds3<T>(Point3<T>(std::max(b1.pMin.x, b2.pMin.x),
-                                std::max(b1.pMin.y, b2.pMin.y),
-                                std::max(b1.pMin.z, b2.pMin.z)),
-                      Point3<T>(std::min(b1.pMax.x, b2.pMax.x),
-                                std::min(b1.pMax.y, b2.pMax.y),
-                                std::min(b1.pMax.z, b2.pMax.z)));
+    // Important: assign to pMin/pMax directly and don't run the Bounds2()
+    // constructor, since it takes min/max of the points passed to it.  In
+    // turn, that breaks returning an invalid bound for the case where we
+    // intersect non-overlapping bounds (as we'd like to happen).
+    Bounds3<T> ret;
+    ret.pMin = Max(b1.pMin, b2.pMin);
+    ret.pMax = Min(b1.pMax, b2.pMax);
+    return ret;
 }
 
 template <typename T>
@@ -1349,11 +1351,14 @@ Bounds2<T> Union(const Bounds2<T> &b, const Bounds2<T> &b2) {
 }
 
 template <typename T>
-Bounds2<T> Intersect(const Bounds2<T> &b, const Bounds2<T> &b2) {
-    Bounds2<T> ret(
-        Point2<T>(std::max(b.pMin.x, b2.pMin.x), std::max(b.pMin.y, b2.pMin.y)),
-        Point2<T>(std::min(b.pMax.x, b2.pMax.x),
-                  std::min(b.pMax.y, b2.pMax.y)));
+Bounds2<T> Intersect(const Bounds2<T> &b1, const Bounds2<T> &b2) {
+    // Important: assign to pMin/pMax directly and don't run the Bounds2()
+    // constructor, since it takes min/max of the points passed to it.  In
+    // turn, that breaks returning an invalid bound for the case where we
+    // intersect non-overlapping bounds (as we'd like to happen).
+    Bounds2<T> ret;
+    ret.pMin = Max(b1.pMin, b2.pMin);
+    ret.pMax = Min(b1.pMax, b2.pMax);
     return ret;
 }
 
