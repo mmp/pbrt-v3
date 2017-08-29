@@ -430,6 +430,8 @@ TEST_P(RenderTest, RadianceMatches) {
     delete tr.integrator;
 
     pbrtCleanup();
+
+    EXPECT_EQ(0, remove("test.exr"));
 }
 
 INSTANTIATE_TEST_CASE_P(AnalyticTestScenes, RenderTest,

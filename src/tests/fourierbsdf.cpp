@@ -17296,20 +17296,10 @@ TEST(BSDFs, Fourier) {
     // Write the serialized data to a temporary file
     // TODO: improve FourierBSDFTable to also be able to deserialize from a
     // given array.
-    char filename[L_tmpnam];
-#ifdef __GNUG__
-// Don't warn about tmpnam being deprecated. While it would be nice in
-// principle to use mkstmp(), it's not available on Windows, while
-// tmpnam is in the standard.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif  // __GNUG__
-    std::tmpnam(filename);
-#ifdef __GNUG__
-#pragma GCC diagnostic pop
-#endif  // __GNUG__
+    const char *filename = "fourier.out";
     FILE *f = fopen(filename, "wb");
     ASSERT_TRUE(f);
+
     int sz = sizeof(fourierData);
     ASSERT_EQ(sz, fwrite(fourierData, 1, sz, f));
     ASSERT_EQ(0, fclose(f));

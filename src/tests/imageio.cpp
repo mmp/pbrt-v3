@@ -72,6 +72,9 @@ static void TestRoundTrip(const char *fn, bool gamma) {
                 }
             }
         }
+
+    // Clean up
+    EXPECT_EQ(0, remove(fn));
 }
 
 TEST(ImageIO, RoundTripEXR) { TestRoundTrip("out.exr", false); }
