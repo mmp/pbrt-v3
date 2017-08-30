@@ -67,10 +67,10 @@ struct Distribution1D {
             for (int i = 1; i < n + 1; ++i) cdf[i] /= funcInt;
         }
     }
-    int Count() const { return func.size(); }
+    int Count() const { return (int)func.size(); }
     Float SampleContinuous(Float u, Float *pdf, int *off = nullptr) const {
         // Find surrounding CDF segments and _offset_
-        int offset = FindInterval(cdf.size(),
+        int offset = FindInterval((int)cdf.size(),
                                   [&](int index) { return cdf[index] <= u; });
         if (off) *off = offset;
         // Compute offset along CDF segment
@@ -90,7 +90,7 @@ struct Distribution1D {
     int SampleDiscrete(Float u, Float *pdf = nullptr,
                        Float *uRemapped = nullptr) const {
         // Find surrounding CDF segments and _offset_
-        int offset = FindInterval(cdf.size(),
+        int offset = FindInterval((int)cdf.size(),
                                   [&](int index) { return cdf[index] <= u; });
         if (pdf) *pdf = (funcInt > 0) ? func[offset] / (funcInt * Count()) : 0;
         if (uRemapped)
