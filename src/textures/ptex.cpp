@@ -126,8 +126,10 @@ template <>
 inline Spectrum fromResult<Spectrum>(int nc, float *result) {
     if (nc == 1)
         return Spectrum(result[0]);
-    else
-        return Spectrum::FromRGB(result);
+    else {
+        Float rgb[3] = { result[0], result[1], result[2] };
+        return Spectrum::FromRGB(rgb);
+    }
 }
 
 template <typename T>
