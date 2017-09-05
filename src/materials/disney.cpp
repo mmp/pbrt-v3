@@ -355,7 +355,7 @@ public:
 
     Float G(const Vector3f &wo, const Vector3f &wi) const {
         // Disney uses the separable masking-shadowing model.
-        return G1(wo) * G1(wo);
+        return G1(wo) * G1(wi);
     }
 };
 
