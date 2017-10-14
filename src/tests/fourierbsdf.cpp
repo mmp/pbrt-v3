@@ -17290,14 +17290,16 @@ static const uint8_t fourierData[] = {
     0x61, 0x6c, 0x73, 0x65, 0xa,  0x7d,
 };
 
+static std::string inTestDir(const std::string &path) { return path; }
+
 // Small smoke test to make sure we get back reasonable values for a few known
 // inputs.
 TEST(BSDFs, Fourier) {
     // Write the serialized data to a temporary file
     // TODO: improve FourierBSDFTable to also be able to deserialize from a
     // given array.
-    const char *filename = "fourier.out";
-    FILE *f = fopen(filename, "wb");
+    std::string filename = inTestDir("fourier.out");
+    FILE *f = fopen(filename.c_str(), "wb");
     ASSERT_TRUE(f);
 
     int sz = sizeof(fourierData);
@@ -17333,5 +17335,5 @@ TEST(BSDFs, Fourier) {
     EXPECT_LT(err(w.z, 0.572980), .001);
 
     // Cleanup.
-    EXPECT_EQ(0, remove(filename));
+    EXPECT_EQ(0, remove(filename.c_str()));
 }
