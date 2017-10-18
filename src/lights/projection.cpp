@@ -68,9 +68,10 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
     lightProjection = Perspective(fov, hither, yon);
 
     // Compute cosine of cone surrounding projection directions
-    Float opposite = std::tan(Radians(fov) / 2.f);
-    Float tanDiag = opposite * std::sqrt(1 + 1 / (aspect * aspect));
-    cosTotalWidth = std::cos(std::atan(tanDiag));
+    // Distance from origin to a corner of the screen window.
+    Float h = (screenBounds.pMin.x * screenBounds.pMin.x +
+               screenBounds.pMin.y * screenBounds.pMin.y + 1);
+    cosTotalWidth = 1 / h;
 }
 
 Spectrum ProjectionLight::Sample_Li(const Interaction &ref, const Point2f &u,
@@ -115,7 +116,7 @@ Spectrum ProjectionLight::Sample_Le(const Point2f &u1, const Point2f &u2,
     ProfilePhase _(Prof::LightSample);
     Vector3f v = UniformSampleCone(u1, cosTotalWidth);
     *ray = Ray(pLight, LightToWorld(v), Infinity, time, mediumInterface.inside);
-    *nLight = (Normal3f)ray->d;  /// same here
+    *nLight = (Normal3f)ray->d;
     *pdfPos = 1.f;
     *pdfDir = UniformConePdf(cosTotalWidth);
     return I * Projection(ray->d);
