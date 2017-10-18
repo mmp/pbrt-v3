@@ -273,7 +273,7 @@ void ReportProfilerResults(FILE *dest) {
             }
         }
         if (s == "") s = "Startup and scene construction";
-        hierarchicalResults[s] = count;
+        hierarchicalResults[s] += count;
 
         if (i == 0)
             flatResults[s] += count;
