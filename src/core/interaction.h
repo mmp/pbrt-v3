@@ -67,7 +67,7 @@ struct Interaction {
     }
     Ray SpawnRayTo(const Point3f &p2) const {
         Point3f origin = OffsetRayOrigin(p, pError, n, p2 - p);
-        Vector3f d = p2 - origin;
+        Vector3f d = p2 - p;
         return Ray(origin, d, 1 - ShadowEpsilon, time, GetMedium(d));
     }
     Ray SpawnRayTo(const Interaction &it) const {
