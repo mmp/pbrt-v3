@@ -2,7 +2,7 @@
 # (https://www.slideshare.net/DanielPfeifer1/cmake-48475415) are violated
 # in this file. Would be nice to address some of these.
 
-CMAKE_MINIMUM_REQUIRED ( VERSION 2.8 )
+CMAKE_MINIMUM_REQUIRED ( VERSION 2.8.4 )
 
 # For sanitizers
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -185,10 +185,10 @@ CHECK_CXX_SOURCE_COMPILES (
 int main() { }"
 HAVE_ATTRIBUTE_NOINLINE )
 
-IF ( HAVE_DECLSPEC_NOINLINE )
-  ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec(noinline)" )
-ELSEIF ( HAVE_ATTRIBUTE_NOINLINE )
+IF ( HAVE_ATTRIBUTE_NOINLINE )
   ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__attribute__\\(\\(noinline\\)\\)" )
+ELSEIF ( HAVE_DECLSPEC_NOINLINE )
+  ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec(noinline)" )
 ELSE ()
   ADD_DEFINITIONS ( -D PBRT_NOINLINE )
 ENDIF ()
@@ -245,10 +245,10 @@ __thread int x; int main() { }
 
 IF ( HAVE_THREAD_LOCAL )
   ADD_DEFINITIONS ( -D PBRT_THREAD_LOCAL=thread_local )
-ELSEIF ( HAVE_DECLSPEC_THREAD )
-  ADD_DEFINITIONS ( -D "PBRT_THREAD_LOCAL=__declspec(thread)" )
 ELSEIF ( HAVE___THREAD )
   ADD_DEFINITIONS ( -D PBRT_THREAD_LOCAL=__thread )
+ELSEIF ( HAVE_DECLSPEC_THREAD )
+  ADD_DEFINITIONS ( -D "PBRT_THREAD_LOCAL=__declspec(thread)" )
 ELSE ()
   MESSAGE ( SEND_ERROR "Unable to find a way to declare a thread-local variable")
 ENDIF ()
