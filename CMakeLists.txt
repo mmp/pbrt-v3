@@ -186,7 +186,7 @@ int main() { }"
 HAVE_ATTRIBUTE_NOINLINE )
 
 IF ( HAVE_DECLSPEC_NOINLINE )
-  ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec\\(noinline\\)" )
+  ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec(noinline)" )
 ELSEIF ( HAVE_ATTRIBUTE_NOINLINE )
   ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__attribute__\\(\\(noinline\\)\\)" )
 ELSE ()
