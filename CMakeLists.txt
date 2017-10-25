@@ -103,6 +103,7 @@ ENDIF ()
 # define workarounds.
 
 INCLUDE (CheckCXXSourceCompiles)
+INCLUDE (CheckCXXSourceRuns)
 
 CHECK_CXX_SOURCE_COMPILES (
   "int main() { float x = 0x1p-32f; }"
@@ -142,7 +143,7 @@ IF ( HAVE_ALIGNOF )
   ADD_DEFINITIONS ( -D PBRT_HAVE_ALIGNOF )
 ENDIF ()
 
-CHECK_CXX_SOURCE_COMPILES ( "
+CHECK_CXX_SOURCE_RUNS ( "
 #include <signal.h>
 #include <string.h>
 #include <sys/time.h>
@@ -155,7 +156,7 @@ int main() {
     sigemptyset(&sa.sa_mask);
     sigaction(SIGPROF, &sa, NULL);
     static struct itimerval timer;
-    setitimer(ITIMER_PROF, &timer, NULL);
+    return setitimer(ITIMER_PROF, &timer, NULL) == 0 ? 0 : 1;
 }
 " HAVE_ITIMER )
 IF ( HAVE_ITIMER )
@@ -185,7 +186,7 @@ int main() { }"
 HAVE_ATTRIBUTE_NOINLINE )
 
 IF ( HAVE_DECLSPEC_NOINLINE )
-  ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec(noinline)" )
+  ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec\\(noinline\\)" )
 ELSEIF ( HAVE_ATTRIBUTE_NOINLINE )
   ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__attribute__\\(\\(noinline\\)\\)" )
 ELSE ()
@@ -227,6 +228,10 @@ ENDIF ()
 # thread-local variables
 
 CHECK_CXX_SOURCE_COMPILES ( "
+#ifdef __CYGWIN__
+// Hack to work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64697
+#error \"No thread_local on cygwin\"
+#endif  // __CYGWIN__
 thread_local int x; int main() { }
 " HAVE_THREAD_LOCAL )
 
