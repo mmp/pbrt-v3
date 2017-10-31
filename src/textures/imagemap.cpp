@@ -185,4 +185,7 @@ ImageTexture<RGBSpectrum, Spectrum> *CreateImageSpectrumTexture(
         std::move(map), filename, trilerp, maxAniso, wrapMode, scale, gamma);
 }
 
+template class ImageTexture<Float, Float>;
+template class ImageTexture<RGBSpectrum, Spectrum>;
+
 }  // namespace pbrt

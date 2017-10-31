@@ -120,6 +120,9 @@ class ImageTexture : public Texture<Treturn> {
     static std::map<TexInfo, std::unique_ptr<MIPMap<Tmemory>>> textures;
 };
 
+extern template class ImageTexture<Float, Float>;
+extern template class ImageTexture<RGBSpectrum, Spectrum>;
+
 ImageTexture<Float, Float> *CreateImageFloatTexture(const Transform &tex2world,
                                                     const TextureParams &tp);
 ImageTexture<RGBSpectrum, Spectrum> *CreateImageSpectrumTexture(
