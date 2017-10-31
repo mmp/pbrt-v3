@@ -121,6 +121,7 @@ AOIntegrator *CreateAOIntegrator(const ParamSet &params,
     }
     bool cosSample = params.FindOneBool("cossample", true);
     int nSamples = params.FindOneInt("nsamples", 64);
+    if (PbrtOptions.quickRender) nSamples = 1;
     return new AOIntegrator(cosSample, nSamples, camera, sampler, pixelBounds);
 }
 
