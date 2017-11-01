@@ -402,7 +402,6 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
                              paramSet);
     else
         Warning("Shape \"%s\" unknown.", name.c_str());
-    paramSet.ReportUnused();
     return shapes;
 }
 
