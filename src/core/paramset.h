@@ -122,6 +122,8 @@ class ParamSet {
 
   private:
     friend class TextureParams;
+    friend bool shapeMaySetMaterialParameters(const ParamSet &ps);
+
     // ParamSet Private Data
     std::vector<std::shared_ptr<ParamSetItem<bool>>> bools;
     std::vector<std::shared_ptr<ParamSetItem<int>>> ints;
