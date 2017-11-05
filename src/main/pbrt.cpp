@@ -131,6 +131,9 @@ int main(int argc, char *argv[]) {
 
     // Print welcome banner
     if (!options.quiet && !options.cat && !options.toPly) {
+        if (sizeof(void *) == 4)
+            printf("*** WARNING: This is a 32-bit build of pbrt. It will crash "
+                   "if used to render highly complex scenes. ***\n");
         printf("pbrt version 3 (built %s at %s) [Detected %d cores]\n",
                __DATE__, __TIME__, NumSystemCores());
 #ifndef NDEBUG
