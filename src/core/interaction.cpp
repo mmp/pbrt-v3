@@ -113,7 +113,7 @@ void SurfaceInteraction::ComputeDifferentials(
         Point3f px = ray.rxOrigin + tx * ray.rxDirection;
         Float ty =
             -(Dot(n, Vector3f(ray.ryOrigin)) - d) / Dot(n, ray.ryDirection);
-        if (std::isinf(tx) || std::isnan(ty)) goto fail;
+        if (std::isinf(ty) || std::isnan(ty)) goto fail;
         Point3f py = ray.ryOrigin + ty * ray.ryDirection;
         dpdx = px - p;
         dpdy = py - p;
