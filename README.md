@@ -10,26 +10,38 @@ Theory to Implementation*, by [Matt Pharr](http://pharr.org/matt), [Wenzel
 Jakob](http://www.mitsuba-renderer.org/~wenzel/), and Greg Humphreys.  As
 before, the code is available under the BSD license.
 
-Please see the [User's Guide](http://pbrt.org/users-guide.html) for more
-information about how to check out and build the system as well as various
-additional information about working with pbrt.
+The [pbrt website](http://pbrt.org) has general information about
+both *Physically Based Rendering* as well as pbrt-v2, the previous version
+of the system.
 
 Example scenes
 --------------
 
 Over 10GB of example scenes are available for download. (Many are new and
-weren't available with previous versions of pbrt.) We're trying an
-experiment and making them available via git. Run:
-```
-$ git clone git://git.pbrt.org/pbrt-v3-scenes
-```
-to get them. We will update this repository as more scenes become
-available. (See the `README.md.html file` in the scene distribution for
-more information about the scenes and preview images.)
+weren't available with previous versions of pbrt.)  See the [pbrt-v3 scenes
+page](http://pbrt.org/scenes-v3.html) on the pbrt website for information
+about how to download them.
 
-The [pbrt website](http://pbrt.org) has general information about
-both *Physically Based Rendering* as well as pbrt-v2, the previous version
-of the system.
+After downloading them, see the `README.md.html file` in the scene
+distribution for more information about the scenes and preview images.
+
+Additional resources
+--------------------
+
+* There is a [pbrt Google
+  Groups](https://groups.google.com/forum/#!forum/pbrt) mailing list that can
+  be a helpful resource.
+* Please see the [User's Guide](http://pbrt.org/users-guide.html) for more
+  information about how to check out and build the system as well as various
+  additional information about working with pbrt.
+* Should you find a bug in pbrt, please report it in the [bug
+  tracker](https://github.com/mmp/pbrt-v3/issues).
+* Please report any errors you find in the *Physically Based Rendering*
+  book to authors@pbrt.org.
+
+Note: we tend to let bug reports and book errata emails pile up for a few
+months for processing them in batches. Don't think we don't appreciate
+them. :-)
 
 Building pbrt
 -------------
