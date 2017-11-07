@@ -457,7 +457,7 @@ int info(int argc, char *argv[]) {
         Float max[3] = {-Infinity, -Infinity, -Infinity};
         double sum[3] = {0., 0., 0.};
         double logYSum = 0.;
-        int nNaN = 0, nInf = 0, nValid = 0;
+        int nNaN = 0, nInf = 0, nValid[3] = { 0, 0, 0 };
         for (int i = 0; i < res.x * res.y; ++i) {
             Float y = image[i].y();
             if (!std::isnan(y) && !std::isinf(y))
@@ -474,18 +474,18 @@ int info(int argc, char *argv[]) {
                     min[c] = std::min(min[c], rgb[c]);
                     max[c] = std::max(max[c], rgb[c]);
                     sum[c] += rgb[c];
-                    ++nValid;
+                    ++nValid[c];
                 }
             }
         }
-        printf("%s: %d infinite pixel components, %d NaN, %d valid.\n", argv[i],
-               nInf, nNaN, nValid);
+        printf("%s: %d infinite pixel components, %d NaN, (%d, %d, %d) valid.\n",
+               argv[i], nInf, nNaN, nValid[0], nValid[1], nValid[2]);
         printf("%s: log average luminance %f\n", argv[i],
                std::exp(logYSum / (res.x * res.y)));
         printf("%s: min rgb (%f, %f, %f)\n", argv[i], min[0], min[1], min[2]);
         printf("%s: max rgb (%f, %f, %f)\n", argv[i], max[0], max[1], max[2]);
-        printf("%s: avg rgb (%f, %f, %f)\n", argv[i], sum[0] / nValid,
-               sum[1] / nValid, sum[2] / nValid);
+        printf("%s: avg rgb (%f, %f, %f)\n", argv[i], sum[0] / nValid[0],
+               sum[1] / nValid[1], sum[2] / nValid[2]);
     }
     return err;
 }
