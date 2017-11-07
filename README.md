@@ -22,7 +22,7 @@ weren't available with previous versions of pbrt.)  See the [pbrt-v3 scenes
 page](http://pbrt.org/scenes-v3.html) on the pbrt website for information
 about how to download them.
 
-After downloading them, see the `README.md.html file` in the scene
+After downloading them, see the `README.md.html` file in the scene
 distribution for more information about the scenes and preview images.
 
 Additional resources
