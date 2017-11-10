@@ -210,20 +210,17 @@ void Film::WriteImage(Float splatScale) {
 }
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
-    // Intentionally use FindOneString() rather than FindOneFilename() here
-    // so that the rendered image is left in the working directory, rather
-    // than the directory the scene file lives in.
-    std::string filename = params.FindOneString("filename", "");
+    std::string filename;
     if (PbrtOptions.imageFile != "") {
-        if (filename != "") {
+        filename = PbrtOptions.imageFile;
+        std::string paramsFilename = params.FindOneString("filename", "");
+        if (paramsFilename != "")
             Warning(
-                "Output filename supplied on command line, \"%s\", ignored "
-                "due to filename provided in scene description file, \"%s\".",
-                PbrtOptions.imageFile.c_str(), filename.c_str());
-        } else
-            filename = PbrtOptions.imageFile;
-    }
-    if (filename == "") filename = "pbrt.exr";
+                "Output filename supplied on command line, \"%s\" is overriding "
+                "filename provided in scene description file, \"%s\".",
+                PbrtOptions.imageFile.c_str(), paramsFilename.c_str());
+    } else
+        filename = params.FindOneString("filename", "pbrt.exr");
 
     int xres = params.FindOneInt("xresolution", 1280);
     int yres = params.FindOneInt("yresolution", 720);
