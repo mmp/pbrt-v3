@@ -91,6 +91,7 @@
 #include "shapes/curve.h"
 #include "shapes/cylinder.h"
 #include "shapes/disk.h"
+#include "shapes/distanceestimator.h"
 #include "shapes/heightfield.h"
 #include "shapes/hyperboloid.h"
 #include "shapes/loopsubdiv.h"
@@ -339,6 +340,9 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
     else if (name == "hyperboloid")
         s = CreateHyperboloidShape(object2world, world2object,
                                    reverseOrientation, paramSet);
+    else if (name == "distanceestimator")
+        s = CreateDistanceEstimatorShape(object2world, world2object, reverseOrientation, paramSet);
+
     if (s != nullptr) shapes.push_back(s);
 
     // Create multiple-_Shape_ types
