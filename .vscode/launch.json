@@ -7,8 +7,8 @@
             "request": "launch",
             "program": "${workspaceRoot}/build/pbrt",
             "args": [
-                // "--nthreads",
-                // "1",
+                "--nthreads",
+                "1",
                 "${workspaceRoot}/scenes/misc/distanceestimatortest.pbrt"
             ],
             "stopAtEntry": false,

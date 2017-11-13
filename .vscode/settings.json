@@ -1,5 +1,10 @@
 {
   "files.associations": {
-    "iterator": "cpp"
+    "iterator": "cpp",
+    "__locale": "cpp",
+    "limits": "cpp",
+    "__string": "cpp",
+    "string": "cpp",
+    "string_view": "cpp"
   }
 }
