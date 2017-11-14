@@ -5,6 +5,8 @@
     "limits": "cpp",
     "__string": "cpp",
     "string": "cpp",
-    "string_view": "cpp"
+    "string_view": "cpp",
+    "__config": "cpp",
+    "__nullptr": "cpp"
   }
 }

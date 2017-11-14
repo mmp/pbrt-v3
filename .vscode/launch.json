@@ -9,7 +9,7 @@
             "args": [
                 "--nthreads",
                 "1",
-                "${workspaceRoot}/scenes/misc/distanceestimatortest.pbrt"
+                "${workspaceRoot}/scenes/misc/spherede.pbrt"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

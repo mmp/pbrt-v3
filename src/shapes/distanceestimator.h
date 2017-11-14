@@ -22,28 +22,27 @@ struct DistanceEstimatorParams {
 class DistanceEstimator : public Shape {
     public:
         // Distance Estimator Public Methods.
-        DistanceEstimator(const Transform *o2w, const Transform *w2o, bool reverseOrientation,
-                          Float radius, const DistanceEstimatorParams &params)
+        DistanceEstimator(
+            const Transform *o2w,
+            const Transform *w2o,
+            bool reverseOrientation,
+            const DistanceEstimatorParams &params)
             : Shape(o2w, w2o, reverseOrientation),
-            radius(radius),
             params(params) {}
-        Bounds3f ObjectBound() const;
-        bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect, bool testAlphaTexture) const;
-        Float Area() const;
-        Interaction Sample(const Point2f &u, Float *pdf) const;
-        Vector3f CalculateNormal(const Point3f &pos, float eps, const Vector3f &defaultNormal) const;
-        virtual Float Evaluate(const Point3f &p) const;
+        // Non Pure Virtual.
+        virtual bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect, bool testAlphaTexture) const;
+        virtual Interaction Sample(const Point2f &u, Float *pdf) const;
+        virtual Vector3f CalculateNormal(const Point3f &pos, float eps, const Vector3f &defaultNormal) const;
+
+        // Pure Virtual.
+        virtual Bounds3f ObjectBound() const = 0;
+        virtual Float Area() const = 0;
+        virtual Float Evaluate(const Point3f &p) const = 0;
 
     private:
         // Distance Estimator Private Data.
-        const Float radius;
         const DistanceEstimatorParams params;
 };
-
-std::shared_ptr<Shape> CreateDistanceEstimatorShape(const Transform *o2w,
-                                                    const Transform *w2o,
-                                                    bool reverseOrientation,
-                                                    const ParamSet &params);
 
 } // namespace pbrt
 

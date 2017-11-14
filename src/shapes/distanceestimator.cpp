@@ -1,16 +1,10 @@
 #include "shapes/distanceestimator.h"
-#include "sampling.h"
 #include "paramset.h"
-#include "efloat.h"
 #include "stats.h"
 
 namespace pbrt {
 
 // Distance Estimator Method Definitions.
-Bounds3f DistanceEstimator::ObjectBound() const {
-    return Bounds3f(Point3f(-radius, -radius, -radius),
-                    Point3f(radius, radius, radius));
-}
 
 bool DistanceEstimator::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect, bool testAlphaTexture) const {
     ProfilePhase p(Prof::ShapeIntersect);
@@ -52,17 +46,9 @@ bool DistanceEstimator::Intersect(const Ray &r, Float *tHit, SurfaceInteraction 
     return false;
 }
 
-Float DistanceEstimator::Area() const {
-    return 4 * Pi * radius * radius;
-}
-
 Interaction DistanceEstimator::Sample(const Point2f &u, Float *pdf) const {
     LOG(FATAL) << "DistanceEstimator::Sample not implemented.";
     return Interaction();
-}
-
-Float DistanceEstimator::Evaluate(const Point3f &p) const {
-    return Distance(p, Point3f()) - radius;
 }
 
 Vector3f DistanceEstimator::CalculateNormal(const Point3f &pos, float eps, const Vector3f &defaultNormal) const {
@@ -80,21 +66,6 @@ Vector3f DistanceEstimator::CalculateNormal(const Point3f &pos, float eps, const
     const Float length = normal.Length();
 
     return length > 0 ? (normal/length) : defaultNormal;
-}
-
-std::shared_ptr<Shape> CreateDistanceEstimatorShape(const Transform *o2w,
-                                               const Transform *w2o,
-                                               bool reverseOrientation,
-                                               const ParamSet &params) {
-    Float radius = params.FindOneFloat("radius", 1.0);
-
-    DistanceEstimatorParams deParams;
-    deParams.maxIters = params.FindOneInt("maxiters", 1000);
-    deParams.hitEpsilon = params.FindOneFloat("hitepsilon", 1e-5);
-    deParams.rayEpsilonMultiplier = params.FindOneFloat("rayepsilonmultiplier", 5);
-    deParams.normalEpsilon = params.FindOneFloat("normalepsilon", 1e-5);
-
-    return std::make_shared<DistanceEstimator>(o2w, w2o, reverseOrientation, radius, deParams);
 }
 
 } // namespace pbrt
