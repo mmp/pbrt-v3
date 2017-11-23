@@ -90,7 +90,7 @@ CurveCommon::CurveCommon(const Point3f c[4], Float width0, Float width1,
 
 std::vector<std::shared_ptr<Shape>> CreateCurve(
     const Transform *o2w, const Transform *w2o, bool reverseOrientation,
-    const Point3f c[4], Float w0, Float w1, CurveType type,
+    const Point3f *c, Float w0, Float w1, CurveType type,
     const Normal3f *norm, int splitDepth) {
     std::vector<std::shared_ptr<Shape>> segments;
     std::shared_ptr<CurveCommon> common =
@@ -386,15 +386,43 @@ std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,
     Float width0 = params.FindOneFloat("width0", width);
     Float width1 = params.FindOneFloat("width1", width);
 
+    int degree = params.FindOneInt("degree", 3);
+    if (degree != 2 && degree != 3) {
+        Error("Invalid degree %d: only degree 2 and 3 curves are supported.",
+              degree);
+        return {};
+    }
+
+    std::string basis = params.FindOneString("basis", "bezier");
+    if (basis != "bezier" && basis != "bspline") {
+        Error("Invalid basis \"%s\": only \"bezier\" and \"bspline\" are "
+              "supported.", basis.c_str());
+        return {};
+    }
+
     int ncp;
     const Point3f *cp = params.FindPoint3f("P", &ncp);
-    if (ncp != 4) {
-        Error(
-            "Must provide 4 control points for \"curve\" primitive. "
-            "(Provided %d).",
-            ncp);
-        return std::vector<std::shared_ptr<Shape>>();
+    int nSegments;
+    if (basis == "bezier") {
+        // After the first segment, which uses degree+1 control points,
+        // subsequent segments reuse the last control point of the previous
+        // one and then use degree more control points.
+        if (((ncp - 1 - degree) % degree) != 0) {
+            Error("Invalid number of control points %d: for the degree %d "
+                  "Bezier basis %d + n * %d are required, for n >= 0.", ncp,
+                  degree, degree + 1, degree);
+            return {};
+        }
+        nSegments = (ncp - 1) / degree;
+    } else {
+        if (ncp < degree + 1) {
+            Error("Invalid number of control points %d: for the degree %d "
+                  "b-spline basis, must have >= %d.", ncp, degree, degree + 1);
+            return {};
+        }
+        nSegments = ncp - degree;
     }
+
 
     CurveType type;
     std::string curveType = params.FindOneString("type", "flat");
@@ -408,32 +436,106 @@ std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,
         Error("Unknown curve type \"%s\".  Using \"flat\".", curveType.c_str());
         type = CurveType::Cylinder;
     }
+
     int nnorm;
     const Normal3f *n = params.FindNormal3f("N", &nnorm);
     if (n != nullptr) {
         if (type != CurveType::Ribbon) {
             Warning("Curve normals are only used with \"ribbon\" type curves.");
             n = nullptr;
-        } else if (nnorm != 2) {
+        } else if (nnorm != nSegments + 1) {
             Error(
-                "Must provide two normals with \"N\" parameter for ribbon "
-                "curves. "
-                "(Provided %d).",
-                nnorm);
-            return std::vector<std::shared_ptr<Shape>>();
+                "Invalid number of normals %d: must provide %d normals for ribbon "
+                "curves with %d segments.", nnorm, nSegments + 1, nSegments);
+            return {};
         }
+    } else if (type == CurveType::Ribbon) {
+        Error(
+            "Must provide normals \"N\" at curve endpoints with ribbon "
+            "curves.");
+        return {};
     }
 
     int sd = params.FindOneFloat("splitdepth", 3);
 
-    if (type == CurveType::Ribbon && !n) {
-        Error(
-            "Must provide normals \"N\" at curve endpoints with ribbon "
-            "curves.");
-        return std::vector<std::shared_ptr<Shape>>();
-    } else
-        return CreateCurve(o2w, w2o, reverseOrientation, cp, width0, width1,
-                           type, n, sd);
+    std::vector<std::shared_ptr<Shape>> curves;
+    // Pointer to the first control point for the current segment. This is
+    // updated after each loop iteration depending on the current basis.
+    const Point3f *cpBase = cp;
+    for (int seg = 0; seg < nSegments; ++seg) {
+        Point3f segCpBezier[4];
+
+        // First, compute the cubic Bezier control points for the current
+        // segment and store them in segCpBezier. (It is admittedly
+        // wasteful storage-wise to turn b-splines into Bezier segments and
+        // wasteful computationally to turn quadratic curves into cubics,
+        // but yolo.)
+        if (basis == "bezier") {
+            if (degree == 2) {
+                // Elevate to degree 3.
+                segCpBezier[0] = cpBase[0];
+                segCpBezier[1] = Lerp(2.f/3.f, cpBase[0], cpBase[1]);
+                segCpBezier[2] = Lerp(1.f/3.f, cpBase[1], cpBase[2]);
+                segCpBezier[3] = cpBase[2];
+            } else {
+                // Allset.
+                for (int i = 0; i < 4; ++i)
+                    segCpBezier[i] = cpBase[i];
+            }
+            cpBase += degree;
+        } else {
+            // Uniform b-spline.
+            if (degree == 2) {
+                // First compute equivalent Bezier control points via some
+                // blossiming.  We have three control points and a uniform
+                // knot vector; we'll label the points p01, p12, and p23.
+                // We want the Bezier control points of the equivalent
+                // curve, which are p11, p12, and p22.
+                Point3f p01 = cpBase[0];
+                Point3f p12 = cpBase[1];
+                Point3f p23 = cpBase[2];
+
+                // We already have p12.
+                Point3f p11 = Lerp(0.5, p01, p12);
+                Point3f p22 = Lerp(0.5, p12, p23);
+
+                // Now elevate to degree 3.
+                segCpBezier[0] = p11;
+                segCpBezier[1] = Lerp(2.f/3.f, p11, p12);
+                segCpBezier[2] = Lerp(1.f/3.f, p12, p22);
+                segCpBezier[3] = p22;
+            } else {
+                // Otherwise we will blossom from p012, p123, p234, and p345
+                // to the Bezier control points p222, p223, p233, and p333.
+                // https://people.eecs.berkeley.edu/~sequin/CS284/IMGS/cubicbsplinepoints.gif
+                Point3f p012 = cpBase[0];
+                Point3f p123 = cpBase[1];
+                Point3f p234 = cpBase[2];
+                Point3f p345 = cpBase[3];
+
+                Point3f p122 = Lerp(2.f/3.f, p012, p123);
+                Point3f p223 = Lerp(1.f/3.f, p123, p234);
+                Point3f p233 = Lerp(2.f/3.f, p123, p234);
+                Point3f p334 = Lerp(1.f/3.f, p234, p345);
+
+                Point3f p222 = Lerp(0.5f, p122, p223);
+                Point3f p333 = Lerp(0.5f, p233, p334);
+
+                segCpBezier[0] = p222;
+                segCpBezier[1] = p223;
+                segCpBezier[2] = p233;
+                segCpBezier[3] = p333;
+            }
+            ++cpBase;
+        }
+
+        auto c = CreateCurve(o2w, w2o, reverseOrientation, segCpBezier,
+                             Lerp(Float(seg) / Float(nSegments), width0, width1),
+                             Lerp(Float(seg + 1) / Float(nSegments), width0, width1),
+                             type, n ? &n[seg] : nullptr, sd);
+        curves.insert(curves.end(), c.begin(), c.end());
+    }
+    return curves;
 }
 
 }  // namespace pbrt
