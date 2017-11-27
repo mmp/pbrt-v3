@@ -4,20 +4,20 @@ pbrt, Version 3
 [![Build Status](https://travis-ci.org/mmp/pbrt-v3.svg?branch=master)](https://travis-ci.org/mmp/pbrt-v3)
 [![Build status](https://ci.appveyor.com/api/projects/status/mlm9g91ejxlcn67s/branch/master?svg=true)](https://ci.appveyor.com/project/mmp/pbrt-v3/branch/master)
 
-This repository holds the source code to the new version of pbrt that is
+This repository holds the source code to the version of pbrt that is
 described in the third edition of *Physically Based Rendering: From
 Theory to Implementation*, by [Matt Pharr](http://pharr.org/matt), [Wenzel
 Jakob](http://www.mitsuba-renderer.org/~wenzel/), and Greg Humphreys.  As
 before, the code is available under the BSD license.
 
 The [pbrt website](http://pbrt.org) has general information about
-both *Physically Based Rendering* as well as pbrt-v2, the previous version
-of the system.
+both the *Physically Based Rendering* book as well as many other resources
+for pbrt.
 
 Example scenes
 --------------
 
-Over 10GB of example scenes are available for download. (Many are new and
+Over 8GB of example scenes are available for download. (Many are new and
 weren't available with previous versions of pbrt.)  See the [pbrt-v3 scenes
 page](http://pbrt.org/scenes-v3.html) on the pbrt website for information
 about how to download them.
@@ -65,8 +65,8 @@ page](http://www.cmake.org/download/).
 * For command-line builds on Linux and OS X, once you have cmake installed,
   create a new directory for the build, change to that directory, and run
   `cmake [path to pbrt-v3]`. A Makefile will be created in that
-  current directory.  Run `make -j4`, and pbrt, the obj2pbrt and imgtool
-  utilities, and an executable that runs pbrt's unit tests will be built.
+  current directory.  Run `make -j8`, to build pbrt, the obj2pbrt and imgtool
+  utilities, and an executable that runs pbrt's unit tests.
 * To make an XCode project file on OS X, run `cmake -G Xcode [path to pbrt-v3]`.
 * Finally, on Windows, the cmake GUI will create MSVC solution files that
   you can load in MSVC.
@@ -88,7 +88,7 @@ optimized builds are generally difficult to trace in a debugger.
 
 To build a debug version of pbrt, set the `CMAKE_BUILD_TYPE` flag to
 `Debug` when you run cmake to create build files to make a debug build. For
-example, when running cmake from the command lne, provide it with the
+example, when running cmake from the command line, provide it with the
 argument `-DCMAKE_BUILD_TYPE=Debug`. Then build pbrt using the resulting
 build files. (You may want to keep two build directories, one for release
 builds and one for debug builds, so that you don't need to switch back and
