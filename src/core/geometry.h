@@ -1248,21 +1248,18 @@ inline Point3<T> &Bounds3<T>::operator[](int i) {
 
 template <typename T>
 Bounds3<T> Union(const Bounds3<T> &b, const Point3<T> &p) {
-    return Bounds3<T>(
-        Point3<T>(std::min(b.pMin.x, p.x), std::min(b.pMin.y, p.y),
-                  std::min(b.pMin.z, p.z)),
-        Point3<T>(std::max(b.pMax.x, p.x), std::max(b.pMax.y, p.y),
-                  std::max(b.pMax.z, p.z)));
+    Bounds3<T> ret;
+    ret.pMin = Min(b.pMin, p);
+    ret.pMax = Max(b.pMax, p);
+    return ret;
 }
 
 template <typename T>
 Bounds3<T> Union(const Bounds3<T> &b1, const Bounds3<T> &b2) {
-    return Bounds3<T>(Point3<T>(std::min(b1.pMin.x, b2.pMin.x),
-                                std::min(b1.pMin.y, b2.pMin.y),
-                                std::min(b1.pMin.z, b2.pMin.z)),
-                      Point3<T>(std::max(b1.pMax.x, b2.pMax.x),
-                                std::max(b1.pMax.y, b2.pMax.y),
-                                std::max(b1.pMax.z, b2.pMax.z)));
+    Bounds3<T> ret;
+    ret.pMin = Min(b1.pMin, b2.pMin);
+    ret.pMax = Max(b1.pMax, b2.pMax);
+    return ret;
 }
 
 template <typename T>
@@ -1336,17 +1333,17 @@ inline Bounds2iIterator end(const Bounds2i &b) {
 
 template <typename T>
 Bounds2<T> Union(const Bounds2<T> &b, const Point2<T> &p) {
-    Bounds2<T> ret(Point2<T>(std::min(b.pMin.x, p.x), std::min(b.pMin.y, p.y)),
-                   Point2<T>(std::max(b.pMax.x, p.x), std::max(b.pMax.y, p.y)));
+    Bounds2<T> ret;
+    ret.pMin = Min(b.pMin, p);
+    ret.pMax = Max(b.pMax, p);
     return ret;
 }
 
 template <typename T>
 Bounds2<T> Union(const Bounds2<T> &b, const Bounds2<T> &b2) {
-    Bounds2<T> ret(
-        Point2<T>(std::min(b.pMin.x, b2.pMin.x), std::min(b.pMin.y, b2.pMin.y)),
-        Point2<T>(std::max(b.pMax.x, b2.pMax.x),
-                  std::max(b.pMax.y, b2.pMax.y)));
+    Bounds2<T> ret;
+    ret.pMin = Min(b.pMin, b2.pMin);
+    ret.pMax = Max(b.pMax, b2.pMax);
     return ret;
 }
 

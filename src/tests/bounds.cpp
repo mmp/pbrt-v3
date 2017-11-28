@@ -80,3 +80,29 @@ TEST(Bounds3, PointDistance) {
                   DistanceSquared(Point3f(-3, -9, 22), b));
     }
 }
+
+TEST(Bounds2, Union) {
+    Bounds2f a(Point2f(-10, -10), Point2f(0, 20));
+    Bounds2f b; // degenerate
+    Bounds2f c = Union(a, b);
+    EXPECT_EQ(a, c);
+
+    EXPECT_EQ(b, Union(b, b));
+
+    Bounds2f d(Point2f(-15, 10));
+    Bounds2f e = Union(a, d);
+    EXPECT_EQ(Bounds2f(Point2f(-15, -10), Point2f(0, 20)), e);
+}
+
+TEST(Bounds3, Union) {
+    Bounds3f a(Point3f(-10, -10, 5), Point3f(0, 20, 10));
+    Bounds3f b; // degenerate
+    Bounds3f c = Union(a, b);
+    EXPECT_EQ(a, c);
+
+    EXPECT_EQ(b, Union(b, b));
+
+    Bounds3f d(Point3f(-15, 10, 30));
+    Bounds3f e = Union(a, d);
+    EXPECT_EQ(Bounds3f(Point3f(-15, -10, 5), Point3f(0, 20, 30)), e);
+}
