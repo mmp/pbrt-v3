@@ -88,6 +88,13 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
         Float r1 = (Float)(i + 1) / nSamples * film->diagonal / 2;
         exitPupilBounds[i] = BoundExitPupil(r0, r1);
     }, nSamples);
+
+    if (simpleWeighting)
+        Warning("\"simpleweighting\" option with RealisticCamera no longer "
+                "necessarily matches regular camera images. Further, pixel "
+                "values will vary a bit depending on the aperture size. See "
+                "this discussion for details: "
+                "https://github.com/mmp/pbrt-v3/issues/162#issuecomment-348625837");
 }
 
 bool RealisticCamera::TraceLensesFromFilm(const Ray &rCamera, Ray *rOut) const {
@@ -698,7 +705,7 @@ Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
     Float cosTheta = Normalize(rFilm.d).z;
     Float cos4Theta = (cosTheta * cosTheta) * (cosTheta * cosTheta);
     if (simpleWeighting)
-        return cos4Theta;
+        return cos4Theta * exitPupilBoundsArea / exitPupilBounds[0].Area();
     else
         return (shutterClose - shutterOpen) *
                (cos4Theta * exitPupilBoundsArea) / (LensRearZ() * LensRearZ());
