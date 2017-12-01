@@ -60,23 +60,38 @@ Camera::Camera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
 Float Camera::GenerateRayDifferential(const CameraSample &sample,
                                       RayDifferential *rd) const {
     Float wt = GenerateRay(sample, rd);
-    // Find camera ray after shifting one pixel in the $x$ direction
-    CameraSample sshift = sample;
-    sshift.pFilm.x++;
-    Ray rx;
-    Float wtx = GenerateRay(sshift, &rx);
-    if (wtx == 0) return 0;
-    rd->rxOrigin = rx.o;
-    rd->rxDirection = rx.d;
+    if (wt == 0) return 0;
 
-    // Find camera ray after shifting one pixel in the $y$ direction
-    sshift.pFilm.x--;
-    sshift.pFilm.y++;
-    Ray ry;
-    Float wty = GenerateRay(sshift, &ry);
-    if (wty == 0) return 0;
-    rd->ryOrigin = ry.o;
-    rd->ryDirection = ry.d;
+    // Find camera ray after shifting a fraction of a pixel in the $x$ direction
+    Float wtx;
+    for (Float eps : { .05, -.05 }) {
+        CameraSample sshift = sample;
+        sshift.pFilm.x += eps;
+        Ray rx;
+        wtx = GenerateRay(sshift, &rx);
+        rd->rxOrigin = rd->o + (rx.o - rd->o) / eps;
+        rd->rxDirection = rd->d + (rx.d - rd->d) / eps;
+        if (wtx != 0)
+            break;
+    }
+    if (wtx == 0)
+        return 0;
+
+    // Find camera ray after shifting a fraction of a pixel in the $y$ direction
+    Float wty;
+    for (Float eps : { .05, -.05 }) {
+        CameraSample sshift = sample;
+        sshift.pFilm.y += eps;
+        Ray ry;
+        wty = GenerateRay(sshift, &ry);
+        rd->ryOrigin = rd->o + (ry.o - rd->o) / eps;
+        rd->ryDirection = rd->d + (ry.d - rd->d) / eps;
+        if (wty != 0)
+            break;
+    }
+    if (wty == 0)
+        return 0;
+
     rd->hasDifferentials = true;
     return wt;
 }
