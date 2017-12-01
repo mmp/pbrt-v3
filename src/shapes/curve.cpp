@@ -67,7 +67,19 @@ static Point3f EvalBezier(const Point3f cp[4], Float u,
     Point3f cp1[3] = {Lerp(u, cp[0], cp[1]), Lerp(u, cp[1], cp[2]),
                       Lerp(u, cp[2], cp[3])};
     Point3f cp2[2] = {Lerp(u, cp1[0], cp1[1]), Lerp(u, cp1[1], cp1[2])};
-    if (deriv) *deriv = (Float)3 * (cp2[1] - cp2[0]);
+    if (deriv) {
+        if ((cp2[1] - cp2[0]).LengthSquared() > 0)
+            *deriv = 3 * (cp2[1] - cp2[0]);
+        else {
+            // For a cubic Bezier, if the first three control points (say) are
+            // coincident, then the derivative of the curve is legitimately (0,0,0)
+            // at u=0.  This is problematic for us, though, since we'd like to be
+            // able to compute a surface normal there.  In that case, just punt and
+            // take the difference between the first and last control points, which
+            // ain't great, but will hopefully do.
+            *deriv = cp[3] - cp[0];
+        }
+    }
     return Lerp(u, cp2[0], cp2[1]);
 }
 
@@ -332,6 +344,10 @@ bool Curve::recursiveIntersect(const Ray &ray, Float *tHit,
             // Compute $\dpdu$ and $\dpdv$ for curve intersection
             Vector3f dpdu, dpdv;
             EvalBezier(common->cpObj, u, &dpdu);
+            CHECK_NE(Vector3f(0, 0, 0), dpdu) << "u = " << u << ", cp = " <<
+                common->cpObj[0] << ", " << common->cpObj[1] << ", " <<
+                common->cpObj[2] << ", " << common->cpObj[3];
+
             if (common->type == CurveType::Ribbon)
                 dpdv = Normalize(Cross(nHit, dpdu)) * hitWidth;
             else {
