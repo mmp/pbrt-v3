@@ -83,18 +83,12 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &CameraToWorld,
     // Compute exit pupil bounds at sampled points on the film
     int nSamples = 64;
     exitPupilBounds.resize(nSamples);
+    exitPupilAreas.resize(nSamples);
     ParallelFor([&](int i) {
         Float r0 = (Float)i / nSamples * film->diagonal / 2;
         Float r1 = (Float)(i + 1) / nSamples * film->diagonal / 2;
-        exitPupilBounds[i] = BoundExitPupil(r0, r1);
+        exitPupilBounds[i] = BoundExitPupil(r0, r1, &exitPupilAreas[i]);
     }, nSamples);
-
-    if (simpleWeighting)
-        Warning("\"simpleweighting\" option with RealisticCamera no longer "
-                "necessarily matches regular camera images. Further, pixel "
-                "values will vary a bit depending on the aperture size. See "
-                "this discussion for details: "
-                "https://github.com/mmp/pbrt-v3/issues/162#issuecomment-348625837");
 }
 
 bool RealisticCamera::TraceLensesFromFilm(const Ray &rCamera, Ray *rOut) const {
@@ -531,7 +525,8 @@ Float RealisticCamera::FocusDistance(Float filmDistance) {
 }
 
 
-Bounds2f RealisticCamera::BoundExitPupil(Float pFilmX0, Float pFilmX1) const {
+Bounds2f RealisticCamera::BoundExitPupil(Float pFilmX0, Float pFilmX1,
+                                         Float *pupilArea) const {
     Bounds2f pupilBounds;
     // Sample a collection of points on the rear lens to find exit pupil
     const int nSamples = 1024 * 1024;
@@ -549,9 +544,10 @@ Bounds2f RealisticCamera::BoundExitPupil(Float pFilmX0, Float pFilmX1) const {
                       Lerp(u[1], projRearBounds.pMin.y, projRearBounds.pMax.y),
                       LensRearZ());
 
-        // Expand pupil bounds if ray makes it through the lens system
-        if (Inside(Point2f(pRear.x, pRear.y), pupilBounds) ||
-            TraceLensesFromFilm(Ray(pFilm, pRear - pFilm), nullptr)) {
+        // Expand pupil bounds if ray makes it through the lens system.
+        // Note: Need to trace all rays, even if they are inside the bounds,
+        // so that we can estimate the area of the actual exit pupil.
+        if (TraceLensesFromFilm(Ray(pFilm, pRear - pFilm), nullptr)) {
             pupilBounds = Union(pupilBounds, Point2f(pRear.x, pRear.y));
             ++nExitingRays;
         }
@@ -561,12 +557,15 @@ Bounds2f RealisticCamera::BoundExitPupil(Float pFilmX0, Float pFilmX1) const {
     if (nExitingRays == 0) {
         LOG(INFO) << StringPrintf("Unable to find exit pupil in x = [%f,%f] on film.",
                                   pFilmX0, pFilmX1);
+        if (pupilArea) *pupilArea = 0;
         return projRearBounds;
     }
 
     // Expand bounds to account for sample spacing
     pupilBounds = Expand(pupilBounds, 2 * projRearBounds.Diagonal().Length() /
                                           std::sqrt(nSamples));
+    if (pupilArea) *pupilArea = Float(nExitingRays) / Float(nSamples) *
+                       projRearBounds.Area();
     return pupilBounds;
 }
 
@@ -612,13 +611,15 @@ void RealisticCamera::RenderExitPupil(Float sx, Float sy,
 
 Point3f RealisticCamera::SampleExitPupil(const Point2f &pFilm,
                                          const Point2f &lensSample,
-                                         Float *sampleBoundsArea) const {
+                                         Float *sampleBoundsArea,
+                                         Float *exitPupilArea) const {
     // Find exit pupil bound for sample distance from film center
     Float rFilm = std::sqrt(pFilm.x * pFilm.x + pFilm.y * pFilm.y);
     int rIndex = rFilm / (film->diagonal / 2) * exitPupilBounds.size();
     rIndex = std::min((int)exitPupilBounds.size() - 1, rIndex);
     Bounds2f pupilBounds = exitPupilBounds[rIndex];
     if (sampleBoundsArea) *sampleBoundsArea = pupilBounds.Area();
+    if (exitPupilArea) *exitPupilArea = exitPupilAreas[rIndex];
 
     // Generate sample point inside exit pupil bound
     Point2f pLens = pupilBounds.Lerp(lensSample);
@@ -686,9 +687,9 @@ Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
     Point3f pFilm(-pFilm2.x, pFilm2.y, 0);
 
     // Trace ray from _pFilm_ through lens system
-    Float exitPupilBoundsArea;
+    Float exitPupilBoundsArea, exitPupilArea;
     Point3f pRear = SampleExitPupil(Point2f(pFilm.x, pFilm.y), sample.pLens,
-                                    &exitPupilBoundsArea);
+                                    &exitPupilBoundsArea, &exitPupilArea);
     Ray rFilm(pFilm, pRear - pFilm, Infinity,
               Lerp(sample.time, shutterOpen, shutterClose));
     if (!TraceLensesFromFilm(rFilm, ray)) {
@@ -705,7 +706,13 @@ Float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
     Float cosTheta = Normalize(rFilm.d).z;
     Float cos4Theta = (cosTheta * cosTheta) * (cosTheta * cosTheta);
     if (simpleWeighting)
-        return cos4Theta * exitPupilBoundsArea / exitPupilBounds[0].Area();
+        // Update since book publication (for details, see
+        // https://github.com/mmp/pbrt-v3/issues/162). Normalize using an
+        // estimate of the fraction of outgoing rays that will be vignetted
+        // due to being outside of the actual exit pupil bounds in order to
+        // get rid of banding artifacts while also maintaining the same
+        // image brightness as regular projective camera implementations.
+        return cos4Theta * exitPupilBoundsArea / exitPupilArea;
     else
         return (shutterClose - shutterOpen) *
                (cos4Theta * exitPupilBoundsArea) / (LensRearZ() * LensRearZ());
