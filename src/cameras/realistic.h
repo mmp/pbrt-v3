@@ -69,7 +69,6 @@ class RealisticCamera : public Camera {
     const bool simpleWeighting;
     std::vector<LensElementInterface> elementInterfaces;
     std::vector<Bounds2f> exitPupilBounds;
-    std::vector<Float> exitPupilAreas;
 
     // RealisticCamera Private Methods
     Float LensRearZ() const { return elementInterfaces.back().thickness; }
@@ -98,11 +97,10 @@ class RealisticCamera : public Camera {
     Float FocusThickLens(Float focusDistance);
     Float FocusBinarySearch(Float focusDistance);
     Float FocusDistance(Float filmDist);
-    Bounds2f BoundExitPupil(Float pFilmX0, Float pFilmX1,
-                            Float *pupilArea = nullptr) const;
+    Bounds2f BoundExitPupil(Float pFilmX0, Float pFilmX1) const;
     void RenderExitPupil(Float sx, Float sy, const char *filename) const;
     Point3f SampleExitPupil(const Point2f &pFilm, const Point2f &lensSample,
-                            Float *sampleBoundsArea, Float *exitPupilArea) const;
+                            Float *sampleBoundsArea) const;
     void TestExitPupilBounds() const;
 };
 
