@@ -298,24 +298,23 @@ int cat(int argc, char *argv[]) {
         std::unique_ptr<RGBSpectrum[]> img = ReadImage(argv[i], &res);
         if (!img) continue;
         if (sort) {
-            std::vector<std::pair<int, RGBSpectrum>> sorted;
+            std::vector<std::pair<Point2i, RGBSpectrum>> sorted;
             sorted.reserve(res.x * res.y);
             for (int y = 0; y < res.y; ++y) {
                 for (int x = 0; x < res.x; ++x) {
-                    int offset = y * res.x + x;
-                    sorted.push_back({offset, img[offset]});
+                    sorted.push_back({{x, y}, img[y * res.x + x]});
                 }
             }
             std::sort(sorted.begin(), sorted.end(),
-                      [](const std::pair<int, RGBSpectrum> &a,
-                         const std::pair<int, RGBSpectrum> &b) {
+                      [](const std::pair<Point2i, RGBSpectrum> &a,
+                         const std::pair<Point2i, RGBSpectrum> &b) {
                           return a.second.y() < b.second.y();
                       });
             for (const auto &v : sorted) {
                 Float rgb[3];
                 v.second.ToRGB(rgb);
-                printf("(%d, %d): (%.9g %.9g %.9g)\n", v.first / res.x,
-                       v.first % res.x, rgb[0], rgb[1], rgb[2]);
+                printf("(%d, %d): (%.9g %.9g %.9g)\n", v.first.x,
+                       v.first.y, rgb[0], rgb[1], rgb[2]);
             }
         } else {
             for (int y = 0; y < res.y; ++y) {
