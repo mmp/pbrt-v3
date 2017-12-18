@@ -77,7 +77,7 @@ bool Disk::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Float v = 1 - oneMinusV;
     Vector3f dpdu(-phiMax * pHit.y, phiMax * pHit.x, 0);
     Vector3f dpdv =
-        Vector3f(pHit.x, pHit.y, 0.) * (innerRadius - radius) / rHit;
+        Vector3f(pHit.x, pHit.y, 0.) * (radius - innerRadius) / rHit;
     Normal3f dndu(0, 0, 0), dndv(0, 0, 0);
 
     // Refine disk intersection point
