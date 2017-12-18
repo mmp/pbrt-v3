@@ -94,6 +94,7 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             Vector3f wo = -ray.d, wi;
             mi.phase->Sample_p(wo, &wi, sampler.Get2D());
             ray = mi.SpawnRay(wi);
+            specularBounce = false;
         } else {
             ++surfaceInteractions;
             // Handle scattering at point on surface for volumetric path tracer
