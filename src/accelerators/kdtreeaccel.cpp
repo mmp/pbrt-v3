@@ -287,7 +287,7 @@ bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const {
 
             // Compute parametric distance along ray to split plane
             int axis = node->SplitAxis();
-            Float tPlane = (node->SplitPos() - ray.o[axis]) * invDir[axis];
+            Float tSplit = (node->SplitPos() - ray.o[axis]) * invDir[axis];
 
             // Get node children pointers for ray
             const KdAccelNode *firstChild, *secondChild;
@@ -303,18 +303,18 @@ bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const {
             }
 
             // Advance to next child node, possibly enqueue other child
-            if (tPlane > tMax || tPlane <= 0)
+            if (tSplit > tMax || tSplit <= 0)
                 node = firstChild;
-            else if (tPlane < tMin)
+            else if (tSplit < tMin)
                 node = secondChild;
             else {
                 // Enqueue _secondChild_ in todo list
                 todo[todoPos].node = secondChild;
-                todo[todoPos].tMin = tPlane;
+                todo[todoPos].tMin = tSplit;
                 todo[todoPos].tMax = tMax;
                 ++todoPos;
                 node = firstChild;
-                tMax = tPlane;
+                tMax = tSplit;
             }
         } else {
             // Check for intersections inside leaf node
@@ -396,7 +396,7 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
 
             // Compute parametric distance along ray to split plane
             int axis = node->SplitAxis();
-            Float tPlane = (node->SplitPos() - ray.o[axis]) * invDir[axis];
+            Float tSplit = (node->SplitPos() - ray.o[axis]) * invDir[axis];
 
             // Get node children pointers for ray
             const KdAccelNode *firstChild, *secondChild;
@@ -412,18 +412,18 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
             }
 
             // Advance to next child node, possibly enqueue other child
-            if (tPlane > tMax || tPlane <= 0)
+            if (tSplit > tMax || tSplit <= 0)
                 node = firstChild;
-            else if (tPlane < tMin)
+            else if (tSplit < tMin)
                 node = secondChild;
             else {
                 // Enqueue _secondChild_ in todo list
                 todo[todoPos].node = secondChild;
-                todo[todoPos].tMin = tPlane;
+                todo[todoPos].tMin = tSplit;
                 todo[todoPos].tMax = tMax;
                 ++todoPos;
                 node = firstChild;
-                tMax = tPlane;
+                tMax = tSplit;
             }
         }
     }
