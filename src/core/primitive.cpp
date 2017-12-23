@@ -39,6 +39,8 @@
 
 namespace pbrt {
 
+STAT_MEMORY_COUNTER("Memory/Primitives", primitiveMemory);
+
 // Primitive Method Definitions
 Primitive::~Primitive() {}
 const AreaLight *Aggregate::GetAreaLight() const {
@@ -65,6 +67,12 @@ void Aggregate::ComputeScatteringFunctions(SurfaceInteraction *isect,
 }
 
 // TransformedPrimitive Method Definitions
+TransformedPrimitive::TransformedPrimitive(std::shared_ptr<Primitive> &primitive,
+                                           const AnimatedTransform &PrimitiveToWorld)
+    : primitive(primitive), PrimitiveToWorld(PrimitiveToWorld) {
+    primitiveMemory += sizeof(*this);
+}
+
 bool TransformedPrimitive::Intersect(const Ray &r,
                                      SurfaceInteraction *isect) const {
     // Compute _ray_ after transformation by _PrimitiveToWorld_
@@ -88,6 +96,17 @@ bool TransformedPrimitive::IntersectP(const Ray &r) const {
 }
 
 // GeometricPrimitive Method Definitions
+GeometricPrimitive::GeometricPrimitive(const std::shared_ptr<Shape> &shape,
+                                       const std::shared_ptr<Material> &material,
+                                       const std::shared_ptr<AreaLight> &areaLight,
+                                       const MediumInterface &mediumInterface)
+    : shape(shape),
+    material(material),
+    areaLight(areaLight),
+    mediumInterface(mediumInterface) {
+    primitiveMemory += sizeof(*this);
+}
+
 Bounds3f GeometricPrimitive::WorldBound() const { return shape->WorldBound(); }
 
 bool GeometricPrimitive::IntersectP(const Ray &r) const {
