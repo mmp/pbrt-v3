@@ -98,8 +98,8 @@ struct SDEdge {
     SDEdge(SDVertex *v0 = nullptr, SDVertex *v1 = nullptr) {
         v[0] = std::min(v0, v1);
         v[1] = std::max(v0, v1);
-        f[0] = f[1] = nullptr;
-        f0edgeNum = -1;
+        f = nullptr;
+        edgeNum = -1;
     }
 
     // SDEdge Comparison Function
@@ -108,8 +108,8 @@ struct SDEdge {
         return v[0] < e2.v[0];
     }
     SDVertex *v[2];
-    SDFace *f[2];
-    int f0edgeNum;
+    SDFace *f;
+    int edgeNum;
 };
 
 // LoopSubdiv Local Declarations
@@ -183,14 +183,14 @@ static std::vector<std::shared_ptr<Shape>> LoopSubdivide(
             SDEdge e(f->v[v0], f->v[v1]);
             if (edges.find(e) == edges.end()) {
                 // Handle new edge
-                e.f[0] = f;
-                e.f0edgeNum = edgeNum;
+                e.f = f;
+                e.edgeNum = edgeNum;
                 edges.insert(e);
             } else {
                 // Handle previously seen edge
                 e = *edges.find(e);
-                e.f[0]->f[e.f0edgeNum] = f;
-                f->f[edgeNum] = e.f[0];
+                e.f->f[e.edgeNum] = f;
+                f->f[edgeNum] = e.f;
                 edges.erase(e);
             }
         }
