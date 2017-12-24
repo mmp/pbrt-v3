@@ -783,7 +783,6 @@ void pbrtCleanup() {
         Error("pbrtCleanup() called while inside world block.");
     currentApiState = APIState::Uninitialized;
     ParallelCleanup();
-    renderOptions.reset(nullptr);
     CleanupProfiler();
 }
 
@@ -1486,6 +1485,7 @@ void pbrtWorldEnd() {
     currentApiState = APIState::OptionsBlock;
     ImageTexture<Float, Float>::ClearCache();
     ImageTexture<RGBSpectrum, Spectrum>::ClearCache();
+    renderOptions.reset(new RenderOptions);
 
     if (!PbrtOptions.cat && !PbrtOptions.toPly) {
         MergeWorkerThreadStats();
