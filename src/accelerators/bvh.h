@@ -58,7 +58,7 @@ class BVHAccel : public Aggregate {
     enum class SplitMethod { SAH, HLBVH, Middle, EqualCounts };
 
     // BVHAccel Public Methods
-    BVHAccel(const std::vector<std::shared_ptr<Primitive>> &p,
+    BVHAccel(std::vector<std::shared_ptr<Primitive>> p,
              int maxPrimsInNode = 1,
              SplitMethod splitMethod = SplitMethod::SAH);
     Bounds3f WorldBound() const;
@@ -95,7 +95,7 @@ class BVHAccel : public Aggregate {
 };
 
 std::shared_ptr<BVHAccel> CreateBVHAccelerator(
-    const std::vector<std::shared_ptr<Primitive>> &prims, const ParamSet &ps);
+    std::vector<std::shared_ptr<Primitive>> prims, const ParamSet &ps);
 
 }  // namespace pbrt
 

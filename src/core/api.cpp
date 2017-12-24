@@ -660,13 +660,13 @@ std::shared_ptr<AreaLight> MakeAreaLight(const std::string &name,
 
 std::shared_ptr<Primitive> MakeAccelerator(
     const std::string &name,
-    const std::vector<std::shared_ptr<Primitive>> &prims,
+    std::vector<std::shared_ptr<Primitive>> prims,
     const ParamSet &paramSet) {
     std::shared_ptr<Primitive> accel;
     if (name == "bvh")
-        accel = CreateBVHAccelerator(prims, paramSet);
+        accel = CreateBVHAccelerator(std::move(prims), paramSet);
     else if (name == "kdtree")
-        accel = CreateKdTreeAccelerator(prims, paramSet);
+        accel = CreateKdTreeAccelerator(std::move(prims), paramSet);
     else
         Warning("Accelerator \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();
@@ -1423,10 +1423,10 @@ void pbrtObjectInstance(const std::string &name) {
     if (in.size() > 1) {
         // Create aggregate for instance _Primitive_s
         std::shared_ptr<Primitive> accel(
-            MakeAccelerator(renderOptions->AcceleratorName, in,
+            MakeAccelerator(renderOptions->AcceleratorName, std::move(in),
                             renderOptions->AcceleratorParams));
         if (!accel) accel = std::make_shared<BVHAccel>(in);
-        in.erase(in.begin(), in.end());
+        in.clear();
         in.push_back(accel);
     }
     static_assert(MaxTransforms == 2,
@@ -1506,12 +1506,12 @@ void pbrtWorldEnd() {
 
 Scene *RenderOptions::MakeScene() {
     std::shared_ptr<Primitive> accelerator =
-        MakeAccelerator(AcceleratorName, primitives, AcceleratorParams);
+        MakeAccelerator(AcceleratorName, std::move(primitives), AcceleratorParams);
     if (!accelerator) accelerator = std::make_shared<BVHAccel>(primitives);
     Scene *scene = new Scene(accelerator, lights);
     // Erase primitives and lights from _RenderOptions_
-    primitives.erase(primitives.begin(), primitives.end());
-    lights.erase(lights.begin(), lights.end());
+    primitives.clear();
+    lights.clear();
     return scene;
 }
 

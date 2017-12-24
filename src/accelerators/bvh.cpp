@@ -180,11 +180,11 @@ static void RadixSort(std::vector<MortonPrimitive> *v) {
 }
 
 // BVHAccel Method Definitions
-BVHAccel::BVHAccel(const std::vector<std::shared_ptr<Primitive>> &p,
+BVHAccel::BVHAccel(std::vector<std::shared_ptr<Primitive>> p,
                    int maxPrimsInNode, SplitMethod splitMethod)
     : maxPrimsInNode(std::min(255, maxPrimsInNode)),
       splitMethod(splitMethod),
-      primitives(p) {
+      primitives(std::move(p)) {
     ProfilePhase _(Prof::AccelConstruction);
     if (primitives.empty()) return;
     // Build BVH from _primitives_
@@ -738,7 +738,7 @@ bool BVHAccel::IntersectP(const Ray &ray) const {
 }
 
 std::shared_ptr<BVHAccel> CreateBVHAccelerator(
-    const std::vector<std::shared_ptr<Primitive>> &prims, const ParamSet &ps) {
+    std::vector<std::shared_ptr<Primitive>> prims, const ParamSet &ps) {
     std::string splitMethodName = ps.FindOneString("splitmethod", "sah");
     BVHAccel::SplitMethod splitMethod;
     if (splitMethodName == "sah")
@@ -756,7 +756,7 @@ std::shared_ptr<BVHAccel> CreateBVHAccelerator(
     }
 
     int maxPrimsInNode = ps.FindOneInt("maxnodeprims", 4);
-    return std::make_shared<BVHAccel>(prims, maxPrimsInNode, splitMethod);
+    return std::make_shared<BVHAccel>(std::move(prims), maxPrimsInNode, splitMethod);
 }
 
 }  // namespace pbrt
