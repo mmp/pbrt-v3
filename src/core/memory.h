@@ -63,7 +63,6 @@ alignas(PBRT_L1_CACHE_LINE_SIZE)
     // MemoryArena Public Methods
     MemoryArena(size_t blockSize = 262144) : blockSize(blockSize) {}
     ~MemoryArena() {
-        LOG(INFO) << "MemoryArena freeing memory: " << TotalAllocated();
         FreeAligned(currentBlock);
         for (auto &block : usedBlocks) FreeAligned(block.second);
         for (auto &block : availableBlocks) FreeAligned(block.second);
