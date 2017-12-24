@@ -1211,6 +1211,7 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         std::shared_ptr<Material> mtl = graphicsState.GetMaterialForShape(params);
         params.ReportUnused();
         MediumInterface mi = graphicsState.CreateMediumInterface();
+        prims.reserve(shapes.size());
         for (auto s : shapes) {
             // Possibly create area light for shape
             std::shared_ptr<AreaLight> area;
@@ -1240,6 +1241,7 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         std::shared_ptr<Material> mtl = graphicsState.GetMaterialForShape(params);
         params.ReportUnused();
         MediumInterface mi = graphicsState.CreateMediumInterface();
+        prims.reserve(shapes.size());
         for (auto s : shapes)
             prims.push_back(
                 std::make_shared<GeometricPrimitive>(s, mtl, nullptr, mi));
