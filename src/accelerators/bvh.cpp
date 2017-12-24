@@ -206,10 +206,13 @@ BVHAccel::BVHAccel(const std::vector<std::shared_ptr<Primitive>> &p,
         root = recursiveBuild(arena, primitiveInfo, 0, primitives.size(),
                               &totalNodes, orderedPrims);
     primitives.swap(orderedPrims);
+    primitiveInfo.resize(0);
     LOG(INFO) << StringPrintf("BVH created with %d nodes for %d "
-                              "primitives (%.2f MB)", totalNodes,
-                              (int)primitives.size(),
+                              "primitives (%.2f MB), arena allocated %.2f MB",
+                              totalNodes, (int)primitives.size(),
                               float(totalNodes * sizeof(LinearBVHNode)) /
+                              (1024.f * 1024.f),
+                              float(arena.TotalAllocated()) /
                               (1024.f * 1024.f));
 
     // Compute representation of depth-first traversal of BVH tree
