@@ -64,9 +64,10 @@ TriangleMesh::TriangleMesh(
       shadowAlphaMask(shadowAlphaMask) {
     ++nMeshes;
     nTris += nTriangles;
-    triMeshBytes += sizeof(*this) + (3 * nTriangles * sizeof(int)) +
+    triMeshBytes += sizeof(*this) + this->vertexIndices.size() * sizeof(int) +
                     nVertices * (sizeof(*P) + (N ? sizeof(*N) : 0) +
-                                 (S ? sizeof(*S) : 0) + (UV ? sizeof(*UV) : 0));
+                                 (S ? sizeof(*S) : 0) + (UV ? sizeof(*UV) : 0) +
+                                 (fIndices ? sizeof(*fIndices) : 0));
 
     // Transform mesh vertices to world space
     p.reset(new Point3f[nVertices]);
