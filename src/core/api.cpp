@@ -371,8 +371,12 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
             }
             const Normal3f *N = paramSet.FindNormal3f("N", &nni);
             const Vector3f *S = paramSet.FindVector3f("S", &nsi);
+            int nfi;
+            const int *faceIndices = paramSet.FindInt("faceIndices", &nfi);
+            if (faceIndices) CHECK_EQ(nfi, nvi / 3);
 
-            if (!WritePlyFile(fn.c_str(), nvi / 3, vi, npi, P, S, N, uvs))
+            if (!WritePlyFile(fn.c_str(), nvi / 3, vi, npi, P, S, N, uvs,
+                              faceIndices))
                 Error("Unable to write PLY file \"%s\"", fn.c_str());
 
             printf("%*sShape \"plymesh\" \"string filename\" \"%s\" ",

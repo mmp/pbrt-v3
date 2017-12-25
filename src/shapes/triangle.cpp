@@ -111,56 +111,60 @@ std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
 
 bool WritePlyFile(const std::string &filename, int nTriangles,
                   const int *vertexIndices, int nVertices, const Point3f *P,
-                  const Vector3f *S, const Normal3f *N, const Point2f *UV) {
+                  const Vector3f *S, const Normal3f *N, const Point2f *UV,
+                  const int *faceIndices) {
     p_ply plyFile =
         ply_create(filename.c_str(), PLY_DEFAULT, PlyErrorCallback, 0, nullptr);
-    if (plyFile != nullptr) {
-        ply_add_element(plyFile, "vertex", nVertices);
-        ply_add_scalar_property(plyFile, "x", PLY_FLOAT);
-        ply_add_scalar_property(plyFile, "y", PLY_FLOAT);
-        ply_add_scalar_property(plyFile, "z", PLY_FLOAT);
-        if (N != nullptr) {
-            ply_add_scalar_property(plyFile, "nx", PLY_FLOAT);
-            ply_add_scalar_property(plyFile, "ny", PLY_FLOAT);
-            ply_add_scalar_property(plyFile, "nz", PLY_FLOAT);
-        }
-        if (UV != nullptr) {
-            ply_add_scalar_property(plyFile, "u", PLY_FLOAT);
-            ply_add_scalar_property(plyFile, "v", PLY_FLOAT);
-        }
-        if (S != nullptr)
-            Warning("PLY mesh in \"%s\" will be missing tangent vectors \"S\".",
-                    filename.c_str());
+    if (plyFile == nullptr)
+        return false;
 
-        ply_add_element(plyFile, "face", nTriangles);
-        ply_add_list_property(plyFile, "vertex_indices", PLY_UINT8, PLY_INT);
-        ply_write_header(plyFile);
-
-        for (int i = 0; i < nVertices; ++i) {
-            ply_write(plyFile, P[i].x);
-            ply_write(plyFile, P[i].y);
-            ply_write(plyFile, P[i].z);
-            if (N) {
-                ply_write(plyFile, N[i].x);
-                ply_write(plyFile, N[i].y);
-                ply_write(plyFile, N[i].z);
-            }
-            if (UV) {
-                ply_write(plyFile, UV[i].x);
-                ply_write(plyFile, UV[i].y);
-            }
-        }
-
-        for (int i = 0; i < nTriangles; ++i) {
-            ply_write(plyFile, 3);
-            ply_write(plyFile, vertexIndices[3 * i]);
-            ply_write(plyFile, vertexIndices[3 * i + 1]);
-            ply_write(plyFile, vertexIndices[3 * i + 2]);
-        }
-        ply_close(plyFile);
-        return true;
+    ply_add_element(plyFile, "vertex", nVertices);
+    ply_add_scalar_property(plyFile, "x", PLY_FLOAT);
+    ply_add_scalar_property(plyFile, "y", PLY_FLOAT);
+    ply_add_scalar_property(plyFile, "z", PLY_FLOAT);
+    if (N) {
+        ply_add_scalar_property(plyFile, "nx", PLY_FLOAT);
+        ply_add_scalar_property(plyFile, "ny", PLY_FLOAT);
+        ply_add_scalar_property(plyFile, "nz", PLY_FLOAT);
     }
-    return false;
+    if (UV) {
+        ply_add_scalar_property(plyFile, "u", PLY_FLOAT);
+        ply_add_scalar_property(plyFile, "v", PLY_FLOAT);
+    }
+    if (S)
+        Warning("%s: PLY mesh will be missing tangent vectors \"S\".",
+                filename.c_str());
+
+    ply_add_element(plyFile, "face", nTriangles);
+    ply_add_list_property(plyFile, "vertex_indices", PLY_UINT8, PLY_INT);
+    ply_add_scalar_property(plyFile, "face_indices", PLY_INT);
+    ply_write_header(plyFile);
+
+    for (int i = 0; i < nVertices; ++i) {
+        ply_write(plyFile, P[i].x);
+        ply_write(plyFile, P[i].y);
+        ply_write(plyFile, P[i].z);
+        if (N) {
+            ply_write(plyFile, N[i].x);
+            ply_write(plyFile, N[i].y);
+            ply_write(plyFile, N[i].z);
+        }
+        if (UV) {
+            ply_write(plyFile, UV[i].x);
+            ply_write(plyFile, UV[i].y);
+        }
+    }
+
+    for (int i = 0; i < nTriangles; ++i) {
+        ply_write(plyFile, 3);
+        ply_write(plyFile, vertexIndices[3 * i]);
+        ply_write(plyFile, vertexIndices[3 * i + 1]);
+        ply_write(plyFile, vertexIndices[3 * i + 2]);
+        if (faceIndices)
+            ply_write(plyFile, faceIndices[i]);
+    }
+    ply_close(plyFile);
+    return true;
 }
 
 Bounds3f Triangle::ObjectBound() const {
