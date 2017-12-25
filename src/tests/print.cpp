@@ -15,7 +15,7 @@ TEST(StringPrintf, Basics) {
     EXPECT_EQ(StringPrintf("%f, %f, %f", 1., 1.5, -8.125),
               "1, 1.5, -8.125");
 #ifndef NDEBUG
-    EXPECT_DEATH(StringPrintf("not enough %s"), "Assertion.*failed.*line");
+    EXPECT_DEATH(StringPrintf("not enough %s"), ".*Check failed: .*");
 #endif
 }
 
