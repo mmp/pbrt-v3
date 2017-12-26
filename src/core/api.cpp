@@ -1081,6 +1081,14 @@ void pbrtTransformEnd() {
 void pbrtTexture(const std::string &name, const std::string &type,
                  const std::string &texname, const ParamSet &params) {
     VERIFY_WORLD("Texture");
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
+        printf("%*sTexture \"%s\" \"%s\" \"%s\" ", catIndentCount, "",
+               name.c_str(), type.c_str(), texname.c_str());
+        params.Print(catIndentCount);
+        printf("\n");
+        return;
+    }
+
     TextureParams tp(params, params, graphicsState.floatTextures,
                      graphicsState.spectrumTextures);
     if (type == "float") {
@@ -1103,12 +1111,6 @@ void pbrtTexture(const std::string &name, const std::string &type,
         if (st) graphicsState.spectrumTextures[name] = st;
     } else
         Error("Texture type \"%s\" unknown.", type.c_str());
-    if (PbrtOptions.cat || PbrtOptions.toPly) {
-        printf("%*sTexture \"%s\" \"%s\" \"%s\" ", catIndentCount, "",
-               name.c_str(), type.c_str(), texname.c_str());
-        params.Print(catIndentCount);
-        printf("\n");
-    }
 }
 
 void pbrtMaterial(const std::string &name, const ParamSet &params) {
@@ -1155,14 +1157,17 @@ void pbrtMakeNamedMaterial(const std::string &name, const ParamSet &params) {
 
 void pbrtNamedMaterial(const std::string &name) {
     VERIFY_WORLD("NamedMaterial");
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
+        printf("%*sNamedMaterial \"%s\"\n", catIndentCount, "", name.c_str());
+        return;
+    }
+
     auto iter = graphicsState.namedMaterials.find(name);
     if (iter == graphicsState.namedMaterials.end()) {
         Error("NamedMaterial \"%s\" unknown.", name.c_str());
         return;
     }
     graphicsState.currentMaterial = iter->second;
-    if (PbrtOptions.cat || PbrtOptions.toPly)
-        printf("%*sNamedMaterial \"%s\"\n", catIndentCount, "", name.c_str());
 }
 
 void pbrtLightSource(const std::string &name, const ParamSet &params) {
@@ -1411,9 +1416,12 @@ STAT_COUNTER("Scene/Object instances used", nObjectInstancesUsed);
 
 void pbrtObjectInstance(const std::string &name) {
     VERIFY_WORLD("ObjectInstance");
-    // Perform object instance error checking
-    if (PbrtOptions.cat || PbrtOptions.toPly)
+    if (PbrtOptions.cat || PbrtOptions.toPly) {
         printf("%*sObjectInstance \"%s\"\n", catIndentCount, "", name.c_str());
+        return;
+    }
+
+    // Perform object instance error checking
     if (renderOptions->currentInstance) {
         Error("ObjectInstance can't be called inside instance definition");
         return;
