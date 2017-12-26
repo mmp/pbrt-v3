@@ -137,7 +137,8 @@ bool WritePlyFile(const std::string &filename, int nTriangles,
 
     ply_add_element(plyFile, "face", nTriangles);
     ply_add_list_property(plyFile, "vertex_indices", PLY_UINT8, PLY_INT);
-    ply_add_scalar_property(plyFile, "face_indices", PLY_INT);
+    if (faceIndices)
+        ply_add_scalar_property(plyFile, "face_indices", PLY_INT);
     ply_write_header(plyFile);
 
     for (int i = 0; i < nVertices; ++i) {
