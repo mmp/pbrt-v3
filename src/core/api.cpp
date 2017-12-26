@@ -354,58 +354,52 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
 
             int nvi, npi, nuvi, nsi, nni;
             const int *vi = paramSet.FindInt("indices", &nvi);
-            const Point3f *P = paramSet.FindPoint3f("P", &npi);
-            const Point2f *uvs = paramSet.FindPoint2f("uv", &nuvi);
-            if (!uvs) uvs = paramSet.FindPoint2f("st", &nuvi);
-            std::vector<Point2f> tempUVs;
-            if (!uvs) {
-                const Float *fuv = paramSet.FindFloat("uv", &nuvi);
-                if (!fuv) fuv = paramSet.FindFloat("st", &nuvi);
-                if (fuv) {
-                    nuvi /= 2;
-                    tempUVs.reserve(nuvi);
-                    for (int i = 0; i < nuvi; ++i)
-                        tempUVs.push_back(Point2f(fuv[2 * i], fuv[2 * i + 1]));
-                    uvs = &tempUVs[0];
+
+            if (nvi < 500) {
+                // It's a small mesh; don't bother with a PLY file after all.
+                printf("%*sShape \"%s\" ", catIndentCount, "", name.c_str());
+                paramSet.Print(catIndentCount);
+                printf("\n");
+            } else {
+                const Point3f *P = paramSet.FindPoint3f("P", &npi);
+                const Point2f *uvs = paramSet.FindPoint2f("uv", &nuvi);
+                if (!uvs) uvs = paramSet.FindPoint2f("st", &nuvi);
+                std::vector<Point2f> tempUVs;
+                if (!uvs) {
+                    const Float *fuv = paramSet.FindFloat("uv", &nuvi);
+                    if (!fuv) fuv = paramSet.FindFloat("st", &nuvi);
+                    if (fuv) {
+                        nuvi /= 2;
+                        tempUVs.reserve(nuvi);
+                        for (int i = 0; i < nuvi; ++i)
+                            tempUVs.push_back(Point2f(fuv[2 * i], fuv[2 * i + 1]));
+                        uvs = &tempUVs[0];
+                    }
                 }
+                const Normal3f *N = paramSet.FindNormal3f("N", &nni);
+                const Vector3f *S = paramSet.FindVector3f("S", &nsi);
+                int nfi;
+                const int *faceIndices = paramSet.FindInt("faceIndices", &nfi);
+                if (faceIndices) CHECK_EQ(nfi, nvi / 3);
+
+                if (!WritePlyFile(fn.c_str(), nvi / 3, vi, npi, P, S, N, uvs,
+                                  faceIndices))
+                    Error("Unable to write PLY file \"%s\"", fn.c_str());
+
+                ParamSet ps = paramSet;
+                ps.EraseInt("indices");
+                ps.ErasePoint3f("P");
+                ps.ErasePoint2f("uv");
+                ps.ErasePoint2f("st");
+                ps.EraseNormal3f("N");
+                ps.EraseVector3f("S");
+                ps.EraseInt("faceIndices");
+
+                printf("%*sShape \"plymesh\" \"string filename\" \"%s\" ",
+                       catIndentCount, "", fn.c_str());
+                ps.Print(catIndentCount);
+                printf("\n");
             }
-            const Normal3f *N = paramSet.FindNormal3f("N", &nni);
-            const Vector3f *S = paramSet.FindVector3f("S", &nsi);
-            int nfi;
-            const int *faceIndices = paramSet.FindInt("faceIndices", &nfi);
-            if (faceIndices) CHECK_EQ(nfi, nvi / 3);
-
-            if (!WritePlyFile(fn.c_str(), nvi / 3, vi, npi, P, S, N, uvs,
-                              faceIndices))
-                Error("Unable to write PLY file \"%s\"", fn.c_str());
-
-            printf("%*sShape \"plymesh\" \"string filename\" \"%s\" ",
-                   catIndentCount, "", fn.c_str());
-
-            std::string alphaTex = paramSet.FindTexture("alpha");
-            if (alphaTex != "")
-                printf("\n%*s\"texture alpha\" \"%s\" ", catIndentCount + 8, "",
-                       alphaTex.c_str());
-            else {
-                int count;
-                const Float *alpha = paramSet.FindFloat("alpha", &count);
-                if (alpha)
-                    printf("\n%*s\"float alpha\" %f ", catIndentCount + 8, "",
-                           *alpha);
-            }
-
-            std::string shadowAlphaTex = paramSet.FindTexture("shadowalpha");
-            if (shadowAlphaTex != "")
-                printf("\n%*s\"texture shadowalpha\" \"%s\" ",
-                       catIndentCount + 8, "", shadowAlphaTex.c_str());
-            else {
-                int count;
-                const Float *alpha = paramSet.FindFloat("shadowalpha", &count);
-                if (alpha)
-                    printf("\n%*s\"float shadowalpha\" %f ", catIndentCount + 8,
-                           "", *alpha);
-            }
-            printf("\n");
         } else
             shapes = CreateTriangleMeshShape(object2world, world2object,
                                              reverseOrientation, paramSet,
