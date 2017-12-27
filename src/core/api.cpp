@@ -347,12 +347,7 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
                                   reverseOrientation, paramSet);
     else if (name == "trianglemesh") {
         if (PbrtOptions.toPly) {
-            static int count = 1;
-            const char *plyPrefix =
-                getenv("PLY_PREFIX") ? getenv("PLY_PREFIX") : "mesh";
-            std::string fn = StringPrintf("%s_%05d.ply", plyPrefix, count++);
-
-            int nvi, npi, nuvi, nsi, nni;
+            int nvi;
             const int *vi = paramSet.FindInt("indices", &nvi);
 
             if (nvi < 500) {
@@ -361,6 +356,12 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
                 paramSet.Print(catIndentCount);
                 printf("\n");
             } else {
+                static int count = 1;
+                const char *plyPrefix =
+                    getenv("PLY_PREFIX") ? getenv("PLY_PREFIX") : "mesh";
+                std::string fn = StringPrintf("%s_%05d.ply", plyPrefix, count++);
+
+                int npi, nuvi, nsi, nni;
                 const Point3f *P = paramSet.FindPoint3f("P", &npi);
                 const Point2f *uvs = paramSet.FindPoint2f("uv", &nuvi);
                 if (!uvs) uvs = paramSet.FindPoint2f("st", &nuvi);
