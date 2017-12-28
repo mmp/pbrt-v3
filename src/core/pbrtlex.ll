@@ -94,6 +94,7 @@ void include_push(char *filename) {
         ii.lineNum = line_num;
         includeStack.push_back(ii);
 
+        LOG(INFO) << "Starting to parse " << new_file;
         yyin = f;
         current_file = new_file;
         line_num = 1;
@@ -110,6 +111,8 @@ void include_pop() {
     fclose(yyin);
     yy_delete_buffer(YY_CURRENT_BUFFER);
     yy_switch_to_buffer(includeStack.back().bufState);
+    LOG(INFO) << "Finished parsing " << current_file << "; returning to " <<
+        includeStack.back().filename;
     current_file = includeStack.back().filename;
     line_num = includeStack.back().lineNum;
     includeStack.pop_back();
