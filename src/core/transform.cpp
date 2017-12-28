@@ -402,6 +402,8 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
       startTime(startTime),
       endTime(endTime),
       actuallyAnimated(*startTransform != *endTransform) {
+    if (!actuallyAnimated)
+        return;
     Decompose(startTransform->m, &T[0], &R[0], &S[0]);
     Decompose(endTransform->m, &T[1], &R[1], &S[1]);
     // Flip _R[1]_ if needed to select shortest path
