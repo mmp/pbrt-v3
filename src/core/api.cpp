@@ -114,6 +114,7 @@
 #include "textures/wrinkled.h"
 #include "media/grid.h"
 #include "media/homogeneous.h"
+
 #include <map>
 #include <stdio.h>
 
@@ -219,31 +220,116 @@ struct GraphicsState {
     bool reverseOrientation = false;
 };
 
+STAT_MEMORY_COUNTER("Memory/TransformCache", transformCacheBytes);
+STAT_PERCENT("Scene/TransformCache hits", nTransformCacheLookups, nTransformCacheHits);
+
+// Note: TransformCache has been reimplemented and has a slightly different
+// interface compared to the version described in the third edition of
+// Physically Based Rendering.  The new version is more efficient in both
+// space and memory, which is helpful for highly complex scenes.
+//
+// The new implementation uses a hash table to store Transforms (rather
+// than a std::map, which generally uses a red-black tree).  Further,
+// it doesn't always store the inverse of the transform; if a caller
+// wants the inverse as well, they are responsible for storing it.
+//
+// The hash table size is always a power of two, allowing for the use of a
+// bitwise AND to turn hash values into table offsets.  Quadratic probing
+// is used when there is a hash collision.
 class TransformCache {
   public:
+    TransformCache()
+        : hashTable(512), hashTableOccupancy(0) {}
+
     // TransformCache Public Methods
-    void Lookup(const Transform &t, Transform **tCached,
-                Transform **tCachedInverse) {
-        auto iter = cache.find(t);
-        if (iter == cache.end()) {
-            Transform *tr = arena.Alloc<Transform>();
-            *tr = t;
-            Transform *tinv = arena.Alloc<Transform>();
-            *tinv = Transform(Inverse(t));
-            cache[t] = std::make_pair(tr, tinv);
-            iter = cache.find(t);
+    Transform *Lookup(const Transform &t) {
+        ++nTransformCacheLookups;
+
+        int offset = Hash(t) & (hashTable.size() - 1);
+        int step = 1;
+        while (true) {
+            // Keep looking until we find the Transform or determine that
+            // it's not present.
+            if (!hashTable[offset] || *hashTable[offset] == t)
+                break;
+            // Advance using quadratic probing.
+            offset = (offset + step * step) & (hashTable.size() - 1);
+            ++step;
         }
-        if (tCached) *tCached = iter->second.first;
-        if (tCachedInverse) *tCachedInverse = iter->second.second;
+        Transform *tCached = hashTable[offset];
+        if (tCached)
+            ++nTransformCacheHits;
+        else {
+            tCached = arena.Alloc<Transform>();
+            *tCached = t;
+            Insert(tCached);
+        }
+        return tCached;
     }
+
+    void Insert(Transform *tNew) {
+        if (++hashTableOccupancy == hashTable.size() / 2) {
+            // Grow the hash table.
+            std::vector<Transform *> newTable(2 * hashTable.size());
+            LOG(INFO) << "Growing transform cache hash table to " << newTable.size();
+
+            // Insert current elements into newTable.
+            for (Transform *tEntry : hashTable) {
+                if (!tEntry) continue;
+
+                int offset = Hash(*tEntry) & (newTable.size() - 1);
+                int step = 1;
+                while (true) {
+                    if (newTable[offset] == nullptr) {
+                        newTable[offset] = tEntry;
+                        break;
+                    }
+                    // Advance using quadratic probing.
+                    offset = (offset + step * step) & (hashTable.size() - 1);
+                    ++step;
+                }
+            }
+
+            std::swap(hashTable, newTable);
+        }
+
+        int offset = Hash(*tNew) & (hashTable.size() - 1);
+        int step = 1;
+        while (true) {
+            if (hashTable[offset] == nullptr) {
+                hashTable[offset] = tNew;
+                return;
+            }
+            // Advance using quadratic probing.
+            offset = (offset + step * step) & (hashTable.size() - 1);
+            ++step;
+        }
+    }
+
     void Clear() {
+        transformCacheBytes += arena.TotalAllocated() + hashTable.size() * sizeof(Transform *);
+        hashTable.resize(512);
+        hashTable.clear();
+        hashTableOccupancy = 0;
         arena.Reset();
-        cache.erase(cache.begin(), cache.end());
     }
 
   private:
+    static uint64_t Hash(const Transform &t) {
+        const char *ptr = (const char *)&t;
+        // https://softwareengineering.stackexchange.com/questions/49550/which-hashing-algorithm-is-best-for-uniqueness-and-speed
+        // FNV1a hash
+        uint64_t hash = 14695981039346656037ull;
+        for (size_t i = 0; i < sizeof(Transform); ++i) {
+            hash ^= ptr[i];
+            hash *= 1099511628211ull;
+        }
+        return hash;
+    }
+
     // TransformCache Private Data
-    std::map<Transform, std::pair<Transform *, Transform *>> cache;
+    std::vector<Transform *> hashTable;
+    int hashTableOccupancy;
     MemoryArena arena;
 };
 
@@ -679,9 +765,10 @@ Camera *MakeCamera(const std::string &name, const ParamSet &paramSet,
     MediumInterface mediumInterface = graphicsState.CreateMediumInterface();
     static_assert(MaxTransforms == 2,
                   "TransformCache assumes only two transforms");
-    Transform *cam2world[2];
-    transformCache.Lookup(cam2worldSet[0], &cam2world[0], nullptr);
-    transformCache.Lookup(cam2worldSet[1], &cam2world[1], nullptr);
+    Transform *cam2world[2] = {
+        transformCache.Lookup(cam2worldSet[0]),
+        transformCache.Lookup(cam2worldSet[1])
+    };
     AnimatedTransform animatedCam2World(cam2world[0], transformStart,
                                         cam2world[1], transformEnd);
     if (name == "perspective")
@@ -1206,8 +1293,8 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         // Initialize _prims_ and _areaLights_ for static shape
 
         // Create shapes for shape _name_
-        Transform *ObjToWorld, *WorldToObj;
-        transformCache.Lookup(curTransform[0], &ObjToWorld, &WorldToObj);
+        Transform *ObjToWorld = transformCache.Lookup(curTransform[0]);
+        Transform *WorldToObj = transformCache.Lookup(Inverse(curTransform[0]));
         std::vector<std::shared_ptr<Shape>> shapes =
             MakeShapes(name, ObjToWorld, WorldToObj,
                        graphicsState.reverseOrientation, params);
@@ -1235,8 +1322,7 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
             Warning(
                 "Ignoring currently set area light when creating "
                 "animated shape");
-        Transform *identity;
-        transformCache.Lookup(Transform(), &identity, nullptr);
+        Transform *identity = transformCache.Lookup(Transform());
         std::vector<std::shared_ptr<Shape>> shapes = MakeShapes(
             name, identity, identity, graphicsState.reverseOrientation, params);
         if (shapes.empty()) return;
@@ -1255,9 +1341,10 @@ void pbrtShape(const std::string &name, const ParamSet &params) {
         // Get _animatedObjectToWorld_ transform for shape
         static_assert(MaxTransforms == 2,
                       "TransformCache assumes only two transforms");
-        Transform *ObjToWorld[2];
-        transformCache.Lookup(curTransform[0], &ObjToWorld[0], nullptr);
-        transformCache.Lookup(curTransform[1], &ObjToWorld[1], nullptr);
+        Transform *ObjToWorld[2] = {
+            transformCache.Lookup(curTransform[0]),
+            transformCache.Lookup(curTransform[1])
+        };
         AnimatedTransform animatedObjectToWorld(
             ObjToWorld[0], renderOptions->transformStartTime, ObjToWorld[1],
             renderOptions->transformEndTime);
@@ -1441,9 +1528,10 @@ void pbrtObjectInstance(const std::string &name) {
     static_assert(MaxTransforms == 2,
                   "TransformCache assumes only two transforms");
     // Create _animatedInstanceToWorld_ transform for instance
-    Transform *InstanceToWorld[2];
-    transformCache.Lookup(curTransform[0], &InstanceToWorld[0], nullptr);
-    transformCache.Lookup(curTransform[1], &InstanceToWorld[1], nullptr);
+    Transform *InstanceToWorld[2] = {
+        transformCache.Lookup(curTransform[0]),
+        transformCache.Lookup(curTransform[1])
+    };
     AnimatedTransform animatedInstanceToWorld(
         InstanceToWorld[0], renderOptions->transformStartTime,
         InstanceToWorld[1], renderOptions->transformEndTime);
