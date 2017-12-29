@@ -269,45 +269,6 @@ class TransformCache {
         return tCached;
     }
 
-    void Insert(Transform *tNew) {
-        if (++hashTableOccupancy == hashTable.size() / 2) {
-            // Grow the hash table.
-            std::vector<Transform *> newTable(2 * hashTable.size());
-            LOG(INFO) << "Growing transform cache hash table to " << newTable.size();
-
-            // Insert current elements into newTable.
-            for (Transform *tEntry : hashTable) {
-                if (!tEntry) continue;
-
-                int offset = Hash(*tEntry) & (newTable.size() - 1);
-                int step = 1;
-                while (true) {
-                    if (newTable[offset] == nullptr) {
-                        newTable[offset] = tEntry;
-                        break;
-                    }
-                    // Advance using quadratic probing.
-                    offset = (offset + step * step) & (hashTable.size() - 1);
-                    ++step;
-                }
-            }
-
-            std::swap(hashTable, newTable);
-        }
-
-        int offset = Hash(*tNew) & (hashTable.size() - 1);
-        int step = 1;
-        while (true) {
-            if (hashTable[offset] == nullptr) {
-                hashTable[offset] = tNew;
-                return;
-            }
-            // Advance using quadratic probing.
-            offset = (offset + step * step) & (hashTable.size() - 1);
-            ++step;
-        }
-    }
-
     void Clear() {
         transformCacheBytes += arena.TotalAllocated() + hashTable.size() * sizeof(Transform *);
         hashTable.resize(512);
@@ -317,12 +278,18 @@ class TransformCache {
     }
 
   private:
+    void Insert(Transform *tNew);
+    void Grow();
+
     static uint64_t Hash(const Transform &t) {
-        const char *ptr = (const char *)&t;
+        constexpr int nChunks = sizeof(Matrix4x4) / sizeof(uint64_t);
+        uint64_t buf[nChunks];
+        memcpy(buf, &t.GetMatrix(), sizeof(Matrix4x4));
+        const uint64_t *ptr = buf;
         // https://softwareengineering.stackexchange.com/questions/49550/which-hashing-algorithm-is-best-for-uniqueness-and-speed
-        // FNV1a hash
+        // FNV1a hash, but modified to process 8 bytes at a time.
         uint64_t hash = 14695981039346656037ull;
-        for (size_t i = 0; i < sizeof(Transform); ++i) {
+        for (size_t i = 0; i < nChunks; ++i) {
             hash ^= ptr[i];
             hash *= 1099511628211ull;
         }
@@ -334,6 +301,48 @@ class TransformCache {
     int hashTableOccupancy;
     MemoryArena arena;
 };
+
+void TransformCache::Insert(Transform *tNew) {
+    if (++hashTableOccupancy == hashTable.size() / 2)
+        Grow();
+
+    int offset = Hash(*tNew) & (hashTable.size() - 1);
+    int step = 1;
+    while (true) {
+        if (hashTable[offset] == nullptr) {
+            hashTable[offset] = tNew;
+            return;
+        }
+        // Advance using quadratic probing.
+        offset = (offset + step * step) & (hashTable.size() - 1);
+        ++step;
+    }
+}
+
+void TransformCache::Grow() {
+    std::vector<Transform *> newTable(2 * hashTable.size());
+    LOG(INFO) << "Growing transform cache hash table to " << newTable.size();
+
+    // Insert current elements into newTable.
+    for (Transform *tEntry : hashTable) {
+        if (!tEntry) continue;
+
+        int offset = Hash(*tEntry) & (newTable.size() - 1);
+        int step = 1;
+        while (true) {
+            if (newTable[offset] == nullptr) {
+                newTable[offset] = tEntry;
+                break;
+            }
+            // Advance using quadratic probing.
+            offset = (offset + step * step) & (hashTable.size() - 1);
+            ++step;
+        }
+    }
+
+    std::swap(hashTable, newTable);
+}
+
 
 // API Static Data
 enum class APIState { Uninitialized, OptionsBlock, WorldBlock };
