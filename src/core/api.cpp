@@ -282,7 +282,7 @@ class TransformCache {
     void Grow();
 
     static uint64_t Hash(const Transform &t) {
-        constexpr int nChunks = sizeof(Matrix4x4) / sizeof(uint64_t);
+        PBRT_CONSTEXPR int nChunks = sizeof(Matrix4x4) / sizeof(uint64_t);
         uint64_t buf[nChunks];
         memcpy(buf, &t.GetMatrix(), sizeof(Matrix4x4));
         const uint64_t *ptr = buf;
