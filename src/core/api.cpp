@@ -221,7 +221,8 @@ struct GraphicsState {
 };
 
 STAT_MEMORY_COUNTER("Memory/TransformCache", transformCacheBytes);
-STAT_PERCENT("Scene/TransformCache hits", nTransformCacheLookups, nTransformCacheHits);
+STAT_PERCENT("Scene/TransformCache hits", nTransformCacheHits, nTransformCacheLookups);
+STAT_INT_DISTRIBUTION("Scene/Probes per TransformCache lookup", transformCacheProbes);
 
 // Note: TransformCache has been reimplemented and has a slightly different
 // interface compared to the version described in the third edition of
@@ -256,6 +257,7 @@ class TransformCache {
             offset = (offset + step * step) & (hashTable.size() - 1);
             ++step;
         }
+        ReportValue(transformCacheProbes, step);
         Transform *tCached = hashTable[offset];
         if (tCached)
             ++nTransformCacheHits;
