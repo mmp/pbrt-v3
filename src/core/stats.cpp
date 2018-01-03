@@ -321,14 +321,11 @@ void ReportProfilerResults(FILE *dest) {
 
     PBRT_CONSTEXPR int NumProfCategories = (int)Prof::NumProfCategories;
     uint64_t overallCount = 0;
-    uint64_t eventCount[NumProfCategories] = {0};
     int used = 0;
     for (const ProfileSample &ps : profileSamples) {
         if (ps.count > 0) {
             overallCount += ps.count;
             ++used;
-            for (int b = 0; b < NumProfCategories; ++b)
-                if (ps.profilerState & (1ull << b)) eventCount[b] += ps.count;
         }
     }
     LOG(INFO) << "Used " << used << " / " << profileHashSize
