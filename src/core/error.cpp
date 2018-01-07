@@ -33,18 +33,16 @@
 // core/error.cpp*
 #include "error.h"
 #include "stringprint.h"
+#include "parallel.h"
 #include "progressreporter.h"
+#include "parser.h"
+
 #include <mutex>
 
 // Error Reporting Includes
 #include <stdarg.h>
 
 namespace pbrt {
-
-const char *findWordEnd(const char *buf) {
-    while (*buf != '\0' && !isspace(*buf)) ++buf;
-    return buf;
-}
 
 // Error Reporting Functions
 template <typename... Args>
@@ -61,7 +59,7 @@ static std::string StringVaprintf(const std::string &fmt, va_list args) {
     return str;
 }
 
-static void processError(const char *format, va_list args,
+static void processError(Loc *loc, const char *format, va_list args,
                          const char *errorType) {
     // Build up an entire formatted error string and print it all at once;
     // this way, if multiple threads are printing messages at once, they
@@ -69,13 +67,12 @@ static void processError(const char *format, va_list args,
     std::string errorString;
 
     // Print line and position in input file, if available
-    extern int line_num;
-    if (line_num != 0) {
-        extern std::string current_file;
-        errorString += current_file;
-        errorString += StringPrintf("(%d): ", line_num);
-    }
+    if (loc)
+        errorString = StringPrintf("%s:%d:%d: ", loc->filename.c_str(),
+                                   loc->line, loc->column);
 
+    errorString += errorType;
+    errorString += ": ";
     errorString += StringVaprintf(format, args);
 
     // Print the error message (but not more than one time).
@@ -83,10 +80,8 @@ static void processError(const char *format, va_list args,
     static std::mutex mutex;
     std::lock_guard<std::mutex> lock(mutex);
     if (errorString != lastError) {
-        if (!strcmp(errorType, "Warning"))
-            LOG(WARNING) << errorString;
-        else
-            LOG(ERROR) << errorString;
+        LOG(INFO) << errorString;
+        fprintf(stderr, "%s\n", errorString.c_str());
         lastError = errorString;
     }
 }
@@ -95,14 +90,14 @@ void Warning(const char *format, ...) {
     if (PbrtOptions.quiet) return;
     va_list args;
     va_start(args, format);
-    processError(format, args, "Warning");
+    processError(parserLoc, format, args, "Warning");
     va_end(args);
 }
 
 void Error(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    processError(format, args, "Error");
+    processError(parserLoc, format, args, "Error");
     va_end(args);
 }
 
