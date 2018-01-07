@@ -157,8 +157,7 @@ int main(int argc, char *argv[]) {
     } else {
         // Parse scene from input files
         for (const std::string &f : filenames)
-            if (!ParseFile(f))
-                Error("Couldn't open scene file \"%s\"", f.c_str());
+            ParseFile(f);
     }
     pbrtCleanup();
     return 0;
