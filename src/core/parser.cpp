@@ -713,6 +713,8 @@ ParamSet parseParams(Next nextToken, Unget ungetToken, MemoryArena &arena,
     return ps;
 }
 
+extern int catIndentCount;
+
 // Parsing Global Interface
 void ParseFile(std::string filename) {
     if (filename != "-")
@@ -760,7 +762,6 @@ void ParseFile(std::string filename) {
         } else if (tok[0] == '#') {
             // Swallow comments, unless --cat or --toply was given, in
             // which case they're printed to stdout.
-            extern int catIndentCount;
             if (PbrtOptions.cat || PbrtOptions.toPly)
                 printf("%*s%s\n", catIndentCount, "", toString(tok).c_str());
             return nextToken(flags);
