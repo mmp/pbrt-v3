@@ -62,11 +62,12 @@ struct : public PtexErrorHandler {
 
 // PtexTexture Method Definitions
 template <typename T>
-PtexTexture<T>::PtexTexture(const std::string &filename) : filename(filename) {
+PtexTexture<T>::PtexTexture(const std::string &filename, Float gamma)
+    : filename(filename), gamma(gamma) {
     if (!cache) {
         CHECK_EQ(nActiveTextures, 0);
         int maxFiles = 100;
-        size_t maxMem = 0;  // unlimited. TODO: FIXME?
+        size_t maxMem = 1ull << 32;  // 4GB
         bool premultiply = true;
 
         cache = Ptex::PtexCache::create(maxFiles, maxMem, premultiply, nullptr,
@@ -154,19 +155,27 @@ T PtexTexture<T>::Evaluate(const SurfaceInteraction &si) const {
     filter->release();
     texture->release();
 
+    if (gamma != 1)
+        for (int i = 0; i < 3; ++i)
+            if (result[i] >= 0 && result[i] <= 1)
+                // FIXME: should use something more efficient here
+                result[i] = std::pow(result[i], gamma);
+
     return fromResult<T>(nc, result);
 }
 
 PtexTexture<Float> *CreatePtexFloatTexture(const Transform &tex2world,
                                            const TextureParams &tp) {
     std::string filename = tp.FindFilename("filename");
-    return new PtexTexture<Float>(filename);
+    Float gamma = tp.FindFloat("gamma", 2.2);
+    return new PtexTexture<Float>(filename, gamma);
 }
 
 PtexTexture<Spectrum> *CreatePtexSpectrumTexture(const Transform &tex2world,
                                                  const TextureParams &tp) {
     std::string filename = tp.FindFilename("filename");
-    return new PtexTexture<Spectrum>(filename);
+    Float gamma = tp.FindFloat("gamma", 2.2);
+    return new PtexTexture<Spectrum>(filename, gamma);
 }
 
 }  // namespace pbrt
