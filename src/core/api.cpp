@@ -200,9 +200,12 @@ struct MaterialInstance {
 
 struct GraphicsState {
     // Graphics State Methods
-    GraphicsState() {
+    GraphicsState()
+        : floatTextures(std::make_shared<FloatTextureMap>()),
+          spectrumTextures(std::make_shared<SpectrumTextureMap>()),
+          namedMaterials(std::make_shared<NamedMaterialMap>()) {
         ParamSet empty;
-        TextureParams tp(empty, empty, floatTextures, spectrumTextures);
+        TextureParams tp(empty, empty, *floatTextures, *spectrumTextures);
         std::shared_ptr<Material> mtl(CreateMatteMaterial(tp));
         currentMaterial = std::make_shared<MaterialInstance>("matte", mtl, ParamSet());
     }
@@ -211,9 +214,25 @@ struct GraphicsState {
 
     // Graphics State
     std::string currentInsideMedium, currentOutsideMedium;
-    std::map<std::string, std::shared_ptr<Texture<Float>>> floatTextures;
-    std::map<std::string, std::shared_ptr<Texture<Spectrum>>> spectrumTextures;
-    std::map<std::string, std::shared_ptr<MaterialInstance>> namedMaterials;
+
+    // Updated after book publication: floatTextures, spectrumTextures, and
+    // namedMaterials are all implemented using a "copy on write" approach
+    // for more efficient GraphicsState management.  When state is pushed
+    // in pbrtAttributeBegin(), we don't immediately make a copy of these
+    // maps, but instead record that each one is shared.  Only if an item
+    // is added to one is a unique copy actually made.
+    using FloatTextureMap = std::map<std::string, std::shared_ptr<Texture<Float>>>;
+    std::shared_ptr<FloatTextureMap> floatTextures;
+    bool floatTexturesShared = false;
+
+    using SpectrumTextureMap = std::map<std::string, std::shared_ptr<Texture<Spectrum>>>;
+    std::shared_ptr<SpectrumTextureMap> spectrumTextures;
+    bool spectrumTexturesShared = false;
+
+    using NamedMaterialMap = std::map<std::string, std::shared_ptr<MaterialInstance>>;
+    std::shared_ptr<NamedMaterialMap> namedMaterials;
+    bool namedMaterialsShared = false;
+
     std::shared_ptr<MaterialInstance> currentMaterial;
     ParamSet areaLightParams;
     std::string areaLight;
@@ -501,10 +520,10 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
         } else
             shapes = CreateTriangleMeshShape(object2world, world2object,
                                              reverseOrientation, paramSet,
-                                             &graphicsState.floatTextures);
+                                             &*graphicsState.floatTextures);
     } else if (name == "plymesh")
         shapes = CreatePLYMesh(object2world, world2object, reverseOrientation,
-                               paramSet, &graphicsState.floatTextures);
+                               paramSet, &*graphicsState.floatTextures);
     else if (name == "heightfield")
         shapes = CreateHeightfield(object2world, world2object,
                                    reverseOrientation, paramSet);
@@ -544,21 +563,21 @@ std::shared_ptr<Material> MakeMaterial(const std::string &name,
         std::string m1 = mp.FindString("namedmaterial1", "");
         std::string m2 = mp.FindString("namedmaterial2", "");
         std::shared_ptr<Material> mat1, mat2;
-        if (graphicsState.namedMaterials.find(m1) ==
-            graphicsState.namedMaterials.end()) {
+        if (graphicsState.namedMaterials->find(m1) ==
+            graphicsState.namedMaterials->end()) {
             Error("Named material \"%s\" undefined.  Using \"matte\"",
                   m1.c_str());
             mat1 = MakeMaterial("matte", mp);
         } else
-            mat1 = graphicsState.namedMaterials[m1]->material;
+            mat1 = (*graphicsState.namedMaterials)[m1]->material;
 
-        if (graphicsState.namedMaterials.find(m2) ==
-            graphicsState.namedMaterials.end()) {
+        if (graphicsState.namedMaterials->find(m2) ==
+            graphicsState.namedMaterials->end()) {
             Error("Named material \"%s\" undefined.  Using \"matte\"",
                   m2.c_str());
             mat2 = MakeMaterial("matte", mp);
         } else
-            mat2 = graphicsState.namedMaterials[m2]->material;
+            mat2 = (*graphicsState.namedMaterials)[m2]->material;
 
         material = CreateMixMaterial(mp, mat1, mat2);
     } else if (name == "metal")
@@ -1115,6 +1134,8 @@ void pbrtWorldBegin() {
 void pbrtAttributeBegin() {
     VERIFY_WORLD("AttributeBegin");
     pushedGraphicsStates.push_back(graphicsState);
+    graphicsState.floatTexturesShared = graphicsState.spectrumTexturesShared =
+        graphicsState.namedMaterialsShared = true;
     pushedTransforms.push_back(curTransform);
     pushedActiveTransformBits.push_back(activeTransformBits);
     if (PbrtOptions.cat || PbrtOptions.toPly) {
@@ -1131,7 +1152,7 @@ void pbrtAttributeEnd() {
             "Ignoring it.");
         return;
     }
-    graphicsState = pushedGraphicsStates.back();
+    graphicsState = std::move(pushedGraphicsStates.back());
     pushedGraphicsStates.pop_back();
     curTransform = pushedTransforms.back();
     pushedTransforms.pop_back();
@@ -1182,26 +1203,42 @@ void pbrtTexture(const std::string &name, const std::string &type,
         return;
     }
 
-    TextureParams tp(params, params, graphicsState.floatTextures,
-                     graphicsState.spectrumTextures);
+    TextureParams tp(params, params, *graphicsState.floatTextures,
+                     *graphicsState.spectrumTextures);
     if (type == "float") {
         // Create _Float_ texture and store in _floatTextures_
-        if (graphicsState.floatTextures.find(name) !=
-            graphicsState.floatTextures.end())
+        if (graphicsState.floatTextures->find(name) !=
+            graphicsState.floatTextures->end())
             Warning("Texture \"%s\" being redefined", name.c_str());
         WARN_IF_ANIMATED_TRANSFORM("Texture");
         std::shared_ptr<Texture<Float>> ft =
             MakeFloatTexture(texname, curTransform[0], tp);
-        if (ft) graphicsState.floatTextures[name] = ft;
+        if (ft) {
+            // TODO: move this to be a GraphicsState method, also don't
+            // provide direct floatTextures access?
+            if (graphicsState.floatTexturesShared) {
+                graphicsState.floatTextures =
+                    std::make_shared<GraphicsState::FloatTextureMap>(*graphicsState.floatTextures);
+                graphicsState.floatTexturesShared = false;
+            }
+            (*graphicsState.floatTextures)[name] = ft;
+        }
     } else if (type == "color" || type == "spectrum") {
         // Create _color_ texture and store in _spectrumTextures_
-        if (graphicsState.spectrumTextures.find(name) !=
-            graphicsState.spectrumTextures.end())
+        if (graphicsState.spectrumTextures->find(name) !=
+            graphicsState.spectrumTextures->end())
             Warning("Texture \"%s\" being redefined", name.c_str());
         WARN_IF_ANIMATED_TRANSFORM("Texture");
         std::shared_ptr<Texture<Spectrum>> st =
             MakeSpectrumTexture(texname, curTransform[0], tp);
-        if (st) graphicsState.spectrumTextures[name] = st;
+        if (st) {
+            if (graphicsState.spectrumTexturesShared) {
+                graphicsState.spectrumTextures =
+                    std::make_shared<GraphicsState::SpectrumTextureMap>(*graphicsState.spectrumTextures);
+                graphicsState.spectrumTexturesShared = false;
+            }
+            (*graphicsState.spectrumTextures)[name] = st;
+        }
     } else
         Error("Texture type \"%s\" unknown.", type.c_str());
 }
@@ -1209,8 +1246,8 @@ void pbrtTexture(const std::string &name, const std::string &type,
 void pbrtMaterial(const std::string &name, const ParamSet &params) {
     VERIFY_WORLD("Material");
     ParamSet emptyParams;
-    TextureParams mp(params, emptyParams, graphicsState.floatTextures,
-                     graphicsState.spectrumTextures);
+    TextureParams mp(params, emptyParams, *graphicsState.floatTextures,
+                     *graphicsState.spectrumTextures);
     std::shared_ptr<Material> mtl = MakeMaterial(name, mp);
     graphicsState.currentMaterial =
         std::make_shared<MaterialInstance>(name, mtl, params);
@@ -1226,8 +1263,8 @@ void pbrtMakeNamedMaterial(const std::string &name, const ParamSet &params) {
     VERIFY_WORLD("MakeNamedMaterial");
     // error checking, warning if replace, what to use for transform?
     ParamSet emptyParams;
-    TextureParams mp(params, emptyParams, graphicsState.floatTextures,
-                     graphicsState.spectrumTextures);
+    TextureParams mp(params, emptyParams, *graphicsState.floatTextures,
+                     *graphicsState.spectrumTextures);
     std::string matName = mp.FindString("type");
     WARN_IF_ANIMATED_TRANSFORM("MakeNamedMaterial");
     if (matName == "")
@@ -1240,10 +1277,15 @@ void pbrtMakeNamedMaterial(const std::string &name, const ParamSet &params) {
         printf("\n");
     } else {
         std::shared_ptr<Material> mtl = MakeMaterial(matName, mp);
-        if (graphicsState.namedMaterials.find(name) !=
-            graphicsState.namedMaterials.end())
+        if (graphicsState.namedMaterials->find(name) !=
+            graphicsState.namedMaterials->end())
             Warning("Named material \"%s\" redefined.", name.c_str());
-        graphicsState.namedMaterials[name] =
+        if (graphicsState.namedMaterialsShared) {
+            graphicsState.namedMaterials =
+                std::make_shared<GraphicsState::NamedMaterialMap>(*graphicsState.namedMaterials);
+            graphicsState.namedMaterialsShared = false;
+        }
+        (*graphicsState.namedMaterials)[name] =
             std::make_shared<MaterialInstance>(matName, mtl, params);
     }
 }
@@ -1255,8 +1297,8 @@ void pbrtNamedMaterial(const std::string &name) {
         return;
     }
 
-    auto iter = graphicsState.namedMaterials.find(name);
-    if (iter == graphicsState.namedMaterials.end()) {
+    auto iter = graphicsState.namedMaterials->find(name);
+    if (iter == graphicsState.namedMaterials->end()) {
         Error("NamedMaterial \"%s\" unknown.", name.c_str());
         return;
     }
@@ -1446,8 +1488,8 @@ std::shared_ptr<Material> GraphicsState::GetMaterialForShape(
         // Only create a unique material for the shape if the shape's
         // parameters are (apparently) going to provide values for some of
         // the material parameters.
-        TextureParams mp(shapeParams, currentMaterial->params, floatTextures,
-                         spectrumTextures);
+        TextureParams mp(shapeParams, currentMaterial->params, *floatTextures,
+                         *spectrumTextures);
         return MakeMaterial(currentMaterial->name, mp);
     } else
         return currentMaterial->material;
