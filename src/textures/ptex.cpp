@@ -156,7 +156,7 @@ T PtexTexture<T>::Evaluate(const SurfaceInteraction &si) const {
     texture->release();
 
     if (gamma != 1)
-        for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < nc; ++i)
             if (result[i] >= 0 && result[i] <= 1)
                 // FIXME: should use something more efficient here
                 result[i] = std::pow(result[i], gamma);
