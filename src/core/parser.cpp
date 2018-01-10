@@ -186,13 +186,6 @@ Tokenizer::~Tokenizer() {
 }
 
 string_view Tokenizer::Next() {
-    if (!ungetString.empty()) {
-        // return std::exchange(ungetString, {});
-        string_view ret;
-        std::swap(ret, ungetString);
-        return ret;
-    }
-
     while (true) {
         const char *tokenStart = pos;
         int ch = getChar();
@@ -730,21 +723,30 @@ void ParseFile(std::string filename) {
     fileStack.push_back(std::move(t));
     parserLoc = &fileStack.back()->loc;
 
-    // nextToken is a little helper functino that handles the file stack,
+    bool ungetTokenSet = false;
+    std::string ungetTokenValue;
+
+    // nextToken is a little helper function that handles the file stack,
     // returning the next token from the current file until reaching EOF,
     // at which point it switches to the next file (if any).
     std::function<string_view(int)> nextToken;
-    nextToken = [&fileStack, &nextToken, &tokError](int flags) -> string_view {
+    nextToken = [&](int flags) -> string_view {
+        if (ungetTokenSet) {
+            ungetTokenSet = false;
+            return string_view(ungetTokenValue.data(), ungetTokenValue.size());
+        }
+
+        if (fileStack.empty()) {
+            if (flags & TokenRequired) Error("premature EOF");
+            parserLoc = nullptr;
+            return {};
+        }
+
         string_view tok = fileStack.back()->Next();
 
         if (tok.empty()) {
             // We've reached EOF in the current file. Anything more to parse?
             fileStack.pop_back();
-            if (fileStack.empty()) {
-                if (flags & TokenRequired) Error("premature EOF");
-                parserLoc = nullptr;
-                return {};
-            }
             parserLoc = &fileStack.back()->loc;
             return nextToken(flags);
         } else if (tok == "Include") {
@@ -770,8 +772,10 @@ void ParseFile(std::string filename) {
             return tok;
     };
 
-    auto ungetToken = [&fileStack](string_view s) {
-        fileStack.back()->Unget(s);
+    auto ungetToken = [&](string_view s) {
+        CHECK(!ungetTokenSet);
+        ungetTokenValue = std::string(s.data(), s.size());
+        ungetTokenSet = true;
     };
 
     MemoryArena arena;

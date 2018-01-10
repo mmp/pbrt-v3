@@ -114,13 +114,6 @@ class Tokenizer {
     // string_view is not guaranteed to be valid after next call to Next().
     string_view Next();
 
-    // A single token may be returned back to the tokenizer to be returned
-    // the next time Next() is called.
-    void Unget(string_view s) {
-        CHECK(ungetString.empty());
-        ungetString = s;
-    }
-
     Loc loc;
 
   private:
@@ -158,8 +151,6 @@ class Tokenizer {
     void *unmapPtr = nullptr;
     size_t unmapLength = 0;
 #endif
-
-    string_view ungetString;
 
     // If the input is stdin, then we copy everything until EOF into this
     // string and then start lexing.  This is a little wasteful (versus
