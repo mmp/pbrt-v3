@@ -71,14 +71,6 @@ page](http://www.cmake.org/download/).
 * Finally, on Windows, the cmake GUI will create MSVC solution files that
   you can load in MSVC.
 
-If you plan to edit the lexer and parser for pbrt's input files
-(`src/core/pbrtlex.ll` and `src/core/pbrtparase.y`), you'll also want to
-have [bison](https://www.gnu.org/software/bison/) and
-[flex](http://flex.sourceforge.net/) installed. On OS X, note that the
-version of flex that ships with the developer tools is extremely old and is
-unable to process `pbrtlex.ll`; you'll need to install a more recent
-version of flex in this case.
-
 ### Debug and Release Builds ###
 
 By default, the build files that are created that will compile an optimized
