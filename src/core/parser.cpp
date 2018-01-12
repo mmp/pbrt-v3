@@ -747,7 +747,8 @@ void ParseFile(std::string filename) {
         if (tok.empty()) {
             // We've reached EOF in the current file. Anything more to parse?
             fileStack.pop_back();
-            parserLoc = &fileStack.back()->loc;
+            if (!fileStack.empty())
+                parserLoc = &fileStack.back()->loc;
             return nextToken(flags);
         } else if (tok == "Include") {
             // Switch to the given file.
