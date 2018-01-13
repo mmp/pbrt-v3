@@ -100,11 +100,6 @@ IF ( HAVE_MEMORY_H )
   ADD_DEFINITIONS ( -D PBRT_HAVE_MEMORY_H )
 ENDIF ()
 
-CHECK_INCLUDE_FILES ( unistd.h HAVE_UNISTD_H )
-IF ( NOT HAVE_UNISTD_H )
-  ADD_DEFINITIONS ( -D YY_NO_UNISTD_H )
-ENDIF ()
-
 ###########################################################################
 # Check for various C++11 features and set preprocessor variables or
 # define workarounds.
