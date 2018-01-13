@@ -24,15 +24,22 @@ if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/openexr/OpenEXR")
     "by running \"git submodule update --init --recursive\"")
 endif()
 
-if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/glog")
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/glog/cmake")
   message(FATAL_ERROR "The glog submodule directory is missing! "
     "You probably did not clone the project with --recursive, or first checked out "
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
 endif()
 
-if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/ptex")
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/ptex/src")
   message(FATAL_ERROR "The ptex submodule directory is missing! "
+    "You probably did not clone the project with --recursive, or first checked out "
+    "pbrt before it was added. It is possible to recover by running "
+    "\"git submodule update --init --recursive\"")
+endif()
+
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib/doc")
+  message(FATAL_ERROR "The zlib submodule directory is missing! "
     "You probably did not clone the project with --recursive, or first checked out "
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
