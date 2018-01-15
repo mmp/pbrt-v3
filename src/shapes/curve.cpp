@@ -472,7 +472,8 @@ std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,
         return {};
     }
 
-    int sd = params.FindOneFloat("splitdepth", 3);
+    int sd = params.FindOneInt("splitdepth",
+                               int(params.FindOneFloat("splitdepth", 3)));
 
     std::vector<std::shared_ptr<Shape>> curves;
     // Pointer to the first control point for the current segment. This is
