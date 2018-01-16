@@ -301,16 +301,14 @@ class TransformCache {
     void Grow();
 
     static uint64_t Hash(const Transform &t) {
-        PBRT_CONSTEXPR int nChunks = sizeof(Matrix4x4) / sizeof(uint64_t);
-        uint64_t buf[nChunks];
-        memcpy(buf, &t.GetMatrix(), sizeof(Matrix4x4));
-        const uint64_t *ptr = buf;
-        // https://softwareengineering.stackexchange.com/questions/49550/which-hashing-algorithm-is-best-for-uniqueness-and-speed
-        // FNV1a hash, but modified to process 8 bytes at a time.
+        const char *ptr = (const char *)(&t.GetMatrix());
+        size_t size = sizeof(Matrix4x4);
         uint64_t hash = 14695981039346656037ull;
-        for (size_t i = 0; i < nChunks; ++i) {
-            hash ^= ptr[i];
+        while (size > 0) {
+            hash ^= *ptr;
             hash *= 1099511628211ull;
+            ++ptr;
+            --size;
         }
         return hash;
     }
