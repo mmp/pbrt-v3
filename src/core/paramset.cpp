@@ -704,7 +704,7 @@ static void printItems(
 
 void ParamSet::Print(int indent) const {
     printItems("integer", indent, ints);
-    printItems("boolean", indent, bools);
+    printItems("bool", indent, bools);
     printItems("float", indent, floats);
     printItems("point2", indent, point2fs);
     printItems("vector2", indent, vector2fs);
