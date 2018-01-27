@@ -269,13 +269,13 @@ Spectrum DisneyClearcoat::f(const Vector3f &wo, const Vector3f &wi) const {
     // Clearcoat has ior = 1.5 hardcoded -> F0 = 0.04. It then uses the
     // GTR1 distribution, which has even fatter tails than Trowbridge-Reitz
     // (which is GTR2).
-    Float Dr = GTR1(AbsCosTheta(wh), Lerp(gloss, .1, .001));
+    Float Dr = GTR1(AbsCosTheta(wh), gloss);
     Float Fr = FrSchlick(.04, Dot(wo, wh));
     // The geometric term always based on alpha = 0.25.
     Float Gr =
         smithG_GGX(AbsCosTheta(wo), .25) * smithG_GGX(AbsCosTheta(wi), .25);
 
-    return .25 * weight * Gr * Fr * Dr;
+    return .25 * weight * Gr * Fr * Dr / (AbsCosTheta(wo) * AbsCosTheta(wi));
 }
 
 Spectrum DisneyClearcoat::Sample_f(const Vector3f &wo, Vector3f *wi,
@@ -286,8 +286,7 @@ Spectrum DisneyClearcoat::Sample_f(const Vector3f &wo, Vector3f *wi,
     // somewhere.
     if (wo.z == 0) return 0.;
 
-    Float alpha = 0.25;
-    Float alpha2 = alpha * alpha;
+    Float alpha2 = gloss * gloss;
     Float cosTheta = std::sqrt(
         std::max(Float(0), (1 - std::pow(alpha2, 1 - u[0])) / (1 - alpha2)));
     Float sinTheta = std::sqrt(std::max((Float)0, 1 - cosTheta * cosTheta));
@@ -313,8 +312,8 @@ Float DisneyClearcoat::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     // Thus, the final value of the PDF is just the value of the
     // distribution for wh converted to a mesure with respect to the
     // surface normal.
-    Float Dr = GTR1(AbsCosTheta(wh), Lerp(gloss, .1, .001));
-    return Dr / (4 * Dot(wo, wh));
+    Float Dr = GTR1(AbsCosTheta(wh), gloss);
+    return Dr * AbsCosTheta(wh) / (4 * Dot(wo, wh));
 }
 
 std::string DisneyClearcoat::ToString() const {
@@ -559,7 +558,7 @@ void DisneyMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
     Float cc = clearcoat->Evaluate(*si);
     if (cc > 0) {
         si->bsdf->Add(ARENA_ALLOC(arena, DisneyClearcoat)(
-            cc, clearcoatGloss->Evaluate(*si)));
+            cc, Lerp(clearcoatGloss->Evaluate(*si), .1, .001)));
     }
 
     // BTDF
