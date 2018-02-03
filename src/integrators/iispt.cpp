@@ -30,8 +30,8 @@
 
  */
 
-// integrators/path.cpp*
-#include "integrators/path.h"
+// integrators/iispt.cpp*
+#include "integrators/iispt.h"
 #include "bssrdf.h"
 #include "camera.h"
 #include "film.h"
@@ -45,8 +45,8 @@ namespace pbrt {
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
-// PathIntegrator Method Definitions
-PathIntegrator::PathIntegrator(int maxDepth,
+// IISPTIntegrator Method Definitions
+IISPTIntegrator::IISPTIntegrator(int maxDepth,
                                std::shared_ptr<const Camera> camera,
                                std::shared_ptr<Sampler> sampler,
                                const Bounds2i &pixelBounds, Float rrThreshold,
@@ -56,12 +56,12 @@ PathIntegrator::PathIntegrator(int maxDepth,
       rrThreshold(rrThreshold),
       lightSampleStrategy(lightSampleStrategy) {}
 
-void PathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
+void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
     lightDistribution =
         CreateLightSampleDistribution(lightSampleStrategy, scene);
 }
 
-Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
+Spectrum IISPTIntegrator::Li(const RayDifferential &r, const Scene &scene,
                             Sampler &sampler, MemoryArena &arena,
                             int depth) const {
     ProfilePhase p(Prof::SamplerIntegratorLi);
@@ -190,9 +190,11 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     return L;
 }
 
-PathIntegrator *CreatePathIntegrator(const ParamSet &params,
+IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera) {
+    LOG(INFO) << "CreateIISPTIntegrator";
+
     int maxDepth = params.FindOneInt("maxdepth", 5);
     int np;
     const int *pb = params.FindInt("pixelbounds", &np);
@@ -211,7 +213,7 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
     Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
     std::string lightStrategy =
         params.FindOneString("lightsamplestrategy", "spatial");
-    return new PathIntegrator(maxDepth, camera, sampler, pixelBounds,
+    return new IISPTIntegrator(maxDepth, camera, sampler, pixelBounds,
                               rrThreshold, lightStrategy);
 }
 

@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 
+var async = require("async");
+const { spawn } = require('child_process');
+const fs = require('fs');
+var path = require("path");
+
+var log_dir = "/tmp/pbrt";
+
+// Utilities ------------------------------------------------------------------
+
 var argv = process.argv;
 
 var argv_get = function(idx) {
@@ -27,6 +36,31 @@ var array_replace_last = function(arr, new_item) {
 
     var last_index = arr.length - 1;
     arr[last_index] = new_item;
+};
+
+// Callback(exit_code, exit_signal)
+var simple_exec = function(cmd, cmd_args, callback, no_output) {
+    console.info("Spawn command ["+ cmd +"] with args ["+ cmd_args+"]");
+    var proc = spawn(cmd, cmd_args);
+    if (!no_output) {
+        proc.stdout.on("data", function(data) {
+            process.stdout.write(data.toString());
+        });
+        proc.stderr.on("data", function(data) {
+            process.stderr.write(data.toString());
+        });
+    }
+    proc.on("close", function(code, signal) {
+        console.info("Process ["+ cmd +"] exited ["+ code +"] ["+ signal +"]");
+        callback(code, signal);
+        return;
+    });
+
+    process.on('SIGINT', function() {
+        console.log("Caught interrupt signal");
+        proc.kill();
+        process.exit();
+    });
 };
 
 // Read command line arguments
@@ -59,58 +93,74 @@ if (!output_file) {
     console.info("Output file: ["+ output_file +"]");
 }
 
-// Launch process
+async.waterfall([
 
-function emitLines (stream) {
-    var backlog = ''
-    stream.on('data', function (data) {
-        backlog += data
-        var n = backlog.indexOf('\n')
-        // got a \n? emit one or more 'line' events
-        while (~n) {
-            stream.emit('line', backlog.substring(0, n))
-            backlog = backlog.substring(n + 1)
-            n = backlog.indexOf('\n')
-        }
-    });
-    stream.on('end', function () {
-        if (backlog) {
-            stream.emit('line', backlog)
-        }
-    });
-};
+    (callback) => {
+        // Delete old logging directory
+        simple_exec("rm", ["-rf", log_dir], (code, signal) => {
+            if (code == 0) {
+                callback();
+                return;
+            } else {
+                callback("Could not remove old logging directory");
+                return;
+            }
+        });
+    },
 
-const { spawn } = require('child_process');
+    (callback) => {
+        // Create logging directory
+        simple_exec("mkdir", [log_dir], (code, signal) => {
+            if (code == 0) {
+                callback();
+                return;
+            } else {
+                callback("Could not create logging directory");
+                return;
+            }
+        });
+    },
 
-var cmd = '/home/gj/git/pbrt-v3-IISPT-build/pbrt';
-var cmd_args = [input_scene, "--outfile", output_file];
+    (callback) => {
+        // Run pbrt
+        simple_exec('/home/gj/git/pbrt-v3-IISPT-build/pbrt',
+                    [input_scene, "--outfile", output_file, "--logdir", log_dir],
+                    (code, signal) => {
+            callback();
+            return;
+        });
+    },
 
-var pbrt_process = spawn(cmd, cmd_args);
-console.info("Spawned command ["+ cmd +"] with args ["+ cmd_args+"]");
+    (callback) => {
+        // Find log files
+        fs.readdir(log_dir, (err, files) => {
+            if (err) {
+                callback(err);
+                return;
+            } else {
+                for (var i = 0; i < files.length; i++) {
+                    var f_name = files[i];
+                    if (f_name.indexOf("INFO") > -1) {
+                        callback(null, f_name);
+                        return;
+                    }
+                }
+                callback("No INFO log file found");
+                return;
+            }
+        });
+    },
 
-// pbrt_process.stdout.on("line", function(line) {
-//     console.info(line);
-// });
-pbrt_process.stdout.on("data", function(data) {
-    process.stdout.write(data.toString());
-});
-// emitLines(pbrt_process.stdout);
+    (log_file_path, callback) => {
+        // Open log file with NANO
+        var log_file_full_path = path.join(log_dir, log_file_path);
+        console.info("nano -c " + log_file_full_path);
+        callback();
+    }
 
-// pbrt_process.stderr.on("line", function(line) {
-//     console.info(line);
-// });
-// emitLines(pbrt_process.stderr);
-pbrt_process.stderr.on("data", function(data) {
-    process.stderr.write(data.toString());
-});
-
-pbrt_process.on('close', (code, signal) => {
-    console.info("PBRT exited with code ["+ code +"] and signal ["+ signal +"]");
-    process.exit();
-});
-
-process.on('SIGINT', function() {
-    console.log("Caught interrupt signal");
-    pbrt_process.kill();
+], (err) => {
+    if (err) {
+        console.info("Error: " + err);
+    }
     process.exit();
 });

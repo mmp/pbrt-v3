@@ -56,6 +56,7 @@
 #include "integrators/directlighting.h"
 #include "integrators/mlt.h"
 #include "integrators/ao.h"
+#include "integrators/iispt.h"
 #include "integrators/path.h"
 #include "integrators/sppm.h"
 #include "integrators/volpath.h"
@@ -1695,6 +1696,8 @@ Integrator *RenderOptions::MakeIntegrator() const {
         integrator = CreateAOIntegrator(IntegratorParams, sampler, camera);
     } else if (IntegratorName == "sppm") {
         integrator = CreateSPPMIntegrator(IntegratorParams, camera);
+    } else if (IntegratorName == "iispt") {
+        integrator = CreateIISPTIntegrator(IntegratorParams, sampler, camera);
     } else {
         Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
         return nullptr;
