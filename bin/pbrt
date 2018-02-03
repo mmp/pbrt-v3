@@ -1,0 +1,116 @@
+#!/usr/bin/env node
+
+var argv = process.argv;
+
+var argv_get = function(idx) {
+    var real_idx = idx + 2;
+    if (real_idx < argv.length) {
+        return argv[real_idx];
+    } else {
+        return null;
+    }
+};
+
+var array_get_last = function(arr) {
+    if (!arr || arr.length == 0) {
+        return null;
+    }
+
+    var last_index = arr.length - 1;
+    return arr[last_index];
+};
+
+var array_replace_last = function(arr, new_item) {
+    if (!arr || arr.length == 0) {
+        return;
+    }
+
+    var last_index = arr.length - 1;
+    arr[last_index] = new_item;
+};
+
+// Read command line arguments
+
+var input_scene = argv_get(0);
+var output_file = argv_get(1);
+
+// Check if there is first argument
+if (!input_scene) {
+    console.info("Usage: pbrt <input.pbrt> <output>");
+    process.exit();
+}
+
+// Check extension
+
+var input_scene_split = input_scene.split(".");
+
+if (array_get_last(input_scene_split) != "pbrt") {
+    console.info("Argument 0 should be a .pbrt file");
+    process.exit();
+}
+
+// Generate output file name if not exists
+
+if (!output_file) {
+    array_replace_last(input_scene_split, "png");
+    output_file = input_scene_split.join(".");
+    console.info("No output file specified. Using ["+ output_file +"]");
+} else {
+    console.info("Output file: ["+ output_file +"]");
+}
+
+// Launch process
+
+function emitLines (stream) {
+    var backlog = ''
+    stream.on('data', function (data) {
+        backlog += data
+        var n = backlog.indexOf('\n')
+        // got a \n? emit one or more 'line' events
+        while (~n) {
+            stream.emit('line', backlog.substring(0, n))
+            backlog = backlog.substring(n + 1)
+            n = backlog.indexOf('\n')
+        }
+    });
+    stream.on('end', function () {
+        if (backlog) {
+            stream.emit('line', backlog)
+        }
+    });
+};
+
+const { spawn } = require('child_process');
+
+var cmd = '/home/gj/git/pbrt-v3-IISPT-build/pbrt';
+var cmd_args = [input_scene, "--outfile", output_file];
+
+var pbrt_process = spawn(cmd, cmd_args);
+console.info("Spawned command ["+ cmd +"] with args ["+ cmd_args+"]");
+
+// pbrt_process.stdout.on("line", function(line) {
+//     console.info(line);
+// });
+pbrt_process.stdout.on("data", function(data) {
+    process.stdout.write(data.toString());
+});
+// emitLines(pbrt_process.stdout);
+
+// pbrt_process.stderr.on("line", function(line) {
+//     console.info(line);
+// });
+// emitLines(pbrt_process.stderr);
+pbrt_process.stderr.on("data", function(data) {
+    process.stderr.write(data.toString());
+});
+
+pbrt_process.on('close', (code, signal) => {
+    console.info("PBRT exited with code ["+ code +"] and signal ["+ signal +"]");
+    process.exit();
+});
+
+process.on('SIGINT', function() {
+    console.log("Caught interrupt signal");
+    pbrt_process.kill();
+    process.exit();
+});
