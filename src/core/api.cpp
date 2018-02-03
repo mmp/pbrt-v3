@@ -872,6 +872,17 @@ Film *MakeFilm(const std::string &name, const ParamSet &paramSet,
     return film;
 }
 
+Film *MakeFilm(const std::string &name, const ParamSet &paramSet,
+               std::unique_ptr<Filter> filter, int xres, int yres) {
+    Film *film = nullptr;
+    if (name == "image")
+        film = CreateFilm(paramSet, std::move(filter), xres, yres);
+    else
+        Warning("Film \"%s\" unknown.", name.c_str());
+    paramSet.ReportUnused();
+    return film;
+}
+
 // API Function Definitions
 void pbrtInit(const Options &opt) {
     PbrtOptions = opt;
@@ -1723,6 +1734,19 @@ Integrator *RenderOptions::MakeIntegrator() const {
 Camera *RenderOptions::MakeCamera() const {
     std::unique_ptr<Filter> filter = MakeFilter(FilterName, FilterParams);
     Film *film = MakeFilm(FilmName, FilmParams, std::move(filter));
+    if (!film) {
+        Error("Unable to create film.");
+        return nullptr;
+    }
+    Camera *camera = pbrt::MakeCamera(CameraName, CameraParams, CameraToWorld,
+                                  renderOptions->transformStartTime,
+                                  renderOptions->transformEndTime, film);
+    return camera;
+}
+
+Camera* RenderOptions::MakeCamera(int xres, int yres) const {
+    std::unique_ptr<Filter> filter = MakeFilter(FilterName, FilterParams);
+    Film *film = MakeFilm(FilmName, FilmParams, std::move(filter), xres, yres);
     if (!film) {
         Error("Unable to create film.");
         return nullptr;

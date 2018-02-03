@@ -35,43 +35,46 @@
 #pragma once
 #endif
 
-#ifndef PBRT_INTEGRATORS_IISPT_H
-#define PBRT_INTEGRATORS_IISPT_H
+#ifndef PBRT_INTEGRATORS_IISPT_D_H
+#define PBRT_INTEGRATORS_IISPT_D_H
 
-// integrators/iispt.h*
+// integrators/iispt_d.h*
 #include "pbrt.h"
 #include "integrator.h"
-#include "lightdistrib.h"
+#include "scene.h"
 
 namespace pbrt {
 
-// IISPTIntegrator Declarations
-class IISPTIntegrator : public SamplerIntegrator {
-  public:
-    // IISPTIntegrator Public Methods
-    IISPTIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
-                   std::shared_ptr<Sampler> sampler,
-                   const Bounds2i &pixelBounds, Float rrThreshold = 1,
-                   const std::string &lightSampleStrategy = "spatial");
+// LightStrategy Declarations
+enum class LightStrategy { UniformSampleAll, UniformSampleOne };
 
-    void Preprocess(const Scene &scene, Sampler &sampler);
+// IISPTdIntegrator Declarations
+class IISPTdIntegrator : public SamplerIntegrator {
+  public:
+    // IISPTdIntegrator Public Methods
+    IISPTdIntegrator(LightStrategy strategy, int maxDepth,
+                             std::shared_ptr<const Camera> camera,
+                             std::shared_ptr<Sampler> sampler,
+                             const Bounds2i &pixelBounds)
+        : SamplerIntegrator(camera, sampler, pixelBounds),
+          strategy(strategy),
+          maxDepth(maxDepth) {}
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth) const;
-    void Render(const Scene &scene);
+    void Preprocess(const Scene &scene, Sampler &sampler);
+    void RenderView(const Scene &scene, std::shared_ptr<const Camera> camera);
 
   private:
-    // IISPTIntegrator Private Data
+    // IISPTdIntegrator Private Data
+    const LightStrategy strategy;
     const int maxDepth;
-    const Float rrThreshold;
-    const std::string lightSampleStrategy;
-    std::unique_ptr<LightDistribution> lightDistribution;
-    const ParamSet params;
+    std::vector<int> nLightSamples;
 };
 
-IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
-                                     std::shared_ptr<Sampler> sampler,
-                                     std::shared_ptr<const Camera> camera);
+IISPTdIntegrator *CreateIISPTdIntegrator(
+    const ParamSet &params, std::shared_ptr<Sampler> sampler,
+    std::shared_ptr<const Camera> camera);
 
 }  // namespace pbrt
 
-#endif  // PBRT_INTEGRATORS_IISPT_H
+#endif  // PBRT_INTEGRATORS_IISPT_D_H

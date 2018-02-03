@@ -210,6 +210,16 @@ void Film::WriteImage(Float splatScale) {
 }
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
+    int xres = params.FindOneInt("xresolution", 1280);
+    int yres = params.FindOneInt("yresolution", 720);
+    return CreateFilm(params, filter, xres, yres);
+}
+
+Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter,
+    int xres, int yres
+) {
+    LOG(INFO) << "CreateFilm: xres ["<< xres <<"] yres ["<< yres <<"]";
+
     std::string filename;
     if (PbrtOptions.imageFile != "") {
         filename = PbrtOptions.imageFile;
@@ -222,8 +232,6 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
     } else
         filename = params.FindOneString("filename", "pbrt.exr");
 
-    int xres = params.FindOneInt("xresolution", 1280);
-    int yres = params.FindOneInt("yresolution", 720);
     if (PbrtOptions.quickRender) xres = std::max(1, xres / 4);
     if (PbrtOptions.quickRender) yres = std::max(1, yres / 4);
     Bounds2f crop(Point2f(0, 0), Point2f(1, 1));
