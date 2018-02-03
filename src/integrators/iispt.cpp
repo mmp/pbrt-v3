@@ -57,6 +57,8 @@ IISPTIntegrator::IISPTIntegrator(int maxDepth,
       lightSampleStrategy(lightSampleStrategy) {}
 
 void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
+    LOG(INFO) << "Preprocess: Received scene";
+    this->scene = &scene;
     lightDistribution =
         CreateLightSampleDistribution(lightSampleStrategy, scene);
 }
@@ -192,8 +194,9 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
-                                     std::shared_ptr<const Camera> camera) {
-    LOG(INFO) << "CreateIISPTIntegrator";
+                                     std::shared_ptr<const Camera> camera
+                                      ) {
+    LOG(INFO) << "CreateIISPTIntegrator: in";
 
     int maxDepth = params.FindOneInt("maxdepth", 5);
     int np;

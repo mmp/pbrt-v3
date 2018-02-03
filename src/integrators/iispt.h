@@ -64,6 +64,7 @@ class IISPTIntegrator : public SamplerIntegrator {
     const Float rrThreshold;
     const std::string lightSampleStrategy;
     std::unique_ptr<LightDistribution> lightDistribution;
+    const Scene* scene;
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
