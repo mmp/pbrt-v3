@@ -51,8 +51,11 @@ class IISPTIntegrator : public SamplerIntegrator {
     // IISPTIntegrator Public Methods
     IISPTIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
                    std::shared_ptr<Sampler> sampler,
-                   const Bounds2i &pixelBounds, Float rrThreshold = 1,
-                   const std::string &lightSampleStrategy = "spatial");
+                   const Bounds2i &pixelBounds,
+                   ParamSet &params,
+                   Float rrThreshold = 1,
+                   const std::string &lightSampleStrategy = "spatial"
+                   );
 
     void Preprocess(const Scene &scene, Sampler &sampler);
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
@@ -65,7 +68,11 @@ class IISPTIntegrator : public SamplerIntegrator {
     const Float rrThreshold;
     const std::string lightSampleStrategy;
     std::unique_ptr<LightDistribution> lightDistribution;
-    const ParamSet params;
+    std::shared_ptr<Sampler> sampler;
+
+    // This is a reference to a field in RenderOptions, which is cleared
+    // only at the end of rendering
+    const ParamSet &params;
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,

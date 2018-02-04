@@ -101,7 +101,7 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
     return L;
 }
 
-void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<const Camera> camera) {
+void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> camera) {
     // There is no preprocess here.
     // It must have already been called by the host.
 
@@ -217,13 +217,13 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<const Came
 }
 
 IISPTdIntegrator *CreateIISPTdIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
+    std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera) {
 
     LOG(INFO) << "CreateIISPTdIntegrator: in";
-    int maxDepth = params.FindOneInt("maxdepth", 5);
+    int maxDepth = 2; // NOTE Hard-coded "maxdepth"
     LightStrategy strategy;
-    std::string st = params.FindOneString("strategy", "all");
+    std::string st ("all"); // "strategy" NOTE hardcoded
     if (st == "one")
         strategy = LightStrategy::UniformSampleOne;
     else if (st == "all")
@@ -235,20 +235,7 @@ IISPTdIntegrator *CreateIISPTdIntegrator(
             st.c_str());
         strategy = LightStrategy::UniformSampleAll;
     }
-    int np;
-    const int *pb = params.FindInt("pixelbounds", &np);
     Bounds2i pixelBounds = camera->film->GetSampleBounds();
-    if (pb) {
-        if (np != 4)
-            Error("Expected four values for \"pixelbounds\" parameter. Got %d.",
-                  np);
-        else {
-            pixelBounds = Intersect(pixelBounds,
-                                    Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
-            if (pixelBounds.Area() == 0)
-                Error("Degenerate \"pixelbounds\" specified.");
-        }
-    }
     IISPTdIntegrator* result = new IISPTdIntegrator(strategy, maxDepth, camera, sampler,
                                         pixelBounds);
 

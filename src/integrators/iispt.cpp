@@ -49,12 +49,17 @@ STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 IISPTIntegrator::IISPTIntegrator(int maxDepth,
                                std::shared_ptr<const Camera> camera,
                                std::shared_ptr<Sampler> sampler,
-                               const Bounds2i &pixelBounds, Float rrThreshold,
-                               const std::string &lightSampleStrategy)
+                               const Bounds2i &pixelBounds,
+                               ParamSet &params,
+                               Float rrThreshold,
+                               const std::string &lightSampleStrategy
+                                )
     : SamplerIntegrator(camera, sampler, pixelBounds),
+      sampler(sampler),
       maxDepth(maxDepth),
       rrThreshold(rrThreshold),
-      lightSampleStrategy(lightSampleStrategy) {}
+      lightSampleStrategy(lightSampleStrategy),
+      params(params) {}
 
 void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
     lightDistribution =
@@ -69,17 +74,18 @@ void IISPTIntegrator::Render(const Scene &scene) {
 
     // Create the auxiliary integrator for intersection-view
     // renders
-    // TODO use a new sampler for the auxiliary integrator
-    // Create sobol sampler with default pixelsamples (16)
-    // and sampleBounds
+    // Create sobol sampler with 1 pixelsamples
     RenderOptions doptions;
     Camera* dcamera = doptions.MakeCamera(32, 32);
     ParamSet dparams;
+    std::unique_ptr<int[]> dparamsdata (new int[1]);
+    dparamsdata[0] = 1;
+    dparams.AddInt(std::string("pixelsamples"), std::move(dparamsdata), 1);
     std::shared_ptr<Sampler> dsampler =
         MakeSampler("sobol", dparams, dcamera->film);
 
     std::unique_ptr<IISPTdIntegrator> dintegrator (CreateIISPTdIntegrator(
-        dparams, sampler
+        dparams, dsampler
     ));
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
@@ -326,8 +332,6 @@ IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
                                       ) {
     LOG(INFO) << "CreateIISPTIntegrator: in";
 
-    this->params = params;
-
     int maxDepth = params.FindOneInt("maxdepth", 5);
     int np;
     const int *pb = params.FindInt("pixelbounds", &np);
@@ -346,7 +350,7 @@ IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
     Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
     std::string lightStrategy =
         params.FindOneString("lightsamplestrategy", "spatial");
-    return new IISPTIntegrator(maxDepth, camera, sampler, pixelBounds,
+    return new IISPTIntegrator(maxDepth, camera, sampler, pixelBounds, params,
                               rrThreshold, lightStrategy);
 }
 

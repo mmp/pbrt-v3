@@ -49,23 +49,38 @@ namespace pbrt {
 enum class LightStrategy { UniformSampleAll, UniformSampleOne };
 
 // IISPTdIntegrator Declarations
-class IISPTdIntegrator : public SamplerIntegrator {
-  public:
+class IISPTdIntegrator {
+public:
+
     // IISPTdIntegrator Public Methods
+
+    // Constructor
     IISPTdIntegrator(LightStrategy strategy, int maxDepth,
-                             std::shared_ptr<const Camera> camera,
+                             std::shared_ptr<Camera> camera,
                              std::shared_ptr<Sampler> sampler,
-                             const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds),
-          strategy(strategy),
-          maxDepth(maxDepth) {}
+                             const Bounds2i &pixelBounds) :
+        camera(camera),
+        sampler(sampler),
+        pixelBounds(pixelBounds),
+        strategy(strategy),
+        maxDepth(maxDepth)
+    {
+
+    }
+
+
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+                Sampler &sampler, MemoryArena &arena, int depth);
+
     void Preprocess(const Scene &scene, Sampler &sampler);
-    void RenderView(const Scene &scene, std::shared_ptr<const Camera> camera);
+
+    void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
 
   private:
     // IISPTdIntegrator Private Data
+    std::shared_ptr<Camera> camera;
+    std::shared_ptr<Sampler> sampler;
+    Bounds2i pixelBounds;
     const LightStrategy strategy;
     const int maxDepth;
     std::vector<int> nLightSamples;

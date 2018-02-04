@@ -212,7 +212,7 @@ void Film::WriteImage(Float splatScale) {
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
     int xres = params.FindOneInt("xresolution", 1280);
     int yres = params.FindOneInt("yresolution", 720);
-    return CreateFilm(params, filter, xres, yres);
+    return CreateFilm(params, std::move(filter), xres, yres);
 }
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter,

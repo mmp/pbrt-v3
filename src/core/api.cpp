@@ -161,6 +161,7 @@ struct RenderOptions {
     Integrator *MakeIntegrator() const;
     Scene *MakeScene();
     Camera *MakeCamera() const;
+    Camera* MakeCamera(int xres, int yres) const;
 
     // RenderOptions Public Data
     Float transformStartTime = 0, transformEndTime = 1;
@@ -1708,7 +1709,15 @@ Integrator *RenderOptions::MakeIntegrator() const {
     } else if (IntegratorName == "sppm") {
         integrator = CreateSPPMIntegrator(IntegratorParams, camera);
     } else if (IntegratorName == "iispt") {
-        integrator = CreateIISPTIntegrator(IntegratorParams, sampler, camera);
+        // Create aux camera
+        std::shared_ptr<Camera> dcamera (MakeCamera(32, 32));
+        // Create aux sampler
+        std::unique_ptr<int[]> dparamsdata (new int[1]);
+        dparamsdata[0] = 1;
+        dparamsdata.AddInt(std::string("pixelsamples"), std::move(dparamsdata), 1);
+        std::shared_ptr<Sampler> dsampler (MakeSampler("sobol", dparams, dcamera->film));
+        // Create integrator
+        integrator = CreateIISPTIntegrator(IntegratorParams, sampler, camera, dcamera, dsampler);
     } else {
         Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
         return nullptr;

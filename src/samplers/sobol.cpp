@@ -65,6 +65,7 @@ std::unique_ptr<Sampler> SobolSampler::Clone(int seed) {
 SobolSampler *CreateSobolSampler(const ParamSet &params,
                                  const Bounds2i &sampleBounds) {
     int nsamp = params.FindOneInt("pixelsamples", 16);
+    LOG(INFO) << "CreateSobolSampler: pixelsamples = ["<< nsamp <<"]";
     if (PbrtOptions.quickRender) nsamp = 1;
     return new SobolSampler(nsamp, sampleBounds);
 }
