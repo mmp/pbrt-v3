@@ -1712,12 +1712,14 @@ Integrator *RenderOptions::MakeIntegrator() const {
         // Create aux camera
         std::shared_ptr<Camera> dcamera (MakeCamera(32, 32));
         // Create aux sampler
+        ParamSet dparams;
         std::unique_ptr<int[]> dparamsdata (new int[1]);
         dparamsdata[0] = 1;
-        dparamsdata.AddInt(std::string("pixelsamples"), std::move(dparamsdata), 1);
+        dparams.AddInt(std::string("pixelsamples"), std::move(dparamsdata), 1);
         std::shared_ptr<Sampler> dsampler (MakeSampler("sobol", dparams, dcamera->film));
         // Create integrator
-        integrator = CreateIISPTIntegrator(IntegratorParams, sampler, camera, dcamera, dsampler);
+        integrator = CreateIISPTIntegrator(IntegratorParams, sampler, camera,
+            dsampler, dcamera);
     } else {
         Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
         return nullptr;

@@ -68,11 +68,14 @@ public:
 
     }
 
-
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
+    virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth);
 
-    void Preprocess(const Scene &scene, Sampler &sampler);
+    void Preprocess(const Scene &scene);
+
+    Spectrum SpecularReflect(
+        const RayDifferential &ray, const SurfaceInteraction &isect,
+        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth);
 
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
 
@@ -86,9 +89,9 @@ public:
     std::vector<int> nLightSamples;
 };
 
-IISPTdIntegrator *CreateIISPTdIntegrator(
-    const ParamSet &params, std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera);
+std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
+    std::shared_ptr<Sampler> sampler,
+    std::shared_ptr<Camera> camera);
 
 }  // namespace pbrt
 

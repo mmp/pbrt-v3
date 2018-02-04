@@ -32,6 +32,7 @@
 
 // integrators/iispt.cpp*
 #include "integrators/iispt.h"
+#include "integrators/iispt_d.h"
 #include "bssrdf.h"
 #include "camera.h"
 #include "film.h"
@@ -39,27 +40,37 @@
 #include "paramset.h"
 #include "scene.h"
 #include "stats.h"
+#include "progressreporter.h"
 
 namespace pbrt {
+
+STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
 // IISPTIntegrator Method Definitions
+
+// Constructor
 IISPTIntegrator::IISPTIntegrator(int maxDepth,
                                std::shared_ptr<const Camera> camera,
                                std::shared_ptr<Sampler> sampler,
                                const Bounds2i &pixelBounds,
-                               ParamSet &params,
+                               std::shared_ptr<Sampler> dsampler,
+                               std::shared_ptr<Camera> dcamera,
                                Float rrThreshold,
                                const std::string &lightSampleStrategy
-                                )
-    : SamplerIntegrator(camera, sampler, pixelBounds),
-      sampler(sampler),
-      maxDepth(maxDepth),
-      rrThreshold(rrThreshold),
-      lightSampleStrategy(lightSampleStrategy),
-      params(params) {}
+) :
+    SamplerIntegrator(camera, sampler, pixelBounds),
+    sampler(sampler),
+    maxDepth(maxDepth),
+    rrThreshold(rrThreshold),
+    lightSampleStrategy(lightSampleStrategy),
+    dsampler(dsampler),
+    dcamera(dcamera)
+{
+
+}
 
 void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
     lightDistribution =
@@ -73,20 +84,10 @@ void IISPTIntegrator::Render(const Scene &scene) {
     // Render image tiles in parallel
 
     // Create the auxiliary integrator for intersection-view
-    // renders
-    // Create sobol sampler with 1 pixelsamples
-    RenderOptions doptions;
-    Camera* dcamera = doptions.MakeCamera(32, 32);
-    ParamSet dparams;
-    std::unique_ptr<int[]> dparamsdata (new int[1]);
-    dparamsdata[0] = 1;
-    dparams.AddInt(std::string("pixelsamples"), std::move(dparamsdata), 1);
-    std::shared_ptr<Sampler> dsampler =
-        MakeSampler("sobol", dparams, dcamera->film);
-
-    std::unique_ptr<IISPTdIntegrator> dintegrator (CreateIISPTdIntegrator(
-        dparams, dsampler
-    ));
+    std::shared_ptr<IISPTdIntegrator> dintegrator = CreateIISPTdIntegrator(
+        dsampler, dcamera);
+    // Preprocess on auxiliary integrator
+    dintegrator->Preprocess(scene);
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
@@ -147,7 +148,8 @@ void IISPTIntegrator::Render(const Scene &scene) {
 
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
+                    // NOTE Passing a depth=0 here
+                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena, 0);
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
@@ -327,9 +329,11 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r, const Scene &scene,
 }
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
-                                     std::shared_ptr<Sampler> sampler,
-                                     std::shared_ptr<const Camera> camera
-                                      ) {
+    std::shared_ptr<Sampler> sampler,
+    std::shared_ptr<const Camera> camera,
+    std::shared_ptr<Sampler> dsampler,
+    std::shared_ptr<Camera> dcamera
+) {
     LOG(INFO) << "CreateIISPTIntegrator: in";
 
     int maxDepth = params.FindOneInt("maxdepth", 5);
@@ -350,8 +354,8 @@ IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
     Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
     std::string lightStrategy =
         params.FindOneString("lightsamplestrategy", "spatial");
-    return new IISPTIntegrator(maxDepth, camera, sampler, pixelBounds, params,
-                              rrThreshold, lightStrategy);
+    return new IISPTIntegrator(maxDepth, camera, sampler, pixelBounds,
+        dsampler, dcamera, rrThreshold, lightStrategy);
 }
 
 }  // namespace pbrt

@@ -47,27 +47,66 @@ namespace pbrt {
 // renders
 
 // Preprocess in IISPTd should be only called once from the host integrator
-void IISPTdIntegrator::Preprocess(const Scene &scene,
-                                          Sampler &sampler) {
+void IISPTdIntegrator::Preprocess(const Scene &scene) {
+
     LOG(INFO) << "Preprocess: in";
     if (strategy == LightStrategy::UniformSampleAll) {
         // Compute number of samples to use for each light
         for (const auto &light : scene.lights)
-            nLightSamples.push_back(sampler.RoundCount(light->nSamples));
+            nLightSamples.push_back(sampler->RoundCount(light->nSamples));
 
         // Request samples for sampling all lights
         for (int i = 0; i < maxDepth; ++i) {
             for (size_t j = 0; j < scene.lights.size(); ++j) {
-                sampler.Request2DArray(nLightSamples[j]);
-                sampler.Request2DArray(nLightSamples[j]);
+                sampler->Request2DArray(nLightSamples[j]);
+                sampler->Request2DArray(nLightSamples[j]);
             }
         }
     }
+
+}
+
+Spectrum IISPTdIntegrator::SpecularReflect(
+    const RayDifferential &ray, const SurfaceInteraction &isect,
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) {
+    // Compute specular reflection direction _wi_ and BSDF value
+    Vector3f wo = isect.wo, wi;
+    Float pdf;
+    BxDFType type = BxDFType(BSDF_REFLECTION | BSDF_SPECULAR);
+    Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf, type);
+
+    // Return contribution of specular reflection
+    const Normal3f &ns = isect.shading.n;
+    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
+        // Compute ray differential _rd_ for specular reflection
+        RayDifferential rd = isect.SpawnRay(wi);
+        if (ray.hasDifferentials) {
+            rd.hasDifferentials = true;
+            rd.rxOrigin = isect.p + isect.dpdx;
+            rd.ryOrigin = isect.p + isect.dpdy;
+            // Compute differential reflected directions
+            Normal3f dndx = isect.shading.dndu * isect.dudx +
+                            isect.shading.dndv * isect.dvdx;
+            Normal3f dndy = isect.shading.dndu * isect.dudy +
+                            isect.shading.dndv * isect.dvdy;
+            Vector3f dwodx = -ray.rxDirection - wo,
+                     dwody = -ray.ryDirection - wo;
+            Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
+            Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
+            rd.rxDirection =
+                wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
+            rd.ryDirection =
+                wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
+        }
+        return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) /
+               pdf;
+    } else
+        return Spectrum(0.f);
 }
 
 Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
                                       const Scene &scene, Sampler &sampler,
-                                      MemoryArena &arena, int depth) const {
+                                      MemoryArena &arena, int depth) {
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     // Find closest ray intersection or return background radiance
@@ -216,28 +255,19 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
     camera->film->WriteImage();
 }
 
-IISPTdIntegrator *CreateIISPTdIntegrator(
+std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
     std::shared_ptr<Sampler> sampler,
-    std::shared_ptr<const Camera> camera) {
+    std::shared_ptr<Camera> camera) {
 
     LOG(INFO) << "CreateIISPTdIntegrator: in";
     int maxDepth = 2; // NOTE Hard-coded "maxdepth"
     LightStrategy strategy;
-    std::string st ("all"); // "strategy" NOTE hardcoded
-    if (st == "one")
-        strategy = LightStrategy::UniformSampleOne;
-    else if (st == "all")
-        strategy = LightStrategy::UniformSampleAll;
-    else {
-        Warning(
-            "Strategy \"%s\" for direct lighting unknown. "
-            "Using \"all\".",
-            st.c_str());
-        strategy = LightStrategy::UniformSampleAll;
-    }
+    // "strategy" NOTE hardcoded
+    strategy = LightStrategy::UniformSampleAll;
+
     Bounds2i pixelBounds = camera->film->GetSampleBounds();
-    IISPTdIntegrator* result = new IISPTdIntegrator(strategy, maxDepth, camera, sampler,
-                                        pixelBounds);
+
+    std::shared_ptr<IISPTdIntegrator> result (new IISPTdIntegrator(strategy, maxDepth, camera, sampler, pixelBounds));
 
     return result;
 }

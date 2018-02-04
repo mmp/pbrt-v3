@@ -47,22 +47,27 @@ namespace pbrt {
 
 // IISPTIntegrator Declarations
 class IISPTIntegrator : public SamplerIntegrator {
-  public:
+public:
     // IISPTIntegrator Public Methods
+
+    // Constructor
     IISPTIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
                    std::shared_ptr<Sampler> sampler,
                    const Bounds2i &pixelBounds,
-                   ParamSet &params,
+                   std::shared_ptr<Sampler> dsampler,
+                   std::shared_ptr<Camera> dcamera,
                    Float rrThreshold = 1,
                    const std::string &lightSampleStrategy = "spatial"
-                   );
+    );
 
     void Preprocess(const Scene &scene, Sampler &sampler);
+
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth) const;
+
     void Render(const Scene &scene);
 
-  private:
+private:
     // IISPTIntegrator Private Data
     const int maxDepth;
     const Float rrThreshold;
@@ -70,14 +75,14 @@ class IISPTIntegrator : public SamplerIntegrator {
     std::unique_ptr<LightDistribution> lightDistribution;
     std::shared_ptr<Sampler> sampler;
 
-    // This is a reference to a field in RenderOptions, which is cleared
-    // only at the end of rendering
-    const ParamSet &params;
+    std::shared_ptr<Sampler> dsampler;
+    std::shared_ptr<Camera> dcamera;
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
-                                     std::shared_ptr<Sampler> sampler,
-                                     std::shared_ptr<const Camera> camera);
+    std::shared_ptr<Sampler> sampler, std::shared_ptr<const Camera> camera,
+    std::shared_ptr<Sampler> dsampler, std::shared_ptr<Camera> dcamera
+);
 
 }  // namespace pbrt
 
