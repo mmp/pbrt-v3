@@ -77,6 +77,10 @@ public:
         const RayDifferential &ray, const SurfaceInteraction &isect,
         const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth);
 
+    Spectrum SpecularTransmit(
+        const RayDifferential &ray, const SurfaceInteraction &isect,
+        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth);
+
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
 
   private:
