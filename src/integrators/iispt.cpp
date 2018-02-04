@@ -222,6 +222,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 << ", beta = " << beta;
 
         // Intersect _ray_ with scene and store intersection in _isect_
+        // SurfaceInteraction defined in interaction.cpp
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
 
@@ -269,9 +270,34 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r, const Scene &scene,
         }
 
         // Sample BSDF to get new path direction
+        // wo = -ray.d
+        // wi = (new)
         Vector3f wo = -ray.d, wi;
         Float pdf;
         BxDFType flags;
+        // NOTE this is where importance sampling should go
+        // Spectrum is a typedef for RGBSpectrum
+        // Look at reflection.cpp:BxDF::Sample_f wi and pdf are updated
+        // Look at sampling.h:CosineSampleHemisphere, sample is generated from
+        //     sampler.Get2D(), which is called Point2f u
+        // Look at sampling.cpp:ConcentricSampleDisk
+        //     it maps [0,1] to [-1,1]
+        //     it returns a 2D point on a circle surface,
+        //     from which CosineSampleHemisphere derives the z coordinate
+        // Possible approach: modify the sampler.Get2D to use the importance
+        //     map. Then modify the pdf dividing it by the pdf of the importance
+        //     map.
+        // In reflection.cpp:SpecularReflection::Sample_f The reflected ray
+        //     is deterministic and pdf=1, in this case we should not use
+        //     the importance map.
+        // The importance map should be only used to sample a 'normal'
+        //     BRDF.
+        // Or we need to pre-compute a full map by multiplying the importance
+        // map by the BRDF
+        // It seems that wo is the outgoing ray, in the coordinate space
+        //     of the surface: x and y on the surface, z point outwards from the surface
+        //     in direction of the normal
+        //     The normal is in isect.shading.n
         Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                           BSDF_ALL, &flags);
         VLOG(2) << "Sampled BSDF, f = " << f << ", pdf = " << pdf;
