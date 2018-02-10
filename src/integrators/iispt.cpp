@@ -42,6 +42,8 @@
 #include "stats.h"
 #include "progressreporter.h"
 
+#include <cstdlib>
+
 namespace pbrt {
 
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
@@ -77,6 +79,10 @@ void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
         CreateLightSampleDistribution(lightSampleStrategy, scene);
 }
 
+static bool is_debug_pixel(Point2i pixel) {
+    return pixel.x == 365 && pixel.y == 500;
+}
+
 void IISPTIntegrator::Render(const Scene &scene) {
 
     Preprocess(scene, *sampler);
@@ -98,6 +104,7 @@ void IISPTIntegrator::Render(const Scene &scene) {
     ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
         ParallelFor2D([&](Point2i tile) {
+
             // Render section of image corresponding to _tile_
 
             // Allocate _MemoryArena_ for tile
@@ -113,7 +120,7 @@ void IISPTIntegrator::Render(const Scene &scene) {
             int y0 = sampleBounds.pMin.y + tile.y * tileSize;
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
-            LOG(INFO) << "Starting image tile " << tileBounds;
+            // LOG(INFO) << "Starting image tile " << tileBounds;
 
             // Get _FilmTile_ for tile
             std::unique_ptr<FilmTile> filmTile =
@@ -121,6 +128,12 @@ void IISPTIntegrator::Render(const Scene &scene) {
 
             // Loop over pixels in tile to render them
             for (Point2i pixel : tileBounds) {
+
+                // TODO remove debug stuff here
+                if (is_debug_pixel(pixel)) {
+                    LOG(INFO) << "IISPTIntegrator::Render: Starting pixel ["<< pixel.x <<"] ["<< pixel.y <<"]";
+                }
+
                 {
                     ProfilePhase pp(Prof::StartPixel);
                     tileSampler->StartPixel(pixel);
@@ -149,7 +162,9 @@ void IISPTIntegrator::Render(const Scene &scene) {
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
                     // NOTE Passing a depth=0 here
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena, 0);
+                    if (rayWeight > 0) {
+                        L = Li(ray, scene, *tileSampler, arena, 0, pixel);
+                    }
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
@@ -185,7 +200,7 @@ void IISPTIntegrator::Render(const Scene &scene) {
                     arena.Reset();
                 } while (tileSampler->StartNextSample());
             }
-            LOG(INFO) << "Finished image tile " << tileBounds;
+            // LOG(INFO) << "Finished image tile " << tileBounds;
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
@@ -199,9 +214,23 @@ void IISPTIntegrator::Render(const Scene &scene) {
     camera->film->WriteImage();
 }
 
-Spectrum IISPTIntegrator::Li(const RayDifferential &r, const Scene &scene,
-                            Sampler &sampler, MemoryArena &arena,
-                            int depth) const {
+Spectrum IISPTIntegrator::Li(const RayDifferential &r,
+                             const Scene &scene,
+                             Sampler &sampler,
+                             MemoryArena &arena,
+                             int depth
+                             ) const {
+    LOG(INFO) << "ERROR IISPTIntegrator::Li, overridden version, is not defined in this debug version.";
+    exit(1);
+}
+
+Spectrum IISPTIntegrator::Li(const RayDifferential &r,
+                             const Scene &scene,
+                             Sampler &sampler,
+                             MemoryArena &arena,
+                             int depth,
+                             Point2i pixel
+                             ) const {
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f), beta(1.f);
     RayDifferential ray(r);
@@ -225,6 +254,11 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r, const Scene &scene,
         // SurfaceInteraction defined in interaction.cpp
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
+
+        // TODO Remove debug statements
+        if (is_debug_pixel(pixel)) {
+            LOG(INFO) << "Li: path tracing, bounce ["<< bounces <<"], intersection found ["<< foundIntersection <<"]";
+        }
 
         // Possibly add emitted light at intersection
         if (bounces == 0 || specularBounce) {

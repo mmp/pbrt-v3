@@ -62,8 +62,20 @@ public:
 
     void Preprocess(const Scene &scene, Sampler &sampler);
 
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
+    Spectrum Li(const RayDifferential &r,
+                 const Scene &scene,
+                 Sampler &sampler,
+                 MemoryArena &arena,
+                 int depth
+                 ) const;
+
+    Spectrum Li(const RayDifferential &r,
+                 const Scene &scene,
+                 Sampler &sampler,
+                 MemoryArena &arena,
+                 int depth,
+                 Point2i pixel
+                 ) const;
 
     void Render(const Scene &scene);
 
