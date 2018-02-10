@@ -92,8 +92,8 @@ void IISPTIntegrator::Render(const Scene &scene) {
     // Render image tiles in parallel
 
     // Create the auxiliary integrator for intersection-view
-    std::shared_ptr<IISPTdIntegrator> dintegrator = CreateIISPTdIntegrator(
-        dsampler, dcamera);
+    this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(
+        dsampler, dcamera));
     // Preprocess on auxiliary integrator
     dintegrator->Preprocess(scene);
 
@@ -270,6 +270,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
                 std::shared_ptr<Camera> testCamera (CreateIISPTPerspectiveCamera(
                             32, 32, dcamera->medium, isect.p, Point3f(isect.n.x, isect.n.y, isect.n.z)));
                 LOG(INFO) << "Created auxiliary camera";
+                this->dintegrator->RenderView(scene, testCamera);
             }
 
         }

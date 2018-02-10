@@ -42,11 +42,9 @@
 #include "pbrt.h"
 #include "integrator.h"
 #include "scene.h"
+#include "integrators/directlighting.h"
 
 namespace pbrt {
-
-// LightStrategy Declarations
-enum class LightStrategy { UniformSampleAll, UniformSampleOne };
 
 // IISPTdIntegrator Declarations
 class IISPTdIntegrator {

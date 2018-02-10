@@ -42,6 +42,7 @@
 #include "pbrt.h"
 #include "integrator.h"
 #include "lightdistrib.h"
+#include "integrators/iispt_d.h"
 
 namespace pbrt {
 
@@ -89,6 +90,7 @@ private:
 
     std::shared_ptr<Sampler> dsampler;
     std::shared_ptr<Camera> dcamera;
+    std::shared_ptr<IISPTdIntegrator> dintegrator;
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,

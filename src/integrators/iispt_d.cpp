@@ -40,6 +40,8 @@
 #include "stats.h"
 #include "progressreporter.h"
 
+#include <cstdlib>
+
 namespace pbrt {
 
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
@@ -195,6 +197,8 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
 }
 
 void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> camera) {
+    LOG(INFO) << "dintegrator start view";
+
     // There is no preprocess here.
     // It must have already been called by the host.
 
@@ -203,7 +207,7 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
     Vector2i sampleExtent = sampleBounds.Diagonal();
-    const int tileSize = 16;
+    const int tileSize = 32;
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
     ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
@@ -224,7 +228,6 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
             int y0 = sampleBounds.pMin.y + tile.y * tileSize;
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
-            LOG(INFO) << "Starting image tile " << tileBounds;
 
             // Get _FilmTile_ for tile
             std::unique_ptr<FilmTile> filmTile =
@@ -260,6 +263,8 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
                     // NOTE using a depth=0 here
+                    // LOG(INFO) << "AUX camera ray: o=["<< ray.o <<"], d=["<< ray.d <<"]";
+                    // exit(0);
                     if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena, 0);
 
                     // Issue warning if unexpected radiance value returned
@@ -296,7 +301,6 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
                     arena.Reset();
                 } while (tileSampler->StartNextSample());
             }
-            LOG(INFO) << "Finished image tile " << tileBounds;
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
@@ -304,10 +308,11 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
         }, nTiles);
         reporter.Done();
     }
-    LOG(INFO) << "Rendering finished";
 
     // Save final image after rendering
     camera->film->WriteImage();
+
+    LOG(INFO) << "dintegrator completed view";
 }
 
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(

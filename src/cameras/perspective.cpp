@@ -235,11 +235,15 @@ PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium
 
     // Create lookAt transform
     const Vector3f up (0.f, 0.f, 1.f);
+    const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
     AnimatedTransform cam2world (
-                new Transform(LookAt(pos, look, up)),
+                cameraTransform,
                 0.,
-                new Transform(),
+                cameraTransform,
                 0.);
+
+    LOG(INFO) << "Creating an IISPTPerspectiveCamera at position: ["<< pos <<"]";
+    LOG(INFO) << "Created an IISPTPerspectiveCamera with startTransform ["<< Transform(LookAt(pos, look, up)) <<"]";
 
     // Create film
     const Point2i resolution (xres, yres);
@@ -271,7 +275,7 @@ PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium
         screen.pMin.y = -1.f / frame;
         screen.pMax.y = 1.f / frame;
     }
-    Float fov = 90.;
+    Float fov = 120.;
 
     return new PerspectiveCamera(cam2world, screen, shutteropen, shutterclose,
                                  lensradius, focaldistance, fov, film, medium);
