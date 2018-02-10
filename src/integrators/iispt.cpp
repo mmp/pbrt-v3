@@ -41,6 +41,7 @@
 #include "scene.h"
 #include "stats.h"
 #include "progressreporter.h"
+#include "cameras/perspective.h"
 
 #include <cstdlib>
 
@@ -80,7 +81,8 @@ void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
 }
 
 static bool is_debug_pixel(Point2i pixel) {
-    return pixel.x == 365 && pixel.y == 500;
+    return (pixel.x == 365 && pixel.y == 500) ||
+            (pixel.x == 450 && pixel.y == 120);
 }
 
 void IISPTIntegrator::Render(const Scene &scene) {
@@ -257,7 +259,19 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
 
         // TODO Remove debug statements
         if (is_debug_pixel(pixel)) {
+            LOG(INFO) << "INFO for pixel ["<< pixel <<"]";
+            LOG(INFO) << "Outgoing ray was o=["<< ray.o <<"] and d=["<< ray.d <<"]";
             LOG(INFO) << "Li: path tracing, bounce ["<< bounces <<"], intersection found ["<< foundIntersection <<"]";
+            LOG(INFO) << "Intersection n is ["<< isect.n <<"]";
+            LOG(INFO) << "Intersection p is ["<< isect.p <<"]";
+
+            // Create camera for auxiliary integrator
+            if (foundIntersection) {
+                std::shared_ptr<Camera> testCamera (CreateIISPTPerspectiveCamera(
+                            32, 32, dcamera->medium, isect.p, Point3f(isect.n.x, isect.n.y, isect.n.z)));
+                LOG(INFO) << "Created auxiliary camera";
+            }
+
         }
 
         // Possibly add emitted light at intersection
