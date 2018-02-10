@@ -161,6 +161,7 @@ struct RenderOptions {
     Integrator *MakeIntegrator() const;
     Scene *MakeScene();
     Camera *MakeCamera() const;
+    Camera* MakeCamera(int xres, int yres) const;
 
     // RenderOptions Public Data
     Float transformStartTime = 0, transformEndTime = 1;
@@ -866,6 +867,17 @@ Film *MakeFilm(const std::string &name, const ParamSet &paramSet,
     Film *film = nullptr;
     if (name == "image")
         film = CreateFilm(paramSet, std::move(filter));
+    else
+        Warning("Film \"%s\" unknown.", name.c_str());
+    paramSet.ReportUnused();
+    return film;
+}
+
+Film *MakeFilm(const std::string &name, const ParamSet &paramSet,
+               std::unique_ptr<Filter> filter, int xres, int yres) {
+    Film *film = nullptr;
+    if (name == "image")
+        film = CreateFilm(paramSet, std::move(filter), xres, yres);
     else
         Warning("Film \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();
@@ -1697,7 +1709,17 @@ Integrator *RenderOptions::MakeIntegrator() const {
     } else if (IntegratorName == "sppm") {
         integrator = CreateSPPMIntegrator(IntegratorParams, camera);
     } else if (IntegratorName == "iispt") {
-        integrator = CreateIISPTIntegrator(IntegratorParams, sampler, camera);
+        // Create aux camera
+        std::shared_ptr<Camera> dcamera (MakeCamera(32, 32));
+        // Create aux sampler
+        ParamSet dparams;
+        std::unique_ptr<int[]> dparamsdata (new int[1]);
+        dparamsdata[0] = 1;
+        dparams.AddInt(std::string("pixelsamples"), std::move(dparamsdata), 1);
+        std::shared_ptr<Sampler> dsampler (MakeSampler("sobol", dparams, dcamera->film));
+        // Create integrator
+        integrator = CreateIISPTIntegrator(IntegratorParams, sampler, camera,
+            dsampler, dcamera);
     } else {
         Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
         return nullptr;
@@ -1723,6 +1745,19 @@ Integrator *RenderOptions::MakeIntegrator() const {
 Camera *RenderOptions::MakeCamera() const {
     std::unique_ptr<Filter> filter = MakeFilter(FilterName, FilterParams);
     Film *film = MakeFilm(FilmName, FilmParams, std::move(filter));
+    if (!film) {
+        Error("Unable to create film.");
+        return nullptr;
+    }
+    Camera *camera = pbrt::MakeCamera(CameraName, CameraParams, CameraToWorld,
+                                  renderOptions->transformStartTime,
+                                  renderOptions->transformEndTime, film);
+    return camera;
+}
+
+Camera* RenderOptions::MakeCamera(int xres, int yres) const {
+    std::unique_ptr<Filter> filter = MakeFilter(FilterName, FilterParams);
+    Film *film = MakeFilm(FilmName, FilmParams, std::move(filter), xres, yres);
     if (!film) {
         Error("Unable to create film.");
         return nullptr;

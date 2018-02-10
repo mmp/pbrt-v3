@@ -42,34 +42,61 @@
 #include "pbrt.h"
 #include "integrator.h"
 #include "lightdistrib.h"
+#include "integrators/iispt_d.h"
 
 namespace pbrt {
 
 // IISPTIntegrator Declarations
 class IISPTIntegrator : public SamplerIntegrator {
-  public:
+public:
     // IISPTIntegrator Public Methods
+
+    // Constructor
     IISPTIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
                    std::shared_ptr<Sampler> sampler,
-                   const Bounds2i &pixelBounds, Float rrThreshold = 1,
-                   const std::string &lightSampleStrategy = "spatial");
+                   const Bounds2i &pixelBounds,
+                   std::shared_ptr<Sampler> dsampler,
+                   std::shared_ptr<Camera> dcamera,
+                   Float rrThreshold = 1,
+                   const std::string &lightSampleStrategy = "spatial"
+    );
 
     void Preprocess(const Scene &scene, Sampler &sampler);
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth) const;
 
-  private:
+    Spectrum Li(const RayDifferential &r,
+                 const Scene &scene,
+                 Sampler &sampler,
+                 MemoryArena &arena,
+                 int depth
+                 ) const;
+
+    Spectrum Li(const RayDifferential &r,
+                 const Scene &scene,
+                 Sampler &sampler,
+                 MemoryArena &arena,
+                 int depth,
+                 Point2i pixel
+                 ) const;
+
+    void Render(const Scene &scene);
+
+private:
     // IISPTIntegrator Private Data
     const int maxDepth;
     const Float rrThreshold;
     const std::string lightSampleStrategy;
     std::unique_ptr<LightDistribution> lightDistribution;
-    const Scene* scene;
+    std::shared_ptr<Sampler> sampler;
+
+    std::shared_ptr<Sampler> dsampler;
+    std::shared_ptr<Camera> dcamera;
+    std::shared_ptr<IISPTdIntegrator> dintegrator;
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
-                                     std::shared_ptr<Sampler> sampler,
-                                     std::shared_ptr<const Camera> camera);
+    std::shared_ptr<Sampler> sampler, std::shared_ptr<const Camera> camera,
+    std::shared_ptr<Sampler> dsampler, std::shared_ptr<Camera> dcamera
+);
 
 }  // namespace pbrt
 

@@ -38,6 +38,11 @@
 #include "sampling.h"
 #include "light.h"
 #include "stats.h"
+#include "geometry.h"
+#include "transform.h"
+#include "filters/gaussian.h"
+
+#include <cstdlib>
 
 namespace pbrt {
 
@@ -222,6 +227,58 @@ Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &u,
     Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1;
     *pdf = (dist * dist) / (AbsDot(lensIntr.n, *wi) * lensArea);
     return We(lensIntr.SpawnRay(-*wi), pRaster);
+}
+
+PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium* medium,
+                                                const Point3f pos,
+                                                const Point3f look) {
+
+    // Create lookAt transform
+    const Vector3f up (0.f, 0.f, 1.f);
+    const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
+    AnimatedTransform cam2world (
+                cameraTransform,
+                0.,
+                cameraTransform,
+                0.);
+
+    LOG(INFO) << "Creating an IISPTPerspectiveCamera at position: ["<< pos <<"]";
+    LOG(INFO) << "Created an IISPTPerspectiveCamera with startTransform ["<< Transform(LookAt(pos, look, up)) <<"]";
+
+    // Create film
+    const Point2i resolution (xres, yres);
+    const Bounds2f cropWindow (Point2f(0., 0.), Point2f(1., 1.));
+    std::unique_ptr<Filter> filter (new GaussianFilter(Vector2f(2.f, 2.f), 2.f));
+    Float scale = 1.;
+    Float diagonal = 35.;
+    Float maxSampleLuminance = Infinity;
+    // TODO change output file name
+    Film* film = new Film(resolution, cropWindow, std::move(filter), diagonal,
+                          "test" + std::to_string(rand()) + ".png", scale, maxSampleLuminance);
+
+    // Create other parameters
+    Float shutteropen = 0.f;
+    Float shutterclose = 1.f;
+    Float lensradius = 0.f;
+    Float focaldistance = 1e6;
+    // Aspect ratio
+    Float frame = Float(film->fullResolution.x) / Float(film->fullResolution.y);
+    Bounds2f screen;
+    if (frame > 1.f) {
+        screen.pMin.x = -frame;
+        screen.pMax.x = frame;
+        screen.pMin.y = -1.f;
+        screen.pMax.y = 1.f;
+    } else {
+        screen.pMin.x = -1.f;
+        screen.pMax.x = 1.f;
+        screen.pMin.y = -1.f / frame;
+        screen.pMax.y = 1.f / frame;
+    }
+    Float fov = 120.;
+
+    return new PerspectiveCamera(cam2world, screen, shutteropen, shutterclose,
+                                 lensradius, focaldistance, fov, film, medium);
 }
 
 PerspectiveCamera *CreatePerspectiveCamera(const ParamSet &params,

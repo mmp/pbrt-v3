@@ -188,6 +188,9 @@ class FilmTile {
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter);
 
+Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter,
+    int xres, int yres);
+
 }  // namespace pbrt
 
 #endif  // PBRT_CORE_FILM_H
