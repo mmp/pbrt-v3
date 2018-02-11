@@ -358,7 +358,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
             }
 
             // Create camera for auxiliary integrator
-            if (foundIntersection && bounces == 0) {
+            if (foundIntersection && bounces == 0 && !specularBounce) {
                 // Invert normal if the surface's normal was pointing inwards
                 Normal3f surfNormal = isect.n;
                 if (Dot(Vector3f(isect.n.x, isect.n.y, isect.n.z), Vector3f(ray.o.x, ray.o.y, ray.o.z)) < 0) {

@@ -41,9 +41,14 @@ HemisphericCamera* CreateHemisphericCamera(
     LOG(INFO) << "                         dir " << dir;
 
     // Create lookAt transform
-    const Vector3f up (0.f, 0.f, 1.f);
+    const Vector3f up = (dir.x == 0.0 && dir.y == 0.0) ?
+                Vector3f(0.f, 1.f, 0.f) :      // Normal already pointing towards Z, set Up vector to be in Y
+                Vector3f(0.f, 0.f, 1.f);       // Set up vector to be in Z
+
+
     const Point3f look = Point3f(pos.x+dir.x, pos.y+dir.y, pos.z+dir.z);
-    const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
+    const Point3f posAdjusted = Point3f(pos.x+(0.001*dir.x), pos.y+(0.001*dir.y), pos.z+(0.001*dir.z));
+    const Transform* cameraTransform = new Transform(LookAt(posAdjusted, look, up).GetInverseMatrix());
 
     AnimatedTransform cam2world (
                 cameraTransform,

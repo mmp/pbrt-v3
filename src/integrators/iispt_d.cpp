@@ -177,6 +177,11 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
     if (!isect.bsdf)
         return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
     Vector3f wo = isect.wo;
+    Float woLength = std::sqrt(Dot(wo, wo));
+    if (woLength == 0) {
+        LOG(INFO) << "Detected a 0 length wo";
+        exit(1);
+    }
     // Compute emitted light if ray hit an area light source
     L += isect.Le(wo);
     if (scene.lights.size() > 0) {
