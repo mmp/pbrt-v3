@@ -41,7 +41,7 @@
 #include "scene.h"
 #include "stats.h"
 #include "progressreporter.h"
-#include "cameras/perspective.h"
+#include "cameras/hemispheric.h"
 
 #include <cstdlib>
 
@@ -362,9 +362,14 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
                     surfNormal = Normal3f(-isect.n.x, -isect.n.y, -isect.n.z);
                 }
 
-                std::shared_ptr<Camera> testCamera (CreateIISPTPerspectiveCamera(
-                            IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
-                            isect.p, Point3f(surfNormal.x, surfNormal.y, surfNormal.z)));
+                std::shared_ptr<Camera> testCamera (
+                            CreateHemisphericCamera(
+                                    IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
+                                    isect.p, Point3f(surfNormal.x, surfNormal.y, surfNormal.z),
+                                    pixel
+                                )
+                            );
+
                 LOG(INFO) << "Created auxiliary camera";
                 this->dintegrator->RenderView(scene, testCamera);
             }
