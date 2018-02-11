@@ -4,6 +4,7 @@ var async = require("async");
 const { spawn } = require('child_process');
 const fs = require('fs');
 var path = require("path");
+var chalk = require("chalk");
 
 var log_dir = "/tmp/pbrt";
 
@@ -51,7 +52,13 @@ var simple_exec = function(cmd, cmd_args, callback, no_output) {
         });
     }
     proc.on("close", function(code, signal) {
-        console.info("Process ["+ cmd +"] exited ["+ code +"] ["+ signal +"]");
+        var msg = "Process ["+ cmd +"] exited ["+ code +"] ["+ signal +"]";
+        if (code == 0 && !signal) {
+            console.info(chalk.green(msg));
+        } else {
+            console.info(chalk.red(msg));
+        }
+
         callback(code, signal);
         return;
     });

@@ -81,9 +81,11 @@ void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
 }
 
 static bool is_debug_pixel(Point2i pixel) {
-    return (pixel.x == 365 && pixel.y == 500) ||
-            (pixel.x == 450 && pixel.y == 120) ||
-            (pixel.x == 464 && pixel.y == 614);
+//    return (pixel.x == 365 && pixel.y == 500) ||
+//            (pixel.x == 450 && pixel.y == 120) ||
+//            (pixel.x == 464 && pixel.y == 614);
+    return (pixel.x == 1159 && pixel.y == 659) ||
+            (pixel.x == 179 && pixel.y == 159);
 }
 
 void IISPTIntegrator::Render(const Scene &scene) {
@@ -258,24 +260,6 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
 
-        // TODO Remove debug statements
-        if (is_debug_pixel(pixel)) {
-            LOG(INFO) << "INFO for pixel ["<< pixel <<"]";
-            LOG(INFO) << "Outgoing ray was o=["<< ray.o <<"] and d=["<< ray.d <<"]";
-            LOG(INFO) << "Li: path tracing, bounce ["<< bounces <<"], intersection found ["<< foundIntersection <<"]";
-            LOG(INFO) << "Intersection n is ["<< isect.n <<"]";
-            LOG(INFO) << "Intersection p is ["<< isect.p <<"]";
-
-            // Create camera for auxiliary integrator
-            if (foundIntersection) {
-                std::shared_ptr<Camera> testCamera (CreateIISPTPerspectiveCamera(
-                            32, 32, dcamera->medium, isect.p, Point3f(isect.n.x, isect.n.y, isect.n.z)));
-                LOG(INFO) << "Created auxiliary camera";
-                this->dintegrator->RenderView(scene, testCamera);
-            }
-
-        }
-
         // Possibly add emitted light at intersection
         if (bounces == 0 || specularBounce) {
             // Add emitted light at path vertex or from the environment
@@ -357,6 +341,30 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
         CHECK_GE(beta.y(), 0.f);
         DCHECK(!std::isinf(beta.y()));
         specularBounce = (flags & BSDF_SPECULAR) != 0;
+
+        // TODO Remove debug statements
+        if (is_debug_pixel(pixel)) {
+            LOG(INFO) << "INFO for pixel ["<< pixel <<"]";
+            LOG(INFO) << "Outgoing ray was o=["<< ray.o <<"] and d=["<< ray.d <<"]";
+            LOG(INFO) << "Li: path tracing, bounce ["<< bounces <<"], intersection found ["<< foundIntersection <<"]";
+            LOG(INFO) << "Intersection n is ["<< isect.n <<"]";
+            LOG(INFO) << "Intersection p is ["<< isect.p <<"]";
+
+            if (specularBounce) {
+                LOG(INFO) << "This is a specular bounce";
+            }
+
+            // Create camera for auxiliary integrator
+            if (foundIntersection && bounces == 0) {
+                std::shared_ptr<Camera> testCamera (CreateIISPTPerspectiveCamera(
+                            IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
+                            isect.p, Point3f(isect.n.x, isect.n.y, isect.n.z)));
+                LOG(INFO) << "Created auxiliary camera";
+                this->dintegrator->RenderView(scene, testCamera);
+            }
+
+        }
+
         if ((flags & BSDF_SPECULAR) && (flags & BSDF_TRANSMISSION)) {
             Float eta = isect.bsdf->eta;
             // Update the term that tracks radiance scaling for refraction

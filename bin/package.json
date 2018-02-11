@@ -9,6 +9,7 @@
   "author": "giuliojiang",
   "license": "GPL-2.0",
   "dependencies": {
-    "async": "^2.6.0"
+    "async": "^2.6.0",
+    "chalk": "^2.3.0"
   }
 }

@@ -235,7 +235,19 @@ PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium
 
     // Create lookAt transform
     const Vector3f up (0.f, 0.f, 1.f);
-    const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
+    Matrix4x4 cameraTranslate = Translate(Vector3f(pos.x, pos.y, pos.z)).GetMatrix();
+    Matrix4x4 cameraRotate = LookAt(pos, look, up).GetMatrix();
+//    Matrix4x4 cameraRotate = LookAt(pos, -look, up).GetMatrix();
+//    Matrix4x4 cameraRotate = LookAt(pos, look, up).GetInverseMatrix();
+//    Matrix4x4 cameraRotate = LookAt(pos, -look, up).GetInverseMatrix();
+    cameraRotate.m[0][3] = 0;
+    cameraRotate.m[1][3] = 0;
+    cameraRotate.m[2][3] = 0;
+    cameraRotate.m[3][3] = 1;
+    const Transform* cameraTransform = new Transform(Matrix4x4::Mul(cameraRotate, cameraTranslate));
+
+    // const Transform* cameraTransform = new Transform(LookAt(pos, -look, up).GetInverseMatrix());
+    // const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
     AnimatedTransform cam2world (
                 cameraTransform,
                 0.,
@@ -243,7 +255,7 @@ PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium
                 0.);
 
     LOG(INFO) << "Creating an IISPTPerspectiveCamera at position: ["<< pos <<"]";
-    LOG(INFO) << "Created an IISPTPerspectiveCamera with startTransform ["<< Transform(LookAt(pos, look, up)) <<"]";
+    LOG(INFO) << "Created an IISPTPerspectiveCamera with startTransform ["<< *cameraTransform <<"]";
 
     // Create film
     const Point2i resolution (xres, yres);
