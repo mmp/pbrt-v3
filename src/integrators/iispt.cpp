@@ -84,8 +84,11 @@ static bool is_debug_pixel(Point2i pixel) {
 //    return (pixel.x == 365 && pixel.y == 500) ||
 //            (pixel.x == 450 && pixel.y == 120) ||
 //            (pixel.x == 464 && pixel.y == 614);
-    return (pixel.x == 1159 && pixel.y == 659) ||
-            (pixel.x == 179 && pixel.y == 159);
+
+//    return (pixel.x == 1159 && pixel.y == 659) ||
+//            (pixel.x == 179 && pixel.y == 159);
+
+    return (pixel.x % 100 == 0) && (pixel.y % 100 == 0);
 }
 
 void IISPTIntegrator::Render(const Scene &scene) {
