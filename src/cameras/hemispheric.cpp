@@ -47,8 +47,8 @@ HemisphericCamera* CreateHemisphericCamera(
 
 
     const Point3f look = Point3f(pos.x+dir.x, pos.y+dir.y, pos.z+dir.z);
-    const Point3f posAdjusted = Point3f(pos.x+(0.001*dir.x), pos.y+(0.001*dir.y), pos.z+(0.001*dir.z));
-    const Transform* cameraTransform = new Transform(LookAt(posAdjusted, look, up).GetInverseMatrix());
+    const Point3f posAdjusted = Point3f(pos.x+(2), pos.y+(0.1*dir.y), pos.z+(0.1*dir.z));
+    const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
 
     AnimatedTransform cam2world (
                 cameraTransform,

@@ -88,7 +88,10 @@ static bool is_debug_pixel(Point2i pixel) {
 //    return (pixel.x == 1159 && pixel.y == 659) ||
 //            (pixel.x == 179 && pixel.y == 159);
 
-    return (pixel.x % 100 == 0) && (pixel.y % 100 == 0);
+    return (pixel.x == 610 && pixel.y == 560) ||
+            (pixel.x == 600 && pixel.y == 600);
+
+//    return (pixel.x % 100 == 0) && (pixel.y % 100 == 0);
 }
 
 void IISPTIntegrator::Render(const Scene &scene) {
@@ -263,6 +266,38 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
 
+        // TODO Remove debug statements
+        if (is_debug_pixel(pixel)) {
+            LOG(INFO) << "INFO for pixel ["<< pixel <<"]";
+            LOG(INFO) << "Outgoing ray was o=["<< ray.o <<"] and d=["<< ray.d <<"]";
+            LOG(INFO) << "Li: path tracing, bounce ["<< bounces <<"], intersection found ["<< foundIntersection <<"]";
+            LOG(INFO) << "Intersection n is ["<< isect.n <<"]";
+            LOG(INFO) << "Intersection p is ["<< isect.p <<"]";
+
+            // Create camera for auxiliary integrator
+            if (foundIntersection && bounces == 0) {
+                // Invert normal if the surface's normal was pointing inwards
+                Normal3f surfNormal = isect.n;
+                if (Dot(Vector3f(isect.n.x, isect.n.y, isect.n.z), Vector3f(ray.d.x, ray.d.y, ray.d.z)) > 0.0) {
+                    surfNormal = Normal3f(-isect.n.x, -isect.n.y, -isect.n.z);
+                }
+
+                Ray auxRay = isect.SpawnRay(Vector3f(surfNormal));
+
+                std::shared_ptr<Camera> testCamera (
+                            CreateHemisphericCamera(
+                                    IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
+                                    auxRay.o, Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                                    pixel
+                                )
+                            );
+
+                LOG(INFO) << "Created auxiliary camera";
+                this->dintegrator->RenderView(scene, testCamera);
+            }
+
+        }
+
         // Possibly add emitted light at intersection
         if (bounces == 0 || specularBounce) {
             // Add emitted light at path vertex or from the environment
@@ -345,39 +380,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
         DCHECK(!std::isinf(beta.y()));
         specularBounce = (flags & BSDF_SPECULAR) != 0;
 
-        // TODO Remove debug statements
-        if (is_debug_pixel(pixel)) {
-            LOG(INFO) << "INFO for pixel ["<< pixel <<"]";
-            LOG(INFO) << "Outgoing ray was o=["<< ray.o <<"] and d=["<< ray.d <<"]";
-            LOG(INFO) << "Li: path tracing, bounce ["<< bounces <<"], intersection found ["<< foundIntersection <<"]";
-            LOG(INFO) << "Intersection n is ["<< isect.n <<"]";
-            LOG(INFO) << "Intersection p is ["<< isect.p <<"]";
 
-            if (specularBounce) {
-                LOG(INFO) << "This is a specular bounce";
-            }
-
-            // Create camera for auxiliary integrator
-            if (foundIntersection && bounces == 0 && !specularBounce) {
-                // Invert normal if the surface's normal was pointing inwards
-                Normal3f surfNormal = isect.n;
-                if (Dot(Vector3f(isect.n.x, isect.n.y, isect.n.z), Vector3f(ray.o.x, ray.o.y, ray.o.z)) < 0) {
-                    surfNormal = Normal3f(-isect.n.x, -isect.n.y, -isect.n.z);
-                }
-
-                std::shared_ptr<Camera> testCamera (
-                            CreateHemisphericCamera(
-                                    IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
-                                    isect.p, Point3f(surfNormal.x, surfNormal.y, surfNormal.z),
-                                    pixel
-                                )
-                            );
-
-                LOG(INFO) << "Created auxiliary camera";
-                this->dintegrator->RenderView(scene, testCamera);
-            }
-
-        }
 
         if ((flags & BSDF_SPECULAR) && (flags & BSDF_TRANSMISSION)) {
             Float eta = isect.bsdf->eta;
