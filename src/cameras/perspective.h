@@ -70,7 +70,7 @@ class PerspectiveCamera : public ProjectiveCamera {
 
 PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium* medium,
                                                 const Point3f pos,
-                                                const Point3f look);
+                                                const Point3f dir);
 
 PerspectiveCamera *CreatePerspectiveCamera(const ParamSet &params,
                                            const AnimatedTransform &cam2world,

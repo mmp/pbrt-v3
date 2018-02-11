@@ -231,27 +231,16 @@ Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &u,
 
 PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium* medium,
                                                 const Point3f pos,
-                                                const Point3f look) {
+                                                const Point3f dir) {
+
+    LOG(INFO) << "CreateIISPTPerspectiveCamera: pos " << pos;
+    LOG(INFO) << "                              dir " << dir;
 
     // Create lookAt transform
     const Vector3f up (0.f, 1.f, 0.f);
-    const Point3f inv_look = Point3f(-look.x, -look.y, -look.z);
-    Matrix4x4 cameraTranslate = Translate(Vector3f(pos.x, pos.y, pos.z)).GetMatrix();
-
-//    Matrix4x4 cameraRotate = LookAt(pos, look, up).GetMatrix();
-//    Matrix4x4 cameraRotate = LookAt(pos, inv_look, up).GetMatrix();
-//    Matrix4x4 cameraRotate = LookAt(pos, look, up).GetInverseMatrix();
-    Matrix4x4 cameraRotate = LookAt(pos, inv_look, up).GetInverseMatrix();
-
-    cameraRotate.m[0][3] = 0;
-    cameraRotate.m[1][3] = 0;
-    cameraRotate.m[2][3] = 0;
-    cameraRotate.m[3][3] = 1;
-
-    // const Transform* cameraTransform = new Transform(Matrix4x4::Mul(cameraTranslate, cameraRotate));
-
-    // const Transform* cameraTransform = new Transform(LookAt(pos, -look, up).GetInverseMatrix());
+    const Point3f look = Point3f(pos.x-dir.x, pos.y-dir.y, pos.z-dir.z);
     const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
+
     AnimatedTransform cam2world (
                 cameraTransform,
                 0.,
