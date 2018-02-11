@@ -82,7 +82,8 @@ void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
 
 static bool is_debug_pixel(Point2i pixel) {
     return (pixel.x == 365 && pixel.y == 500) ||
-            (pixel.x == 450 && pixel.y == 120);
+            (pixel.x == 450 && pixel.y == 120) ||
+            (pixel.x == 464 && pixel.y == 614);
 }
 
 void IISPTIntegrator::Render(const Scene &scene) {

@@ -44,7 +44,7 @@
 
 namespace pbrt {
 
-STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
+// STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 
 // IISPTdIntegrator Method Definitions
 
@@ -207,25 +207,25 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
     Vector2i sampleExtent = sampleBounds.Diagonal();
-    const int tileSize = 32;
+    const int tileSize = 16;
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
-    ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
-    {
-        ParallelFor2D([&](Point2i tile) {
+
+    for (int tilex = 0; tilex < nTiles.x; tilex++) {
+        for (int tiley = 0; tiley < nTiles.y; tiley++) {
             // Render section of image corresponding to _tile_
 
             // Allocate _MemoryArena_ for tile
             MemoryArena arena;
 
             // Get sampler instance for tile
-            int seed = tile.y * nTiles.x + tile.x;
+            int seed = tiley * nTiles.x + tilex;
             std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
 
             // Compute sample bounds for tile
-            int x0 = sampleBounds.pMin.x + tile.x * tileSize;
+            int x0 = sampleBounds.pMin.x + tilex * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
-            int y0 = sampleBounds.pMin.y + tile.y * tileSize;
+            int y0 = sampleBounds.pMin.y + tiley * tileSize;
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
 
@@ -258,7 +258,7 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
                         camera->GenerateRayDifferential(cameraSample, &ray);
                     ray.ScaleDifferentials(
                         1 / std::sqrt((Float)tileSampler->samplesPerPixel));
-                    ++nCameraRays;
+                    // ++nCameraRays;
 
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
@@ -304,9 +304,8 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
-            reporter.Update();
-        }, nTiles);
-        reporter.Done();
+            // reporter.Update();
+        }
     }
 
     // Save final image after rendering
