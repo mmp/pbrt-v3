@@ -237,8 +237,8 @@ PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium
     LOG(INFO) << "                              dir " << dir;
 
     // Create lookAt transform
-    const Vector3f up (0.f, 1.f, 0.f);
-    const Point3f look = Point3f(pos.x-dir.x, pos.y-dir.y, pos.z-dir.z);
+    const Vector3f up (0.f, 0.f, 1.f);
+    const Point3f look = Point3f(pos.x+dir.x, pos.y+dir.y, pos.z+dir.z);
     const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
 
     AnimatedTransform cam2world (

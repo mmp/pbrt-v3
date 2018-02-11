@@ -356,9 +356,15 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
 
             // Create camera for auxiliary integrator
             if (foundIntersection && bounces == 0) {
+                // Invert normal if the surface's normal was pointing inwards
+                Normal3f surfNormal = isect.n;
+                if (Dot(Vector3f(isect.n.x, isect.n.y, isect.n.z), Vector3f(ray.o.x, ray.o.y, ray.o.z)) < 0) {
+                    surfNormal = Normal3f(-isect.n.x, -isect.n.y, -isect.n.z);
+                }
+
                 std::shared_ptr<Camera> testCamera (CreateIISPTPerspectiveCamera(
                             IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
-                            isect.p, Point3f(isect.n.x, isect.n.y, isect.n.z)));
+                            isect.p, Point3f(surfNormal.x, surfNormal.y, surfNormal.z)));
                 LOG(INFO) << "Created auxiliary camera";
                 this->dintegrator->RenderView(scene, testCamera);
             }
