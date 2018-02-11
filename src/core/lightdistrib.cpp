@@ -291,8 +291,8 @@ SpatialLightDistribution::ComputeDistribution(Point3i pi) const {
                 << lightContrib[i];
         lightContrib[i] = std::max(lightContrib[i], minContrib);
     }
-    LOG(INFO) << "Initialized light distribution in voxel pi= " <<  pi <<
-        ", avgContrib = " << avgContrib;
+//    LOG(INFO) << "Initialized light distribution in voxel pi= " <<  pi <<
+//        ", avgContrib = " << avgContrib;
 
     // Compute a sampling distribution from the accumulated contributions.
     return new Distribution1D(&lightContrib[0], int(lightContrib.size()));

@@ -1710,7 +1710,7 @@ Integrator *RenderOptions::MakeIntegrator() const {
         integrator = CreateSPPMIntegrator(IntegratorParams, camera);
     } else if (IntegratorName == "iispt") {
         // Create aux camera
-        std::shared_ptr<Camera> dcamera (MakeCamera(32, 32));
+        std::shared_ptr<Camera> dcamera (MakeCamera(IISPT_D_SIZE_X, IISPT_D_SIZE_Y));
         // Create aux sampler
         ParamSet dparams;
         std::unique_ptr<int[]> dparamsdata (new int[1]);

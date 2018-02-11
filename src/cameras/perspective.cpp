@@ -231,11 +231,16 @@ Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &u,
 
 PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium* medium,
                                                 const Point3f pos,
-                                                const Point3f look) {
+                                                const Point3f dir) {
+
+    LOG(INFO) << "CreateIISPTPerspectiveCamera: pos " << pos;
+    LOG(INFO) << "                              dir " << dir;
 
     // Create lookAt transform
     const Vector3f up (0.f, 0.f, 1.f);
+    const Point3f look = Point3f(pos.x+dir.x, pos.y+dir.y, pos.z+dir.z);
     const Transform* cameraTransform = new Transform(LookAt(pos, look, up).GetInverseMatrix());
+
     AnimatedTransform cam2world (
                 cameraTransform,
                 0.,
@@ -243,7 +248,7 @@ PerspectiveCamera *CreateIISPTPerspectiveCamera(int xres, int yres, const Medium
                 0.);
 
     LOG(INFO) << "Creating an IISPTPerspectiveCamera at position: ["<< pos <<"]";
-    LOG(INFO) << "Created an IISPTPerspectiveCamera with startTransform ["<< Transform(LookAt(pos, look, up)) <<"]";
+    LOG(INFO) << "Created an IISPTPerspectiveCamera with startTransform ["<< *cameraTransform <<"]";
 
     // Create film
     const Point2i resolution (xres, yres);

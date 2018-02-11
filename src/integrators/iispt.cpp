@@ -41,7 +41,7 @@
 #include "scene.h"
 #include "stats.h"
 #include "progressreporter.h"
-#include "cameras/perspective.h"
+#include "cameras/hemispheric.h"
 
 #include <cstdlib>
 
@@ -81,8 +81,17 @@ void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
 }
 
 static bool is_debug_pixel(Point2i pixel) {
-    return (pixel.x == 365 && pixel.y == 500) ||
-            (pixel.x == 450 && pixel.y == 120);
+//    return (pixel.x == 365 && pixel.y == 500) ||
+//            (pixel.x == 450 && pixel.y == 120) ||
+//            (pixel.x == 464 && pixel.y == 614);
+
+//    return (pixel.x == 1159 && pixel.y == 659) ||
+//            (pixel.x == 179 && pixel.y == 159);
+
+//    return (pixel.x == 610 && pixel.y == 560) ||
+//            (pixel.x == 600 && pixel.y == 600);
+
+    return (pixel.x % 100 == 0) && (pixel.y % 100 == 0);
 }
 
 void IISPTIntegrator::Render(const Scene &scene) {
@@ -266,9 +275,23 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
             LOG(INFO) << "Intersection p is ["<< isect.p <<"]";
 
             // Create camera for auxiliary integrator
-            if (foundIntersection) {
-                std::shared_ptr<Camera> testCamera (CreateIISPTPerspectiveCamera(
-                            32, 32, dcamera->medium, isect.p, Point3f(isect.n.x, isect.n.y, isect.n.z)));
+            if (foundIntersection && bounces == 0) {
+                // Invert normal if the surface's normal was pointing inwards
+                Normal3f surfNormal = isect.n;
+                if (Dot(Vector3f(isect.n.x, isect.n.y, isect.n.z), Vector3f(ray.d.x, ray.d.y, ray.d.z)) > 0.0) {
+                    surfNormal = Normal3f(-isect.n.x, -isect.n.y, -isect.n.z);
+                }
+
+                Ray auxRay = isect.SpawnRay(Vector3f(surfNormal));
+
+                std::shared_ptr<Camera> testCamera (
+                            CreateHemisphericCamera(
+                                    IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
+                                    auxRay.o, Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                                    pixel
+                                )
+                            );
+
                 LOG(INFO) << "Created auxiliary camera";
                 this->dintegrator->RenderView(scene, testCamera);
             }
@@ -356,6 +379,9 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
         CHECK_GE(beta.y(), 0.f);
         DCHECK(!std::isinf(beta.y()));
         specularBounce = (flags & BSDF_SPECULAR) != 0;
+
+
+
         if ((flags & BSDF_SPECULAR) && (flags & BSDF_TRANSMISSION)) {
             Float eta = isect.bsdf->eta;
             // Update the term that tracks radiance scaling for refraction

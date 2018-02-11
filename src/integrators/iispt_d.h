@@ -46,6 +46,10 @@
 
 namespace pbrt {
 
+// Configurable size of auxiliary films
+const int IISPT_D_SIZE_X = 128;
+const int IISPT_D_SIZE_Y = 128;
+
 // IISPTdIntegrator Declarations
 class IISPTdIntegrator {
 public:

@@ -570,8 +570,24 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
     Float norm = std::sqrt(sin2ThetaI / Sin2Theta(wo));
     if (std::isinf(norm)) norm = 0;
     Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
+
+    Float woLength = wo.x + wo.y + wo.z;
+    if (woLength == 0.f) {
+        fprintf(stderr, "\nDetected a woLength == 0\n");
+        exit(1);
+    }
+
     *wi = -Vector3f(norm * (cosPhi * wo.x - sinPhi * wo.y),
                     norm * (sinPhi * wo.x + cosPhi * wo.y), muI);
+
+    Float wiLength = wi->x + wi->y + wi->z;
+    // This is a hack to avoid crashes when wi is 0 vector
+    if (wiLength == 0.f) {
+//        fprintf(stderr, "\nDetected a wiLength == 0\n");
+//        fprintf(stderr, "muI is %.6f\n", muI);
+//        fprintf(stderr, "norm is %.6f\n", norm);
+        *wi = Vector3f(0, 0, -1);
+    }
 
     // Mathematically, wi will be normalized (if wo was). However, in
     // practice, floating-point rounding error can cause some error to
