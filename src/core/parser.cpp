@@ -709,16 +709,7 @@ ParamSet parseParams(Next nextToken, Unget ungetToken, MemoryArena &arena,
 extern int catIndentCount;
 
 // Parsing Global Interface
-void ParseFile(std::string filename) {
-    if (filename != "-")
-        SetSearchDirectory(DirectoryContaining(filename));
-
-    auto tokError = [](const char *msg) { Error("%s", msg); };
-    std::unique_ptr<Tokenizer> t =
-        Tokenizer::CreateFromFile(filename, tokError);
-    if (!t)
-        return;
-
+static void parse(std::unique_ptr<Tokenizer> t) {
     std::vector<std::unique_ptr<Tokenizer>> fileStack;
     fileStack.push_back(std::move(t));
     parserLoc = &fileStack.back()->loc;
@@ -755,6 +746,7 @@ void ParseFile(std::string filename) {
             std::string filename =
                 toString(dequoteString(nextToken(TokenRequired)));
             filename = AbsolutePath(ResolveFilename(filename));
+            auto tokError = [](const char *msg) { Error("%s", msg); };
             std::unique_ptr<Tokenizer> tinc =
                 Tokenizer::CreateFromFile(filename, tokError);
             if (tinc) {
@@ -1016,6 +1008,27 @@ void ParseFile(std::string filename) {
             syntaxError(tok);
         }
     }
+}
+
+void pbrtParseFile(std::string filename) {
+    if (filename != "-")
+        SetSearchDirectory(DirectoryContaining(filename));
+
+    auto tokError = [](const char *msg) { Error("%s", msg); };
+    std::unique_ptr<Tokenizer> t =
+        Tokenizer::CreateFromFile(filename, tokError);
+    if (!t)
+        return;
+    parse(std::move(t));
+}
+
+void pbrtParseString(std::string str) {
+    auto tokError = [](const char *msg) { Error("%s", msg); };
+    std::unique_ptr<Tokenizer> t =
+        Tokenizer::CreateFromString(std::move(str), tokError);
+    if (!t)
+        return;
+    parse(std::move(t));
 }
 
 }  // namespace pbrt

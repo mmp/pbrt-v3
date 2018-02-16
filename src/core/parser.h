@@ -170,8 +170,6 @@ class Tokenizer {
     std::string sEscaped;
 };
 
-void ParseFile(std::string filename);
-
 }  // namespace pbrt
 
 #endif  // PBRT_CORE_PARSER_H

@@ -153,11 +153,11 @@ int main(int argc, char *argv[]) {
     // Process scene description
     if (filenames.empty()) {
         // Parse scene from standard input
-        ParseFile("-");
+        pbrtParseFile("-");
     } else {
         // Parse scene from input files
         for (const std::string &f : filenames)
-            ParseFile(f);
+            pbrtParseFile(f);
     }
     pbrtCleanup();
     return 0;
