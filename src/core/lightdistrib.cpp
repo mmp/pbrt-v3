@@ -38,6 +38,7 @@
 #include "parallel.h"
 #include "scene.h"
 #include "stats.h"
+#include "integrator.h"
 #include <numeric>
 
 namespace pbrt {

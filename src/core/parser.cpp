@@ -36,6 +36,7 @@
 #include "fileutil.h"
 #include "paramset.h"
 #include "stats.h"
+#include "memory.h"
 
 #include <ctype.h>
 #include <stdio.h>
