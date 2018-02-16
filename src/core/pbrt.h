@@ -116,6 +116,7 @@ class SurfaceInteraction;
 class Shape;
 class Primitive;
 class GeometricPrimitive;
+class TransformedPrimitive;
 template <int nSpectrumSamples>
 class CoefficientSpectrum;
 class RGBSpectrum;
