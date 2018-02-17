@@ -305,9 +305,16 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
         dpdu = (duv12[1] * dp02 - duv02[1] * dp12) * invdet;
         dpdv = (-duv12[0] * dp02 + duv02[0] * dp12) * invdet;
     }
-    if (degenerateUV || Cross(dpdu, dpdv).LengthSquared() == 0)
+    if (degenerateUV || Cross(dpdu, dpdv).LengthSquared() == 0) {
         // Handle zero determinant for triangle partial derivative matrix
-        CoordinateSystem(Normalize(Cross(p2 - p0, p1 - p0)), &dpdu, &dpdv);
+        Vector3f ng = Cross(p2 - p0, p1 - p0);
+        if (ng.LengthSquared() == 0)
+            // The triangle is actually degenerate; the intersection is
+            // bogus.
+            return false;
+
+        CoordinateSystem(Normalize(ng), &dpdu, &dpdv);
+    }
 
     // Compute error bounds for triangle intersection
     Float xAbsSum =
@@ -523,9 +530,16 @@ bool Triangle::IntersectP(const Ray &ray, bool testAlphaTexture) const {
             dpdu = (duv12[1] * dp02 - duv02[1] * dp12) * invdet;
             dpdv = (-duv12[0] * dp02 + duv02[0] * dp12) * invdet;
         }
-        if (degenerateUV || Cross(dpdu, dpdv).LengthSquared() == 0)
+        if (degenerateUV || Cross(dpdu, dpdv).LengthSquared() == 0) {
             // Handle zero determinant for triangle partial derivative matrix
+            Vector3f ng = Cross(p2 - p0, p1 - p0);
+            if (ng.LengthSquared() == 0)
+                // The triangle is actually degenerate; the intersection is
+                // bogus.
+                return false;
+
             CoordinateSystem(Normalize(Cross(p2 - p0, p1 - p0)), &dpdu, &dpdv);
+        }
 
         // Interpolate $(u,v)$ parametric coordinates and hit point
         Point3f pHit = b0 * p0 + b1 * p1 + b2 * p2;
