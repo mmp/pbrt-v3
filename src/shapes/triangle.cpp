@@ -387,9 +387,24 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
             Normal3f dn2 = mesh->n[v[1]] - mesh->n[v[2]];
             Float determinant = duv02[0] * duv12[1] - duv02[1] * duv12[0];
             bool degenerateUV = std::abs(determinant) < 1e-8;
-            if (degenerateUV)
-                dndu = dndv = Normal3f(0, 0, 0);
-            else {
+            if (degenerateUV) {
+                // We can still compute dndu and dndv, with respect to the
+                // same arbitrary coordinate system we use to compute dpdu
+                // and dpdv when this happens. It's important to do this
+                // (rather than giving up) so that ray differentials for
+                // rays reflected from triangles with degenerate
+                // parameterizations are still reasonable.
+                Vector3f dn = Cross(Vector3f(mesh->n[v[2]] - mesh->n[v[0]]),
+                                    Vector3f(mesh->n[v[1]] - mesh->n[v[0]]));
+                if (dn.LengthSquared() == 0)
+                    dndu = dndv = Normal3f(0, 0, 0);
+                else {
+                    Vector3f dnu, dnv;
+                    CoordinateSystem(dn, &dnu, &dnv);
+                    dndu = Normal3f(dnu);
+                    dndv = Normal3f(dnv);
+                }
+            } else {
                 Float invDet = 1 / determinant;
                 dndu = (duv12[1] * dn1 - duv02[1] * dn2) * invDet;
                 dndv = (-duv12[0] * dn1 + duv02[0] * dn2) * invDet;
