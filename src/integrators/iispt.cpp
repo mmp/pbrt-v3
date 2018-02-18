@@ -75,9 +75,97 @@ IISPTIntegrator::IISPTIntegrator(int maxDepth,
 
 }
 
-void IISPTIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
-    lightDistribution =
-        CreateLightSampleDistribution(lightSampleStrategy, scene);
+void IISPTIntegrator::Preprocess(const Scene &scene) {
+
+    LOG(INFO) << "IISPTIntegrator preprocess";
+
+}
+
+Spectrum IISPTIntegrator::SpecularTransmit(
+    const RayDifferential &ray, const SurfaceInteraction &isect,
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) {
+    Vector3f wo = isect.wo, wi;
+    Float pdf;
+    const Point3f &p = isect.p;
+    const Normal3f &ns = isect.shading.n;
+    const BSDF &bsdf = *isect.bsdf;
+    Spectrum f = bsdf.Sample_f(wo, &wi, sampler.Get2D(), &pdf,
+                               BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
+    Spectrum L = Spectrum(0.f);
+    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
+        // Compute ray differential _rd_ for specular transmission
+        RayDifferential rd = isect.SpawnRay(wi);
+        if (ray.hasDifferentials) {
+            rd.hasDifferentials = true;
+            rd.rxOrigin = p + isect.dpdx;
+            rd.ryOrigin = p + isect.dpdy;
+
+            Float eta = bsdf.eta;
+            Vector3f w = -wo;
+            if (Dot(wo, ns) < 0) eta = 1.f / eta;
+
+            Normal3f dndx = isect.shading.dndu * isect.dudx +
+                            isect.shading.dndv * isect.dvdx;
+            Normal3f dndy = isect.shading.dndu * isect.dudy +
+                            isect.shading.dndv * isect.dvdy;
+
+            Vector3f dwodx = -ray.rxDirection - wo,
+                     dwody = -ray.ryDirection - wo;
+            Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
+            Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
+
+            Float mu = eta * Dot(w, ns) - Dot(wi, ns);
+            Float dmudx =
+                (eta - (eta * eta * Dot(w, ns)) / Dot(wi, ns)) * dDNdx;
+            Float dmudy =
+                (eta - (eta * eta * Dot(w, ns)) / Dot(wi, ns)) * dDNdy;
+
+            rd.rxDirection =
+                wi + eta * dwodx - Vector3f(mu * dndx + dmudx * ns);
+            rd.ryDirection =
+                wi + eta * dwody - Vector3f(mu * dndy + dmudy * ns);
+        }
+        L = f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
+    }
+    return L;
+}
+
+Spectrum IISPTIntegrator::SpecularReflect(
+    const RayDifferential &ray, const SurfaceInteraction &isect,
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) {
+    // Compute specular reflection direction _wi_ and BSDF value
+    Vector3f wo = isect.wo, wi;
+    Float pdf;
+    BxDFType type = BxDFType(BSDF_REFLECTION | BSDF_SPECULAR);
+    Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf, type);
+
+    // Return contribution of specular reflection
+    const Normal3f &ns = isect.shading.n;
+    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
+        // Compute ray differential _rd_ for specular reflection
+        RayDifferential rd = isect.SpawnRay(wi);
+        if (ray.hasDifferentials) {
+            rd.hasDifferentials = true;
+            rd.rxOrigin = isect.p + isect.dpdx;
+            rd.ryOrigin = isect.p + isect.dpdy;
+            // Compute differential reflected directions
+            Normal3f dndx = isect.shading.dndu * isect.dudx +
+                            isect.shading.dndv * isect.dvdx;
+            Normal3f dndy = isect.shading.dndu * isect.dudy +
+                            isect.shading.dndv * isect.dvdy;
+            Vector3f dwodx = -ray.rxDirection - wo,
+                     dwody = -ray.ryDirection - wo;
+            Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
+            Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
+            rd.rxDirection =
+                wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
+            rd.ryDirection =
+                wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
+        }
+        return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) /
+               pdf;
+    } else
+        return Spectrum(0.f);
 }
 
 static bool is_debug_pixel(Point2i pixel) {
@@ -94,6 +182,28 @@ static bool is_debug_pixel(Point2i pixel) {
     return (pixel.x % 100 == 0) && (pixel.y % 100 == 0);
 }
 
+/*
+Reimplementing pixel estimation using Direct Illumination and rendered hemisphere:
+
+in integrator.cpp: UniformSampleAllLights
+    for each light, calls EstimateDirect
+    Instead of using the number of samples for the light source,
+    I do the for loop for every pixel in my hemisphere
+
+in integrator.cpp: EstimateDirect
+    here is Multiple Importance Sampling
+    light.Sample_Li is sampling the illumination. I can replace this to sample from my hemisphere.
+*/
+
+
+// New version ----------------------------------------------------------------
+void IISPTIntegrator::Render(const Scene &scene) {
+
+
+
+}
+
+// Old version ----------------------------------------------------------------
 void IISPTIntegrator::Render(const Scene &scene) {
 
     Preprocess(scene, *sampler);
@@ -225,6 +335,7 @@ void IISPTIntegrator::Render(const Scene &scene) {
     camera->film->WriteImage();
 }
 
+// Disabled version ===========================================================
 Spectrum IISPTIntegrator::Li(const RayDifferential &r,
                              const Scene &scene,
                              Sampler &sampler,
@@ -235,6 +346,64 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
     exit(1);
 }
 
+// New version ================================================================
+Spectrum IISPTIntegrator::Li(const RayDifferential &r,
+                             const Scene &scene,
+                             Sampler &sampler,
+                             MemoryArena &arena,
+                             int depth,
+                             Point2i pixel
+                             ) const {
+
+    ProfilePhase p(Prof::SamplerIntegratorLi);
+    Spectrum L (0.f);
+
+    // Find closest ray intersection or return background radiance
+    SurfaceIntersection isect;
+    if (!scene.Intersect(ray, &isect)) {
+        for (const auto &lights : scene.lights) {
+            L += light->Le(ray);
+            return L;
+        }
+    }
+
+    // Compute the hemisphere -------------------------------------------------
+
+    // Invert normal if the surface's normal was pointing inwards
+    Normal3f surfNormal = isect.n;
+    if (Dot(Vector3f(isect.n.x, isect.n.y, isect.n.z), Vector3f(ray.d.x, ray.d.y, ray.d.z)) > 0.0) {
+        surfNormal = Normal3f(-isect.n.x, -isect.n.y, -isect.n.z);
+    }
+
+    // auxRay is centered at the intersection point, and points towards the intersection
+    // surface normal
+    Ray auxRay = isect.SpawnRay(Vector3f(surfNormal));
+
+    // testCamera is used for the hemispheric rendering
+    std::shared_ptr<Camera> testCamera (
+                CreateHemisphericCamera(
+                        IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
+                        auxRay.o, Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                        pixel
+                    )
+                );
+
+    // Start rendering the hemispherical view
+    this->dintegrator->RenderView(scene, testCamera);
+
+    // Use the hemispherical view to obtain illumination ----------------------
+
+    // Compute scattering functions for surface interaction
+    isect.ComputeScatteringFunctions(ray, arena);
+    if (!isect.bsdf) {
+        return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
+    }
+
+    // wo should be the vector towards camera, from intersection
+
+}
+
+// Old version ----------------------------------------------------------------
 Spectrum IISPTIntegrator::Li(const RayDifferential &r,
                              const Scene &scene,
                              Sampler &sampler,

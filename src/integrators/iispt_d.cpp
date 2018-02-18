@@ -176,9 +176,11 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
     isect.ComputeScatteringFunctions(ray, arena);
     if (!isect.bsdf)
         return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
+    // wo should be the vector towards camera, from intersection
     Vector3f wo = isect.wo;
-    Float woLength = std::sqrt(Dot(wo, wo));
+    Float woLength = Dot(wo, wo);
     if (woLength == 0) {
+        fprintf(stderr, "Detected a 0 length wo");
         LOG(INFO) << "Detected a 0 length wo";
         exit(1);
     }
@@ -186,14 +188,14 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
     L += isect.Le(wo);
     if (scene.lights.size() > 0) {
         // Compute direct lighting for _IISPTdIntegrator_ integrator
-        if (strategy == LightStrategy::UniformSampleAll)
+        if (strategy == LightStrategy::UniformSampleAll) {
             L += UniformSampleAllLights(isect, scene, arena, sampler,
                                         nLightSamples);
-        else
+        } else {
             L += UniformSampleOneLight(isect, scene, arena, sampler);
+        }
     }
     if (depth + 1 < maxDepth) {
-        Vector3f wi;
         // Trace rays for specular reflection and refraction
         L += SpecularReflect(ray, isect, scene, sampler, arena, depth);
         L += SpecularTransmit(ray, isect, scene, sampler, arena, depth);
@@ -270,7 +272,9 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
                     // NOTE using a depth=0 here
                     // LOG(INFO) << "AUX camera ray: o=["<< ray.o <<"], d=["<< ray.d <<"]";
                     // exit(0);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena, 0);
+                    if (rayWeight > 0) {
+                        L = Li(ray, scene, *tileSampler, arena, 0);
+                    }
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
