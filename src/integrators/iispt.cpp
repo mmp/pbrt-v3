@@ -331,7 +331,9 @@ void IISPTIntegrator::Render(const Scene &scene) {
 
 // Estimate direct ============================================================
 static Spectrum IISPTEstimateDirect(
-        const Interaction &it) {
+        const Interaction &it,
+        int hem_x,
+        int hem_y) {
 
     bool specular = false; // Default value
 
@@ -345,6 +347,9 @@ static Spectrum IISPTEstimateDirect(
     VisibilityTester visibility;
 
     // TODO replace Sample_Li with custom code to sample from hemisphere instead
+    // Writes into wi the vector towards the light source. Derived from hem_x and hem_y
+    // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
+    // We don't need to have a visibility object
     Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
 
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -356,8 +361,9 @@ static Spectrum IISPTEstimateDirect(
 
             // Evaluate BSDF for light sampling strategy
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
-            f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
-                    AbsDot(wi, isect.shading.n);
+
+            f = isect.bsdf->f(isect.wo, wi, bsdfFlags) * AbsDot(wi, isect.shading.n);
+
             scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
 
         } else {
@@ -405,8 +411,18 @@ static Spectrum IISPTSampleHemisphere(
         ) {
     ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
-    L += IISPTEstimateDirect(it, scene, sampler, arena, handleMedia);
-    return L;
+
+    // Loop for every pixel in the hemisphere
+    HemisphericFilm hemi_film; // TODO replace with real object
+    for (int hemi_x = 0; hemi_x < hemi_film.size_x(); hemi_x++) {
+        for (int hemi_y = 0; hemi_y < hemi_film.size_y(); hemi_y++) {
+            L += IISPTEstimateDirect(it, hemi_x, hemi_y);
+        }
+    }
+
+    int n_samples = hemi_film.size_x() * hemi_film.size_y();
+
+    return L / n_samples;
 }
 
 // Disabled version ===========================================================
