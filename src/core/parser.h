@@ -118,7 +118,7 @@ class Tokenizer {
 
   private:
     Tokenizer(std::string str, std::function<void(const char *)> errorCallback);
-#ifdef PBRT_HAVE_MMAP
+#if defined(PBRT_HAVE_MMAP) || defined(PBRT_IS_WINDOWS)
     Tokenizer(void *ptr, size_t len, std::string filename,
               std::function<void(const char *)> errorCallback);
 #endif
@@ -144,7 +144,7 @@ class Tokenizer {
     // This function is called if there is an error during lexing.
     std::function<void(const char *)> errorCallback;
 
-#ifdef PBRT_HAVE_MMAP
+#if defined(PBRT_HAVE_MMAP) || defined(PBRT_IS_WINDOWS)
     // Scene files on disk are mapped into memory for lexing.  We need to
     // hold on to the starting pointer and total length so they can be
     // unmapped in the destructor.
