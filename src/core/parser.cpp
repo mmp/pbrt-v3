@@ -282,7 +282,7 @@ string_view Tokenizer::Next() {
         } else if (ch == '#') {
             // comment: scan to EOL (or EOF)
             while ((ch = getChar()) != EOF) {
-                if (ch == '\n') {
+                if (ch == '\n' || ch == '\r') {
                     ungetChar();
                     break;
                 }
