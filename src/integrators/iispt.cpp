@@ -82,8 +82,14 @@ void IISPTIntegrator::Preprocess(const Scene &scene) {
 }
 
 Spectrum IISPTIntegrator::SpecularTransmit(
-    const RayDifferential &ray, const SurfaceInteraction &isect,
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) {
+        const RayDifferential &ray,
+        const SurfaceInteraction &isect,
+        const Scene &scene,
+        Sampler &sampler,
+        MemoryArena &arena,
+        int depth,
+        Point2i pixel
+        ) const {
     Vector3f wo = isect.wo, wi;
     Float pdf;
     const Point3f &p = isect.p;
@@ -125,14 +131,20 @@ Spectrum IISPTIntegrator::SpecularTransmit(
             rd.ryDirection =
                 wi + eta * dwody - Vector3f(mu * dndy + dmudy * ns);
         }
-        L = f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
+        L = f * Li(rd, scene, sampler, arena, depth + 1, pixel) * AbsDot(wi, ns) / pdf;
     }
     return L;
 }
 
 Spectrum IISPTIntegrator::SpecularReflect(
-    const RayDifferential &ray, const SurfaceInteraction &isect,
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) {
+        const RayDifferential &ray,
+        const SurfaceInteraction &isect,
+        const Scene &scene,
+        Sampler &sampler,
+        MemoryArena &arena,
+        int depth,
+        Point2i pixel
+        ) const {
     // Compute specular reflection direction _wi_ and BSDF value
     Vector3f wo = isect.wo, wi;
     Float pdf;
@@ -162,7 +174,7 @@ Spectrum IISPTIntegrator::SpecularReflect(
             rd.ryDirection =
                 wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
         }
-        return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) /
+        return f * Li(rd, scene, sampler, arena, depth + 1, pixel) * AbsDot(wi, ns) /
                pdf;
     } else
         return Spectrum(0.f);
@@ -200,7 +212,7 @@ in integrator.cpp: EstimateDirect
 // Render =====================================================================
 void IISPTIntegrator::Render(const Scene &scene) {
 
-    Preprocess(scene, *sampler);
+    Preprocess(scene);
 
     // Render image tiles in parallel
 
@@ -350,7 +362,8 @@ static Spectrum IISPTEstimateDirect(
     // Writes into wi the vector towards the light source. Derived from hem_x and hem_y
     // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
     // We don't need to have a visibility object
-    Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
+    // Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
+    Spectrum Li (0.f);
 
     if (lightPdf > 0 && !Li.IsBlack()) {
         // Compute BSDF or phase function's value for light sample
@@ -382,13 +395,7 @@ static Spectrum IISPTEstimateDirect(
 
             // Add light's contribution to reflected radiance
             if (!Li.IsBlack()) {
-                if (IsDeltaLight(light.flags))
-                    Ld += f * Li / lightPdf;
-                else {
-                    Float weight =
-                        PowerHeuristic(1, lightPdf, 1, scatteringPdf);
-                    Ld += f * Li * weight / lightPdf;
-                }
+                Ld += f * Li / lightPdf;
             }
         }
     }
@@ -406,23 +413,25 @@ static Spectrum IISPTSampleHemisphere(
         const Scene &scene,
         MemoryArena &arena,
         Sampler &sampler,
-        const std::vector<int> &nLightSamples,
-        bool handleMedia
+        std::shared_ptr<Camera> auxCamera
         ) {
     ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
+    return L;
 
-    // Loop for every pixel in the hemisphere
-    HemisphericFilm hemi_film; // TODO replace with real object
-    for (int hemi_x = 0; hemi_x < hemi_film.size_x(); hemi_x++) {
-        for (int hemi_y = 0; hemi_y < hemi_film.size_y(); hemi_y++) {
-            L += IISPTEstimateDirect(it, hemi_x, hemi_y);
-        }
-    }
+    // TODO disabled for debugging
 
-    int n_samples = hemi_film.size_x() * hemi_film.size_y();
+//    // Loop for every pixel in the hemisphere
+//    HemisphericFilm hemi_film; // TODO replace with real object
+//    for (int hemi_x = 0; hemi_x < hemi_film.size_x(); hemi_x++) {
+//        for (int hemi_y = 0; hemi_y < hemi_film.size_y(); hemi_y++) {
+//            L += IISPTEstimateDirect(it, hemi_x, hemi_y);
+//        }
+//    }
 
-    return L / n_samples;
+//    int n_samples = hemi_film.size_x() * hemi_film.size_y();
+
+//    return L / n_samples;
 }
 
 // Disabled version ===========================================================
@@ -432,12 +441,12 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
                              MemoryArena &arena,
                              int depth
                              ) const {
-    LOG(INFO) << "ERROR IISPTIntegrator::Li, overridden version, is not defined in this debug version.";
+    fprintf(stderr, "ERROR IISPTIntegrator::Li, overridden version, is not defined in this debug version.");
     exit(1);
 }
 
 // New version ================================================================
-Spectrum IISPTIntegrator::Li(const RayDifferential &r,
+Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                              const Scene &scene,
                              Sampler &sampler,
                              MemoryArena &arena,
@@ -449,9 +458,9 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
     Spectrum L (0.f);
 
     // Find closest ray intersection or return background radiance
-    SurfaceIntersection isect;
+    SurfaceInteraction isect;
     if (!scene.Intersect(ray, &isect)) {
-        for (const auto &lights : scene.lights) {
+        for (const auto &light : scene.lights) {
             L += light->Le(ray);
             return L;
         }
@@ -470,7 +479,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
     Ray auxRay = isect.SpawnRay(Vector3f(surfNormal));
 
     // testCamera is used for the hemispheric rendering
-    std::shared_ptr<Camera> testCamera (
+    std::shared_ptr<Camera> auxCamera (
                 CreateHemisphericCamera(
                         IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
                         auxRay.o, Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
@@ -479,7 +488,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
                 );
 
     // Start rendering the hemispherical view
-    this->dintegrator->RenderView(scene, testCamera);
+    this->dintegrator->RenderView(scene, auxCamera);
 
     // Use the hemispherical view to obtain illumination ----------------------
 
@@ -501,13 +510,13 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
     L += isect.Le(wo);
     if (scene.lights.size() > 0) {
         // Compute direct lighting using hemisphere information TODO
-        L += IISPTSampleHemisphere(isect, scene, arena, sampler);
+        L += IISPTSampleHemisphere(isect, scene, arena, sampler, auxCamera);
     }
 
     if (depth + 1 < maxDepth) {
         // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, isect, scene, sampler, arena, depth);
-        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth);
+        L += SpecularReflect(ray, isect, scene, sampler, arena, depth, pixel);
+        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth, pixel);
     }
 
     return L;

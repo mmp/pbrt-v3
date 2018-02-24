@@ -37,9 +37,6 @@ HemisphericCamera* CreateHemisphericCamera(
         Point2i originalPixel
         ) {
 
-    LOG(INFO) << "CreateHemisphericCamera: pos " << pos;
-    LOG(INFO) << "                         dir " << dir;
-
     // Create lookAt transform
     const Vector3f up = (dir.x == 0.0 && dir.y == 0.0) ?
                 Vector3f(0.f, 1.f, 0.f) :      // Normal already pointing towards Z, set Up vector to be in Y
@@ -55,9 +52,6 @@ HemisphericCamera* CreateHemisphericCamera(
                 0.,
                 cameraTransform,
                 0.);
-
-    LOG(INFO) << "Creating a HemisphericCamera at position: ["<< pos <<"]";
-    LOG(INFO) << "Created a HemisphericCamera with startTransform ["<< *cameraTransform <<"]";
 
     // Create film
     const Point2i resolution (xres, yres);

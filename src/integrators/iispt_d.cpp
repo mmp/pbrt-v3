@@ -204,8 +204,6 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
 }
 
 void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> camera) {
-    LOG(INFO) << "dintegrator start view";
-
     // There is no preprocess here.
     // It must have already been called by the host.
 
@@ -318,9 +316,8 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
     }
 
     // Save final image after rendering
-    camera->film->WriteImage();
-
-    LOG(INFO) << "dintegrator completed view";
+    // Disable saving the image
+    // camera->film->WriteImage();
 }
 
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
