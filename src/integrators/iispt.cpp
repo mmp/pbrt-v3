@@ -131,7 +131,7 @@ Spectrum IISPTIntegrator::SpecularTransmit(
             rd.ryDirection =
                 wi + eta * dwody - Vector3f(mu * dndy + dmudy * ns);
         }
-        L = f * Li(rd, scene, sampler, arena, depth + 1, pixel) * AbsDot(wi, ns) / pdf;
+        L = f * Li_direct(rd, scene, sampler, arena, depth + 1, pixel) * AbsDot(wi, ns) / pdf;
     }
     return L;
 }
@@ -174,7 +174,7 @@ Spectrum IISPTIntegrator::SpecularReflect(
             rd.ryDirection =
                 wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
         }
-        return f * Li(rd, scene, sampler, arena, depth + 1, pixel) * AbsDot(wi, ns) /
+        return f * Li_direct(rd, scene, sampler, arena, depth + 1, pixel) * AbsDot(wi, ns) /
                pdf;
     } else
         return Spectrum(0.f);
@@ -345,7 +345,9 @@ void IISPTIntegrator::Render(const Scene &scene) {
 static Spectrum IISPTEstimateDirect(
         const Interaction &it,
         int hem_x,
-        int hem_y) {
+        int hem_y,
+        HemisphericCamera* auxCamera
+        ) {
 
     bool specular = false; // Default value
 
@@ -355,7 +357,8 @@ static Spectrum IISPTEstimateDirect(
 
     // Sample light source with multiple importance sampling
     Vector3f wi;
-    Float lightPdf = 0, scatteringPdf = 0;
+    Float lightPdf = 1.0 / 3.14;
+    Float scatteringPdf = 0;
     VisibilityTester visibility;
 
     // TODO replace Sample_Li with custom code to sample from hemisphere instead
@@ -363,7 +366,7 @@ static Spectrum IISPTEstimateDirect(
     // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
     // We don't need to have a visibility object
     // Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
-    Spectrum Li (0.f);
+    Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
 
     if (lightPdf > 0 && !Li.IsBlack()) {
         // Compute BSDF or phase function's value for light sample
@@ -413,25 +416,21 @@ static Spectrum IISPTSampleHemisphere(
         const Scene &scene,
         MemoryArena &arena,
         Sampler &sampler,
-        std::shared_ptr<Camera> auxCamera
+        HemisphericCamera* auxCamera
         ) {
     ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
-    return L;
 
-    // TODO disabled for debugging
+    // Loop for every pixel in the hemisphere
+    for (int hemi_x = 0; hemi_x < IISPT_D_SIZE_X; hemi_x++) {
+        for (int hemi_y = 0; hemi_y < IISPT_D_SIZE_Y; hemi_y++) {
+            L += IISPTEstimateDirect(it, hemi_x, hemi_y, auxCamera);
+        }
+    }
 
-//    // Loop for every pixel in the hemisphere
-//    HemisphericFilm hemi_film; // TODO replace with real object
-//    for (int hemi_x = 0; hemi_x < hemi_film.size_x(); hemi_x++) {
-//        for (int hemi_y = 0; hemi_y < hemi_film.size_y(); hemi_y++) {
-//            L += IISPTEstimateDirect(it, hemi_x, hemi_y);
-//        }
-//    }
+    int n_samples = IISPT_D_SIZE_X * IISPT_D_SIZE_Y;
 
-//    int n_samples = hemi_film.size_x() * hemi_film.size_y();
-
-//    return L / n_samples;
+    return L / n_samples;
 }
 
 // Disabled version ===========================================================
@@ -443,6 +442,19 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &r,
                              ) const {
     fprintf(stderr, "ERROR IISPTIntegrator::Li, overridden version, is not defined in this debug version.");
     exit(1);
+}
+
+// Direct version used by specular and transmit ===============================
+Spectrum IISPTIntegrator::Li_direct(
+        const RayDifferential &ray,
+        const Scene &scene,
+        Sampler &sampler,
+        MemoryArena &arena,
+        int depth,
+        Point2i pixel
+        ) const {
+    Spectrum L (0.f);
+    return L;
 }
 
 // New version ================================================================
@@ -479,7 +491,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     Ray auxRay = isect.SpawnRay(Vector3f(surfNormal));
 
     // testCamera is used for the hemispheric rendering
-    std::shared_ptr<Camera> auxCamera (
+    std::shared_ptr<HemisphericCamera> auxCamera (
                 CreateHemisphericCamera(
                         IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
                         auxRay.o, Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
@@ -510,14 +522,14 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     L += isect.Le(wo);
     if (scene.lights.size() > 0) {
         // Compute direct lighting using hemisphere information TODO
-        L += IISPTSampleHemisphere(isect, scene, arena, sampler, auxCamera);
+        L += IISPTSampleHemisphere(isect, scene, arena, sampler, auxCamera.get());
     }
 
-    if (depth + 1 < maxDepth) {
-        // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, isect, scene, sampler, arena, depth, pixel);
-        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth, pixel);
-    }
+//    if (depth + 1 < maxDepth) {
+//        // Trace rays for specular reflection and refraction
+//        L += SpecularReflect(ray, isect, scene, sampler, arena, depth, pixel);
+//        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth, pixel);
+//    }
 
     return L;
 

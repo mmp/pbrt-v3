@@ -57,9 +57,6 @@ Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
                          std::ceil(fullResolution.y * cropWindow.pMin.y)),
                  Point2i(std::ceil(fullResolution.x * cropWindow.pMax.x),
                          std::ceil(fullResolution.y * cropWindow.pMax.y)));
-    LOG(INFO) << "Created film with full resolution " << resolution <<
-        ". Crop window of " << cropWindow << " -> croppedPixelBounds " <<
-        croppedPixelBounds;
 
     // Allocate film image storage
     pixels = std::unique_ptr<Pixel[]>(new Pixel[croppedPixelBounds.Area()]);

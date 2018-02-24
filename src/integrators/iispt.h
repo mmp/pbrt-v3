@@ -111,6 +111,15 @@ private:
             int depth,
             Point2i pixel
             ) const;
+
+    Spectrum  Li_direct(
+            const RayDifferential &ray,
+            const Scene &scene,
+            Sampler &sampler,
+            MemoryArena &arena,
+            int depth,
+            Point2i pixel
+            ) const;
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
