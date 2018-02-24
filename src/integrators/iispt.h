@@ -61,7 +61,7 @@ public:
                    const std::string &lightSampleStrategy = "spatial"
     );
 
-    void Preprocess(const Scene &scene, Sampler &sampler);
+    void Preprocess(const Scene &scene);
 
     Spectrum Li(const RayDifferential &r,
                  const Scene &scene,
@@ -91,6 +91,35 @@ private:
     std::shared_ptr<Sampler> dsampler;
     std::shared_ptr<Camera> dcamera;
     std::shared_ptr<IISPTdIntegrator> dintegrator;
+
+    Spectrum SpecularTransmit(
+            const RayDifferential &ray,
+            const SurfaceInteraction &isect,
+            const Scene &scene,
+            Sampler &sampler,
+            MemoryArena &arena,
+            int depth,
+            Point2i pixel
+            ) const;
+
+    Spectrum SpecularReflect(
+            const RayDifferential &ray,
+            const SurfaceInteraction &isect,
+            const Scene &scene,
+            Sampler &sampler,
+            MemoryArena &arena,
+            int depth,
+            Point2i pixel
+            ) const;
+
+    Spectrum  Li_direct(
+            const RayDifferential &ray,
+            const Scene &scene,
+            Sampler &sampler,
+            MemoryArena &arena,
+            int depth,
+            Point2i pixel
+            ) const;
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,

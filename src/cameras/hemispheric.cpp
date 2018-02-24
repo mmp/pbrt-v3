@@ -7,6 +7,8 @@
 #include "stats.h"
 #include "filters/gaussian.h"
 
+#include <iostream>
+
 namespace pbrt {
 
 Float HemisphericCamera::GenerateRay(
@@ -24,8 +26,34 @@ Float HemisphericCamera::GenerateRay(
                Lerp(sample.time, shutterOpen, shutterClose));
     ray->medium = medium;
     *ray = CameraToWorld(*ray);
+
+    // Testing ----------------------------------------------------------------
+
+    // Show input camera sample coordinates
+
+    // Show computed world ray
+
+    // Backwards-compute the camera pixel
+
     return 1;
 
+}
+
+Spectrum HemisphericCamera::getLightSample(
+        int x,
+        int y,
+        Vector3f* wi
+        ) {
+    Float theta = Pi * y / film->fullResolution.y;
+    Float phi = Pi * x / film->fullResolution.x;
+    Vector3f dir(std::sin(theta) * std::cos(phi), std::cos(theta),
+                 std::sin(theta) * std::sin(phi));
+    Ray ray = Ray(Point3f(0, 0, 0), dir, Infinity,
+               Lerp(0.0, shutterOpen, shutterClose));
+    ray = CameraToWorld(ray);
+    *wi = ray.d;
+
+    return film->get_pixel_as_spectrum(Point2i(x, y));
 }
 
 HemisphericCamera* CreateHemisphericCamera(
@@ -36,9 +64,6 @@ HemisphericCamera* CreateHemisphericCamera(
         Point3f dir,
         Point2i originalPixel
         ) {
-
-    LOG(INFO) << "CreateHemisphericCamera: pos " << pos;
-    LOG(INFO) << "                         dir " << dir;
 
     // Create lookAt transform
     const Vector3f up = (dir.x == 0.0 && dir.y == 0.0) ?
@@ -55,9 +80,6 @@ HemisphericCamera* CreateHemisphericCamera(
                 0.,
                 cameraTransform,
                 0.);
-
-    LOG(INFO) << "Creating a HemisphericCamera at position: ["<< pos <<"]";
-    LOG(INFO) << "Created a HemisphericCamera with startTransform ["<< *cameraTransform <<"]";
 
     // Create film
     const Point2i resolution (xres, yres);

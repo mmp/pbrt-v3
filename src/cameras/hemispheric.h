@@ -31,6 +31,12 @@ public:
             Ray *
             ) const;
 
+    Spectrum getLightSample(
+            int x,
+            int y,
+            Vector3f* wi
+            );
+
 };
 
 
