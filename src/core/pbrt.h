@@ -169,6 +169,7 @@ struct Options {
     bool quiet = false;
     bool cat = false, toPly = false;
     std::string imageFile;
+    int referenceTiles = -1;
 };
 
 extern Options PbrtOptions;

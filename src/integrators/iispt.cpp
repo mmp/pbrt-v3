@@ -42,6 +42,7 @@
 #include "stats.h"
 #include "progressreporter.h"
 #include "cameras/hemispheric.h"
+#include "pbrt.h"
 
 #include <cstdlib>
 
@@ -181,16 +182,6 @@ Spectrum IISPTIntegrator::SpecularReflect(
 }
 
 static bool is_debug_pixel(Point2i pixel) {
-//    return (pixel.x == 365 && pixel.y == 500) ||
-//            (pixel.x == 450 && pixel.y == 120) ||
-//            (pixel.x == 464 && pixel.y == 614);
-
-//    return (pixel.x == 1159 && pixel.y == 659) ||
-//            (pixel.x == 179 && pixel.y == 159);
-
-//    return (pixel.x == 610 && pixel.y == 560) ||
-//            (pixel.x == 600 && pixel.y == 600);
-
     return (pixel.x % 100 == 0) && (pixel.y % 100 == 0);
 }
 
@@ -211,6 +202,17 @@ in integrator.cpp: EstimateDirect
 
 // Render =====================================================================
 void IISPTIntegrator::Render(const Scene &scene) {
+    if (PbrtOptions.referenceTiles <= 0) {
+        // Normal render of the scene
+        render_normal(scene);
+    } else {
+        // Render reference training views
+        render_reference(scene);
+    }
+}
+
+// Render Normal ==============================================================
+void IISPTIntegrator::render_normal(const Scene &scene) {
 
     Preprocess(scene);
 
@@ -247,7 +249,6 @@ void IISPTIntegrator::Render(const Scene &scene) {
             int y0 = sampleBounds.pMin.y + tile.y * tileSize;
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
-            // LOG(INFO) << "Starting image tile " << tileBounds;
 
             // Get _FilmTile_ for tile
             std::unique_ptr<FilmTile> filmTile =
@@ -327,7 +328,6 @@ void IISPTIntegrator::Render(const Scene &scene) {
                     arena.Reset();
                 } while (tileSampler->StartNextSample());
             }
-            // LOG(INFO) << "Finished image tile " << tileBounds;
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
@@ -339,6 +339,11 @@ void IISPTIntegrator::Render(const Scene &scene) {
 
     // Save final image after rendering
     camera->film->WriteImage();
+}
+
+// Render reference ===========================================================
+void IISPTIntegrator::render_reference(const Scene &scene) {
+
 }
 
 // Estimate direct ============================================================
@@ -361,11 +366,10 @@ static Spectrum IISPTEstimateDirect(
     Float scatteringPdf = 0;
     VisibilityTester visibility;
 
-    // TODO replace Sample_Li with custom code to sample from hemisphere instead
+    // Sample_Li with custom code to sample from hemisphere instead
     // Writes into wi the vector towards the light source. Derived from hem_x and hem_y
     // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
     // We don't need to have a visibility object
-    // Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
     Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
 
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -524,12 +528,6 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         // Compute direct lighting using hemisphere information TODO
         L += IISPTSampleHemisphere(isect, scene, arena, sampler, auxCamera.get());
     }
-
-//    if (depth + 1 < maxDepth) {
-//        // Trace rays for specular reflection and refraction
-//        L += SpecularReflect(ray, isect, scene, sampler, arena, depth, pixel);
-//        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth, pixel);
-//    }
 
     return L;
 

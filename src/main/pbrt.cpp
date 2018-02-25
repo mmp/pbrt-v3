@@ -125,8 +125,12 @@ int main(int argc, char *argv[]) {
                    !strcmp(argv[i], "-h")) {
             usage();
             return 0;
-        } else
+        } else if (!strncmp(argv[i], "--reference=", 12)) {
+            options.referenceTiles = atoi(&argv[i][12]);
+        }
+        else {
             filenames.push_back(argv[i]);
+        }
     }
 
     // Print welcome banner

@@ -118,3 +118,25 @@ typedef RGBSpectrum Spectrum;
 ```
 Again, don't forget to recompile after making this change.
 
+# PBRT-IISPT options
+
+## Command line options
+
+```
+-reference=<nTiles>
+```
+
+Disables normal rendering, and enables rendering of reference hemispheric images for training data. Note: `iispt` integrator needs to be selected for this to be effective.
+
+`<nTiles>` specifies the number of hemispheric reference images rendered per dimension.
+
+The output is saved into the current working directory, in subfolder `reference/`.
+
+## .pbrt file
+
+To enable the IISPT integrator, use `iispt` as integrator. For example
+
+```
+Sampler "sobol" "integer pixelsamples" 1
+Integrator "iispt"
+```
