@@ -49,6 +49,7 @@ namespace pbrt {
 // Configurable size of auxiliary films
 const int IISPT_D_SIZE_X = 16;
 const int IISPT_D_SIZE_Y = 16;
+const std::string IISPT_REFERENCE_DIRECTORY = std::string("out/");
 
 // IISPTdIntegrator Declarations
 class IISPTdIntegrator {
@@ -84,6 +85,8 @@ public:
         const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth);
 
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
+
+    void save_reference(std::string output_path, std::shared_ptr<Camera> camera);
 
   private:
     // IISPTdIntegrator Private Data

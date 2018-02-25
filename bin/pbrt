@@ -7,6 +7,7 @@ var path = require("path");
 var chalk = require("chalk");
 
 var log_dir = "/tmp/pbrt";
+var out_dir = "out";
 
 // Utilities ------------------------------------------------------------------
 
@@ -137,6 +138,8 @@ async.waterfall([
         });
     },
 
+
+
     (callback) => {
         // Create logging directory
         simple_exec("mkdir", [log_dir], (code, signal) => {
@@ -148,6 +151,38 @@ async.waterfall([
                 return;
             }
         });
+    },
+
+    (callback) => {
+        // Check if out directory exists
+        fs.access(out_dir, fs.constants.F_OK, (err) => {
+            if (err) {
+                // Doesn't exist
+                callback(null, false);
+                return;
+            } else {
+                callback(null, true);
+                return;
+            }
+        });
+    },
+
+    (directory_exists, callback) => {
+        if (!directory_exists) {
+            // Create out directory
+            simple_exec("mkdir", [out_dir], (code, signal) => {
+                if (code == 0) {
+                    callback();
+                    return;
+                } else {
+                    callback("Could not create out directory");
+                    return;
+                }
+            });
+        } else {
+            callback();
+            return;
+        }
     },
 
     (callback) => {

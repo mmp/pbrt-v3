@@ -54,7 +54,23 @@ STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
-// IISPTIntegrator Method Definitions
+// Utilities ==================================================================
+
+// Generate reference file name -----------------------------------------------
+// extension must start with a .
+static std::string generate_reference_name(std::string identifier_type, Point2i pixel, std::string extension) {
+    std::string generated_path =
+            IISPT_REFERENCE_DIRECTORY +
+            identifier_type +
+            "_" +
+            std::to_string(pixel.x) +
+            "_" +
+            std::to_string(pixel.y) +
+            extension;
+    return generated_path;
+}
+
+// IISPTIntegrator Method Definitions =========================================
 
 // Constructor
 IISPTIntegrator::IISPTIntegrator(int maxDepth,
@@ -365,6 +381,10 @@ void IISPTIntegrator::render_reference(const Scene &scene) {
         return;
     }
 
+    // Initialize sampler and arena
+    MemoryArena arena;
+    std::unique_ptr<Sampler> tile_sampler = sampler->Clone(0);
+
     for (int px_y = 0; px_y < sampleExtent.y; px_y += reference_tile_interval_y) {
         for (int px_x = 0; px_x < sampleExtent.x; px_x += reference_tile_interval_x) {
             CameraSample current_sample;
@@ -373,6 +393,15 @@ void IISPTIntegrator::render_reference(const Scene &scene) {
 
             std::cerr << "Current pixel ["<< px_x <<"] ["<< px_y <<"]" << std::endl;
             std::cerr << "Camera sample is " << current_sample << std::endl;
+
+            // Render IISPTd views and Reference views
+            RayDifferential ray;
+            Float rayWeight = camera->GenerateRayDifferential(current_sample, &ray);
+            // It's a single pass per pixel, so we don't scale the differential
+            ray.ScaleDifferentials(1);
+            // The Li method, in reference mode, will automatically save the reference images
+            // to the out/ directory
+            Li(ray, scene, *tile_sampler, arena, 0, Point2i(px_x, px_y));
         }
     }
 
@@ -502,6 +531,8 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                              Point2i pixel
                              ) const {
 
+    std::cerr << "In Li" << std::endl;
+
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L (0.f);
 
@@ -537,6 +568,12 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
 
     // Start rendering the hemispherical view
     this->dintegrator->RenderView(scene, auxCamera);
+
+    // In Reference mode, save the rendered view ------------------------------
+    if (PbrtOptions.referenceTiles > 0) {
+        std::cerr << "Li: Saving reference image" << std::endl;
+        dintegrator->save_reference(generate_reference_name("d", pixel, ".exr"), auxCamera);
+    }
 
     // Use the hemispherical view to obtain illumination ----------------------
 

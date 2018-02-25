@@ -51,6 +51,7 @@ namespace pbrt {
 // Direct Illumination integrator for IISPT's intersection-viewpoint
 // renders
 
+// Preprocess =================================================================
 // Preprocess in IISPTd should be only called once from the host integrator
 void IISPTdIntegrator::Preprocess(const Scene &scene) {
 
@@ -315,11 +316,14 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
         }
     }
 
-    // Save final image after rendering
-    // Disable saving the image
-    // camera->film->WriteImage();
 }
 
+// Save reference image =======================================================
+void IISPTdIntegrator::save_reference(std::string output_path, std::shared_ptr<Camera> camera) {
+    camera->film->WriteImage(1, output_path);
+}
+
+// Factory ====================================================================
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
     std::shared_ptr<Sampler> sampler,
     std::shared_ptr<Camera> camera) {
