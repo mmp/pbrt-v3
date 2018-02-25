@@ -572,10 +572,10 @@ Spectrum FourierBSDF::Sample_f(const Vector3f &wo, Vector3f *wi,
     Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
 
     Float woLength = wo.x + wo.y + wo.z;
-    if (woLength == 0.f) {
-        fprintf(stderr, "\nDetected a woLength == 0\n");
-        exit(1);
-    }
+//    if (woLength == 0.f) {
+//        fprintf(stderr, "\nDetected a woLength == 0\n");
+//        exit(1);
+//    }
 
     *wi = -Vector3f(norm * (cosPhi * wo.x - sinPhi * wo.y),
                     norm * (sinPhi * wo.x + cosPhi * wo.y), muI);

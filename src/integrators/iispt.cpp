@@ -533,6 +533,10 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                              Point2i pixel
                              ) const {
 
+    if (!(pixel.x == 204 && pixel.y == 0)) {
+        return Spectrum(0.f);
+    }
+
     std::cerr << "In Li" << std::endl;
 
     ProfilePhase p(Prof::SamplerIntegratorLi);
