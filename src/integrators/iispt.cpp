@@ -43,6 +43,8 @@
 #include "progressreporter.h"
 #include "cameras/hemispheric.h"
 #include "pbrt.h"
+#include "samplers/sobol.h"
+#include "integrators/path.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -560,9 +562,13 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     // testCamera is used for the hemispheric rendering
     std::shared_ptr<HemisphericCamera> auxCamera (
                 CreateHemisphericCamera(
-                        IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
-                        auxRay.o, Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
-                        pixel
+                    IISPT_D_SIZE_X,
+                    IISPT_D_SIZE_Y,
+                    dcamera->medium,
+                    auxRay.o,
+                    Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                    pixel,
+                    generate_reference_name("d", pixel, ".exr")
                     )
                 );
 
@@ -571,8 +577,46 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
 
     // In Reference mode, save the rendered view ------------------------------
     if (PbrtOptions.referenceTiles > 0) {
-        std::cerr << "Li: Saving reference image" << std::endl;
-        dintegrator->save_reference(generate_reference_name("d", pixel, ".exr"), auxCamera);
+        dintegrator->save_reference(auxCamera);
+    }
+
+    // In Reference mode, create a Path Tracer for ground truth ---------------
+    if (PbrtOptions.referenceTiles > 0) {
+        std::shared_ptr<HemisphericCamera> pathCamera (
+                    CreateHemisphericCamera(
+                        IISPT_D_SIZE_X,
+                        IISPT_D_SIZE_Y,
+                        dcamera->medium,
+                        auxRay.o,
+                        Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                        pixel,
+                        generate_reference_name("p", pixel, ".exr")
+                        )
+                    );
+
+        int path_pixel_samples = PbrtOptions.referencePixelSamples;
+        const Bounds2i path_sample_bounds (
+                    Point2i(0, 0),
+                    Point2i(IISPT_D_SIZE_X, IISPT_D_SIZE_Y)
+                    );
+        std::shared_ptr<Sampler> path_sobol_sampler (CreateSobolSampler(path_sample_bounds, path_pixel_samples));
+        int path_max_depth = IISPT_REFERENCE_PATH_MAX_DEPTH;
+        Float path_rr_threshold = 1.0;
+        std::string path_light_strategy = "spatial";
+
+        std::shared_ptr<PathIntegrator> path_integrator
+                (CreatePathIntegrator(path_sobol_sampler,
+                                      pathCamera,
+                                      path_max_depth,
+                                      path_sample_bounds,
+                                      path_rr_threshold,
+                                      path_light_strategy
+                                      ));
+
+        // Start rendering the ground truth
+        // The render method will automatically save the image
+        path_integrator->Render(scene);
+
     }
 
     // Use the hemispherical view to obtain illumination ----------------------

@@ -319,8 +319,8 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
 }
 
 // Save reference image =======================================================
-void IISPTdIntegrator::save_reference(std::string output_path, std::shared_ptr<Camera> camera) {
-    camera->film->WriteImage(1, output_path);
+void IISPTdIntegrator::save_reference(std::shared_ptr<Camera> camera) {
+    camera->film->WriteImage();
 }
 
 // Factory ====================================================================

@@ -829,8 +829,9 @@ std::shared_ptr<Sampler> MakeSampler(const std::string &name,
         sampler = CreateMaxMinDistSampler(paramSet);
     else if (name == "halton")
         sampler = CreateHaltonSampler(paramSet, film->GetSampleBounds());
-    else if (name == "sobol")
+    else if (name == "sobol") {
         sampler = CreateSobolSampler(paramSet, film->GetSampleBounds());
+    }
     else if (name == "random")
         sampler = CreateRandomSampler(paramSet);
     else if (name == "stratified")

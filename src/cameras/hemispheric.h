@@ -46,7 +46,8 @@ HemisphericCamera* CreateHemisphericCamera(
         const Medium *medium,
         Point3f pos,
         Point3f dir,
-        Point2i originalPixel
+        Point2i originalPixel,
+        std::string output_file_name
         );
 
 

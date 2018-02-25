@@ -170,6 +170,7 @@ struct Options {
     bool cat = false, toPly = false;
     std::string imageFile;
     int referenceTiles = -1;
+    int referencePixelSamples = 1024;
 };
 
 extern Options PbrtOptions;

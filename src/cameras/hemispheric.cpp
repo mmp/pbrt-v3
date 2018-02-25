@@ -62,7 +62,8 @@ HemisphericCamera* CreateHemisphericCamera(
         const Medium *medium,
         Point3f pos,
         Point3f dir,
-        Point2i originalPixel
+        Point2i originalPixel,
+        std::string output_file_name
         ) {
 
     // Create lookAt transform
@@ -89,9 +90,13 @@ HemisphericCamera* CreateHemisphericCamera(
     Float diagonal = 35.;
     Float maxSampleLuminance = Infinity;
     // TODO change output file name
-    Film* film = new Film(resolution, cropWindow, std::move(filter), diagonal,
-                          "aux_" + std::to_string(originalPixel.x) + "_" + std::to_string(originalPixel.y) + ".png",
-                          scale, maxSampleLuminance);
+    Film* film = new Film(resolution,
+                          cropWindow,
+                          std::move(filter),
+                          diagonal,
+                          output_file_name,
+                          scale,
+                          maxSampleLuminance);
 
     Float shutteropen = 0.f;
     Float shutterclose = 1.f;

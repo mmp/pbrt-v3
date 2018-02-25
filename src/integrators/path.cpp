@@ -215,4 +215,23 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
                               rrThreshold, lightStrategy);
 }
 
+PathIntegrator *CreatePathIntegrator(
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<const Camera> camera,
+        int max_depth,
+        const Bounds2i pixel_bounds,
+        Float rr_threshold,
+        std::string light_strategy
+        ) {
+    Bounds2i pixel_bounds_copy = pixel_bounds;
+    return new PathIntegrator(
+                max_depth,
+                camera,
+                sampler,
+                pixel_bounds_copy,
+                rr_threshold,
+                light_strategy
+                );
+}
+
 }  // namespace pbrt

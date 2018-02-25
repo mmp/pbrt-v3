@@ -72,6 +72,11 @@ class SobolSampler : public GlobalSampler {
 SobolSampler *CreateSobolSampler(const ParamSet &params,
                                  const Bounds2i &sampleBounds);
 
+SobolSampler *CreateSobolSampler(
+        const Bounds2i &sampleBounds,
+        int pixel_samples
+        );
+
 }  // namespace pbrt
 
 #endif  // PBRT_SAMPLERS_SOBOL_H
