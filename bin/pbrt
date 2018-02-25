@@ -21,6 +21,10 @@ var argv_get = function(idx) {
     }
 };
 
+var argv_length = function() {
+    return argv.length - 2;
+};
+
 var array_get_last = function(arr) {
     if (!arr || arr.length == 0) {
         return null;
@@ -72,12 +76,30 @@ var simple_exec = function(cmd, cmd_args, callback, no_output) {
 
 // Read command line arguments
 
-var input_scene = argv_get(0);
-var output_file = argv_get(1);
+var positional_args = [];
+var optional_args = [];
+
+for (var i = 0; i < argv_length(); i++) {
+    var an_arg = argv_get(i);
+    if (an_arg.startsWith("--")) {
+        optional_args.push(an_arg);
+    } else {
+        positional_args.push(an_arg);
+    }
+};
+
+var input_scene = null;
+if (positional_args.length >= 1) {
+    input_scene = positional_args[0];
+}
+var output_file = null;
+if (positional_args.length >= 2) {
+    output_file = positional_args[1];
+}
 
 // Check if there is first argument
 if (!input_scene) {
-    console.info("Usage: pbrt <input.pbrt> <output>");
+    console.info("Usage: pbrt <input.pbrt> <output> [options...]");
     process.exit();
 }
 
@@ -130,8 +152,14 @@ async.waterfall([
 
     (callback) => {
         // Run pbrt
+
+        var final_args = [input_scene, "--outfile", output_file, "--logdir", log_dir];
+        for (var i = 0; i < optional_args.length; i++) {
+            final_args.push(optional_args[i]);
+        }
+
         simple_exec('/home/gj/git/pbrt-v3-IISPT-build/pbrt',
-                    [input_scene, "--outfile", output_file, "--logdir", log_dir],
+                    final_args,
                     (code, signal) => {
             callback();
             return;

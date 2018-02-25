@@ -45,6 +45,7 @@
 #include "pbrt.h"
 
 #include <cstdlib>
+#include <iostream>
 
 namespace pbrt {
 
@@ -343,6 +344,37 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
 
 // Render reference ===========================================================
 void IISPTIntegrator::render_reference(const Scene &scene) {
+
+    Preprocess(scene);
+
+    // Create the auxiliary integrator for intersection-view
+    this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(
+            dsampler, dcamera));
+    // Preprocess on auxiliary integrator
+    dintegrator->Preprocess(scene);
+
+    // Compute number of tiles
+    Bounds2i sampleBounds = camera->film->GetSampleBounds();
+    Vector2i sampleExtent = sampleBounds.Diagonal();
+    int reference_tiles = PbrtOptions.referenceTiles;
+    int reference_tile_interval_x = sampleExtent.x / reference_tiles; // Pixels
+    int reference_tile_interval_y = sampleExtent.y / reference_tiles; // Pixels
+
+    if (reference_tile_interval_x == 0 || reference_tile_interval_y == 0) {
+        fprintf(stderr, "Reference tile interval too small. Image resolution could be too small or reference tiles too many\n");
+        return;
+    }
+
+    for (int px_y = 0; px_y < sampleExtent.y; px_y += reference_tile_interval_y) {
+        for (int px_x = 0; px_x < sampleExtent.x; px_x += reference_tile_interval_x) {
+            CameraSample current_sample;
+            current_sample.pFilm = Point2f(px_x, px_y);
+            current_sample.time = 0;
+
+            std::cerr << "Current pixel ["<< px_x <<"] ["<< px_y <<"]" << std::endl;
+            std::cerr << "Camera sample is " << current_sample << std::endl;
+        }
+    }
 
 }
 

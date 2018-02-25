@@ -126,7 +126,9 @@ int main(int argc, char *argv[]) {
             usage();
             return 0;
         } else if (!strncmp(argv[i], "--reference=", 12)) {
+            fprintf(stderr, "Detected --reference= option\n");
             options.referenceTiles = atoi(&argv[i][12]);
+            fprintf(stderr, "Set reference tiles to %d \n", options.referenceTiles);
         }
         else {
             filenames.push_back(argv[i]);
