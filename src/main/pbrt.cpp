@@ -46,6 +46,7 @@ static void usage(const char *msg = nullptr) {
 
     fprintf(stderr, R"(usage: pbrt [<options>] <filename.pbrt...>
 Rendering options:
+  --cropwindow <x0,x1,y0,y1> Specify an image crop window.
   --help               Print this help text.
   --nthreads <num>     Use specified number of threads for rendering.
   --outfile <filename> Write the final image to the given filename.
@@ -68,6 +69,7 @@ Reformatting options:
                        standard output and convert all triangle meshes to
                        PLY files. Does not render an image.
 )");
+    exit(msg ? 1 : 0);
 }
 
 // main program
@@ -89,6 +91,13 @@ int main(int argc, char *argv[]) {
             if (i + 1 == argc)
                 usage("missing value after --outfile argument");
             options.imageFile = argv[++i];
+        } else if (!strcmp(argv[i], "--cropwindow") || !strcmp(argv[i], "-cropwindow")) {
+            if (i + 4 >= argc)
+                usage("missing value after --cropwindow argument");
+            options.cropWindow[0][0] = atof(argv[++i]);
+            options.cropWindow[0][1] = atof(argv[++i]);
+            options.cropWindow[1][0] = atof(argv[++i]);
+            options.cropWindow[1][1] = atof(argv[++i]);
         } else if (!strncmp(argv[i], "--outfile=", 10)) {
             options.imageFile = &argv[i][10];
         } else if (!strcmp(argv[i], "--logdir") || !strcmp(argv[i], "-logdir")) {
