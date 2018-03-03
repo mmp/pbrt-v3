@@ -125,8 +125,19 @@ int main(int argc, char *argv[]) {
                    !strcmp(argv[i], "-h")) {
             usage();
             return 0;
-        } else
+        }
+        else if (!strncmp(argv[i], "--reference=", 12)) {
+            fprintf(stderr, "Detected --reference= option\n");
+            options.referenceTiles = atoi(&argv[i][12]);
+            std::cerr << "Set reference tiles to " << options.referenceTiles << std::endl;
+        }
+        else if (!strncmp(argv[i], "--reference_samples=", 20)) {
+            options.referencePixelSamples = atoi(&argv[i][20]);
+            std::cerr << "Set reference samples to " << options.referencePixelSamples << std::endl;
+        }
+        else {
             filenames.push_back(argv[i]);
+        }
     }
 
     // Print welcome banner

@@ -44,6 +44,8 @@
 
 namespace pbrt {
 
+static const float NO_INTERSECTION_DISTANCE = -1.0;
+
 // STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 
 // IISPTdIntegrator Method Definitions
@@ -51,6 +53,7 @@ namespace pbrt {
 // Direct Illumination integrator for IISPT's intersection-viewpoint
 // renders
 
+// Preprocess =================================================================
 // Preprocess in IISPTd should be only called once from the host integrator
 void IISPTdIntegrator::Preprocess(const Scene &scene) {
 
@@ -74,7 +77,7 @@ void IISPTdIntegrator::Preprocess(const Scene &scene) {
 
 Spectrum IISPTdIntegrator::SpecularTransmit(
     const RayDifferential &ray, const SurfaceInteraction &isect,
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) {
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y) {
     Vector3f wo = isect.wo, wi;
     Float pdf;
     const Point3f &p = isect.p;
@@ -116,7 +119,7 @@ Spectrum IISPTdIntegrator::SpecularTransmit(
             rd.ryDirection =
                 wi + eta * dwody - Vector3f(mu * dndy + dmudy * ns);
         }
-        L = f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
+        L = f * Li(rd, scene, sampler, arena, depth + 1, x, y) * AbsDot(wi, ns) / pdf;
     }
     return L;
 }
@@ -124,7 +127,7 @@ Spectrum IISPTdIntegrator::SpecularTransmit(
 
 Spectrum IISPTdIntegrator::SpecularReflect(
     const RayDifferential &ray, const SurfaceInteraction &isect,
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) {
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y) {
     // Compute specular reflection direction _wi_ and BSDF value
     Vector3f wo = isect.wo, wi;
     Float pdf;
@@ -154,7 +157,7 @@ Spectrum IISPTdIntegrator::SpecularReflect(
             rd.ryDirection =
                 wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
         }
-        return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) /
+        return f * Li(rd, scene, sampler, arena, depth + 1, x, y) * AbsDot(wi, ns) /
                pdf;
     } else
         return Spectrum(0.f);
@@ -162,20 +165,34 @@ Spectrum IISPTdIntegrator::SpecularReflect(
 
 Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
                                       const Scene &scene, Sampler &sampler,
-                                      MemoryArena &arena, int depth) {
+                                      MemoryArena &arena, int depth, int x, int y) {
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;
     if (!scene.Intersect(ray, &isect)) {
-        for (const auto &light : scene.lights) L += light->Le(ray);
+        for (const auto &light : scene.lights) {
+            L += light->Le(ray);
+        }
+
+        // Record intersection distance (no intersection)
+        distance_film->set(x, y, NO_INTERSECTION_DISTANCE);
+
         return L;
+    }
+
+    // Record intersection distance (intersection found)
+    {
+        Vector3f connecting_vector = isect.p - ray.o;
+        float d2 = Dot(connecting_vector, connecting_vector);
+        float d = sqrt(d2);
+        distance_film->set(x, y, d);
     }
 
     // Compute scattering functions for surface interaction
     isect.ComputeScatteringFunctions(ray, arena);
     if (!isect.bsdf)
-        return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
+        return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth, x, y);
     // wo should be the vector towards camera, from intersection
     Vector3f wo = isect.wo;
     Float woLength = Dot(wo, wo);
@@ -197,8 +214,8 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
     }
     if (depth + 1 < maxDepth) {
         // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, isect, scene, sampler, arena, depth);
-        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth);
+        L += SpecularReflect(ray, isect, scene, sampler, arena, depth, x, y);
+        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth, x, y);
     }
     return L;
 }
@@ -271,7 +288,7 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
                     // LOG(INFO) << "AUX camera ray: o=["<< ray.o <<"], d=["<< ray.d <<"]";
                     // exit(0);
                     if (rayWeight > 0) {
-                        L = Li(ray, scene, *tileSampler, arena, 0);
+                        L = Li(ray, scene, *tileSampler, arena, 0, pixel.x, pixel.y);
                     }
 
                     // Issue warning if unexpected radiance value returned
@@ -315,11 +332,16 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
         }
     }
 
-    // Save final image after rendering
-    // Disable saving the image
-    // camera->film->WriteImage();
 }
 
+// Save reference image =======================================================
+void IISPTdIntegrator::save_reference(std::shared_ptr<Camera> camera,
+                                      std::string distance_filename) {
+    camera->film->WriteImage();
+    distance_film->write(distance_filename);
+}
+
+// Factory ====================================================================
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
     std::shared_ptr<Sampler> sampler,
     std::shared_ptr<Camera> camera) {

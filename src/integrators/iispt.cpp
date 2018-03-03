@@ -42,8 +42,12 @@
 #include "stats.h"
 #include "progressreporter.h"
 #include "cameras/hemispheric.h"
+#include "pbrt.h"
+#include "samplers/sobol.h"
+#include "integrators/path.h"
 
 #include <cstdlib>
+#include <iostream>
 
 namespace pbrt {
 
@@ -52,7 +56,23 @@ STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
-// IISPTIntegrator Method Definitions
+// Utilities ==================================================================
+
+// Generate reference file name -----------------------------------------------
+// extension must start with a .
+static std::string generate_reference_name(std::string identifier_type, Point2i pixel, std::string extension) {
+    std::string generated_path =
+            IISPT_REFERENCE_DIRECTORY +
+            identifier_type +
+            "_" +
+            std::to_string(pixel.x) +
+            "_" +
+            std::to_string(pixel.y) +
+            extension;
+    return generated_path;
+}
+
+// IISPTIntegrator Method Definitions =========================================
 
 // Constructor
 IISPTIntegrator::IISPTIntegrator(int maxDepth,
@@ -181,16 +201,6 @@ Spectrum IISPTIntegrator::SpecularReflect(
 }
 
 static bool is_debug_pixel(Point2i pixel) {
-//    return (pixel.x == 365 && pixel.y == 500) ||
-//            (pixel.x == 450 && pixel.y == 120) ||
-//            (pixel.x == 464 && pixel.y == 614);
-
-//    return (pixel.x == 1159 && pixel.y == 659) ||
-//            (pixel.x == 179 && pixel.y == 159);
-
-//    return (pixel.x == 610 && pixel.y == 560) ||
-//            (pixel.x == 600 && pixel.y == 600);
-
     return (pixel.x % 100 == 0) && (pixel.y % 100 == 0);
 }
 
@@ -211,6 +221,17 @@ in integrator.cpp: EstimateDirect
 
 // Render =====================================================================
 void IISPTIntegrator::Render(const Scene &scene) {
+    if (PbrtOptions.referenceTiles <= 0) {
+        // Normal render of the scene
+        render_normal(scene);
+    } else {
+        // Render reference training views
+        render_reference(scene);
+    }
+}
+
+// Render Normal ==============================================================
+void IISPTIntegrator::render_normal(const Scene &scene) {
 
     Preprocess(scene);
 
@@ -247,7 +268,6 @@ void IISPTIntegrator::Render(const Scene &scene) {
             int y0 = sampleBounds.pMin.y + tile.y * tileSize;
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
-            // LOG(INFO) << "Starting image tile " << tileBounds;
 
             // Get _FilmTile_ for tile
             std::unique_ptr<FilmTile> filmTile =
@@ -327,7 +347,6 @@ void IISPTIntegrator::Render(const Scene &scene) {
                     arena.Reset();
                 } while (tileSampler->StartNextSample());
             }
-            // LOG(INFO) << "Finished image tile " << tileBounds;
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
@@ -339,6 +358,55 @@ void IISPTIntegrator::Render(const Scene &scene) {
 
     // Save final image after rendering
     camera->film->WriteImage();
+}
+
+// Render reference ===========================================================
+void IISPTIntegrator::render_reference(const Scene &scene) {
+
+    Preprocess(scene);
+
+    // Create the auxiliary integrator for intersection-view
+    this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(
+            dsampler, dcamera));
+    // Preprocess on auxiliary integrator
+    dintegrator->Preprocess(scene);
+
+    // Compute number of tiles
+    Bounds2i sampleBounds = camera->film->GetSampleBounds();
+    Vector2i sampleExtent = sampleBounds.Diagonal();
+    int reference_tiles = PbrtOptions.referenceTiles;
+    int reference_tile_interval_x = sampleExtent.x / reference_tiles; // Pixels
+    int reference_tile_interval_y = sampleExtent.y / reference_tiles; // Pixels
+
+    if (reference_tile_interval_x == 0 || reference_tile_interval_y == 0) {
+        fprintf(stderr, "Reference tile interval too small. Image resolution could be too small or reference tiles too many\n");
+        return;
+    }
+
+    // Initialize sampler and arena
+    MemoryArena arena;
+    std::unique_ptr<Sampler> tile_sampler = sampler->Clone(0);
+
+    for (int px_y = 0; px_y < sampleExtent.y; px_y += reference_tile_interval_y) {
+        for (int px_x = 0; px_x < sampleExtent.x; px_x += reference_tile_interval_x) {
+            CameraSample current_sample;
+            current_sample.pFilm = Point2f(px_x, px_y);
+            current_sample.time = 0;
+
+            std::cerr << "Current pixel ["<< px_x <<"] ["<< px_y <<"]" << std::endl;
+            std::cerr << "Camera sample is " << current_sample << std::endl;
+
+            // Render IISPTd views and Reference views
+            RayDifferential ray;
+            Float rayWeight = camera->GenerateRayDifferential(current_sample, &ray);
+            // It's a single pass per pixel, so we don't scale the differential
+            ray.ScaleDifferentials(1);
+            // The Li method, in reference mode, will automatically save the reference images
+            // to the out/ directory
+            Li(ray, scene, *tile_sampler, arena, 0, Point2i(px_x, px_y));
+        }
+    }
+
 }
 
 // Estimate direct ============================================================
@@ -361,11 +429,10 @@ static Spectrum IISPTEstimateDirect(
     Float scatteringPdf = 0;
     VisibilityTester visibility;
 
-    // TODO replace Sample_Li with custom code to sample from hemisphere instead
+    // Sample_Li with custom code to sample from hemisphere instead
     // Writes into wi the vector towards the light source. Derived from hem_x and hem_y
     // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
     // We don't need to have a visibility object
-    // Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
     Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
 
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -493,14 +560,65 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     // testCamera is used for the hemispheric rendering
     std::shared_ptr<HemisphericCamera> auxCamera (
                 CreateHemisphericCamera(
-                        IISPT_D_SIZE_X, IISPT_D_SIZE_Y, dcamera->medium,
-                        auxRay.o, Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
-                        pixel
+                    IISPT_D_SIZE_X,
+                    IISPT_D_SIZE_Y,
+                    dcamera->medium,
+                    auxRay.o,
+                    Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                    pixel,
+                    generate_reference_name("d", pixel, ".exr")
                     )
                 );
 
     // Start rendering the hemispherical view
     this->dintegrator->RenderView(scene, auxCamera);
+
+    // In Reference mode, save the rendered view ------------------------------
+    if (PbrtOptions.referenceTiles > 0) {
+        dintegrator->save_reference(
+                    auxCamera,
+                    generate_reference_name("z", pixel, ".pfm") // distance map
+                    );
+    }
+
+    // In Reference mode, create a Path Tracer for ground truth ---------------
+    if (PbrtOptions.referenceTiles > 0) {
+        std::shared_ptr<HemisphericCamera> pathCamera (
+                    CreateHemisphericCamera(
+                        IISPT_D_SIZE_X,
+                        IISPT_D_SIZE_Y,
+                        dcamera->medium,
+                        auxRay.o,
+                        Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                        pixel,
+                        generate_reference_name("p", pixel, ".exr")
+                        )
+                    );
+
+        int path_pixel_samples = PbrtOptions.referencePixelSamples;
+        const Bounds2i path_sample_bounds (
+                    Point2i(0, 0),
+                    Point2i(IISPT_D_SIZE_X, IISPT_D_SIZE_Y)
+                    );
+        std::shared_ptr<Sampler> path_sobol_sampler (CreateSobolSampler(path_sample_bounds, path_pixel_samples));
+        int path_max_depth = IISPT_REFERENCE_PATH_MAX_DEPTH;
+        Float path_rr_threshold = 1.0;
+        std::string path_light_strategy = "spatial";
+
+        std::shared_ptr<PathIntegrator> path_integrator
+                (CreatePathIntegrator(path_sobol_sampler,
+                                      pathCamera,
+                                      path_max_depth,
+                                      path_sample_bounds,
+                                      path_rr_threshold,
+                                      path_light_strategy
+                                      ));
+
+        // Start rendering the ground truth
+        // The render method will automatically save the image
+        path_integrator->Render(scene);
+
+    }
 
     // Use the hemispherical view to obtain illumination ----------------------
 
@@ -524,12 +642,6 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         // Compute direct lighting using hemisphere information TODO
         L += IISPTSampleHemisphere(isect, scene, arena, sampler, auxCamera.get());
     }
-
-//    if (depth + 1 < maxDepth) {
-//        // Trace rays for specular reflection and refraction
-//        L += SpecularReflect(ray, isect, scene, sampler, arena, depth, pixel);
-//        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth, pixel);
-//    }
 
     return L;
 

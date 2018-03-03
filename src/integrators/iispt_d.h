@@ -43,12 +43,15 @@
 #include "integrator.h"
 #include "scene.h"
 #include "integrators/directlighting.h"
+#include "film/distancefilm.h"
 
 namespace pbrt {
 
 // Configurable size of auxiliary films
-const int IISPT_D_SIZE_X = 16;
-const int IISPT_D_SIZE_Y = 16;
+const int IISPT_D_SIZE_X = 256;
+const int IISPT_D_SIZE_Y = 256;
+const std::string IISPT_REFERENCE_DIRECTORY = std::string("out/");
+const int IISPT_REFERENCE_PATH_MAX_DEPTH = 16;
 
 // IISPTdIntegrator Declarations
 class IISPTdIntegrator {
@@ -67,23 +70,32 @@ public:
         strategy(strategy),
         maxDepth(maxDepth)
     {
-
+        distance_film = std::shared_ptr<DistanceFilm>(
+            new DistanceFilm(
+                pixelBounds.pMax.x,
+                pixelBounds.pMax.y
+            )
+        );
     }
 
-    virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth);
+    Spectrum Li(const RayDifferential &ray,
+                                          const Scene &scene, Sampler &sampler,
+                                          MemoryArena &arena, int depth, int x, int y);
 
     void Preprocess(const Scene &scene);
 
     Spectrum SpecularReflect(
         const RayDifferential &ray, const SurfaceInteraction &isect,
-        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth);
+        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y);
 
     Spectrum SpecularTransmit(
         const RayDifferential &ray, const SurfaceInteraction &isect,
-        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth);
+        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y);
 
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
+
+    void save_reference(std::shared_ptr<Camera> camera,
+                                          std::string distance_filename);
 
   private:
     // IISPTdIntegrator Private Data
@@ -93,6 +105,7 @@ public:
     const LightStrategy strategy;
     const int maxDepth;
     std::vector<int> nLightSamples;
+    std::shared_ptr<DistanceFilm> distance_film;
 };
 
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(

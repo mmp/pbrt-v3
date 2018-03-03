@@ -70,4 +70,11 @@ SobolSampler *CreateSobolSampler(const ParamSet &params,
     return new SobolSampler(nsamp, sampleBounds);
 }
 
+SobolSampler *CreateSobolSampler(
+        const Bounds2i &sampleBounds,
+        int pixel_samples
+        ) {
+    return new SobolSampler(pixel_samples, sampleBounds);
+}
+
 }  // namespace pbrt

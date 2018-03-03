@@ -80,6 +80,10 @@ public:
 
     void Render(const Scene &scene);
 
+    void render_normal(const Scene &scene);
+
+    void render_reference(const Scene &scene);
+
 private:
     // IISPTIntegrator Private Data
     const int maxDepth;

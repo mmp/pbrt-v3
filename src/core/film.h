@@ -95,6 +95,7 @@ public:
   void SetImage(const Spectrum *img) const;
   void AddSplat(const Point2f &p, Spectrum v);
   void WriteImage(Float splatScale = 1);
+  void WriteImage(Float splatScale, std::string out_filename);
   void Clear();
 
   // Film Public Data

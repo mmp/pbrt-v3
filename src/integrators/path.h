@@ -70,6 +70,15 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera);
 
+PathIntegrator *CreatePathIntegrator(
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<const Camera> camera,
+        int max_depth,
+        Bounds2i pixel_bounds,
+        Float rr_threshold,
+        std::string light_strategy
+        );
+
 }  // namespace pbrt
 
 #endif  // PBRT_INTEGRATORS_PATH_H

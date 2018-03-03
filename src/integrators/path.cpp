@@ -140,6 +140,9 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         if (f.IsBlack() || pdf == 0.f) break;
         beta *= f * AbsDot(wi, isect.shading.n) / pdf;
         VLOG(2) << "Updated beta = " << beta;
+        if (beta.y() < 0.f || isNaN(beta.y())) {
+            return L;
+        }
         CHECK_GE(beta.y(), 0.f);
         DCHECK(!std::isinf(beta.y()));
         specularBounce = (flags & BSDF_SPECULAR) != 0;
@@ -213,6 +216,25 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
         params.FindOneString("lightsamplestrategy", "spatial");
     return new PathIntegrator(maxDepth, camera, sampler, pixelBounds,
                               rrThreshold, lightStrategy);
+}
+
+PathIntegrator *CreatePathIntegrator(
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<const Camera> camera,
+        int max_depth,
+        const Bounds2i pixel_bounds,
+        Float rr_threshold,
+        std::string light_strategy
+        ) {
+    Bounds2i pixel_bounds_copy = pixel_bounds;
+    return new PathIntegrator(
+                max_depth,
+                camera,
+                sampler,
+                pixel_bounds_copy,
+                rr_threshold,
+                light_strategy
+                );
 }
 
 }  // namespace pbrt
