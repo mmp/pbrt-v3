@@ -78,18 +78,19 @@ public:
         );
     }
 
-    virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth);
+    Spectrum Li(const RayDifferential &ray,
+                                          const Scene &scene, Sampler &sampler,
+                                          MemoryArena &arena, int depth, int x, int y);
 
     void Preprocess(const Scene &scene);
 
     Spectrum SpecularReflect(
         const RayDifferential &ray, const SurfaceInteraction &isect,
-        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth);
+        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y);
 
     Spectrum SpecularTransmit(
         const RayDifferential &ray, const SurfaceInteraction &isect,
-        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth);
+        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y);
 
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
 
