@@ -123,7 +123,7 @@ Again, don't forget to recompile after making this change.
 ## Command line options
 
 ```
--reference=<nTiles>
+--reference_samples=<nTiles>
 ```
 
 Disables normal rendering, and enables rendering of reference hemispheric images for training data. Note: `iispt` integrator needs to be selected for this to be effective.
@@ -131,6 +131,12 @@ Disables normal rendering, and enables rendering of reference hemispheric images
 `<nTiles>` specifies the number of hemispheric reference images rendered per dimension.
 
 The output is saved into the current working directory, in subfolder `reference/`.
+
+```
+--reference_samples=<nsamples>
+```
+
+Sets the path tracing samples to be used in reference mode.
 
 ## .pbrt file
 
