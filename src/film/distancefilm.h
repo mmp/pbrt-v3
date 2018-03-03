@@ -11,7 +11,8 @@ class DistanceFilm
 private:
     int width;
     int height;
-    std::shared_ptr<Film> film;
+    std::shared_ptr<ImageFilm> film;
+    std::string filename;
 
 public:
 
@@ -22,32 +23,23 @@ public:
             std::string filename
             ) :
         width(width),
-        height(height) {
-
-        const Point2i resolution (width, height);
-        const Bounds2f cropWindow (Point2f(0., 0.), Point2f(1., 1.));
-        std::unique_ptr<Filter> filter (new GaussianFilter(Vector2f(2.f, 2.f), 2.f));
-        Float scale = 1.;
-        Float diagonal = 35.;
-        Float maxSampleLuminance = Infinity;
-        film = std::shared_ptr<Film>(
-                    new Film(
-                        resolution,
-                        cropWindow,
-                        std::move(filter),
-                        diagonal,
-                        filename,
-                        scale,
-                        maxSampleLuminance
-                        )
-                    );
+        height(height),
+        filename(filename)
+    {
+        film = std::shared_ptr<ImageFilm>(
+                new ImageFilm(
+                    width,
+                    height,
+                    1
+                )
+        );
     }
 
     // Set pixel ==============================================================
-
-    // Get pixel ==============================================================
+    void set(int x, int y, float val);
 
     // Write image ============================================================
+    void write();
 };
 
 } // namespace pbrt
