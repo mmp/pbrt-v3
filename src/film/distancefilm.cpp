@@ -6,12 +6,12 @@ namespace pbrt {
 
 // ============================================================================
 void DistanceFilm::set(int x, int y, float val) {
-    ScalarPfmItem item (val);
+    std::shared_ptr<PfmItem> item (new ScalarPfmItem(val));
     film->set(x, y, item);
 }
 
 // ============================================================================
-void DistanceFilm::write() {
+void DistanceFilm::write(std::string filename) {
     film->write(filename);
 }
 

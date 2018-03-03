@@ -2,6 +2,7 @@
 #define DISTANCEFILM_H
 
 #include <memory>
+#include <film/imagefilm.h>
 
 namespace pbrt {
 
@@ -12,19 +13,16 @@ private:
     int width;
     int height;
     std::shared_ptr<ImageFilm> film;
-    std::string filename;
 
 public:
 
     // Constructor ============================================================
     DistanceFilm(
             int width,
-            int height,
-            std::string filename
+            int height
             ) :
         width(width),
-        height(height),
-        filename(filename)
+        height(height)
     {
         film = std::shared_ptr<ImageFilm>(
                 new ImageFilm(
@@ -39,7 +37,7 @@ public:
     void set(int x, int y, float val);
 
     // Write image ============================================================
-    void write();
+    void write(std::string filename);
 };
 
 } // namespace pbrt

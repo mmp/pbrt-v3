@@ -44,6 +44,8 @@
 
 namespace pbrt {
 
+static const float NO_INTERSECTION_DISTANCE = -1.0;
+
 // STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 
 // IISPTdIntegrator Method Definitions
@@ -163,14 +165,28 @@ Spectrum IISPTdIntegrator::SpecularReflect(
 
 Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
                                       const Scene &scene, Sampler &sampler,
-                                      MemoryArena &arena, int depth) {
+                                      MemoryArena &arena, int depth, int x, int y) {
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;
     if (!scene.Intersect(ray, &isect)) {
-        for (const auto &light : scene.lights) L += light->Le(ray);
+        for (const auto &light : scene.lights) {
+            L += light->Le(ray);
+        }
+
+        // Record intersection distance (no intersection)
+        distance_film->set(x, y, NO_INTERSECTION_DISTANCE);
+
         return L;
+    }
+
+    // Record intersection distance (intersection found)
+    {
+        Vector3f connecting_vector = isect.p - ray.o;
+        float d2 = Dot(connecting_vector, connecting_vector);
+        float d = sqrt(d2);
+        distance_film->set(x, y, d);
     }
 
     // Compute scattering functions for surface interaction
@@ -319,8 +335,10 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
 }
 
 // Save reference image =======================================================
-void IISPTdIntegrator::save_reference(std::shared_ptr<Camera> camera) {
+void IISPTdIntegrator::save_reference(std::shared_ptr<Camera> camera,
+                                      std::string distance_filename) {
     camera->film->WriteImage();
+    distance_film->write(distance_filename);
 }
 
 // Factory ====================================================================

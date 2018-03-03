@@ -43,6 +43,7 @@
 #include "integrator.h"
 #include "scene.h"
 #include "integrators/directlighting.h"
+#include "film/distancefilm.h"
 
 namespace pbrt {
 
@@ -69,7 +70,12 @@ public:
         strategy(strategy),
         maxDepth(maxDepth)
     {
-
+        distance_film = std::shared_ptr<DistanceFilm>(
+            new DistanceFilm(
+                pixelBounds.pMax.x,
+                pixelBounds.pMax.y
+            )
+        );
     }
 
     virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
@@ -87,7 +93,8 @@ public:
 
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
 
-    void save_reference(std::shared_ptr<Camera> camera);
+    void save_reference(std::shared_ptr<Camera> camera,
+                                          std::string distance_filename);
 
   private:
     // IISPTdIntegrator Private Data
@@ -97,6 +104,7 @@ public:
     const LightStrategy strategy;
     const int maxDepth;
     std::vector<int> nLightSamples;
+    std::shared_ptr<DistanceFilm> distance_film;
 };
 
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(

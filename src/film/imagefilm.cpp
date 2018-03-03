@@ -11,32 +11,18 @@ static void write_float_value(ofstream &ofs, float val) {
     ofs.write((char *)&val, sizeof(float));
 }
 
-// ============================================================================
-std::shared_ptr<std::vector<PfmItem>> get_row(int y) {
 
-    return rows->operator[](y);
+// ============================================================================
+void ImageFilm::set(int x, int y, std::shared_ptr<PfmItem> pixel) {
+
+    (rows[y])[x] = pixel;
 
 }
 
 // ============================================================================
-void ImageFilm::set(int x, int y, PfmItem pixel) {
+std::shared_ptr<PfmItem> ImageFilm::get(int x, int y) {
 
-    // Get the row
-    std::shared_ptr<std::vector<PfmItem>> row = get_row(y);
-
-    // Set the element
-    row->operator[](x) = pixel;
-
-}
-
-// ============================================================================
-PfmItem ImageFilm::get(int x, int y) {
-
-    // Get the row
-    std::shared_ptr<std::vector<PfmItem>> row = get_row(y);
-
-    // Get the element
-    return row->operator[](x);
+    return (rows[y])[x];
 
 }
 
@@ -60,9 +46,8 @@ void ImageFilm::write(std::string filename) {
 
     // Write pixels
     for (int y = 0; y < height; y++) {
-        std::shared_ptr<std::vector<PfmItem>> row = get_row(y);
         for (int x = 0; x < width; x++) {
-            PfmItem pix = row->operator[](x);
+            std::shared_ptr<PfmItem> pix = (rows[y])[x];
             if (num_components == 1) {
                 float val = pix.get_single_component();
                 write_float_value(ofs, val);

@@ -6,9 +6,13 @@
 namespace pbrt {
 
 // Simple default null-implementation of a PfmItem
-class NullPfmItem : PfmItem {
+class NullPfmItem : public PfmItem {
 
 public:
+
+    NullPfmItem() {
+
+    }
 
     virtual int get_number_components() {
         return 1;

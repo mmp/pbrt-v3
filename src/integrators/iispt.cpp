@@ -577,7 +577,10 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
 
     // In Reference mode, save the rendered view ------------------------------
     if (PbrtOptions.referenceTiles > 0) {
-        dintegrator->save_reference(auxCamera);
+        dintegrator->save_reference(
+                    auxCamera,
+                    generate_reference_name("z", pixel, ".pfm") // distance map
+                    );
     }
 
     // In Reference mode, create a Path Tracer for ground truth ---------------

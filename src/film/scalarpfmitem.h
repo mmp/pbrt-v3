@@ -4,14 +4,14 @@
 namespace pbrt {
 
 // Implementation of PfmItem for a single scalar value
-class ScalarPfmItem : PfmItem {
+class ScalarPfmItem : public PfmItem {
 
 private:
     float value = 0.0;
 
 public:
 
-    ScalarPfmItem(value) :
+    ScalarPfmItem(float value) :
         value(value)
     {
 

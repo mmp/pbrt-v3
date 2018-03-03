@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 #include "pfmitem.h"
+#include "film/nullpfmitem.h"
 
 namespace pbrt {
 
@@ -21,19 +22,7 @@ private:
     int height;
     int num_components;
 
-    // Each row is a std::shared_ptr<std::vector<T>>
-    std::shared_ptr<
-        std::vector<
-            std::shared_ptr<
-                std::vector<
-                    PfmItem
-                >
-            >
-        >
-    > rows;
-
-    // Get row ================================================================
-    std::shared_ptr<std::vector<PfmItem>> get_row(int y);
+    std::vector<std::vector<std::shared_ptr<PfmItem>>> rows;
 
 public:
     // Constructor ============================================================
@@ -52,24 +41,29 @@ public:
             exit(0);
         }
 
-        rows = std::shared_ptr<std::vector<std::shared_ptr<std::vector<PfmItem>>>>(
-                new std::vector<std::shared_ptr<std::vector<PfmItem>>> (height)
-                );
-
         for (int y = 0; y < height; y++) {
-            rows.push_back(
-                    std::shared_ptr<std::vector<PfmItem>> (
-                        new std::vector<PfmItem> (width, NullPfmItem())
-                    )
-            );
+            std::vector<std::shared_ptr<PfmItem>> a_row;
+            for (int x = 0; x < width; x++) {
+                std::shared_ptr<PfmItem> a_null_item (new NullPfmItem());
+                a_row.push_back(
+                    a_null_item
+                );
+            }
+            rows.push_back(a_row);
+        }
+
+        if (rows.size() != height) {
+            std::cerr << "imagefilm.h: construct ImageFilm: specified height is "
+                      << height << " but actual height is " << rows.size() << std::endl;
+            exit(1);
         }
     }
 
     // Set ====================================================================
-    void set(int x, int y, PfmItem pixel);
+    void set(int x, int y, std::shared_ptr<PfmItem> pixel);
 
     // Get ====================================================================
-    PfmItem get(int x, int y);
+    std::shared_ptr<PfmItem> get(int x, int y);
 
     // Write ==================================================================
     // Write to PFM file
