@@ -52,6 +52,12 @@ Rendering options:
   --quick              Automatically reduce a number of quality settings to
                        render more quickly.
   --quiet              Suppress all text output other than error messages.
+  --reference=<nTiles>
+                       Enables the reference mode with nTiles per dimension
+  --reference_samples=<nsamples>
+                       Sets the number of samples for the reference
+                       path tracer
+
 
 Logging options:
   --logdir <dir>       Specify directory that log files should be written to.

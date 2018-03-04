@@ -577,7 +577,8 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     if (PbrtOptions.referenceTiles > 0) {
         dintegrator->save_reference(
                     auxCamera,
-                    generate_reference_name("z", pixel, ".pfm") // distance map
+                    generate_reference_name("z", pixel, ".pfm"), // distance map
+                    generate_reference_name("n", pixel, ".pfm")  // normal map
                     );
     }
 

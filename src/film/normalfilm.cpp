@@ -5,7 +5,7 @@
 namespace pbrt {
 
 // ============================================================================
-void NormalFilm::set(int x, int y, Vector3f n) {
+void NormalFilm::set(int x, int y, Normal3f n) {
     std::shared_ptr<PfmItem> item (new RgbPfmItem(n.x, n.y, n.z));
     film->set(x, y, item);
 }

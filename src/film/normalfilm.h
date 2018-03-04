@@ -31,7 +31,7 @@ public:
     }
 
     // Set pixel ==============================================================
-    void set(int x, int y, Vector3f n);
+    void set(int x, int y, Normal3f n);
 
     // Write image ============================================================
     void write(std::string filename);

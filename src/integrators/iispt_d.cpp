@@ -178,6 +178,9 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
         // Record intersection distance (no intersection)
         distance_film->set(x, y, NO_INTERSECTION_DISTANCE);
 
+        // Record null normal vector
+        normal_film->set(x, y, Normal3f(0.0, 0.0, 0.0));
+
         return L;
     }
 
@@ -187,6 +190,11 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
         float d2 = Dot(connecting_vector, connecting_vector);
         float d = sqrt(d2);
         distance_film->set(x, y, d);
+    }
+
+    // Record intersection normal
+    {
+        normal_film->set(x, y, isect.n);
     }
 
     // Compute scattering functions for surface interaction
@@ -336,9 +344,12 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
 
 // Save reference image =======================================================
 void IISPTdIntegrator::save_reference(std::shared_ptr<Camera> camera,
-                                      std::string distance_filename) {
+                                      std::string distance_filename,
+                                      std::string normal_filename
+                                      ) {
     camera->film->WriteImage();
     distance_film->write(distance_filename);
+    normal_film->write(normal_filename);
 }
 
 // Factory ====================================================================

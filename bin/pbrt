@@ -9,6 +9,8 @@ var chalk = require("chalk");
 var log_dir = "/tmp/pbrt";
 var out_dir = "out";
 
+var PBRT_EXEC_PATH = '/home/gj/git/pbrt-v3-IISPT-build/pbrt';
+
 // Utilities ------------------------------------------------------------------
 
 var argv = process.argv;
@@ -75,162 +77,180 @@ var simple_exec = function(cmd, cmd_args, callback, no_output) {
     });
 };
 
-// Read command line arguments
-
-var positional_args = [];
-var optional_args = [];
-
-for (var i = 0; i < argv_length(); i++) {
-    var an_arg = argv_get(i);
-    if (an_arg.startsWith("--")) {
-        optional_args.push(an_arg);
-    } else {
-        positional_args.push(an_arg);
-    }
+// Display help
+// Callback: ()
+var display_help = function(callback) {
+    simple_exec(PBRT_EXEC_PATH, ["-h"], (code, signal) => {
+        callback();
+    });
 };
 
-var input_scene = null;
-if (positional_args.length >= 1) {
-    input_scene = positional_args[0];
-}
-var output_file = null;
-if (positional_args.length >= 2) {
-    output_file = positional_args[1];
-}
+// Read command line arguments
 
-// Check if there is first argument
-if (!input_scene) {
-    console.info("Usage: pbrt <input.pbrt> <output> [options...]");
-    process.exit();
-}
+var main = function() {
+    var positional_args = [];
+    var optional_args = [];
 
-// Check extension
+    for (var i = 0; i < argv_length(); i++) {
+        var an_arg = argv_get(i);
+        if (an_arg == "-h") {
+            display_help(() => {
+                process.exit();
+            });
+            return;
+        } else if (an_arg.startsWith("--")) {
+            optional_args.push(an_arg);
+        } else {
+            positional_args.push(an_arg);
+        }
+    };
 
-var input_scene_split = input_scene.split(".");
+    var input_scene = null;
+    if (positional_args.length >= 1) {
+        input_scene = positional_args[0];
+    }
+    var output_file = null;
+    if (positional_args.length >= 2) {
+        output_file = positional_args[1];
+    }
 
-if (array_get_last(input_scene_split) != "pbrt") {
-    console.info("Argument 0 should be a .pbrt file");
-    process.exit();
-}
+    // Check if there is first argument
+    if (!input_scene) {
+        console.info("Usage: pbrt <input.pbrt> <output> [options...]");
+        process.exit();
+    }
 
-// Generate output file name if not exists
+    // Check extension
 
-if (!output_file) {
-    array_replace_last(input_scene_split, "png");
-    output_file = input_scene_split.join(".");
-    console.info("No output file specified. Using ["+ output_file +"]");
-} else {
-    console.info("Output file: ["+ output_file +"]");
-}
+    var input_scene_split = input_scene.split(".");
 
-async.waterfall([
+    if (array_get_last(input_scene_split) != "pbrt") {
+        console.info("Argument 0 should be a .pbrt file");
+        process.exit();
+    }
 
-    (callback) => {
-        // Delete old logging directory
-        simple_exec("rm", ["-rf", log_dir], (code, signal) => {
-            if (code == 0) {
-                callback();
-                return;
-            } else {
-                callback("Could not remove old logging directory");
-                return;
-            }
-        });
-    },
+    // Generate output file name if not exists
 
+    if (!output_file) {
+        array_replace_last(input_scene_split, "png");
+        output_file = input_scene_split.join(".");
+        console.info("No output file specified. Using ["+ output_file +"]");
+    } else {
+        console.info("Output file: ["+ output_file +"]");
+    }
 
+    async.waterfall([
 
-    (callback) => {
-        // Create logging directory
-        simple_exec("mkdir", [log_dir], (code, signal) => {
-            if (code == 0) {
-                callback();
-                return;
-            } else {
-                callback("Could not create logging directory");
-                return;
-            }
-        });
-    },
-
-    (callback) => {
-        // Check if out directory exists
-        fs.access(out_dir, fs.constants.F_OK, (err) => {
-            if (err) {
-                // Doesn't exist
-                callback(null, false);
-                return;
-            } else {
-                callback(null, true);
-                return;
-            }
-        });
-    },
-
-    (directory_exists, callback) => {
-        if (!directory_exists) {
-            // Create out directory
-            simple_exec("mkdir", [out_dir], (code, signal) => {
+        (callback) => {
+            // Delete old logging directory
+            simple_exec("rm", ["-rf", log_dir], (code, signal) => {
                 if (code == 0) {
                     callback();
                     return;
                 } else {
-                    callback("Could not create out directory");
+                    callback("Could not remove old logging directory");
                     return;
                 }
             });
-        } else {
-            callback();
-            return;
-        }
-    },
+        },
 
-    (callback) => {
-        // Run pbrt
 
-        var final_args = [input_scene, "--outfile", output_file, "--logdir", log_dir];
-        for (var i = 0; i < optional_args.length; i++) {
-            final_args.push(optional_args[i]);
-        }
 
-        simple_exec('/home/gj/git/pbrt-v3-IISPT-build/pbrt',
-                    final_args,
-                    (code, signal) => {
-            callback();
-            return;
-        });
-    },
+        (callback) => {
+            // Create logging directory
+            simple_exec("mkdir", [log_dir], (code, signal) => {
+                if (code == 0) {
+                    callback();
+                    return;
+                } else {
+                    callback("Could not create logging directory");
+                    return;
+                }
+            });
+        },
 
-    (callback) => {
-        // Find log files
-        fs.readdir(log_dir, (err, files) => {
-            if (err) {
-                callback(err);
-                return;
-            } else {
-                for (var i = 0; i < files.length; i++) {
-                    var f_name = files[i];
-                    if (f_name.indexOf("INFO") > -1) {
-                        callback(null, f_name);
+        (callback) => {
+            // Check if out directory exists
+            fs.access(out_dir, fs.constants.F_OK, (err) => {
+                if (err) {
+                    // Doesn't exist
+                    callback(null, false);
+                    return;
+                } else {
+                    callback(null, true);
+                    return;
+                }
+            });
+        },
+
+        (directory_exists, callback) => {
+            if (!directory_exists) {
+                // Create out directory
+                simple_exec("mkdir", [out_dir], (code, signal) => {
+                    if (code == 0) {
+                        callback();
+                        return;
+                    } else {
+                        callback("Could not create out directory");
                         return;
                     }
-                }
-                callback("No INFO log file found");
+                });
+            } else {
+                callback();
                 return;
             }
-        });
-    },
+        },
 
-    (log_file_path, callback) => {
-        // Open log file with NANO
-        var log_file_full_path = path.join(log_dir, log_file_path);
-        console.info("nano -c " + log_file_full_path);
-        callback();
-    }
+        (callback) => {
+            // Run pbrt
 
-], (err) => {
-    if (err) {
-        console.info("Error: " + err);
-    }
-    process.exit();
-});
+            var final_args = [input_scene, "--outfile", output_file, "--logdir", log_dir];
+            for (var i = 0; i < optional_args.length; i++) {
+                final_args.push(optional_args[i]);
+            }
+
+            simple_exec(PBRT_EXEC_PATH,
+                        final_args,
+                        (code, signal) => {
+                callback();
+                return;
+            });
+        },
+
+        (callback) => {
+            // Find log files
+            fs.readdir(log_dir, (err, files) => {
+                if (err) {
+                    callback(err);
+                    return;
+                } else {
+                    for (var i = 0; i < files.length; i++) {
+                        var f_name = files[i];
+                        if (f_name.indexOf("INFO") > -1) {
+                            callback(null, f_name);
+                            return;
+                        }
+                    }
+                    callback("No INFO log file found");
+                    return;
+                }
+            });
+        },
+
+        (log_file_path, callback) => {
+            // Open log file with NANO
+            var log_file_full_path = path.join(log_dir, log_file_path);
+            console.info("nano -c " + log_file_full_path);
+            callback();
+        }
+
+    ], (err) => {
+        if (err) {
+            console.info("Error: " + err);
+        }
+        process.exit();
+    });
+
+}
+
+main();

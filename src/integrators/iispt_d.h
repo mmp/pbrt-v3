@@ -49,8 +49,8 @@
 namespace pbrt {
 
 // Configurable size of auxiliary films
-const int IISPT_D_SIZE_X = 256;
-const int IISPT_D_SIZE_Y = 256;
+const int IISPT_D_SIZE_X = 16;
+const int IISPT_D_SIZE_Y = 16;
 const std::string IISPT_REFERENCE_DIRECTORY = std::string("out/");
 const int IISPT_REFERENCE_PATH_MAX_DEPTH = 16;
 
@@ -101,7 +101,9 @@ public:
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
 
     void save_reference(std::shared_ptr<Camera> camera,
-                                          std::string distance_filename);
+                                          std::string distance_filename,
+                                          std::string normal_filename
+                                          );
 
   private:
     // IISPTdIntegrator Private Data
