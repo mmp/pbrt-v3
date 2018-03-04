@@ -44,6 +44,7 @@
 #include "scene.h"
 #include "integrators/directlighting.h"
 #include "film/distancefilm.h"
+#include "film/normalfilm.h"
 
 namespace pbrt {
 
@@ -76,6 +77,11 @@ public:
                 pixelBounds.pMax.y
             )
         );
+
+        normal_film = std::make_shared<NormalFilm>(
+                    pixelBounds.pMax.x,
+                    pixelBounds.pMax.y
+                    );
     }
 
     Spectrum Li(const RayDifferential &ray,
@@ -106,6 +112,7 @@ public:
     const int maxDepth;
     std::vector<int> nLightSamples;
     std::shared_ptr<DistanceFilm> distance_film;
+    std::shared_ptr<NormalFilm> normal_film;
 };
 
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
