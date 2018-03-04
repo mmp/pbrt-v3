@@ -123,7 +123,7 @@ Again, don't forget to recompile after making this change.
 ## Command line options
 
 ```
---reference_samples=<nTiles>
+--reference=<nTiles>
 ```
 
 Disables normal rendering, and enables rendering of reference hemispheric images for training data. Note: `iispt` integrator needs to be selected for this to be effective.

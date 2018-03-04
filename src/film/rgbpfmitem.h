@@ -4,7 +4,7 @@
 namespace pbrt {
 
 // Implementation of PfmItem for a single scalar value
-class RgbPfmItem : PfmItem {
+class RgbPfmItem : public PfmItem {
 
 private:
     float r = 0.0;

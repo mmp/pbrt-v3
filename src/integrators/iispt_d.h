@@ -44,12 +44,13 @@
 #include "scene.h"
 #include "integrators/directlighting.h"
 #include "film/distancefilm.h"
+#include "film/normalfilm.h"
 
 namespace pbrt {
 
 // Configurable size of auxiliary films
-const int IISPT_D_SIZE_X = 256;
-const int IISPT_D_SIZE_Y = 256;
+const int IISPT_D_SIZE_X = 16;
+const int IISPT_D_SIZE_Y = 16;
 const std::string IISPT_REFERENCE_DIRECTORY = std::string("out/");
 const int IISPT_REFERENCE_PATH_MAX_DEPTH = 16;
 
@@ -76,6 +77,11 @@ public:
                 pixelBounds.pMax.y
             )
         );
+
+        normal_film = std::make_shared<NormalFilm>(
+                    pixelBounds.pMax.x,
+                    pixelBounds.pMax.y
+                    );
     }
 
     Spectrum Li(const RayDifferential &ray,
@@ -95,7 +101,9 @@ public:
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
 
     void save_reference(std::shared_ptr<Camera> camera,
-                                          std::string distance_filename);
+                                          std::string distance_filename,
+                                          std::string normal_filename
+                                          );
 
   private:
     // IISPTdIntegrator Private Data
@@ -106,6 +114,7 @@ public:
     const int maxDepth;
     std::vector<int> nLightSamples;
     std::shared_ptr<DistanceFilm> distance_film;
+    std::shared_ptr<NormalFilm> normal_film;
 };
 
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
