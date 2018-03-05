@@ -56,6 +56,7 @@ licensed under a slightly-modified Apache 2.0 license.
 #include "stats.h"
 #include "stringprint.h"
 #include "texture.h"
+#include "rng.h"
 
 namespace pbrt {
 
@@ -199,12 +200,10 @@ std::string DisneyRetro::ToString() const {
 ///////////////////////////////////////////////////////////////////////////
 // DisneySheen
 
-enum class SheenMode { Reflect, Transmit };
-
 class DisneySheen : public BxDF {
   public:
-    DisneySheen(const Spectrum &R, SheenMode mode)
-        : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), R(R), mode(mode) {}
+    DisneySheen(const Spectrum &R)
+        : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), R(R) {}
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const;
     Spectrum rho(const Vector3f &, int, const Point2f *) const { return R; }
     Spectrum rho(int, const Point2f *, const Point2f *) const { return R; }
@@ -212,7 +211,6 @@ class DisneySheen : public BxDF {
 
   private:
     Spectrum R;
-    SheenMode mode;
 };
 
 Spectrum DisneySheen::f(const Vector3f &wo, const Vector3f &wi) const {
@@ -225,8 +223,7 @@ Spectrum DisneySheen::f(const Vector3f &wo, const Vector3f &wi) const {
 }
 
 std::string DisneySheen::ToString() const {
-    return StringPrintf("[ DisneySheen R: %s mode: %s]", R.ToString().c_str(),
-                        mode == SheenMode::Reflect ? "reflect" : "transmit");
+    return StringPrintf("[ DisneySheen R: %s]", R.ToString().c_str());
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -275,6 +272,8 @@ Spectrum DisneyClearcoat::f(const Vector3f &wo, const Vector3f &wi) const {
     Float Gr =
         smithG_GGX(AbsCosTheta(wo), .25) * smithG_GGX(AbsCosTheta(wi), .25);
 
+    // Ad-hoc 0.25 term to match Disney implementation (unpublished, via
+    // Brent Burley.)
     return .25 * weight * Gr * Fr * Dr;
 }
 
@@ -388,7 +387,10 @@ class DisneyBSSRDF : public SeparableBSSRDF {
 Spectrum DisneyBSSRDF::S(const SurfaceInteraction &pi, const Vector3f &wi) {
     ProfilePhase pp(Prof::BSSRDFEvaluation);
     // Fade based on relative orientations of the two surface normals to
-    // better handle surface cavities.
+    // better handle surface cavities. (Details via personal communication
+    // from Brent Burley; these details aren't published in the course
+    // notes.)
+    //
     // TODO: test
     // TODO: explain
     Vector3f a = Normalize(pi.p - po.p);
@@ -402,9 +404,9 @@ Spectrum DisneyBSSRDF::S(const SurfaceInteraction &pi, const Vector3f &wi) {
         fade = std::max(Float(0), Dot(pi.shading.n, a2));
     }
 
-    // Back to the regular BSSRDF::S() implementation from here on out
-    Float Ft = FrDielectric(CosTheta(po.wo), 1, eta);
-    return fade * (1 - Ft) * Sp(pi) * Sw(wi);
+    Float Fo = SchlickWeight(AbsCosTheta(po.wo)),
+          Fi = SchlickWeight(AbsCosTheta(wi));
+    return fade * (1 - Fo / 2) * (1 - Fi / 2) * Sp(pi) * Sw(wi);
 }
 
 // Diffusion profile from Burley 2015, eq (5).
@@ -448,13 +450,11 @@ Float DisneyBSSRDF::Sample_Sr(int ch, Float u) const {
     // from that for every one sample we take from the first.
     if (u < .25f) {
         // Sample the first exponential
-        u *= 4;  // renormalize to [0,1)
-        CHECK_LT(u, 1);
+        u = std::min<Float>(u * 4, OneMinusEpsilon);  // renormalize to [0,1)
         return d[ch] * std::log(1 / (1 - u));
     } else {
         // Second exponenital
-        u = (u - .25f) / .75f;  // normalize to [0,1]
-        CHECK_LT(u, 1);
+        u = std::min<Float>((u - .25f) / .75f, OneMinusEpsilon);  // normalize to [0,1)
         return 3 * d[ch] * std::log(1 / (1 - u));
     }
 }
@@ -534,7 +534,7 @@ void DisneyMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
         // Sheen (if enabled)
         if (sheenWeight > 0)
             si->bsdf->Add(ARENA_ALLOC(arena, DisneySheen)(
-                diffuseWeight * sheenWeight * Csheen, SheenMode::Reflect));
+                diffuseWeight * sheenWeight * Csheen));
     }
 
     // Create the microfacet distribution for metallic and/or specular
