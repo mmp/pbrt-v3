@@ -43,6 +43,7 @@
 #include "shape.h"
 #include "material.h"
 #include "medium.h"
+#include "transform.h"
 
 namespace pbrt {
 

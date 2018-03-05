@@ -42,7 +42,7 @@
 
 namespace pbrt {
 
-STAT_FLOAT_DISTRIBUTION("Integrator/Path length", pathLength);
+STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 STAT_COUNTER("Integrator/Volume interactions", volumeInteractions);
 STAT_COUNTER("Integrator/Surface interactions", surfaceInteractions);
 
