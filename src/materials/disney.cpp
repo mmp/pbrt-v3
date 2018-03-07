@@ -369,7 +369,9 @@ class DisneyBSSRDF : public SeparableBSSRDF {
     DisneyBSSRDF(const Spectrum &R, const Spectrum &d,
                  const SurfaceInteraction &po, Float eta,
                  const Material *material, TransportMode mode)
-        : SeparableBSSRDF(po, eta, material, mode), R(R), d(d) {}
+        // 0.2 factor comes from personal communication from Brent Burley
+        // and Matt Chiang.
+        : SeparableBSSRDF(po, eta, material, mode), R(R), d(0.2 * d) {}
 
     Spectrum S(const SurfaceInteraction &pi, const Vector3f &wi);
     Spectrum Sr(Float d) const;
