@@ -48,9 +48,6 @@
 
 namespace pbrt {
 
-// Configurable size of auxiliary films
-const int IISPT_D_SIZE_X = 16;
-const int IISPT_D_SIZE_Y = 16;
 const std::string IISPT_REFERENCE_DIRECTORY = std::string("out/");
 const int IISPT_REFERENCE_PATH_MAX_DEPTH = 16;
 
