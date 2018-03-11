@@ -57,6 +57,14 @@ Rendering options:
   --reference_samples=<nsamples>
                        Sets the number of samples for the reference
                        path tracer
+  --reference_startx=<xpixel>
+  --reference_starty=<ypixel>
+                       Set the starting x and y pixel coordinates.
+                       All tiles before the specified coordinate will be
+                       skipped.
+  --iispt_hemi_size=<pixel>
+                       Set the dimension of the IISPT hemispherical renders
+                       Defaults to 32
 
 
 Logging options:
@@ -140,6 +148,18 @@ int main(int argc, char *argv[]) {
         else if (!strncmp(argv[i], "--reference_samples=", 20)) {
             options.referencePixelSamples = atoi(&argv[i][20]);
             std::cerr << "Set reference samples to " << options.referencePixelSamples << std::endl;
+        }
+        else if (!strncmp(argv[i], "--reference_startx=", 19)) {
+            options.referenceStartX = atoi(&argv[i][19]);
+            std::cerr << "Set reference start X to " << options.referenceStartX << std::endl;
+        }
+        else if (!strncmp(argv[i], "--reference_starty=", 19)) {
+            options.referenceStartY = atoi(&argv[i][19]);
+            std::cerr << "Set reference start Y to " << options.referenceStartY << std::endl;
+        }
+        else if (!strncmp(argv[i], "--iispt_hemi_size=", 18)) {
+            options.iisptHemiSize = atoi(&argv[i][18]);
+            std::cerr << "Set IISPT hemi size to " << options.iisptHemiSize << std::endl;
         }
         else {
             filenames.push_back(argv[i]);

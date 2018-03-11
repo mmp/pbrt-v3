@@ -387,23 +387,39 @@ void IISPTIntegrator::render_reference(const Scene &scene) {
     MemoryArena arena;
     std::unique_ptr<Sampler> tile_sampler = sampler->Clone(0);
 
+    // Detect reference starting points
+    // If referenceStart options are not set, all tiles will be rendered
+    // Otherwise only render starting from the specified tile (exclusive)
+    bool reference_active =
+            !(PbrtOptions.referenceStartX != -1 && PbrtOptions.referenceStartY != -1);
+
     for (int px_y = 0; px_y < sampleExtent.y; px_y += reference_tile_interval_y) {
         for (int px_x = 0; px_x < sampleExtent.x; px_x += reference_tile_interval_x) {
-            CameraSample current_sample;
-            current_sample.pFilm = Point2f(px_x, px_y);
-            current_sample.time = 0;
 
             std::cerr << "Current pixel ["<< px_x <<"] ["<< px_y <<"]" << std::endl;
-            std::cerr << "Camera sample is " << current_sample << std::endl;
 
-            // Render IISPTd views and Reference views
-            RayDifferential ray;
-            Float rayWeight = camera->GenerateRayDifferential(current_sample, &ray);
-            // It's a single pass per pixel, so we don't scale the differential
-            ray.ScaleDifferentials(1);
-            // The Li method, in reference mode, will automatically save the reference images
-            // to the out/ directory
-            Li(ray, scene, *tile_sampler, arena, 0, Point2i(px_x, px_y));
+            if (reference_active) {
+                CameraSample current_sample;
+                current_sample.pFilm = Point2f(px_x, px_y);
+                current_sample.time = 0;
+
+
+                std::cerr << "Camera sample is " << current_sample << std::endl;
+
+                // Render IISPTd views and Reference views
+                RayDifferential ray;
+                Float rayWeight = camera->GenerateRayDifferential(current_sample, &ray);
+                // It's a single pass per pixel, so we don't scale the differential
+                ray.ScaleDifferentials(1);
+                // The Li method, in reference mode, will automatically save the reference images
+                // to the out/ directory
+                Li(ray, scene, *tile_sampler, arena, 0, Point2i(px_x, px_y));
+            }
+
+            // Enable reference processing if current pixel is reference start coordinates
+            if (px_x == PbrtOptions.referenceStartX && px_y == PbrtOptions.referenceStartY) {
+                reference_active = true;
+            }
         }
     }
 
@@ -489,13 +505,13 @@ static Spectrum IISPTSampleHemisphere(
     Spectrum L(0.f);
 
     // Loop for every pixel in the hemisphere
-    for (int hemi_x = 0; hemi_x < IISPT_D_SIZE_X; hemi_x++) {
-        for (int hemi_y = 0; hemi_y < IISPT_D_SIZE_Y; hemi_y++) {
+    for (int hemi_x = 0; hemi_x < PbrtOptions.iisptHemiSize; hemi_x++) {
+        for (int hemi_y = 0; hemi_y < PbrtOptions.iisptHemiSize; hemi_y++) {
             L += IISPTEstimateDirect(it, hemi_x, hemi_y, auxCamera);
         }
     }
 
-    int n_samples = IISPT_D_SIZE_X * IISPT_D_SIZE_Y;
+    int n_samples = PbrtOptions.iisptHemiSize * PbrtOptions.iisptHemiSize;
 
     return L / n_samples;
 }
@@ -560,8 +576,8 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     // testCamera is used for the hemispheric rendering
     std::shared_ptr<HemisphericCamera> auxCamera (
                 CreateHemisphericCamera(
-                    IISPT_D_SIZE_X,
-                    IISPT_D_SIZE_Y,
+                    PbrtOptions.iisptHemiSize,
+                    PbrtOptions.iisptHemiSize,
                     dcamera->medium,
                     auxRay.o,
                     Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
@@ -586,8 +602,8 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     if (PbrtOptions.referenceTiles > 0) {
         std::shared_ptr<HemisphericCamera> pathCamera (
                     CreateHemisphericCamera(
-                        IISPT_D_SIZE_X,
-                        IISPT_D_SIZE_Y,
+                        PbrtOptions.iisptHemiSize,
+                        PbrtOptions.iisptHemiSize,
                         dcamera->medium,
                         auxRay.o,
                         Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
@@ -599,7 +615,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         int path_pixel_samples = PbrtOptions.referencePixelSamples;
         const Bounds2i path_sample_bounds (
                     Point2i(0, 0),
-                    Point2i(IISPT_D_SIZE_X, IISPT_D_SIZE_Y)
+                    Point2i(PbrtOptions.iisptHemiSize, PbrtOptions.iisptHemiSize)
                     );
         std::shared_ptr<Sampler> path_sobol_sampler (CreateSobolSampler(path_sample_bounds, path_pixel_samples));
         int path_max_depth = IISPT_REFERENCE_PATH_MAX_DEPTH;
