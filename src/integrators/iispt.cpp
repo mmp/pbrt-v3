@@ -48,6 +48,8 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <sys/stat.h>
+#include <fstream>
 
 namespace pbrt {
 
@@ -70,6 +72,81 @@ static std::string generate_reference_name(std::string identifier_type, Point2i 
             std::to_string(pixel.y) +
             extension;
     return generated_path;
+}
+
+// Create auxiliary path integrator for reference mode
+static std::shared_ptr<PathIntegrator> create_aux_path_integrator(
+        int path_pixel_samples,
+        std::string output_filename,
+        std::shared_ptr<Camera> dcamera,
+        Ray auxRay,
+        Point2i pixel
+        )
+{
+    std::shared_ptr<HemisphericCamera> pathCamera (
+                CreateHemisphericCamera(
+                    PbrtOptions.iisptHemiSize,
+                    PbrtOptions.iisptHemiSize,
+                    dcamera->medium,
+                    auxRay.o,
+                    Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                    pixel,
+                    output_filename
+                    )
+                );
+
+    const Bounds2i path_sample_bounds (
+                Point2i(0, 0),
+                Point2i(PbrtOptions.iisptHemiSize, PbrtOptions.iisptHemiSize)
+                );
+    std::shared_ptr<Sampler> path_sobol_sampler (CreateSobolSampler(path_sample_bounds, path_pixel_samples));
+    int path_max_depth = IISPT_REFERENCE_PATH_MAX_DEPTH;
+    Float path_rr_threshold = 1.0;
+    std::string path_light_strategy = "spatial";
+
+    std::shared_ptr<PathIntegrator> path_integrator
+            (CreatePathIntegrator(path_sobol_sampler,
+                                  pathCamera,
+                                  path_max_depth,
+                                  path_sample_bounds,
+                                  path_rr_threshold,
+                                  path_light_strategy
+                                  ));
+    return path_integrator;
+}
+
+// Check if file exists
+static inline bool file_exists(std::string& name) {
+    std::ifstream f(name.c_str());
+    return f.good();
+}
+
+// Utility to execute a lambda only if the file doesn't exist already
+template<typename Func>
+static void exec_if_not_exists(std::string file_path, Func f) {
+    if (PbrtOptions.referenceResume == 0) {
+        f();
+        return;
+    }
+    if (!file_exists(file_path)) {
+        f();
+    }
+}
+
+// Utility to execute a lambda only if at least one of the files doesn't
+// exist
+template<typename Func>
+static void exec_if_one_not_exists(std::vector<std::string> &file_paths, Func f) {
+    if (PbrtOptions.referenceResume == 0) {
+        f();
+        return;
+    }
+    for (std::string fp : file_paths) {
+        if (!file_exists(fp)) {
+            f();
+            return;
+        }
+    }
 }
 
 // IISPTIntegrator Method Definitions =========================================
@@ -223,9 +300,11 @@ in integrator.cpp: EstimateDirect
 void IISPTIntegrator::Render(const Scene &scene) {
     if (PbrtOptions.referenceTiles <= 0) {
         // Normal render of the scene
+        std::cerr << "Starting normal render" << std::endl;
         render_normal(scene);
     } else {
         // Render reference training views
+        std::cerr << "Starting reference render" << std::endl;
         render_reference(scene);
     }
 }
@@ -387,39 +466,27 @@ void IISPTIntegrator::render_reference(const Scene &scene) {
     MemoryArena arena;
     std::unique_ptr<Sampler> tile_sampler = sampler->Clone(0);
 
-    // Detect reference starting points
-    // If referenceStart options are not set, all tiles will be rendered
-    // Otherwise only render starting from the specified tile (exclusive)
-    bool reference_active =
-            !(PbrtOptions.referenceStartX != -1 && PbrtOptions.referenceStartY != -1);
-
     for (int px_y = 0; px_y < sampleExtent.y; px_y += reference_tile_interval_y) {
         for (int px_x = 0; px_x < sampleExtent.x; px_x += reference_tile_interval_x) {
 
             std::cerr << "Current pixel ["<< px_x <<"] ["<< px_y <<"]" << std::endl;
 
-            if (reference_active) {
-                CameraSample current_sample;
-                current_sample.pFilm = Point2f(px_x, px_y);
-                current_sample.time = 0;
+            CameraSample current_sample;
+            current_sample.pFilm = Point2f(px_x, px_y);
+            current_sample.time = 0;
+
+            std::cerr << "Camera sample is " << current_sample << std::endl;
+
+            // Render IISPTd views and Reference views
+            RayDifferential ray;
+            Float rayWeight = camera->GenerateRayDifferential(current_sample, &ray);
+            // It's a single pass per pixel, so we don't scale the differential
+            ray.ScaleDifferentials(1);
+            // The Li method, in reference mode, will automatically save the reference images
+            // to the out/ directory
+            Li(ray, scene, *tile_sampler, arena, 0, Point2i(px_x, px_y));
 
 
-                std::cerr << "Camera sample is " << current_sample << std::endl;
-
-                // Render IISPTd views and Reference views
-                RayDifferential ray;
-                Float rayWeight = camera->GenerateRayDifferential(current_sample, &ray);
-                // It's a single pass per pixel, so we don't scale the differential
-                ray.ScaleDifferentials(1);
-                // The Li method, in reference mode, will automatically save the reference images
-                // to the out/ directory
-                Li(ray, scene, *tile_sampler, arena, 0, Point2i(px_x, px_y));
-            }
-
-            // Enable reference processing if current pixel is reference start coordinates
-            if (px_x == PbrtOptions.referenceStartX && px_y == PbrtOptions.referenceStartY) {
-                reference_active = true;
-            }
         }
     }
 
@@ -555,6 +622,9 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;
     if (!scene.Intersect(ray, &isect)) {
+        if (PbrtOptions.referenceTiles > 0) {
+            std::cerr << "No intersection" << std::endl;
+        }
         for (const auto &light : scene.lights) {
             L += light->Le(ray);
             return L;
@@ -574,6 +644,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     Ray auxRay = isect.SpawnRay(Vector3f(surfNormal));
 
     // testCamera is used for the hemispheric rendering
+    std::string reference_d_name = generate_reference_name("d", pixel, ".pfm");
     std::shared_ptr<HemisphericCamera> auxCamera (
                 CreateHemisphericCamera(
                     PbrtOptions.iisptHemiSize,
@@ -582,59 +653,66 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                     auxRay.o,
                     Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
                     pixel,
-                    generate_reference_name("d", pixel, ".exr")
+                    reference_d_name
                     )
                 );
 
-    // Start rendering the hemispherical view
-    this->dintegrator->RenderView(scene, auxCamera);
-
     // In Reference mode, save the rendered view ------------------------------
     if (PbrtOptions.referenceTiles > 0) {
-        dintegrator->save_reference(
-                    auxCamera,
-                    generate_reference_name("z", pixel, ".pfm"), // distance map
-                    generate_reference_name("n", pixel, ".pfm")  // normal map
-                    );
+        std::vector<std::string> direct_reference_names;
+        direct_reference_names.push_back(reference_d_name);
+        std::string reference_z_name = generate_reference_name("z", pixel, ".pfm");
+        direct_reference_names.push_back(reference_z_name);
+        std::string reference_n_name = generate_reference_name("n", pixel, ".pfm");
+        direct_reference_names.push_back(reference_n_name);
+        exec_if_one_not_exists(direct_reference_names, [&]() {
+            // Start rendering the hemispherical view
+            this->dintegrator->RenderView(scene, auxCamera);
+            dintegrator->save_reference(
+                        auxCamera,
+                        reference_z_name, // distance map
+                        reference_n_name  // normal map
+                        );
+        });
+    } else {
+        // Start rendering the hemispherical view
+        this->dintegrator->RenderView(scene, auxCamera);
     }
 
     // In Reference mode, create a Path Tracer for ground truth ---------------
     if (PbrtOptions.referenceTiles > 0) {
-        std::shared_ptr<HemisphericCamera> pathCamera (
-                    CreateHemisphericCamera(
-                        PbrtOptions.iisptHemiSize,
-                        PbrtOptions.iisptHemiSize,
-                        dcamera->medium,
-                        auxRay.o,
-                        Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
-                        pixel,
-                        generate_reference_name("p", pixel, ".exr")
-                        )
-                    );
+        std::string reference_p_name = generate_reference_name("p", pixel, ".pfm");
+        exec_if_not_exists(reference_p_name, [&]() {
+            std::shared_ptr<PathIntegrator> path_integrator =
+                    create_aux_path_integrator(
+                        PbrtOptions.referencePixelSamples,
+                        reference_p_name,
+                        dcamera,
+                        auxRay,
+                        pixel
+                        );
+            // Start rendering the ground truth
+            // The render method will automatically save the image
+            path_integrator->Render(scene);
+        });
+    }
 
-        int path_pixel_samples = PbrtOptions.referencePixelSamples;
-        const Bounds2i path_sample_bounds (
-                    Point2i(0, 0),
-                    Point2i(PbrtOptions.iisptHemiSize, PbrtOptions.iisptHemiSize)
-                    );
-        std::shared_ptr<Sampler> path_sobol_sampler (CreateSobolSampler(path_sample_bounds, path_pixel_samples));
-        int path_max_depth = IISPT_REFERENCE_PATH_MAX_DEPTH;
-        Float path_rr_threshold = 1.0;
-        std::string path_light_strategy = "spatial";
-
-        std::shared_ptr<PathIntegrator> path_integrator
-                (CreatePathIntegrator(path_sobol_sampler,
-                                      pathCamera,
-                                      path_max_depth,
-                                      path_sample_bounds,
-                                      path_rr_threshold,
-                                      path_light_strategy
-                                      ));
-
-        // Start rendering the ground truth
-        // The render method will automatically save the image
-        path_integrator->Render(scene);
-
+    // In Reference mode, create low-quality 1spp path traced render ----------
+    if (PbrtOptions.referenceTiles > 0) {
+        std::string reference_o_name = generate_reference_name("o", pixel, ".pfm");
+        exec_if_not_exists(reference_o_name, [&]() {
+            std::shared_ptr<PathIntegrator> path_integrator =
+                    create_aux_path_integrator(
+                        1,
+                        reference_o_name,
+                        dcamera,
+                        auxRay,
+                        pixel
+                        );
+            // Start rendering the ground truth
+            // The render method will automatically save the image
+            path_integrator->Render(scene);
+        });
     }
 
     // Use the hemispherical view to obtain illumination ----------------------
