@@ -2,6 +2,9 @@
 
 var fs = require("fs");
 var async = require("async");
+var randomstring = require("randomstring");
+var path = require("path");
+const { spawn } = require('child_process');
 
 var BURN_PERCENTAGE = 0.05;
 
@@ -489,35 +492,105 @@ var readPfm = function(file_path, callback) {
 
 // Script ---------------------------------------------------------------------
 
-if (argv_length() != 1) {
-    console.info("Expected 1 argument: input file");
-    process.exit();
+var main = function() {
+    if (argv_length() != 1) {
+        console.info("Expected 1 argument: input file");
+        process.exit();
+    }
+
+    var input_file_path = argv_get(0);
+    var pfm_image;
+    var output_file_path;
+
+    async.waterfall([
+
+        // Read input PFM
+        (callback) => {
+            readPfm(input_file_path, (err, res) => {
+                if (err) {
+                    callback(err);
+                } else {
+                    console.info("Got the pfm!");
+                    pfm_image = res;
+                    callback();
+                }
+            });
+        },
+
+        // Generate output filename
+        (callback) => {
+
+            var MAX_ATTEMPTS = 25;
+            var attempt = 0;
+            var output_path_valid = false;
+            var output_path;
+
+            async.whilst(
+                function() {
+                    return !output_path_valid && (attempt < MAX_ATTEMPTS);
+                },
+                function(callback) {
+                    attempt += 1;
+                    var randstr = "/tmp/" + randomstring.generate(20) + ".ppm";
+                    fs.access(randstr, fs.constants.R_OK, (err) => {
+                        if (err) {
+                            // Does not exist
+                            output_path_valid = true;
+                            output_path = randstr;
+                            callback();
+                        } else {
+                            // Exists
+                            callback();
+                        }
+                    });
+                },
+                function(err) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        if (output_path_valid) {
+                            output_file_path = output_path;
+                            callback();
+                        } else {
+                            callback("Could not generate output path");
+                        }
+                    }
+                }
+            );
+
+        },
+
+        // Write output file
+        (callback) => {
+            console.info("Writing to " + output_file_path);
+            pfm_image.write_to_ppm(output_file_path, (err) => {
+                callback(err);
+            })
+        },
+
+        // Open viewer
+        (callback) => {
+            var proc = spawn("ristretto", [output_file_path]);
+            proc.on("close", function(code, signal) {
+                console.info("Ristretto exited with ["+code+"] ["+signal+"]");
+                callback();
+            });
+        },
+
+        // Delete the file
+        (callback) => {
+            fs.unlink(output_file_path, (err) => {
+                callback(err);
+            });
+        }
+
+    ], (err) => {
+        if (err) {
+            console.info(err);
+        } else {
+            console.info("Completed.");
+        }
+    });
 }
 
-var input_file_path = argv_get(0);
-
-
-readPfm(input_file_path, (err, pfm_image) => {
-    if (err) {
-        console.info(err);
-        return;
-    } else {
-        console.info("Got the pfm!");
-
-        // Generate the output file name
-        var name_split = input_file_path.split(".");
-        var name_split_len = name_split.length;
-        name_split[name_split_len - 1] = "ppm";
-        var output_file_name = name_split.join(".");
-
-        pfm_image.write_to_ppm(output_file_name, (err) => {
-            if (err) {
-                console.info("Error when saving PPM " + err);
-            } else {
-                console.info("Written.");
-            }
-        });
-
-        return;
-    }
-});
+main();
