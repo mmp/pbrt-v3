@@ -3,6 +3,8 @@
 var fs = require("fs");
 var async = require("async");
 
+var BURN_PERCENTAGE = 0.05;
+
 // Command line arguments -----------------------------------------------------
 
 var argv = process.argv;
@@ -63,6 +65,57 @@ function Pixel(r, g, b) {
     };
 };
 
+// Class FixedSet -------------------------------------------------------------
+
+// selector_func: function(array) returns an index to be returned
+function FixedSet(set_size, selector_func) {
+
+    var self = this;
+    var data = [];
+    if (set_size < 1) {
+        set_size = 1;
+    }
+
+    self.add = function(elem) {
+        data.push(elem);
+        if (data.length > set_size) {
+            var removal_index = selector_func(data);
+            data.splice(removal_index, 1);
+        }
+    };
+
+    self.get = function() {
+        var ret_index = selector_func(data);
+        return data[ret_index];
+    };
+
+};
+
+var fixedset_generic_selector = function(data, criteria_func) {
+    var t_index = null;
+    var t_value = null;
+    for (var i = 0; i < data.length; i++) {
+        var a_data = data[i];
+        if (t_index == null || criteria_func(a_data, t_value)) {
+            t_index = i;
+            t_value = a_data;
+        }
+    }
+    return t_index;
+};
+
+var fixedset_min_selector = function(data) {
+    return fixedset_generic_selector(data, (new_data, min_value) => {
+        return new_data < min_value;
+    });
+};
+
+var fixedset_max_selector = function(data) {
+    return fixedset_generic_selector(data, (new_data, max_value) => {
+        return new_data > max_value;
+    });
+};
+
 // Class Pfm ------------------------------------------------------------------
 
 function Pfm(width, height, data) {
@@ -90,22 +143,26 @@ function Pfm(width, height, data) {
     // Callback: (error)
     self.write_to_ppm = function(out_filename, callback) {
 
-        // Find minimum and maximum values
-        var val_min = null;
-        var val_max = null;
+        // Compute number of pixels, and burn/black numbers of pixels
+        var num_pixels = width * height;
+        var burn_pixels = num_pixels * BURN_PERCENTAGE;
+
+        // Find minimum and maximum threshold values
+        var min_set = new FixedSet(burn_pixels, fixedset_max_selector);
+        var max_set = new FixedSet(burn_pixels, fixedset_min_selector);
         for (var y = 0; y < height; y++) {
             for (var x = 0; x < width; x++) {
                 var a_pixel = self.getPixel(x, y);
                 var a_max = a_pixel.get_max();
                 var a_min = a_pixel.get_min();
-                if (val_max == null || a_max > val_max) {
-                    val_max = a_max;
-                }
-                if (val_min == null || a_min < val_min) {
-                    val_min = a_min;
-                }
+                min_set.add(a_min);
+                max_set.add(a_max);
             }
         }
+        var val_min = min_set.get();
+        var val_max = max_set.get();
+        console.info("min ["+val_min+"] max ["+val_max+"]");
+
         var offset = -val_min;
         var multiplier = 255 / (val_max - val_min);
         var transform_val = function(v) {
