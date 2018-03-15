@@ -156,7 +156,6 @@ IISPTIntegrator::IISPTIntegrator(int maxDepth,
                                std::shared_ptr<const Camera> camera,
                                std::shared_ptr<Sampler> sampler,
                                const Bounds2i &pixelBounds,
-                               std::shared_ptr<Sampler> dsampler,
                                std::shared_ptr<Camera> dcamera,
                                Float rrThreshold,
                                const std::string &lightSampleStrategy
@@ -166,7 +165,6 @@ IISPTIntegrator::IISPTIntegrator(int maxDepth,
     maxDepth(maxDepth),
     rrThreshold(rrThreshold),
     lightSampleStrategy(lightSampleStrategy),
-    dsampler(dsampler),
     dcamera(dcamera)
 {
 
@@ -317,8 +315,7 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
     // Render image tiles in parallel
 
     // Create the auxiliary integrator for intersection-view
-    this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(
-        dsampler, dcamera));
+    this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(dcamera));
     // Preprocess on auxiliary integrator
     dintegrator->Preprocess(scene);
 
@@ -445,8 +442,7 @@ void IISPTIntegrator::render_reference(const Scene &scene) {
     Preprocess(scene);
 
     // Create the auxiliary integrator for intersection-view
-    this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(
-            dsampler, dcamera));
+    this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(dcamera));
     // Preprocess on auxiliary integrator
     dintegrator->Preprocess(scene);
 
@@ -659,21 +655,21 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
 
     // In Reference mode, save the rendered view ------------------------------
     if (PbrtOptions.referenceTiles > 0) {
-        std::vector<std::string> direct_reference_names;
-        direct_reference_names.push_back(reference_d_name);
-        std::string reference_z_name = generate_reference_name("z", pixel, ".pfm");
-        direct_reference_names.push_back(reference_z_name);
-        std::string reference_n_name = generate_reference_name("n", pixel, ".pfm");
-        direct_reference_names.push_back(reference_n_name);
-        exec_if_one_not_exists(direct_reference_names, [&]() {
-            // Start rendering the hemispherical view
-            this->dintegrator->RenderView(scene, auxCamera);
-            dintegrator->save_reference(
-                        auxCamera,
-                        reference_z_name, // distance map
-                        reference_n_name  // normal map
-                        );
-        });
+//        std::vector<std::string> direct_reference_names;
+//        direct_reference_names.push_back(reference_d_name);
+//        std::string reference_z_name = generate_reference_name("z", pixel, ".pfm");
+//        direct_reference_names.push_back(reference_z_name);
+//        std::string reference_n_name = generate_reference_name("n", pixel, ".pfm");
+//        direct_reference_names.push_back(reference_n_name);
+//        exec_if_one_not_exists(direct_reference_names, [&]() {
+//            // Start rendering the hemispherical view
+//            this->dintegrator->RenderView(scene, auxCamera);
+//            dintegrator->save_reference(
+//                        auxCamera,
+//                        reference_z_name, // distance map
+//                        reference_n_name  // normal map
+//                        );
+//        });
     } else {
         // Start rendering the hemispherical view
         this->dintegrator->RenderView(scene, auxCamera);
@@ -746,7 +742,6 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
 IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
     std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera,
-    std::shared_ptr<Sampler> dsampler,
     std::shared_ptr<Camera> dcamera
 ) {
     LOG(INFO) << "CreateIISPTIntegrator: in";
@@ -770,7 +765,7 @@ IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
     std::string lightStrategy =
         params.FindOneString("lightsamplestrategy", "spatial");
     return new IISPTIntegrator(maxDepth, camera, sampler, pixelBounds,
-        dsampler, dcamera, rrThreshold, lightStrategy);
+        dcamera, rrThreshold, lightStrategy);
 }
 
 }  // namespace pbrt

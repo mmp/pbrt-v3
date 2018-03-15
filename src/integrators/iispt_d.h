@@ -115,7 +115,6 @@ public:
 };
 
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
-    std::shared_ptr<Sampler> sampler,
     std::shared_ptr<Camera> camera);
 
 }  // namespace pbrt

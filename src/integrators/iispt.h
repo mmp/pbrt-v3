@@ -55,7 +55,6 @@ public:
     IISPTIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
                    std::shared_ptr<Sampler> sampler,
                    const Bounds2i &pixelBounds,
-                   std::shared_ptr<Sampler> dsampler,
                    std::shared_ptr<Camera> dcamera,
                    Float rrThreshold = 1,
                    const std::string &lightSampleStrategy = "spatial"
@@ -92,7 +91,6 @@ private:
     std::unique_ptr<LightDistribution> lightDistribution;
     std::shared_ptr<Sampler> sampler;
 
-    std::shared_ptr<Sampler> dsampler;
     std::shared_ptr<Camera> dcamera;
     std::shared_ptr<IISPTdIntegrator> dintegrator;
 
@@ -126,9 +124,11 @@ private:
             ) const;
 };
 
-IISPTIntegrator *CreateIISPTIntegrator(const ParamSet &params,
-    std::shared_ptr<Sampler> sampler, std::shared_ptr<const Camera> camera,
-    std::shared_ptr<Sampler> dsampler, std::shared_ptr<Camera> dcamera
+IISPTIntegrator *CreateIISPTIntegrator(
+        const ParamSet &params,
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<const Camera> camera,
+        std::shared_ptr<Camera> dcamera
 );
 
 }  // namespace pbrt

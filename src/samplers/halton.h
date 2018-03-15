@@ -79,6 +79,11 @@ class HaltonSampler : public GlobalSampler {
 HaltonSampler *CreateHaltonSampler(const ParamSet &params,
                                    const Bounds2i &sampleBounds);
 
+HaltonSampler* CreateHaltonSampler(
+        int pixelsamples,
+        Bounds2i sampleBounds
+        );
+
 }  // namespace pbrt
 
 #endif  // PBRT_SAMPLERS_HALTON_H

@@ -39,6 +39,7 @@
 #include "film.h"
 #include "stats.h"
 #include "progressreporter.h"
+#include "samplers/halton.h"
 
 #include <cstdlib>
 
@@ -354,7 +355,6 @@ void IISPTdIntegrator::save_reference(std::shared_ptr<Camera> camera,
 
 // Factory ====================================================================
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
-    std::shared_ptr<Sampler> sampler,
     std::shared_ptr<Camera> camera) {
 
     LOG(INFO) << "CreateIISPTdIntegrator: in";
@@ -363,7 +363,14 @@ std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
     // "strategy" NOTE hardcoded
     strategy = LightStrategy::UniformSampleAll;
 
-    Bounds2i pixelBounds = camera->film->GetSampleBounds();
+    Bounds2i pixelBounds (
+                Point2i(0, 0),
+                Point2i(PbrtOptions.iisptHemiSize, PbrtOptions.iisptHemiSize)
+                );
+
+    std::shared_ptr<Sampler> sampler (
+                CreateHaltonSampler(1024, pixelBounds)
+                );
 
     std::shared_ptr<IISPTdIntegrator> result (new IISPTdIntegrator(strategy, maxDepth, camera, sampler, pixelBounds));
 
