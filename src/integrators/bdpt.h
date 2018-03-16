@@ -439,9 +439,15 @@ Spectrum ConnectBDPT(
     const std::unordered_map<const Light *, size_t> &lightToIndex,
     const Camera &camera, Sampler &sampler, Point2f *pRaster,
     Float *misWeight = nullptr);
+
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera);
+
+BDPTIntegrator *CreateBDPTIntegrator(
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<Camera> camera
+        );
 
 // Vertex Inline Method Definitions
 inline Vertex Vertex::CreateCamera(const Camera *camera, const Ray &ray,

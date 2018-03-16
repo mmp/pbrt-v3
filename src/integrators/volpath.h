@@ -73,6 +73,15 @@ VolPathIntegrator *CreateVolPathIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera);
 
+VolPathIntegrator *CreateVolPathIntegrator(
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<const Camera> camera,
+        int max_depth,
+        const Bounds2i pixel_bounds,
+        Float rr_threshold,
+        std::string light_strategy
+        );
+
 }  // namespace pbrt
 
 #endif  // PBRT_INTEGRATORS_VOLPATH_H

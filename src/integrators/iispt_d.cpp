@@ -40,6 +40,7 @@
 #include "stats.h"
 #include "progressreporter.h"
 #include "samplers/halton.h"
+#include "bssrdf.h"
 
 #include <cstdlib>
 
@@ -57,176 +58,151 @@ static const float NO_INTERSECTION_DISTANCE = -1.0;
 // Preprocess =================================================================
 // Preprocess in IISPTd should be only called once from the host integrator
 void IISPTdIntegrator::Preprocess(const Scene &scene) {
-
-    LOG(INFO) << "Preprocess: in";
-    if (strategy == LightStrategy::UniformSampleAll) {
-        // Compute number of samples to use for each light
-        for (const auto &light : scene.lights)
-            nLightSamples.push_back(sampler->RoundCount(light->nSamples));
-
-        // Request samples for sampling all lights
-        for (int i = 0; i < maxDepth; ++i) {
-            for (size_t j = 0; j < scene.lights.size(); ++j) {
-                sampler->Request2DArray(nLightSamples[j]);
-                sampler->Request2DArray(nLightSamples[j]);
-            }
-        }
-    }
-
+    lightDistribution =
+        CreateLightSampleDistribution(lightSampleStrategy, scene);
 }
 
-
-Spectrum IISPTdIntegrator::SpecularTransmit(
-    const RayDifferential &ray, const SurfaceInteraction &isect,
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y) {
-    Vector3f wo = isect.wo, wi;
-    Float pdf;
-    const Point3f &p = isect.p;
-    const Normal3f &ns = isect.shading.n;
-    const BSDF &bsdf = *isect.bsdf;
-    Spectrum f = bsdf.Sample_f(wo, &wi, sampler.Get2D(), &pdf,
-                               BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
-    Spectrum L = Spectrum(0.f);
-    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
-        // Compute ray differential _rd_ for specular transmission
-        RayDifferential rd = isect.SpawnRay(wi);
-        if (ray.hasDifferentials) {
-            rd.hasDifferentials = true;
-            rd.rxOrigin = p + isect.dpdx;
-            rd.ryOrigin = p + isect.dpdy;
-
-            Float eta = bsdf.eta;
-            Vector3f w = -wo;
-            if (Dot(wo, ns) < 0) eta = 1.f / eta;
-
-            Normal3f dndx = isect.shading.dndu * isect.dudx +
-                            isect.shading.dndv * isect.dvdx;
-            Normal3f dndy = isect.shading.dndu * isect.dudy +
-                            isect.shading.dndv * isect.dvdy;
-
-            Vector3f dwodx = -ray.rxDirection - wo,
-                     dwody = -ray.ryDirection - wo;
-            Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
-            Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
-
-            Float mu = eta * Dot(w, ns) - Dot(wi, ns);
-            Float dmudx =
-                (eta - (eta * eta * Dot(w, ns)) / Dot(wi, ns)) * dDNdx;
-            Float dmudy =
-                (eta - (eta * eta * Dot(w, ns)) / Dot(wi, ns)) * dDNdy;
-
-            rd.rxDirection =
-                wi + eta * dwodx - Vector3f(mu * dndx + dmudx * ns);
-            rd.ryDirection =
-                wi + eta * dwody - Vector3f(mu * dndy + dmudy * ns);
-        }
-        L = f * Li(rd, scene, sampler, arena, depth + 1, x, y) * AbsDot(wi, ns) / pdf;
-    }
-    return L;
-}
-
-
-Spectrum IISPTdIntegrator::SpecularReflect(
-    const RayDifferential &ray, const SurfaceInteraction &isect,
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y) {
-    // Compute specular reflection direction _wi_ and BSDF value
-    Vector3f wo = isect.wo, wi;
-    Float pdf;
-    BxDFType type = BxDFType(BSDF_REFLECTION | BSDF_SPECULAR);
-    Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf, type);
-
-    // Return contribution of specular reflection
-    const Normal3f &ns = isect.shading.n;
-    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
-        // Compute ray differential _rd_ for specular reflection
-        RayDifferential rd = isect.SpawnRay(wi);
-        if (ray.hasDifferentials) {
-            rd.hasDifferentials = true;
-            rd.rxOrigin = isect.p + isect.dpdx;
-            rd.ryOrigin = isect.p + isect.dpdy;
-            // Compute differential reflected directions
-            Normal3f dndx = isect.shading.dndu * isect.dudx +
-                            isect.shading.dndv * isect.dvdx;
-            Normal3f dndy = isect.shading.dndu * isect.dudy +
-                            isect.shading.dndv * isect.dvdy;
-            Vector3f dwodx = -ray.rxDirection - wo,
-                     dwody = -ray.ryDirection - wo;
-            Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
-            Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
-            rd.rxDirection =
-                wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
-            rd.ryDirection =
-                wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
-        }
-        return f * Li(rd, scene, sampler, arena, depth + 1, x, y) * AbsDot(wi, ns) /
-               pdf;
-    } else
-        return Spectrum(0.f);
-}
-
-Spectrum IISPTdIntegrator::Li(const RayDifferential &ray,
+Spectrum IISPTdIntegrator::Li(const RayDifferential &r,
                                       const Scene &scene, Sampler &sampler,
                                       MemoryArena &arena, int depth, int x, int y) {
     ProfilePhase p(Prof::SamplerIntegratorLi);
-    Spectrum L(0.f);
-    // Find closest ray intersection or return background radiance
-    SurfaceInteraction isect;
-    if (!scene.Intersect(ray, &isect)) {
-        for (const auto &light : scene.lights) {
-            L += light->Le(ray);
+    Spectrum L(0.f), beta(1.f);
+    RayDifferential ray(r);
+    bool specularBounce = false;
+    int bounces;
+    // Added after book publication: etaScale tracks the accumulated effect
+    // of radiance scaling due to rays passing through refractive
+    // boundaries (see the derivation on p. 527 of the third edition). We
+    // track this value in order to remove it from beta when we apply
+    // Russian roulette; this is worthwhile, since it lets us sometimes
+    // avoid terminating refracted rays that are about to be refracted back
+    // out of a medium and thus have their beta value increased.
+    Float etaScale = 1;
+
+    for (bounces = 0;; ++bounces) {
+        // Find next path vertex and accumulate contribution
+        VLOG(2) << "Path tracer bounce " << bounces << ", current L = " << L
+                << ", beta = " << beta;
+
+        // Intersect _ray_ with scene and store intersection in _isect_
+        SurfaceInteraction isect;
+        bool foundIntersection = scene.Intersect(ray, &isect);
+
+        if (depth == 0 && bounces == 0) {
+            if (foundIntersection) {
+                Vector3f connecting_vector = isect.p - ray.o;
+                float d2 = Dot(connecting_vector, connecting_vector);
+                float d = sqrt(d2);
+                distance_film->set(x, y, d);
+                normal_film->set(x, y, isect.n);
+            } else {
+                distance_film->set(x, y, NO_INTERSECTION_DISTANCE);
+                normal_film->set(x, y, Normal3f(0.0, 0.0, 0.0));
+            }
         }
 
-        // Record intersection distance (no intersection)
-        distance_film->set(x, y, NO_INTERSECTION_DISTANCE);
-
-        // Record null normal vector
-        normal_film->set(x, y, Normal3f(0.0, 0.0, 0.0));
-
-        return L;
-    }
-
-    // Record intersection distance (intersection found)
-    {
-        Vector3f connecting_vector = isect.p - ray.o;
-        float d2 = Dot(connecting_vector, connecting_vector);
-        float d = sqrt(d2);
-        distance_film->set(x, y, d);
-    }
-
-    // Record intersection normal
-    {
-        normal_film->set(x, y, isect.n);
-    }
-
-    // Compute scattering functions for surface interaction
-    isect.ComputeScatteringFunctions(ray, arena);
-    if (!isect.bsdf)
-        return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth, x, y);
-    // wo should be the vector towards camera, from intersection
-    Vector3f wo = isect.wo;
-    Float woLength = Dot(wo, wo);
-    if (woLength == 0) {
-        fprintf(stderr, "Detected a 0 length wo");
-        LOG(INFO) << "Detected a 0 length wo";
-        exit(1);
-    }
-    // Compute emitted light if ray hit an area light source
-    L += isect.Le(wo);
-    if (scene.lights.size() > 0) {
-        // Compute direct lighting for _IISPTdIntegrator_ integrator
-        if (strategy == LightStrategy::UniformSampleAll) {
-            L += UniformSampleAllLights(isect, scene, arena, sampler,
-                                        nLightSamples);
-        } else {
-            L += UniformSampleOneLight(isect, scene, arena, sampler);
+        // Possibly add emitted light at intersection
+        if (bounces == 0 || specularBounce) {
+            // Add emitted light at path vertex or from the environment
+            if (foundIntersection) {
+                L += beta * isect.Le(-ray.d);
+                VLOG(2) << "Added Le -> L = " << L;
+            } else {
+                for (const auto &light : scene.infiniteLights)
+                    L += beta * light->Le(ray);
+                VLOG(2) << "Added infinite area lights -> L = " << L;
+            }
         }
-    }
-    if (depth + 1 < maxDepth) {
-        // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, isect, scene, sampler, arena, depth, x, y);
-        L += SpecularTransmit(ray, isect, scene, sampler, arena, depth, x, y);
+
+        // Terminate path if ray escaped or _maxDepth_ was reached
+        if (!foundIntersection || bounces >= maxDepth) break;
+
+        // NOTE We have a valid intersection
+        // Compute from this point the hemispherical map
+
+        // Compute scattering functions and skip over medium boundaries
+        isect.ComputeScatteringFunctions(ray, arena, true);
+        if (!isect.bsdf) {
+            VLOG(2) << "Skipping intersection due to null bsdf";
+            ray = isect.SpawnRay(ray.d);
+            bounces--;
+            continue;
+        }
+
+        const Distribution1D *distrib = lightDistribution->Lookup(isect.p);
+
+        // Sample illumination from lights to find path contribution.
+        // (But skip this for perfectly specular BSDFs.)
+        if (isect.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) >
+            0) {
+            Spectrum Ld = beta * UniformSampleOneLight(isect, scene, arena,
+                                                       sampler, false, distrib);
+            VLOG(2) << "Sampled direct lighting Ld = " << Ld;
+            CHECK_GE(Ld.y(), 0.f);
+            L += Ld;
+        }
+
+        // Sample BSDF to get new path direction
+        Vector3f wo = -ray.d, wi;
+        Float pdf;
+        BxDFType flags;
+        Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
+                                          BSDF_ALL, &flags);
+        VLOG(2) << "Sampled BSDF, f = " << f << ", pdf = " << pdf;
+        if (f.IsBlack() || pdf == 0.f) break;
+        beta *= f * AbsDot(wi, isect.shading.n) / pdf;
+        VLOG(2) << "Updated beta = " << beta;
+        if (beta.y() < 0.f || isNaN(beta.y())) {
+            return L;
+        }
+        CHECK_GE(beta.y(), 0.f);
+        DCHECK(!std::isinf(beta.y()));
+        specularBounce = (flags & BSDF_SPECULAR) != 0;
+        if ((flags & BSDF_SPECULAR) && (flags & BSDF_TRANSMISSION)) {
+            Float eta = isect.bsdf->eta;
+            // Update the term that tracks radiance scaling for refraction
+            // depending on whether the ray is entering or leaving the
+            // medium.
+            etaScale *= (Dot(wo, isect.n) > 0) ? (eta * eta) : 1 / (eta * eta);
+        }
+        ray = isect.SpawnRay(wi);
+
+        // Account for subsurface scattering, if applicable
+        if (isect.bssrdf && (flags & BSDF_TRANSMISSION)) {
+            // Importance sample the BSSRDF
+            SurfaceInteraction pi;
+            Spectrum S = isect.bssrdf->Sample_S(
+                scene, sampler.Get1D(), sampler.Get2D(), arena, &pi, &pdf);
+            DCHECK(!std::isinf(beta.y()));
+            if (S.IsBlack() || pdf == 0) break;
+            beta *= S / pdf;
+
+            // Account for the direct subsurface scattering component
+            L += beta * UniformSampleOneLight(pi, scene, arena, sampler, false,
+                                              lightDistribution->Lookup(pi.p));
+
+            // Account for the indirect subsurface scattering component
+            Spectrum f = pi.bsdf->Sample_f(pi.wo, &wi, sampler.Get2D(), &pdf,
+                                           BSDF_ALL, &flags);
+            if (f.IsBlack() || pdf == 0) break;
+            beta *= f * AbsDot(wi, pi.shading.n) / pdf;
+            DCHECK(!std::isinf(beta.y()));
+            specularBounce = (flags & BSDF_SPECULAR) != 0;
+            ray = pi.SpawnRay(wi);
+        }
+
+        // Possibly terminate the path with Russian roulette.
+        // Factor out radiance scaling due to refraction in rrBeta.
+        Spectrum rrBeta = beta * etaScale;
+        if (rrBeta.MaxComponentValue() < rrThreshold && bounces > 3) {
+            Float q = std::max((Float).05, 1 - rrBeta.MaxComponentValue());
+            if (sampler.Get1D() < q) break;
+            beta /= 1 - q;
+            DCHECK(!std::isinf(beta.y()));
+        }
     }
     return L;
+
 }
 
 void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> camera) {
@@ -241,22 +217,22 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
     const int tileSize = 16;
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
-
-    for (int tilex = 0; tilex < nTiles.x; tilex++) {
-        for (int tiley = 0; tiley < nTiles.y; tiley++) {
+    ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
+    {
+        ParallelFor2D([&](Point2i tile) {
             // Render section of image corresponding to _tile_
 
             // Allocate _MemoryArena_ for tile
             MemoryArena arena;
 
             // Get sampler instance for tile
-            int seed = tiley * nTiles.x + tilex;
+            int seed = tile.y * nTiles.x + tile.x;
             std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
 
             // Compute sample bounds for tile
-            int x0 = sampleBounds.pMin.x + tilex * tileSize;
+            int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
-            int y0 = sampleBounds.pMin.y + tiley * tileSize;
+            int y0 = sampleBounds.pMin.y + tile.y * tileSize;
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
 
@@ -289,16 +265,10 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
                         camera->GenerateRayDifferential(cameraSample, &ray);
                     ray.ScaleDifferentials(
                         1 / std::sqrt((Float)tileSampler->samplesPerPixel));
-                    // ++nCameraRays;
 
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    // NOTE using a depth=0 here
-                    // LOG(INFO) << "AUX camera ray: o=["<< ray.o <<"], d=["<< ray.d <<"]";
-                    // exit(0);
-                    if (rayWeight > 0) {
-                        L = Li(ray, scene, *tileSampler, arena, 0, pixel.x, pixel.y);
-                    }
+                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena, 0, pixel.x, pixel.y);
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
@@ -337,8 +307,9 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
-            // reporter.Update();
-        }
+            reporter.Update();
+        }, nTiles);
+        reporter.Done();
     }
 
 }
@@ -358,10 +329,7 @@ std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
     std::shared_ptr<Camera> camera) {
 
     LOG(INFO) << "CreateIISPTdIntegrator: in";
-    int maxDepth = 2; // NOTE Hard-coded "maxdepth"
-    LightStrategy strategy;
-    // "strategy" NOTE hardcoded
-    strategy = LightStrategy::UniformSampleAll;
+    int maxDepth = 16; // NOTE Hard-coded "maxdepth"
 
     Bounds2i pixelBounds (
                 Point2i(0, 0),
@@ -369,10 +337,10 @@ std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
                 );
 
     std::shared_ptr<Sampler> sampler (
-                CreateHaltonSampler(1024, pixelBounds)
+                CreateHaltonSampler(1, pixelBounds)
                 );
 
-    std::shared_ptr<IISPTdIntegrator> result (new IISPTdIntegrator(strategy, maxDepth, camera, sampler, pixelBounds));
+    std::shared_ptr<IISPTdIntegrator> result (new IISPTdIntegrator(maxDepth, camera, sampler, pixelBounds));
 
     return result;
 }

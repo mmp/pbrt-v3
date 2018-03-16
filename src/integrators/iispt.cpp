@@ -45,6 +45,7 @@
 #include "pbrt.h"
 #include "samplers/sobol.h"
 #include "integrators/path.h"
+#include "integrators/volpath.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -106,6 +107,47 @@ static std::shared_ptr<PathIntegrator> create_aux_path_integrator(
 
     std::shared_ptr<PathIntegrator> path_integrator
             (CreatePathIntegrator(path_sobol_sampler,
+                                  pathCamera,
+                                  path_max_depth,
+                                  path_sample_bounds,
+                                  path_rr_threshold,
+                                  path_light_strategy
+                                  ));
+    return path_integrator;
+}
+
+static std::shared_ptr<VolPathIntegrator> create_aux_volpath_integrator(
+        int pixel_samples,
+        std::string output_filename,
+        std::shared_ptr<Camera> dcamera,
+        Ray auxRay,
+        Point2i pixel
+        )
+{
+    std::shared_ptr<HemisphericCamera> pathCamera (
+                CreateHemisphericCamera(
+                    PbrtOptions.iisptHemiSize,
+                    PbrtOptions.iisptHemiSize,
+                    dcamera->medium,
+                    auxRay.o,
+                    Point3f(auxRay.d.x, auxRay.d.y, auxRay.d.z),
+                    pixel,
+                    output_filename
+                    )
+                );
+
+    const Bounds2i path_sample_bounds (
+                Point2i(0, 0),
+                Point2i(PbrtOptions.iisptHemiSize, PbrtOptions.iisptHemiSize)
+                );
+    std::shared_ptr<Sampler> path_sobol_sampler (
+                CreateSobolSampler(path_sample_bounds, pixel_samples));
+    int path_max_depth = IISPT_REFERENCE_PATH_MAX_DEPTH;
+    Float path_rr_threshold = 0.5;
+    std::string path_light_strategy = "spatial";
+
+    std::shared_ptr<VolPathIntegrator> path_integrator
+            (CreateVolPathIntegrator(path_sobol_sampler,
                                   pathCamera,
                                   path_max_depth,
                                   path_sample_bounds,
@@ -655,61 +697,79 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
 
     // In Reference mode, save the rendered view ------------------------------
     if (PbrtOptions.referenceTiles > 0) {
-//        std::vector<std::string> direct_reference_names;
-//        direct_reference_names.push_back(reference_d_name);
-//        std::string reference_z_name = generate_reference_name("z", pixel, ".pfm");
-//        direct_reference_names.push_back(reference_z_name);
-//        std::string reference_n_name = generate_reference_name("n", pixel, ".pfm");
-//        direct_reference_names.push_back(reference_n_name);
-//        exec_if_one_not_exists(direct_reference_names, [&]() {
-//            // Start rendering the hemispherical view
-//            this->dintegrator->RenderView(scene, auxCamera);
-//            dintegrator->save_reference(
-//                        auxCamera,
-//                        reference_z_name, // distance map
-//                        reference_n_name  // normal map
-//                        );
-//        });
+        std::vector<std::string> direct_reference_names;
+        direct_reference_names.push_back(reference_d_name);
+        std::string reference_z_name = generate_reference_name("z", pixel, ".pfm");
+        direct_reference_names.push_back(reference_z_name);
+        std::string reference_n_name = generate_reference_name("n", pixel, ".pfm");
+        direct_reference_names.push_back(reference_n_name);
+        exec_if_one_not_exists(direct_reference_names, [&]() {
+            // Start rendering the hemispherical view
+            this->dintegrator->RenderView(scene, auxCamera);
+            dintegrator->save_reference(
+                        auxCamera,
+                        reference_z_name, // distance map
+                        reference_n_name  // normal map
+                        );
+        });
     } else {
         // Start rendering the hemispherical view
         this->dintegrator->RenderView(scene, auxCamera);
     }
 
     // In Reference mode, create a Path Tracer for ground truth ---------------
+//    if (PbrtOptions.referenceTiles > 0) {
+//        std::string reference_p_name = generate_reference_name("p", pixel, ".pfm");
+//        exec_if_not_exists(reference_p_name, [&]() {
+//            std::shared_ptr<PathIntegrator> path_integrator =
+//                    create_aux_path_integrator(
+//                        PbrtOptions.referencePixelSamples,
+//                        reference_p_name,
+//                        auxCamera,
+//                        auxRay,
+//                        pixel
+//                        );
+//            // Start rendering the ground truth
+//            // The render method will automatically save the image
+//            path_integrator->Render(scene);
+//        });
+//    }
+
+    // In Reference mode, create a volpath for ground truth -------------------
     if (PbrtOptions.referenceTiles > 0) {
-        std::string reference_p_name = generate_reference_name("p", pixel, ".pfm");
-        exec_if_not_exists(reference_p_name, [&]() {
-            std::shared_ptr<PathIntegrator> path_integrator =
-                    create_aux_path_integrator(
+        std::string reference_b_name = generate_reference_name("p", pixel, ".pfm");
+        exec_if_not_exists(reference_b_name, [&]() {
+            std::shared_ptr<VolPathIntegrator> volpath =
+                    create_aux_volpath_integrator(
                         PbrtOptions.referencePixelSamples,
-                        reference_p_name,
-                        dcamera,
+                        reference_b_name,
+                        auxCamera,
                         auxRay,
                         pixel
                         );
             // Start rendering the ground truth
             // The render method will automatically save the image
-            path_integrator->Render(scene);
+            volpath->Render(scene);
         });
     }
 
-    // In Reference mode, create low-quality 1spp path traced render ----------
-    if (PbrtOptions.referenceTiles > 0) {
-        std::string reference_o_name = generate_reference_name("o", pixel, ".pfm");
-        exec_if_not_exists(reference_o_name, [&]() {
-            std::shared_ptr<PathIntegrator> path_integrator =
-                    create_aux_path_integrator(
-                        1,
-                        reference_o_name,
-                        dcamera,
-                        auxRay,
-                        pixel
-                        );
-            // Start rendering the ground truth
-            // The render method will automatically save the image
-            path_integrator->Render(scene);
-        });
-    }
+    // In Reference mode, create low-quality 1spp volpath render --------------
+//    if (PbrtOptions.referenceTiles > 0) {
+//        std::string reference_o_name = generate_reference_name("o", pixel, ".pfm");
+//        exec_if_not_exists(reference_o_name, [&]() {
+//            std::shared_ptr<VolPathIntegrator> volpath =
+//                    create_aux_volpath_integrator(
+//                        1,
+//                        reference_o_name,
+//                        auxCamera,
+//                        auxRay,
+//                        pixel
+//                        );
+//            // Start rendering the ground truth
+//            // The render method will automatically save the image
+//            volpath->Render(scene);
+//        });
+//    }
 
     // Use the hemispherical view to obtain illumination ----------------------
 
