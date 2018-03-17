@@ -37,6 +37,125 @@ var clamp_and_round_8b = function(v) {
     return Math.round(v);
 };
 
+// Class BufferedReader -------------------------------------------------------
+
+function BufferedReader(file_path) {
+
+    var self = this;
+
+    // Callback: function(err)
+    self.open = function(callback) {
+
+        fs.open(file_path, "r", function(status, fd) {
+
+            if (status) {
+                console.info(status.message);
+                callback("Error when opening file ["+file_path+"], status ["+status.message+"]");
+                return;
+            }
+            console.info("Opened binary file: " + file_path);
+
+            // If the buffer is a valid object, the start of the buffer
+            // is the next byte to be retrieved
+            // If the buffer is null, the buffer is currently empty and we
+            // need to read directly from the file
+            var BUFFER_SIZE = 100000; // 100 KBytes
+            var buffer = null;
+            var eof_reached = false;
+
+            // Callback: function(err, buffer)
+            self.read_bytes = function(num_bytes, callback) {
+
+                var result_buffer = null;
+
+                async.waterfall([
+
+                    // Read from file if necessary
+                    function(callback) {
+                        // If buffer is empty, or buffer doesn't have enough bytes, read
+                        // from file in chunks of buffer size
+                        // Stop reading if EOF is reached
+                        var populate_buffer = function(callback) {
+                            if ((!eof_reached) && (buffer == null || buffer.length < num_bytes)) {
+                                // populate buffer
+                                console.info("++ Populating buffer...");
+                                if (buffer == null) {
+                                    console.info("buffer is null");
+                                } else {
+                                    console.info("Buffer size " + buffer.length + " requested size " + num_bytes);
+                                }
+                                var new_buff = new Buffer(BUFFER_SIZE);
+                                console.info("Initiating read");
+                                fs.read(fd, new_buff, 0, BUFFER_SIZE, null, (err, num) => {
+                                    console.info("Read complete ["+err+"] ["+num+"]");
+                                    if (err) {
+                                        console.info("Read err " + err);
+                                        callback(err);
+                                        return;
+                                    }
+
+                                    console.info("Read ["+ num +"] bytes");
+
+                                    // Reached end of file
+                                    if (num < BUFFER_SIZE) {
+                                        console.info("EOF reached");
+                                        eof_reached = true;
+                                        // Trim read buffer to actual size
+                                        new_buff = new_buff.slice(0, num);
+                                    }
+
+                                    // Append current buffer to existing buffer
+                                    if (buffer == null) {
+                                        buffer = new_buff;
+                                    } else {
+                                        buffer = Buffer.concat([buffer, new_buff]);
+                                    }
+
+                                    async.setImmediate(() => {
+                                        populate_buffer((err) => {
+                                            callback(err);
+                                        });
+                                    });
+
+                                });
+                                console.info("fs.read fired");
+                            } else {
+                                // no need to populate buffer
+                                callback();
+                            }
+                        };
+                        populate_buffer(function(err) {
+                            callback(err);
+                        });
+                    },
+
+                    // If buffer has enough data, copy data to result buffer
+                    // Otherwise raise an error
+                    function(callback) {
+                        if (buffer.length < num_bytes) {
+                            callback("Requested more bytes than available in file");
+                        } else {
+                            result_buffer = new Buffer(num_bytes);
+                            buffer.copy(result_buffer, 0, 0, num_bytes); // destination start, source start, source end
+                            buffer = buffer.slice(num_bytes, buffer.length);
+                            // console.info("read bytes. result_buffer ["+result_buffer.length+"] buffer ["+buffer.length+"]");
+                            callback();
+                        }
+                    }
+
+                ], function(err) {
+                    callback(err, result_buffer);
+                });
+
+            };
+
+            callback();
+        });
+
+    };
+
+};
+
 // Class Pixel ----------------------------------------------------------------
 
 // Floating point values pixel
@@ -262,16 +381,17 @@ function Pfm(width, height, data) {
 // Callback: (err, line)
 // line does not contain the line ending
 // fd: file descriptor
-var read_line = function(fd, callback) {
+var read_line = function(buffered_file_reader, callback) {
     var curr_chars = "";
     var read_char = function() {
         var char_bytelen = 1;
-        var buffer = new Buffer(char_bytelen);
-        fs.read(fd, buffer, 0, char_bytelen, null, (err, num) => {
-            if (num != char_bytelen) {
-                callback("Could not read a byte");
+
+        buffered_file_reader.read_bytes(char_bytelen, function(err, buffer) {
+            if (err) {
+                callback(err);
                 return;
             }
+
             var curr_char = buffer.toString('utf8');
             if (curr_char == '\n') {
                 callback(null, curr_chars);
@@ -280,6 +400,7 @@ var read_line = function(fd, callback) {
                 read_char();
             }
         });
+
     };
     read_char();
 };
@@ -309,7 +430,7 @@ var write_string = function(fd, strng, callback) {
 
 // Callback: (err, Pixel)
 // fd: file descriptor
-var read_pixel = function(channels, fd, callback) {
+var read_pixel = function(channels, buff_file_reader, callback) {
     var pixel_bytelen;
     if (channels == 1) {
         pixel_bytelen = 4;
@@ -317,12 +438,12 @@ var read_pixel = function(channels, fd, callback) {
         pixel_bytelen = 12;
     }
 
-    var buffer = new Buffer(pixel_bytelen);
-    fs.read(fd, buffer, 0, pixel_bytelen, null, (err, num) => {
-        if (pixel_bytelen != num) {
-            callback("Could not read ["+ pixel_bytelen +"] bytes. Read ["+ num +"] instead");
+    buff_file_reader.read_bytes(pixel_bytelen, function(err, buffer) {
+        if (err) {
+            callback(err);
             return;
         }
+
         var r;
         var g;
         var b;
@@ -342,6 +463,7 @@ var read_pixel = function(channels, fd, callback) {
         callback(null, the_pixel);
         return;
     });
+
 };
 
 // Write an integers pixel (1 byte per channel)
@@ -359,133 +481,176 @@ var write_pixel = function(vals, fd, callback) {
 
 // Pfm reader -----------------------------------------------------------------
 
+// Callback: function(err, row)
+var read_pixel_row_async = function(buff_file_reader, width, channels, callback) {
+
+    var row = [];
+    var x = 0;
+
+    var priv_read_pix = function(callback) {
+
+        // Row complete, exit priv_read_pix
+        if (x >= width) {
+            callback();
+            return;
+        }
+
+        // Read a pixel
+        read_pixel(channels, buff_file_reader, (err, px) => {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            row.push(px);
+            x += 1;
+            async.setImmediate(() => {
+                priv_read_pix(callback);
+            });
+        });
+
+    };
+
+    priv_read_pix((err) => {
+        callback(err, row);
+    });
+
+};
+
 // Callback: (err, Pfm object)
 // path: file path of file to be read
 var readPfm = function(file_path, callback) {
 
-    fs.open(file_path, "r", function(status, fd) {
-        if (status) {
-            console.info(status.message);
-            callback("Error when opening file ["+ file_path +"], status ["+ status.message +"]");
-            return;
-        }
-        console.info("Opened binary file: " + file_path);
+    var buffered_file_reader = new BufferedReader(file_path);
 
-        var width;
-        var height;
-        var data;
+    var width;
+    var height;
+    var data;
 
-        var channels;
+    var channels;
 
-        async.waterfall([
+    async.waterfall([
 
-            // Read the identifier line
-            (callback) => {
-                read_line(fd, (err, line) => {
-                    if (err) {
-                        callback(err);
-                        return;
-                    } else {
-                        console.info("Read a line ["+ line +"]");
-                        if (line == "PF") {
-                            channels = 3;
-                            callback();
-                            return;
-                        }
-                        if (line == "Pf") {
-                            channels = 1;
-                            callback();
-                            return;
-                        }
-                        callback("Unrecognized file format. No PFM identifier line");
-                        return;
-                    }
-                });
-            },
-
-            // Read dimensions line
-            (callback) => {
-                read_line(fd, (err, line) => {
-                    if (err) {
-                        callback(err);
-                        return;
-                    } else {
-                        console.info("Read a line ["+ line +"]");
-                        var line_split = line.split(" ");
-                        if (line_split.length != 2) {
-                            callback("Could not read dimensions");
-                            return;
-                        }
-                        var width_str = line_split[0];
-                        var height_str = line_split[1];
-                        width = parseInt(width_str);
-                        height = parseInt(height_str);
-                        console.info("Width ["+ width +"]");
-                        console.info("Height ["+ height +"]");
-                        callback();
-                        return;
-                    }
-                });
-            },
-
-            // Read scale factor and endianness
-            (callback) => {
-                read_line(fd, (err, line) => {
-                    if (err) {
-                        callback(err);
-                        return;
-                    } else {
-                        // Ignore these data
-                        callback();
-                        return;
-                    }
-                });
-            },
-
-            // Read pixel values
-            (callback) => {
-                async.times(height, (y_val, next) => {
-                    async.times(width, (x_val, next2) => {
-                        read_pixel(channels, fd, (err, px) => {
-                            if (err) {
-                                next2(err);
-                                return;
-                            }
-                            next2(null, px);
-                            return;
-                        });
-                    }, (err, row) => {
-                        if (err) {
-                            next(err);
-                            return;
-                        } else {
-                            next(null, row);
-                            return;
-                        }
-                    });
-                }, (err, rows) => {
-                    if (err) {
-                        callback(err);
-                        return;
-                    } else {
-                        data = rows;
-                        callback();
-                        return;
-                    }
-                });
-            }
-
-        ], (err) => {
-            if (err) {
+        // Open the file
+        function(callback) {
+            console.info("readPfm waterfall: opening reader");
+            buffered_file_reader.open(function(err) {
                 callback(err);
-                return;
-            } else {
-                var the_pfm = new Pfm(width, height, data);
-                callback(null, the_pfm);
-                return;
-            }
-        });
+            });
+        },
 
+        // Read the identifier line
+        (callback) => {
+            console.info("readPfm waterfall: reading identifier line");
+            read_line(buffered_file_reader, (err, line) => {
+                if (err) {
+                    callback(err);
+                    return;
+                } else {
+                    console.info("Read a line ["+ line +"]");
+                    if (line == "PF") {
+                        channels = 3;
+                        callback();
+                        return;
+                    }
+                    if (line == "Pf") {
+                        channels = 1;
+                        callback();
+                        return;
+                    }
+                    callback("Unrecognized file format. No PFM identifier line");
+                    return;
+                }
+            });
+        },
+
+        // Read dimensions line
+        (callback) => {
+            read_line(buffered_file_reader, (err, line) => {
+                if (err) {
+                    callback(err);
+                    return;
+                } else {
+                    console.info("Read a line ["+ line +"]");
+                    var line_split = line.split(" ");
+                    if (line_split.length != 2) {
+                        callback("Could not read dimensions");
+                        return;
+                    }
+                    var width_str = line_split[0];
+                    var height_str = line_split[1];
+                    width = parseInt(width_str);
+                    height = parseInt(height_str);
+                    console.info("Width ["+ width +"]");
+                    console.info("Height ["+ height +"]");
+                    callback();
+                    return;
+                }
+            });
+        },
+
+        // Read scale factor and endianness
+        (callback) => {
+            read_line(buffered_file_reader, (err, line) => {
+                if (err) {
+                    callback(err);
+                    return;
+                } else {
+                    // Ignore these data
+                    console.info("Read a line ["+ line +"]");
+                    callback();
+                    return;
+                }
+            });
+        },
+
+        // Read pixel values
+        (callback) => {
+
+            var rows = [];
+            var y = 0;
+
+            var priv_read_img = function(callback) {
+
+                // Complete, exit
+                if (y >= height) {
+                    callback();
+                    return;
+                }
+
+                // Read row
+                read_pixel_row_async(buffered_file_reader, width, channels, (err, a_row) => {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    rows.push(a_row);
+                    y += 1;
+                    async.setImmediate(() => {
+                        priv_read_img(callback);
+                    });
+                });
+
+            };
+
+            priv_read_img((err) => {
+                if (err) {
+                    callback(err);
+                } else {
+                    data = rows;
+                    callback();
+                }
+            });
+
+        }
+
+    ], function(err) {
+        if (err) {
+            callback(err);
+        } else {
+            var the_pfm = new Pfm(width, height, data);
+            callback(null, the_pfm);
+        }
     });
 
 };
