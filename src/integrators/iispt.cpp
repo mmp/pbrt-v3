@@ -46,6 +46,7 @@
 #include "samplers/sobol.h"
 #include "integrators/path.h"
 #include "integrators/volpath.h"
+#include "integrators/iispt_estimator_integrator.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -161,6 +162,36 @@ static std::shared_ptr<VolPathIntegrator> create_aux_volpath_integrator(
                                   path_rr_threshold,
                                   path_light_strategy
                                   ));
+    return path_integrator;
+}
+
+static std::shared_ptr<VolPathIntegrator> create_aux_volpath_integrator_perspective(
+        std::shared_ptr<Camera> camera
+        )
+{
+    const Bounds2i path_sample_bounds = camera->film->GetSampleBounds();
+
+    std::shared_ptr<Sampler> path_sobol_sampler (
+                CreateSobolSampler(
+                    path_sample_bounds, 1
+                    )
+                );
+
+    int path_max_depth = IISPT_REFERENCE_PATH_MAX_DEPTH;
+    Float path_rr_threshold = 0.5;
+    std::string path_light_strategy = "spatial";
+
+    std::shared_ptr<VolPathIntegrator> path_integrator (
+                CreateVolPathIntegrator(
+                    path_sobol_sampler,
+                    camera,
+                    path_max_depth,
+                    path_sample_bounds,
+                    path_rr_threshold,
+                    path_light_strategy
+                    )
+                );
+
     return path_integrator;
 }
 
@@ -342,7 +373,11 @@ in integrator.cpp: EstimateDirect
 */
 
 // Estimate intensity normalization ===========================================
-void IISPTIntegrator::estimate_intensity_normalization(const Scene &scene, Vector2i sample_extent) {
+void IISPTIntegrator::estimate_intensity_normalization(
+        const Scene &scene,
+        Vector2i sample_extent
+        )
+{
     // Create RNG
     std::shared_ptr<RNG> rng (new RNG());
 
@@ -350,6 +385,21 @@ void IISPTIntegrator::estimate_intensity_normalization(const Scene &scene, Vecto
     std::shared_ptr<std::vector<Float>> intensity_values ();
 
     // Create auxiliary estimation path tracer
+    std::shared_ptr<VolPathIntegrator> aux_volpath =
+            create_aux_volpath_integrator(
+                1,
+                "null",
+                camera,
+
+                )
+
+    std::shared_ptr<IISPTEstimatorIntegrator> estimator_integrator (
+                new IISPTEstimatorIntegrator(
+                    ,
+                    scene,
+                    sampler
+                    )
+                )
 
     // Loop to get the samples
     for (int i = 0; i < 1000; i++) {
@@ -362,7 +412,7 @@ void IISPTIntegrator::estimate_intensity_normalization(const Scene &scene, Vecto
 // Estimate normalization values ==============================================
 void IISPTIntegrator::estimate_normalization(const Scene &scene) {
     Vector2i sample_extent = get_sample_extent(camera);
-
+    estimate_intensity_normalization(scene, sample_extent);
 }
 
 // Render =====================================================================
