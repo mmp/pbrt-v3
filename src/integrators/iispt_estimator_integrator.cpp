@@ -1,4 +1,5 @@
 #include "iispt_estimator_integrator.h"
+#include "camera.h"
 
 #include <math.h>
 
@@ -14,7 +15,7 @@ Float adjust_logarithmic(Float r, Float g, Float b) {
 
 // Estimate intensity =========================================================
 Float IISPTEstimatorIntegrator::estimate_intensity(
-        Scene &scene,
+        const Scene &scene,
         Point2i pixel,
         std::shared_ptr<Sampler> sampler
         )
@@ -41,7 +42,7 @@ Float IISPTEstimatorIntegrator::estimate_intensity(
 
     // Evaluate radiance along camera ray
     Spectrum L (0.0);
-    L = Li(ray, scene, *tileSampler, arena);
+    L = volpath->Li(ray, scene, *tileSampler, arena, 0);
 
     // Check for unexpected radiance values returned
     if (L.HasNaNs()) {
@@ -56,7 +57,9 @@ Float IISPTEstimatorIntegrator::estimate_intensity(
     arena.Reset();
 
     // Postprocess sample
-    return adjust_logarithmic(L.c[0], L.c[1], L.c[2]);
+    Float rgb_values [3];
+    L.ToRGB(&rgb_values[0]);
+    return adjust_logarithmic(rgb_values[0], rgb_values[1], rgb_values[2]);
 }
 
 }

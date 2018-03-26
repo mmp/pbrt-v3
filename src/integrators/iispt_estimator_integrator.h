@@ -8,26 +8,28 @@
 
 namespace pbrt {
 
-class IISPTEstimatorIntegrator : public SamplerIntegrator
+class IISPTEstimatorIntegrator
 {
 private:
 
     std::shared_ptr<VolPathIntegrator> volpath;
-
+    std::shared_ptr<const Camera> camera;
 
 public:
     IISPTEstimatorIntegrator(
             std::shared_ptr<VolPathIntegrator> volpath,
+            std::shared_ptr<const Camera> camera,
             const Scene &scene,
-            Sampler &sampler
+            std::shared_ptr<Sampler> sampler
             ) :
-        volpath(volpath)
+        volpath(volpath),
+        camera(camera)
     {
-        volpath->Preprocess(scene, sampler);
+        volpath->Preprocess(scene, *sampler.get());
     }
 
     Float estimate_intensity(
-            Scene &scene,
+            const Scene &scene,
             Point2i pixel,
             std::shared_ptr<Sampler> sampler
             );

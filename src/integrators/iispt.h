@@ -122,6 +122,13 @@ private:
             int depth,
             Point2i pixel
             ) const;
+
+    void estimate_normalization(const Scene &scene);
+
+    void estimate_intensity_normalization(
+            const Scene &scene,
+            Vector2i sample_extent
+            );
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(

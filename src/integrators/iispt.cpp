@@ -63,7 +63,7 @@ STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 // Utilities ==================================================================
 
 // Get sample extent in pixels ------------------------------------------------
-static Vector2i get_sample_extent(std::shared_ptr<Camera> camera) {
+static Vector2i get_sample_extent(std::shared_ptr<const Camera> camera) {
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
     Vector2i sampleExtent = sampleBounds.Diagonal();
     return sampleExtent;
@@ -166,7 +166,7 @@ static std::shared_ptr<VolPathIntegrator> create_aux_volpath_integrator(
 }
 
 static std::shared_ptr<VolPathIntegrator> create_aux_volpath_integrator_perspective(
-        std::shared_ptr<Camera> camera
+        std::shared_ptr<const Camera> camera
         )
 {
     const Bounds2i path_sample_bounds = camera->film->GetSampleBounds();
@@ -386,26 +386,29 @@ void IISPTIntegrator::estimate_intensity_normalization(
 
     // Create auxiliary estimation path tracer
     std::shared_ptr<VolPathIntegrator> aux_volpath =
-            create_aux_volpath_integrator(
-                1,
-                "null",
-                camera,
-
-                )
+            create_aux_volpath_integrator_perspective(
+                camera
+                );
 
     std::shared_ptr<IISPTEstimatorIntegrator> estimator_integrator (
                 new IISPTEstimatorIntegrator(
-                    ,
+                    aux_volpath,
+                    camera,
                     scene,
                     sampler
                     )
-                )
+                );
 
     // Loop to get the samples
     for (int i = 0; i < 1000; i++) {
         int x = rng->UniformUInt32(sample_extent.x);
         int y = rng->UniformUInt32(sample_extent.y);
-
+        Float estimate = estimator_integrator->estimate_intensity(
+                    scene,
+                    Point2i(x, y),
+                    sampler
+                    );
+        std::cerr << "Got an estimate for intensity " << estimate << std::endl;
     }
 }
 
