@@ -42,30 +42,45 @@
 #include "pbrt.h"
 #include "integrator.h"
 #include "scene.h"
-#include "integrators/directlighting.h"
 #include "film/distancefilm.h"
 #include "film/normalfilm.h"
+#include "lightdistrib.h"
 
 namespace pbrt {
 
 const std::string IISPT_REFERENCE_DIRECTORY = std::string("out/");
-const int IISPT_REFERENCE_PATH_MAX_DEPTH = 16;
+const int IISPT_REFERENCE_PATH_MAX_DEPTH = 24;
 
 // IISPTdIntegrator Declarations
-class IISPTdIntegrator {
+class IISPTdIntegrator : public SamplerIntegrator {
+
+private:
+  // IISPTdIntegrator Private Data
+  std::shared_ptr<Camera> camera;
+  std::shared_ptr<Sampler> sampler;
+  Bounds2i pixelBounds;
+  const int maxDepth;
+  std::vector<int> nLightSamples;
+  std::shared_ptr<DistanceFilm> distance_film;
+  std::shared_ptr<NormalFilm> normal_film;
+
+  const Float rrThreshold = 0.5;
+  const std::string lightSampleStrategy = std::string("spatial");
+  std::unique_ptr<LightDistribution> lightDistribution;
+
 public:
 
     // IISPTdIntegrator Public Methods
 
     // Constructor
-    IISPTdIntegrator(LightStrategy strategy, int maxDepth,
+    IISPTdIntegrator(int maxDepth,
                              std::shared_ptr<Camera> camera,
                              std::shared_ptr<Sampler> sampler,
                              const Bounds2i &pixelBounds) :
+        SamplerIntegrator(camera, sampler, pixelBounds),
         camera(camera),
         sampler(sampler),
         pixelBounds(pixelBounds),
-        strategy(strategy),
         maxDepth(maxDepth)
     {
         distance_film = std::shared_ptr<DistanceFilm>(
@@ -85,15 +100,13 @@ public:
                                           const Scene &scene, Sampler &sampler,
                                           MemoryArena &arena, int depth, int x, int y);
 
+    Spectrum Li(const RayDifferential &ray, const Scene &scene,
+                Sampler &sampler, MemoryArena &arena, int depth) const {
+        std::cerr << "Call on iispt_d: Li's default implementation, empty." << std::endl;
+        exit(1);
+    }
+
     void Preprocess(const Scene &scene);
-
-    Spectrum SpecularReflect(
-        const RayDifferential &ray, const SurfaceInteraction &isect,
-        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y);
-
-    Spectrum SpecularTransmit(
-        const RayDifferential &ray, const SurfaceInteraction &isect,
-        const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth, int x, int y);
 
     void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
 
@@ -102,20 +115,9 @@ public:
                                           std::string normal_filename
                                           );
 
-  private:
-    // IISPTdIntegrator Private Data
-    std::shared_ptr<Camera> camera;
-    std::shared_ptr<Sampler> sampler;
-    Bounds2i pixelBounds;
-    const LightStrategy strategy;
-    const int maxDepth;
-    std::vector<int> nLightSamples;
-    std::shared_ptr<DistanceFilm> distance_film;
-    std::shared_ptr<NormalFilm> normal_film;
 };
 
 std::shared_ptr<IISPTdIntegrator> CreateIISPTdIntegrator(
-    std::shared_ptr<Sampler> sampler,
     std::shared_ptr<Camera> camera);
 
 }  // namespace pbrt

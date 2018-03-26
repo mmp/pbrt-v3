@@ -568,4 +568,28 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                               visualizeWeights, pixelBounds, lightStrategy);
 }
 
+BDPTIntegrator *CreateBDPTIntegrator(
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<Camera> camera
+        )
+{
+    int max_depth = 8;
+    bool visualize_strategies = false;
+    bool visualize_weights = false;
+
+    Bounds2i pixel_bounds = camera->film->GetSampleBounds();
+
+    std::string light_strategy = "power";
+
+    return new BDPTIntegrator(
+                sampler,
+                camera,
+                max_depth,
+                visualize_strategies,
+                visualize_weights,
+                pixel_bounds,
+                light_strategy
+                );
+}
+
 }  // namespace pbrt

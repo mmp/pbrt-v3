@@ -138,4 +138,12 @@ HaltonSampler *CreateHaltonSampler(const ParamSet &params,
     return new HaltonSampler(nsamp, sampleBounds, sampleAtCenter);
 }
 
+HaltonSampler* CreateHaltonSampler(
+        int pixelsamples,
+        Bounds2i sampleBounds
+        )
+{
+    return new HaltonSampler(pixelsamples, sampleBounds, false);
+}
+
 }  // namespace pbrt
