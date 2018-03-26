@@ -15,6 +15,9 @@ private:
     std::shared_ptr<VolPathIntegrator> volpath;
     std::shared_ptr<const Camera> camera;
 
+    Float max_logd_intensity = -1.0;
+    Float max_sqrt_distance = -1.0;
+
 public:
     IISPTEstimatorIntegrator(
             std::shared_ptr<VolPathIntegrator> volpath,
@@ -28,11 +31,21 @@ public:
         volpath->Preprocess(scene, *sampler.get());
     }
 
-    Float estimate_intensity(
+    void estimate_intensity(
             const Scene &scene,
             Point2i pixel,
             std::shared_ptr<Sampler> sampler
             );
+
+    void estimate_distance(
+            const Scene &scene,
+            Point2i pixel,
+            std::shared_ptr<Sampler> sampler
+            );
+
+    Float get_max_intensity();
+
+    Float get_max_distance();
 
 };
 

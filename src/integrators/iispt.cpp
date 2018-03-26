@@ -400,20 +400,30 @@ void IISPTIntegrator::estimate_intensity_normalization(
                 );
 
     // Loop to get the samples
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < IISPT_NORMALIZATION_ESTIMATION_SAMPLES; i++) {
         int x = rng->UniformUInt32(sample_extent.x);
         int y = rng->UniformUInt32(sample_extent.y);
-        Float estimate = estimator_integrator->estimate_intensity(
+        estimator_integrator->estimate_intensity(
                     scene,
                     Point2i(x, y),
                     sampler
                     );
-        std::cerr << "Got an estimate for intensity " << estimate << std::endl;
+        estimator_integrator->estimate_distance(
+                    scene,
+                    Point2i(x, y),
+                    sampler
+                    );
     }
+
+    // Print statistics
+    Float max_intensity = estimator_integrator->get_max_intensity();
+    Float max_distance = estimator_integrator->get_max_distance();
+    std::cerr << "Max intensity ["<< max_intensity <<"] Max distance ["<< max_distance <<"]" << std::endl;
 }
 
 // Estimate normalization values ==============================================
 void IISPTIntegrator::estimate_normalization(const Scene &scene) {
+    std::cerr << "Start estimate_normalization" << std::endl;
     Vector2i sample_extent = get_sample_extent(camera);
     estimate_intensity_normalization(scene, sample_extent);
 }

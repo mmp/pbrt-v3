@@ -46,6 +46,8 @@
 
 namespace pbrt {
 
+const int IISPT_NORMALIZATION_ESTIMATION_SAMPLES = 10000;
+
 // IISPTIntegrator Declarations
 class IISPTIntegrator : public SamplerIntegrator {
 public:
