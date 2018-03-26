@@ -61,6 +61,13 @@ STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
 // Utilities ==================================================================
 
+// Get sample extent in pixels ------------------------------------------------
+static Vector2i get_sample_extent(std::shared_ptr<Camera> camera) {
+    Bounds2i sampleBounds = camera->film->GetSampleBounds();
+    Vector2i sampleExtent = sampleBounds.Diagonal();
+    return sampleExtent;
+}
+
 // Generate reference file name -----------------------------------------------
 // extension must start with a .
 static std::string generate_reference_name(std::string identifier_type, Point2i pixel, std::string extension) {
@@ -334,7 +341,29 @@ in integrator.cpp: EstimateDirect
     light.Sample_Li is sampling the illumination. I can replace this to sample from my hemisphere.
 */
 
+// Estimate intensity normalization ===========================================
+void IISPTIntegrator::estimate_intensity_normalization(const Scene &scene, Vector2i sample_extent) {
+    // Create RNG
+    std::shared_ptr<RNG> rng (new RNG());
 
+    // Create vector to hold data
+    std::shared_ptr<std::vector<Float>> intensity_values ();
+
+    // Create auxiliary estimation path tracer
+
+    // Loop to get the samples
+    for (int i = 0; i < 1000; i++) {
+        int x = rng->UniformUInt32(sample_extent.x);
+        int y = rng->UniformUInt32(sample_extent.y);
+
+    }
+}
+
+// Estimate normalization values ==============================================
+void IISPTIntegrator::estimate_normalization(const Scene &scene) {
+    Vector2i sample_extent = get_sample_extent(camera);
+
+}
 
 // Render =====================================================================
 void IISPTIntegrator::Render(const Scene &scene) {
@@ -482,6 +511,8 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
 void IISPTIntegrator::render_reference(const Scene &scene) {
 
     Preprocess(scene);
+
+    estimate_normalization(scene);
 
     // Create the auxiliary integrator for intersection-view
     this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(dcamera));
@@ -717,25 +748,6 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         this->dintegrator->RenderView(scene, auxCamera);
     }
 
-    // In Reference mode, create a Path Tracer for ground truth ---------------
-//    if (PbrtOptions.referenceTiles > 0) {
-//        std::string reference_p_name = generate_reference_name("p", pixel, ".pfm");
-//        exec_if_not_exists(reference_p_name, [&]() {
-//            std::shared_ptr<PathIntegrator> path_integrator =
-//                    create_aux_path_integrator(
-//                        PbrtOptions.referencePixelSamples,
-//                        reference_p_name,
-//                        auxCamera,
-//                        auxRay,
-//                        pixel
-//                        );
-//            // Start rendering the ground truth
-//            // The render method will automatically save the image
-//            path_integrator->Render(scene);
-//        });
-//    }
-
-    // In Reference mode, create a volpath for ground truth -------------------
     if (PbrtOptions.referenceTiles > 0) {
         std::string reference_b_name = generate_reference_name("p", pixel, ".pfm");
         exec_if_not_exists(reference_b_name, [&]() {
@@ -752,26 +764,6 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
             volpath->Render(scene);
         });
     }
-
-    // In Reference mode, create low-quality 1spp volpath render --------------
-//    if (PbrtOptions.referenceTiles > 0) {
-//        std::string reference_o_name = generate_reference_name("o", pixel, ".pfm");
-//        exec_if_not_exists(reference_o_name, [&]() {
-//            std::shared_ptr<VolPathIntegrator> volpath =
-//                    create_aux_volpath_integrator(
-//                        1,
-//                        reference_o_name,
-//                        auxCamera,
-//                        auxRay,
-//                        pixel
-//                        );
-//            // Start rendering the ground truth
-//            // The render method will automatically save the image
-//            volpath->Render(scene);
-//        });
-//    }
-
-    // Use the hemispherical view to obtain illumination ----------------------
 
     // Compute scattering functions for surface interaction
     isect.ComputeScatteringFunctions(ray, arena);
