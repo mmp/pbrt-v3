@@ -46,6 +46,8 @@
 
 namespace pbrt {
 
+const int IISPT_NORMALIZATION_ESTIMATION_SAMPLES = 10000;
+
 // IISPTIntegrator Declarations
 class IISPTIntegrator : public SamplerIntegrator {
 public:
@@ -122,6 +124,13 @@ private:
             int depth,
             Point2i pixel
             ) const;
+
+    void estimate_normalization(const Scene &scene);
+
+    void estimate_intensity_normalization(
+            const Scene &scene,
+            Vector2i sample_extent
+            );
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(

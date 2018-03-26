@@ -46,6 +46,7 @@
 #include "samplers/sobol.h"
 #include "integrators/path.h"
 #include "integrators/volpath.h"
+#include "integrators/iispt_estimator_integrator.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -60,6 +61,13 @@ STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
 // Utilities ==================================================================
+
+// Get sample extent in pixels ------------------------------------------------
+static Vector2i get_sample_extent(std::shared_ptr<const Camera> camera) {
+    Bounds2i sampleBounds = camera->film->GetSampleBounds();
+    Vector2i sampleExtent = sampleBounds.Diagonal();
+    return sampleExtent;
+}
 
 // Generate reference file name -----------------------------------------------
 // extension must start with a .
@@ -154,6 +162,36 @@ static std::shared_ptr<VolPathIntegrator> create_aux_volpath_integrator(
                                   path_rr_threshold,
                                   path_light_strategy
                                   ));
+    return path_integrator;
+}
+
+static std::shared_ptr<VolPathIntegrator> create_aux_volpath_integrator_perspective(
+        std::shared_ptr<const Camera> camera
+        )
+{
+    const Bounds2i path_sample_bounds = camera->film->GetSampleBounds();
+
+    std::shared_ptr<Sampler> path_sobol_sampler (
+                CreateSobolSampler(
+                    path_sample_bounds, 1
+                    )
+                );
+
+    int path_max_depth = IISPT_REFERENCE_PATH_MAX_DEPTH;
+    Float path_rr_threshold = 0.5;
+    std::string path_light_strategy = "spatial";
+
+    std::shared_ptr<VolPathIntegrator> path_integrator (
+                CreateVolPathIntegrator(
+                    path_sobol_sampler,
+                    camera,
+                    path_max_depth,
+                    path_sample_bounds,
+                    path_rr_threshold,
+                    path_light_strategy
+                    )
+                );
+
     return path_integrator;
 }
 
@@ -334,7 +372,61 @@ in integrator.cpp: EstimateDirect
     light.Sample_Li is sampling the illumination. I can replace this to sample from my hemisphere.
 */
 
+// Estimate intensity normalization ===========================================
+void IISPTIntegrator::estimate_intensity_normalization(
+        const Scene &scene,
+        Vector2i sample_extent
+        )
+{
+    // Create RNG
+    std::shared_ptr<RNG> rng (new RNG());
 
+    // Create vector to hold data
+    std::shared_ptr<std::vector<Float>> intensity_values ();
+
+    // Create auxiliary estimation path tracer
+    std::shared_ptr<VolPathIntegrator> aux_volpath =
+            create_aux_volpath_integrator_perspective(
+                camera
+                );
+
+    std::shared_ptr<IISPTEstimatorIntegrator> estimator_integrator (
+                new IISPTEstimatorIntegrator(
+                    aux_volpath,
+                    camera,
+                    scene,
+                    sampler
+                    )
+                );
+
+    // Loop to get the samples
+    for (int i = 0; i < IISPT_NORMALIZATION_ESTIMATION_SAMPLES; i++) {
+        int x = rng->UniformUInt32(sample_extent.x);
+        int y = rng->UniformUInt32(sample_extent.y);
+        estimator_integrator->estimate_intensity(
+                    scene,
+                    Point2i(x, y),
+                    sampler
+                    );
+        estimator_integrator->estimate_distance(
+                    scene,
+                    Point2i(x, y),
+                    sampler
+                    );
+    }
+
+    // Print statistics
+    Float max_intensity = estimator_integrator->get_max_intensity();
+    Float max_distance = estimator_integrator->get_max_distance();
+    std::cerr << "Max intensity ["<< max_intensity <<"] Max distance ["<< max_distance <<"]" << std::endl;
+}
+
+// Estimate normalization values ==============================================
+void IISPTIntegrator::estimate_normalization(const Scene &scene) {
+    std::cerr << "Start estimate_normalization" << std::endl;
+    Vector2i sample_extent = get_sample_extent(camera);
+    estimate_intensity_normalization(scene, sample_extent);
+}
 
 // Render =====================================================================
 void IISPTIntegrator::Render(const Scene &scene) {
@@ -482,6 +574,8 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
 void IISPTIntegrator::render_reference(const Scene &scene) {
 
     Preprocess(scene);
+
+    estimate_normalization(scene);
 
     // Create the auxiliary integrator for intersection-view
     this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(dcamera));
@@ -717,25 +811,6 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         this->dintegrator->RenderView(scene, auxCamera);
     }
 
-    // In Reference mode, create a Path Tracer for ground truth ---------------
-//    if (PbrtOptions.referenceTiles > 0) {
-//        std::string reference_p_name = generate_reference_name("p", pixel, ".pfm");
-//        exec_if_not_exists(reference_p_name, [&]() {
-//            std::shared_ptr<PathIntegrator> path_integrator =
-//                    create_aux_path_integrator(
-//                        PbrtOptions.referencePixelSamples,
-//                        reference_p_name,
-//                        auxCamera,
-//                        auxRay,
-//                        pixel
-//                        );
-//            // Start rendering the ground truth
-//            // The render method will automatically save the image
-//            path_integrator->Render(scene);
-//        });
-//    }
-
-    // In Reference mode, create a volpath for ground truth -------------------
     if (PbrtOptions.referenceTiles > 0) {
         std::string reference_b_name = generate_reference_name("p", pixel, ".pfm");
         exec_if_not_exists(reference_b_name, [&]() {
@@ -752,26 +827,6 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
             volpath->Render(scene);
         });
     }
-
-    // In Reference mode, create low-quality 1spp volpath render --------------
-//    if (PbrtOptions.referenceTiles > 0) {
-//        std::string reference_o_name = generate_reference_name("o", pixel, ".pfm");
-//        exec_if_not_exists(reference_o_name, [&]() {
-//            std::shared_ptr<VolPathIntegrator> volpath =
-//                    create_aux_volpath_integrator(
-//                        1,
-//                        reference_o_name,
-//                        auxCamera,
-//                        auxRay,
-//                        pixel
-//                        );
-//            // Start rendering the ground truth
-//            // The render method will automatically save the image
-//            volpath->Render(scene);
-//        });
-//    }
-
-    // Use the hemispherical view to obtain illumination ----------------------
 
     // Compute scattering functions for surface interaction
     isect.ComputeScatteringFunctions(ray, arena);
