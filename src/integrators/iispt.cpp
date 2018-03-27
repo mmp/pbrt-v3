@@ -48,6 +48,10 @@
 #include "integrators/volpath.h"
 #include "integrators/iispt_estimator_integrator.h"
 
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
 #include <cstdlib>
 #include <iostream>
 #include <sys/stat.h>
@@ -372,17 +376,31 @@ in integrator.cpp: EstimateDirect
     light.Sample_Li is sampling the illumination. I can replace this to sample from my hemisphere.
 */
 
+// Write info file ============================================================
+void IISPTIntegrator::write_info_file(std::string out_filename) {
+
+    rapidjson::Document jd;
+    jd.SetObject();
+    jd["normalization_intensity"] = max_intensity;
+    jd["normalization_distance"] = max_distance;
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer (buffer);
+    jd.Accept(writer);
+
+    std::ofstream out_file (out_filename);
+    out_file << buffer.GetString();
+    out_file.close();
+}
+
 // Estimate intensity normalization ===========================================
-void IISPTIntegrator::estimate_intensity_normalization(
+void IISPTIntegrator::estimate_normalization_values(
         const Scene &scene,
         Vector2i sample_extent
         )
 {
     // Create RNG
     std::shared_ptr<RNG> rng (new RNG());
-
-    // Create vector to hold data
-    std::shared_ptr<std::vector<Float>> intensity_values ();
 
     // Create auxiliary estimation path tracer
     std::shared_ptr<VolPathIntegrator> aux_volpath =
@@ -416,16 +434,19 @@ void IISPTIntegrator::estimate_intensity_normalization(
     }
 
     // Print statistics
-    Float max_intensity = estimator_integrator->get_max_intensity();
-    Float max_distance = estimator_integrator->get_max_distance();
+    max_intensity = estimator_integrator->get_max_intensity();
+    max_distance = estimator_integrator->get_max_distance();
     std::cerr << "Max intensity ["<< max_intensity <<"] Max distance ["<< max_distance <<"]" << std::endl;
+
+    // Write info file
+    write_info_file(IISPT_REFERENCE_DIRECTORY + IISPT_REFERENCE_TRAIN_INFO);
 }
 
 // Estimate normalization values ==============================================
 void IISPTIntegrator::estimate_normalization(const Scene &scene) {
     std::cerr << "Start estimate_normalization" << std::endl;
     Vector2i sample_extent = get_sample_extent(camera);
-    estimate_intensity_normalization(scene, sample_extent);
+    estimate_normalization_values(scene, sample_extent);
 }
 
 // Render =====================================================================
