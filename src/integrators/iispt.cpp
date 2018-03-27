@@ -381,8 +381,19 @@ void IISPTIntegrator::write_info_file(std::string out_filename) {
 
     rapidjson::Document jd;
     jd.SetObject();
-    jd["normalization_intensity"] = max_intensity;
-    jd["normalization_distance"] = max_distance;
+
+    auto& allocator = jd.GetAllocator();
+
+    jd.AddMember(
+                rapidjson::Value("normalization_intensity", allocator).Move(),
+                rapidjson::Value().SetDouble(max_intensity),
+            allocator);
+
+    jd.AddMember(
+                rapidjson::Value("normalization_distance", allocator).Move(),
+                rapidjson::Value().SetDouble(max_distance),
+                allocator
+                );
 
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer (buffer);
