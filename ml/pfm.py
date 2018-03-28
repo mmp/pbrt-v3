@@ -10,6 +10,7 @@ import math
 # =============================================================================
 # Transform callables
 
+# -----------------------------------------------------------------------------
 class NormalizeTransform:
 
     def __init__(self, min_val, max_val):
@@ -27,6 +28,7 @@ class NormalizeTransform:
         else:
             return y
 
+# -----------------------------------------------------------------------------
 class LogTransform:
 
     def __init__(self):
@@ -35,6 +37,7 @@ class LogTransform:
     def __call__(self, x):
         return math.log(x + 1.0)
 
+# -----------------------------------------------------------------------------
 class SqrtTransform:
 
     def __init__(self):
@@ -50,19 +53,28 @@ class SqrtTransform:
 
 class PfmImage:
 
+    # -------------------------------------------------------------------------
     def __init__(self, data):
         self.data = data
     
+    # -------------------------------------------------------------------------
     def print_shape(self):
         print(self.data.shape)
     
+    # -------------------------------------------------------------------------
     def print_array(self):
         print(self.data)
     
+    # -------------------------------------------------------------------------
+    def get_numpy_array(self):
+        return self.data
+    
+    # -------------------------------------------------------------------------
     def map(self, f):
         f = numpy.vectorize(f)
         self.data = f(self.data)
     
+    # -------------------------------------------------------------------------
     # Given min and max vals in the original range,
     # Remaps everything into the 0-1 range
     # And clips any values that stay outside
@@ -70,12 +82,14 @@ class PfmImage:
         t = NormalizeTransform(min_val, max_val)
         self.map(t)
     
+    # -------------------------------------------------------------------------
     # Applies a natural logarithm on the value
     # And normalizes according to given max_value
     def normalize_log(self, max_value):
         self.map(LogTransform())
         self.normalize(0.0, max_value)
     
+    # -------------------------------------------------------------------------
     # 1 - Apply the square root
     # 2 - Normalize according to the max value. Min value is -1
     #     for the pixels that have no intersection
@@ -153,18 +167,19 @@ def load(file_path):
 # =============================================================================
 # Quick test
 
-p = load("z_0_0.pfm")
-p.print_shape()
-p.print_array()
+def test_main():
+    p = load("z_0_0.pfm")
+    p.print_shape()
+    p.print_array()
 
-p.normalize(0.0, 100.0)
-p.print_shape()
-p.print_array()
+    p.normalize(0.0, 100.0)
+    p.print_shape()
+    p.print_array()
 
-p.normalize_log(2.0)
-p.print_shape()
-p.print_array()
+    p.normalize_log(2.0)
+    p.print_shape()
+    p.print_array()
 
-p.normalize_sqrt(2.0)
-p.print_shape()
-p.print_array()
+    p.normalize_sqrt(2.0)
+    p.print_shape()
+    p.print_array()
