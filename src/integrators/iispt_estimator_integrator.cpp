@@ -28,7 +28,6 @@ Float adjust_logarithmic(Float r, Float g, Float b) {
 // Square root falloff normalization
 Float adjust_sqrt(Float d) {
     Float sd = std::sqrt(d);
-    std::cerr << "sqrt d " << sd << std::endl;
     return sd;
 }
 

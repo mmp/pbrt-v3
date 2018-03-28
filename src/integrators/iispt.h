@@ -96,6 +96,9 @@ private:
     std::shared_ptr<Camera> dcamera;
     std::shared_ptr<IISPTdIntegrator> dintegrator;
 
+    Float max_intensity = -1;
+    Float max_distance = -1;
+
     Spectrum SpecularTransmit(
             const RayDifferential &ray,
             const SurfaceInteraction &isect,
@@ -127,10 +130,12 @@ private:
 
     void estimate_normalization(const Scene &scene);
 
-    void estimate_intensity_normalization(
+    void estimate_normalization_values(
             const Scene &scene,
             Vector2i sample_extent
             );
+
+    void write_info_file(std::string out_filename);
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(

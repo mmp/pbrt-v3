@@ -49,6 +49,7 @@
 namespace pbrt {
 
 const std::string IISPT_REFERENCE_DIRECTORY = std::string("out/");
+const std::string IISPT_REFERENCE_TRAIN_INFO = std::string("train.json");
 const int IISPT_REFERENCE_PATH_MAX_DEPTH = 24;
 
 // IISPTdIntegrator Declarations
