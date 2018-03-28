@@ -177,6 +177,7 @@ def load_set_directory(set_dir_name, set_dir_path, results_dict):
 
     # Iterate through all the files
     set_content = os.listdir(set_dir_path)
+    added_current = 0
     for a_file_name in set_content:
         # Parse X and Y from filename
         filename_data = parse_filename(a_file_name)
@@ -204,7 +205,9 @@ def load_set_directory(set_dir_name, set_dir_path, results_dict):
         value["log_normalization"] = normalization_intensity
         value["sqrt_normalization"] = normalization_distance
         results_dict[k] = value
-        print("Added {} {} {}".format(set_dir_path, x, y))
+        added_current += 1
+    
+    print("Added {} examples in {}".format(added_current, set_dir_path))
 
 # -----------------------------------------------------------------------------
 def load_dataset(root_directory):
@@ -233,7 +236,6 @@ def load_dataset(root_directory):
 
 def main_test():
     d = load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset")
-    print(d.__len__())
-    print(d.__getitem__(3))
+    print("Loaded {} examples".format(d.__len__()))
 
 main_test()
