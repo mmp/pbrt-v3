@@ -18,9 +18,9 @@ class NormalizeTransform:
         self.max_val = max_val
     
     def __call__(self, x):
-        y = x + self.min_val
-        new_max = self.max_val + self.min_val
-        y = x / new_max
+        y = x - self.min_val
+        new_max = self.max_val - self.min_val
+        y = y / new_max
         if y < 0.0:
             return 0.0
         elif y > 1.0:
@@ -168,7 +168,7 @@ def load(file_path):
 # Quick test
 
 def test_main():
-    p = load("z_0_0.pfm")
+    p = load("/home/gj/git/pbrt-v3-IISPT-dataset/barcelona_pavilion_day/p_160_420.pfm")
     p.print_shape()
     p.print_array()
 
@@ -183,3 +183,5 @@ def test_main():
     p.normalize_sqrt(2.0)
     p.print_shape()
     p.print_array()
+
+# test_main()

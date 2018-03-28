@@ -56,7 +56,7 @@ TYPE_PREFIXES = ["p", "d", "n", "z"]
 def generate_pfm_filenames(dirname, x, y):
     results = []
     for p in TYPE_PREFIXES:
-        a_name = os.path.abspath(os.path.join(dirname, "p_{}_{}.pfm".format(x, y)))
+        a_name = os.path.abspath(os.path.join(dirname, "{}_{}_{}.pfm".format(p, x, y)))
         results.append(a_name)
     return results
 
@@ -124,7 +124,7 @@ def parse_filename(fname):
     if len(splt) != 2:
         return None
     fname = splt[0]
-    splt = fname.splt("_")
+    splt = fname.split("_")
     if len(splt) != 3:
         return None
     try:
@@ -232,7 +232,8 @@ def load_dataset(root_directory):
 # =============================================================================
 
 def main_test():
-    d = load_dataset("/home/gj/git/pbrt-v3-scenes")
+    d = load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset")
     print(d.__len__())
+    print(d.__getitem__(3))
 
 main_test()
