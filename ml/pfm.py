@@ -5,6 +5,45 @@
 
 import numpy
 import struct
+import math
+
+# =============================================================================
+# Transform callables
+
+class NormalizeTransform:
+
+    def __init__(self, min_val, max_val):
+        self.min_val = min_val
+        self.max_val = max_val
+    
+    def __call__(self, x):
+        y = x + self.min_val
+        new_max = self.max_val + self.min_val
+        y = x / new_max
+        if y < 0.0:
+            return 0.0
+        elif y > 1.0:
+            return 1.0
+        else:
+            return y
+
+class LogTransform:
+
+    def __init__(self):
+        pass
+    
+    def __call__(self, x):
+        return math.log(x + 1.0)
+
+class SqrtTransform:
+
+    def __init__(self):
+        pass
+    
+    def __call__(self, x):
+        if x < 0.0:
+            return 0.0
+        return math.sqrt(x)
 
 # =============================================================================
 # Class definitions
@@ -16,6 +55,33 @@ class PfmImage:
     
     def print_shape(self):
         print(self.data.shape)
+    
+    def print_array(self):
+        print(self.data)
+    
+    def map(self, f):
+        f = numpy.vectorize(f)
+        self.data = f(self.data)
+    
+    # Given min and max vals in the original range,
+    # Remaps everything into the 0-1 range
+    # And clips any values that stay outside
+    def normalize(self, min_val, max_val):
+        t = NormalizeTransform(min_val, max_val)
+        self.map(t)
+    
+    # Applies a natural logarithm on the value
+    # And normalizes according to given max_value
+    def normalize_log(self, max_value):
+        self.map(LogTransform())
+        self.normalize(0.0, max_value)
+    
+    # 1 - Apply the square root
+    # 2 - Normalize according to the max value. Min value is -1
+    #     for the pixels that have no intersection
+    def normalize_sqrt(self, max_value):
+        self.map(SqrtTransform())
+        self.normalize(-1.0, max_value)
 
 # =============================================================================
 # Utilities
@@ -54,7 +120,6 @@ def load(file_path):
 
     # Read the identifier line
     identifier_line = read_line(f)
-    print("Identifier line [{}]".format(identifier_line))
     if identifier_line == "PF":
         channels = 3
     elif identifier_line == "Pf":
@@ -69,10 +134,9 @@ def load(file_path):
         raise Exception("Could not recognize PFM dimensions line in [{}]".format(dimensions_line))
     width = int(dimensions_line_split[0])
     height = int(dimensions_line_split[1])
-    print("Dimensions width [{}] height [{}] channels [{}]".format(width, height, channels))
 
     # Read scale factor and endianness
-    misc_line = read_line(f)
+    read_line(f)
     # Ignore the value
 
     # Read pixel values
@@ -89,5 +153,18 @@ def load(file_path):
 # =============================================================================
 # Quick test
 
-p = load("n_0_0.pfm")
+p = load("z_0_0.pfm")
 p.print_shape()
+p.print_array()
+
+p.normalize(0.0, 100.0)
+p.print_shape()
+p.print_array()
+
+p.normalize_log(2.0)
+p.print_shape()
+p.print_array()
+
+p.normalize_sqrt(2.0)
+p.print_shape()
+p.print_array()
