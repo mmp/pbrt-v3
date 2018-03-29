@@ -272,9 +272,7 @@ Spectrum DisneyClearcoat::f(const Vector3f &wo, const Vector3f &wi) const {
     Float Gr =
         smithG_GGX(AbsCosTheta(wo), .25) * smithG_GGX(AbsCosTheta(wi), .25);
 
-    // Ad-hoc 0.25 term to match Disney implementation (unpublished, via
-    // Brent Burley.)
-    return .25 * weight * Gr * Fr * Dr;
+    return weight * Gr * Fr * Dr / 4;
 }
 
 Spectrum DisneyClearcoat::Sample_f(const Vector3f &wo, Vector3f *wi,
