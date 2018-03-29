@@ -284,7 +284,6 @@ ENDIF ()
   ADD_SUBDIRECTORY(src/ext/zlib)
 
   SET(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib")
-  SET(ZLIB_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib/zlibstatic.lib")
   SET(ZLIB_LIBRARIES zlibstatic)
   SET_PROPERTY(TARGET zlibstatic PROPERTY FOLDER "dependencies")
   INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib")
@@ -485,7 +484,7 @@ SET(ALL_PBRT_LIBS
   ${OPENEXR_LIBS}
   glog
   Ptex_static
-  ${ZLIB_LIBRARY}
+  ${ZLIB_LIBRARIES}
 )
 
 # Main renderer
