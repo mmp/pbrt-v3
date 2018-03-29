@@ -276,18 +276,18 @@ ENDIF ()
 ###########################################################################
 # zlib
 
-#FIND_PACKAGE ( ZLIB )
-#IF(NOT ZLIB_FOUND)
+FIND_PACKAGE ( ZLIB )
+IF(NOT ZLIB_FOUND)
   # Build zlib
   SET(ZLIB_BUILD_STATIC_LIBS ON CACHE BOOL " " FORCE)
   SET(ZLIB_BUILD_SHARED_LIBS OFF CACHE BOOL " " FORCE)
   ADD_SUBDIRECTORY(src/ext/zlib)
 
   SET(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib")
-  SET(ZLIB_LIBRARIES zlibstatic)
+  SET(ZLIB_LIBRARY zlibstatic)
   SET_PROPERTY(TARGET zlibstatic PROPERTY FOLDER "dependencies")
   INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib")
-#ENDIF()
+ENDIF()
 INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIRS})
 
 ###########################################################################
@@ -311,7 +311,7 @@ INCLUDE_DIRECTORIES (
   ${CMAKE_BINARY_DIR}/src/ext/openexr/OpenEXR/config
 )
 IF(WIN32)
-  SET(OPENEXR_LIBS IlmImf Imath Half ${ZLIB_LIBRARIES})
+  SET(OPENEXR_LIBS IlmImf Imath Half ${ZLIB_LIBRARY})
 ELSE()
   SET(OPENEXR_LIBS IlmImf Imath Half)
 ENDIF()
@@ -484,7 +484,7 @@ SET(ALL_PBRT_LIBS
   ${OPENEXR_LIBS}
   glog
   Ptex_static
-  ${ZLIB_LIBRARIES}
+  ${ZLIB_LIBRARY}
 )
 
 # Main renderer
