@@ -407,7 +407,7 @@ Spectrum DisneyBSSRDF::S(const SurfaceInteraction &pi, const Vector3f &wi) {
 
     Float Fo = SchlickWeight(AbsCosTheta(po.wo)),
           Fi = SchlickWeight(AbsCosTheta(wi));
-    return fade * (1 - Fo / 2) * (1 - Fi / 2) * Sp(pi) * Sw(wi);
+    return fade * (1 - Fo / 2) * (1 - Fi / 2) * Sp(pi) / Pi;
 }
 
 // Diffusion profile from Burley 2015, eq (5).
