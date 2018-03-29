@@ -276,19 +276,19 @@ ENDIF ()
 ###########################################################################
 # zlib
 
-FIND_PACKAGE ( ZLIB )
-IF(NOT ZLIB_FOUND)
+#FIND_PACKAGE ( ZLIB )
+#IF(NOT ZLIB_FOUND)
   # Build zlib
   SET(ZLIB_BUILD_STATIC_LIBS ON CACHE BOOL " " FORCE)
   SET(ZLIB_BUILD_SHARED_LIBS OFF CACHE BOOL " " FORCE)
   ADD_SUBDIRECTORY(src/ext/zlib)
 
   SET(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib")
-  SET(ZLIB_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib/$<CONFIGURATION>/zlibstatic.lib")
+  SET(ZLIB_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib/zlibstatic.lib")
   SET(ZLIB_LIBRARIES zlibstatic)
   SET_PROPERTY(TARGET zlibstatic PROPERTY FOLDER "dependencies")
   INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib")
-ENDIF()
+#ENDIF()
 INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIRS})
 
 ###########################################################################
