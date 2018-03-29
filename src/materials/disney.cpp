@@ -274,7 +274,7 @@ Spectrum DisneyClearcoat::f(const Vector3f &wo, const Vector3f &wi) const {
 
     // Ad-hoc 0.25 term to match Disney implementation (unpublished, via
     // Brent Burley.)
-    return .25 * weight * Gr * Fr * Dr / (AbsCosTheta(wo) * AbsCosTheta(wi));
+    return .25 * weight * Gr * Fr * Dr;
 }
 
 Spectrum DisneyClearcoat::Sample_f(const Vector3f &wo, Vector3f *wi,
