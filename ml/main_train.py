@@ -14,7 +14,7 @@ def main():
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=20, shuffle=True, num_workers=2)
     testloader = torch.utils.data.DataLoader(testset, batch_size=20, shuffle=False, num_workers=2)
 
-    net = iispt_net.IISPTNet()
+    net = iispt_net.IISPTNet().cuda()
 
     criterion = nn.MSELoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
@@ -30,8 +30,8 @@ def main():
             expected_x = data["p"]
 
             # Wrap in variables
-            input_v = Variable(input_x)
-            expected_v = Variable(expected_x)
+            input_v = Variable(input_x.cuda())
+            expected_v = Variable(expected_x.cuda())
 
             # Zero the parameter gradients
             optimizer.zero_grad()

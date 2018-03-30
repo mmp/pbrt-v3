@@ -258,7 +258,9 @@ def load_dataset(root_directory, validation_probability):
             results_train.append(v)
     
     # Create Dataset object
-    return (IISPTDataset(results_train), IISPTDataset(results_validation))
+    r_t, r_v = (IISPTDataset(results_train), IISPTDataset(results_validation))
+    print("Loaded {} training, {} validation examples".format(r_t.__len__(), r_v.__len__()))
+    return (r_t, r_v)
 
 # =============================================================================
 
