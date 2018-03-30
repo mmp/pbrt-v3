@@ -107,10 +107,18 @@ class IISPTDataset(Dataset):
 
         # Convert from numpy to tensors and create results
         result = {}
-        result["p"] = torch.from_numpy(p_pfm.get_numpy_array())
-        result["d"] = torch.from_numpy(d_pfm.get_numpy_array())
-        result["n"] = torch.from_numpy(n_pfm.get_numpy_array())
-        result["z"] = torch.from_numpy(z_pfm.get_numpy_array())
+        result["p"] = torch.from_numpy(p_pfm.get_numpy_array().flatten()).float()
+        # result["d"] = torch.from_numpy(d_pfm.get_numpy_array())
+        # result["n"] = torch.from_numpy(n_pfm.get_numpy_array())
+        # result["z"] = torch.from_numpy(z_pfm.get_numpy_array())
+        train_d = d_pfm.get_numpy_array()
+        train_n = n_pfm.get_numpy_array()
+        train_z = z_pfm.get_numpy_array()
+        train_d = train_d.flatten()
+        train_n = train_n.flatten()
+        train_z = train_z.flatten()
+        train_combined = numpy.concatenate([train_d, train_n, train_z])
+        result["t"] = torch.from_numpy(train_combined).float()
 
         return result
 
@@ -258,3 +266,5 @@ def main_test():
     dt, dv = load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset", 0.1)
     print("Loaded {} + {} examples".format(dt.__len__(), dv.__len__()))
     print(dv.__getitem__(0))
+
+# main_test()
