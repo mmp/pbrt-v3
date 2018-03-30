@@ -8,9 +8,9 @@ import iispt_dataset
 import iispt_net
 import config
 
-NO_EPOCHS = 1
-BATCH_SIZE = 10
-NO_WORKERS = 4
+NO_EPOCHS = 20
+BATCH_SIZE = 50
+NO_WORKERS = 2
 
 def main():
 
@@ -22,7 +22,7 @@ def main():
     net = iispt_net.IISPTNet().cuda()
 
     criterion = nn.MSELoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.Adam(net.parameters(), lr=0.00003)
 
     for epoch in range(NO_EPOCHS):
 
