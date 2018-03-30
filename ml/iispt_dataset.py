@@ -76,6 +76,13 @@ class IISPTDataset(Dataset):
         return len(self.data_list)
     
     # -------------------------------------------------------------------------
+    def get_datum(self, idx):
+        if idx < 0 or idx >= len(self.data_list):
+            return None
+        else:
+            return self.data_list[idx]
+    
+    # -------------------------------------------------------------------------
     def __getitem__(self, idx):
         datum = self.data_list[idx]
         dirname = datum["directory"]

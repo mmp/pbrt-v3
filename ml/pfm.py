@@ -194,6 +194,14 @@ def load(file_path):
     return PfmImage(data)
 
 # =============================================================================
+# Load from flattened numpy array
+
+def load_from_flat_numpy(narray, width=32, height=32, channels=3):
+    shape = (height, width, channels)
+    narray = narray.reshape(shape)
+    return PfmImage(narray)
+
+# =============================================================================
 # Quick test
 
 def test_main():
