@@ -7,22 +7,25 @@ import torch.optim as optim
 import iispt_dataset
 import iispt_net
 
+NO_EPOCHS = 2
+BATCH_SIZE = 100
+NO_WORKERS = 4
+
 def main():
 
     trainset, testset = iispt_dataset.load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset", 0.1)
 
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=20, shuffle=True, num_workers=2)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=20, shuffle=False, num_workers=2)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NO_WORKERS)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False, num_workers=NO_WORKERS)
 
     net = iispt_net.IISPTNet().cuda()
 
     criterion = nn.MSELoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(2):
+    for epoch in range(NO_EPOCHS):
 
-        running_loss = 0.0
-
+        # each i is a batch
         for i, data in enumerate(trainloader, 0):
 
             # Get the inputs
@@ -43,10 +46,8 @@ def main():
             optimizer.step()
 
             # Print statistics
-            running_loss += loss.data[0]
-            if i % 2 == 0:
-                print("Epoch [{}] i [{}] Running loss [{}]".format(epoch, i, running_loss))
-                running_loss = 0.0
+            running_loss = loss.data[0]
+            print("Epoch [{}] example [{}] Running loss [{}]".format(epoch, i * BATCH_SIZE, running_loss))
 
     print("Finished training")
 
