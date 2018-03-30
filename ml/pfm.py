@@ -97,6 +97,30 @@ class PfmImage:
     def normalize_sqrt(self, max_value):
         self.map(SqrtTransform())
         self.normalize(-1.0, max_value)
+    
+    # -------------------------------------------------------------------------
+    # Write out to .pfm file
+    def save_pfm(self, out_path):
+        print("Writing {}".format(out_path))
+        out_file = open(out_path, "wb")
+
+        # Write identifier line
+        out_file.write(b"PF\n")
+
+        # Write dimensions line
+        width, height, channels = self.data.shape
+        out_file.write("{} {}\n".format(width, height).encode())
+
+        # Write scale factor and endianness
+        out_file.write(b"1\n")
+
+        # Write pixel values
+        for y in range(height):
+            for x in range(width):
+                for c in range(channels):
+                    write_float_32(out_file, self.data[y, x, c])
+
+        out_file.close()
 
 # =============================================================================
 # Utilities
@@ -114,6 +138,10 @@ def read_line(f):
 
 def read_float_32(f):
     return struct.unpack('f', f.read(4))[0]
+
+def write_float_32(f, v):
+    data = struct.pack('f', v)
+    f.write(data)
 
 def load_pixel(f, y, x, channels, data):
     for p in range(channels):
@@ -172,17 +200,17 @@ def test_main():
     p = load("/home/gj/git/pbrt-v3-IISPT-dataset/barcelona_pavilion_day/p_160_420.pfm")
     p.print_shape()
     p.print_array()
+    p.save_pfm("test.pfm")
 
-    p.normalize(0.0, 100.0)
-    p.print_shape()
-    p.print_array()
+    # p.normalize(0.0, 100.0)
+    # p.print_shape()
+    # p.print_array()
 
-    p.normalize_log(2.0)
-    p.print_shape()
-    p.print_array()
+    # p.normalize_log(2.0)
+    # p.print_shape()
+    # p.print_array()
 
-    p.normalize_sqrt(2.0)
-    p.print_shape()
-    p.print_array()
-
+    # p.normalize_sqrt(2.0)
+    # p.print_shape()
+    # p.print_array()
 # test_main()

@@ -6,9 +6,10 @@ import torch.optim as optim
 
 import iispt_dataset
 import iispt_net
+import config
 
-NO_EPOCHS = 2
-BATCH_SIZE = 100
+NO_EPOCHS = 1
+BATCH_SIZE = 10
 NO_WORKERS = 4
 
 def main():
@@ -50,5 +51,9 @@ def main():
             print("Epoch [{}] example [{}] Running loss [{}]".format(epoch, i * BATCH_SIZE, running_loss))
 
     print("Finished training")
+
+    net = net.cpu()
+    torch.save(net, config.model_path)
+    print("Model saved: {}".format(config.model_path))
 
 main()
