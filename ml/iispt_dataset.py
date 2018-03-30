@@ -65,7 +65,7 @@ def generate_pfm_filenames(dirname, x, y):
     return results
 
 # =============================================================================
-class IISPTDataset():
+class IISPTDataset(Dataset):
 
     # -------------------------------------------------------------------------
     def __init__(self, data_list):
@@ -224,6 +224,8 @@ def load_set_directory(set_dir_name, set_dir_path, results_dict, validation_prob
     print("Added {} examples in {}".format(added_current, set_dir_path))
 
 # -----------------------------------------------------------------------------
+# Returns a tuple (training_dataset, validation_dataset)
+# Each dataset is a Pytorch Dataset
 def load_dataset(root_directory, validation_probability):
     # Key: setname_x_y
     # Value: {directory, x, y, log_normalization, sqrt_normalization, validation}
@@ -255,5 +257,4 @@ def load_dataset(root_directory, validation_probability):
 def main_test():
     dt, dv = load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset", 0.1)
     print("Loaded {} + {} examples".format(dt.__len__(), dv.__len__()))
-
-main_test()
+    print(dv.__getitem__(0))
