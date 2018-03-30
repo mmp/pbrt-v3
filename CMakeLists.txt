@@ -346,6 +346,11 @@ ADD_SUBDIRECTORY(src/ext/ptex)
 SET_PROPERTY(TARGET Ptex_static PROPERTY FOLDER "dependencies")
 INCLUDE_DIRECTORIES ( src/ext/ptex/src/ptex )
 
+###############################################################################
+# rapidjson
+
+INCLUDE_DIRECTORIES ( src/ext/rapidjson )
+
 ###########################################################################
 # On to pbrt...
 

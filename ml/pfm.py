@@ -18,15 +18,16 @@ class NormalizeTransform:
         self.max_val = max_val
     
     def __call__(self, x):
-        y = x - self.min_val
-        new_max = self.max_val - self.min_val
-        y = y / new_max
-        if y < 0.0:
-            return 0.0
-        elif y > 1.0:
+        mid = (self.max_val + self.min_val) / 2.0
+        r = self.max_val - mid
+        x = x - mid
+        x = x / r
+        if x < -1.0:
+            return -1.0
+        elif x > 1.0:
             return 1.0
         else:
-            return y
+            return x
 
 # -----------------------------------------------------------------------------
 class LogTransform:
@@ -76,7 +77,7 @@ class PfmImage:
     
     # -------------------------------------------------------------------------
     # Given min and max vals in the original range,
-    # Remaps everything into the 0-1 range
+    # Remaps everything into the [-1, +1] range
     # And clips any values that stay outside
     def normalize(self, min_val, max_val):
         t = NormalizeTransform(min_val, max_val)
