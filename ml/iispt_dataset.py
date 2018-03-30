@@ -12,6 +12,9 @@
 # Each set contains a train.json file:
 # {normalization_intensity, normalization_distance}
 # That give the normalization values
+# Optional keys:
+# {validation_only} - boolean - declares an entire directory
+# to be used only for validation.
 #
 # Dataset files are named like:
 # type_x_y.pfm
@@ -36,6 +39,7 @@ import os
 import json
 import torch
 import numpy
+import random
 from torch.utils.data import Dataset, DataLoader
 
 import pfm
@@ -160,7 +164,7 @@ def check_siblings_exist(set_dir_path, x, y):
 
 # -----------------------------------------------------------------------------
 # (private)
-def load_set_directory(set_dir_name, set_dir_path, results_dict):
+def load_set_directory(set_dir_name, set_dir_path, results_dict, validation_probability):
     # Info
     print("Loading set directory {}".format(set_dir_path))
 
@@ -174,6 +178,9 @@ def load_set_directory(set_dir_name, set_dir_path, results_dict):
     json_file.close()
     normalization_intensity = train_info["normalization_intensity"]
     normalization_distance = train_info["normalization_distance"]
+    validation_only = False
+    if "validation_only" in train_info:
+        validation_only = train_info["validation_only"]
 
     # Iterate through all the files
     set_content = os.listdir(set_dir_path)
@@ -204,15 +211,22 @@ def load_set_directory(set_dir_name, set_dir_path, results_dict):
         value["y"] = y
         value["log_normalization"] = normalization_intensity
         value["sqrt_normalization"] = normalization_distance
+        # validation key
+        if validation_only:
+            value["validation"] = True
+        elif random.random() < validation_probability:
+            value["validation"] = True
+        else:
+            value["validation"] = False
         results_dict[k] = value
         added_current += 1
     
     print("Added {} examples in {}".format(added_current, set_dir_path))
 
 # -----------------------------------------------------------------------------
-def load_dataset(root_directory):
+def load_dataset(root_directory, validation_probability):
     # Key: setname_x_y
-    # Value: {directory, x, y, log_normalization, sqrt_normalization}
+    # Value: {directory, x, y, log_normalization, sqrt_normalization, validation}
     results_dict = {}
 
     # List directory contents
@@ -221,21 +235,25 @@ def load_dataset(root_directory):
     # Explore each directory
     for set_dir in root_content:
         set_dir_abs = os.path.abspath(os.path.join(root_directory, set_dir))
-        load_set_directory(set_dir, set_dir_abs, results_dict)
+        load_set_directory(set_dir, set_dir_abs, results_dict, validation_probability)
     
     # Create the list of results
-    results = []
+    results_train = []
+    results_validation = []
     for k in results_dict:
         v = results_dict[k]
-        results.append(v)
+        if v["validation"]:
+            results_validation.append(v)
+        else:
+            results_train.append(v)
     
     # Create Dataset object
-    return IISPTDataset(results)
+    return (IISPTDataset(results_train), IISPTDataset(results_validation))
 
 # =============================================================================
 
 def main_test():
-    d = load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset")
-    print("Loaded {} examples".format(d.__len__()))
+    dt, dv = load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset", 0.1)
+    print("Loaded {} + {} examples".format(dt.__len__(), dv.__len__()))
 
 main_test()
