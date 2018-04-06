@@ -111,7 +111,7 @@ class IISPTDataset(Dataset):
         n_pfm.normalize(-1.0, 1.0)
 
         # Transform Z
-        z_pfm.normalize_sqrt(sqrt_normalization)
+        z_pfm.normalize_sqrt_gamma(sqrt_normalization, GAMMA_VALUE)
 
         # Convert from numpy to tensors and create results
         result = {}

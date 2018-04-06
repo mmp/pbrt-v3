@@ -33,8 +33,18 @@ class IISPTNet(torch.nn.Module):
             nn.LeakyReLU(0.2)
         )
 
+        self.hidden5 = nn.Sequential(
+            nn.Linear(3300, 2200),
+            nn.LeakyReLU(0.2)
+        )
+
+        self.hidden6 = nn.Sequential(
+            nn.Linear(2200, 1800),
+            nn.LeakyReLU(0.2)
+        )
+
         self.out1 = nn.Sequential(
-            nn.Linear(3300, 3072),
+            nn.Linear(1800, 3072),
             nn.LeakyReLU(0.2)
         )
     
@@ -44,5 +54,7 @@ class IISPTNet(torch.nn.Module):
         x = self.hidden2(x)
         x = self.hidden3(x)
         x = self.hidden4(x)
+        x = self.hidden5(x)
+        x = self.hidden6(x)
         x = self.out1(x)
         return x
