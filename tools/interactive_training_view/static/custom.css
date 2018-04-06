@@ -1,0 +1,5 @@
+.j_image {
+    width: 40vw;
+    height: 40vw;
+    image-rendering: pixelated;
+}
