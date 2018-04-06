@@ -26,6 +26,11 @@ mainApp.controller("main_controller", function($scope) {
     priv.handle_ws_message = function(msgobj) {
         console.info("Received a ws message");
         console.info(msgobj);
+        var t = msgobj._t;
+        if (t == "task_complete") {
+            priv.image_refresh_left();
+            priv.image_refresh_right();
+        }
     };
 
     priv.send = function(msgobj) {
