@@ -9,31 +9,28 @@ class IISPTNet(torch.nn.Module):
         super(IISPTNet, self).__init__()
 
         self.hidden0 = nn.Sequential(
-            nn.Linear(7168, 3000),
-            nn.Sigmoid(),
-            nn.Dropout(0.1)
+            nn.Linear(7168, 5000),
+            nn.Sigmoid()
         )
 
         self.hidden1 = nn.Sequential(
-            nn.Linear(3000, 2800),
-            nn.Tanh(),
-            nn.Dropout(0.1)
+            nn.Linear(5000, 4000),
+            nn.LeakyReLU(0.2)
         )
 
         self.hidden2 = nn.Sequential(
-            nn.Linear(2800, 2500),
-            nn.Tanh(),
-            nn.Dropout(0.1)
+            nn.Linear(4000, 3000),
+            nn.LeakyReLU(0.2)
         )
 
         self.hidden3 = nn.Sequential(
-            nn.Linear(2500, 2400),
-            nn.Tanh(),
+            nn.Linear(3000, 1500),
+            nn.LeakyReLU(0.2),
             nn.Dropout(0.1)
         )
 
         self.out = nn.Sequential(
-            nn.Linear(2400, 3072),
+            nn.Linear(1500, 3072),
             nn.Tanh()
         )
     

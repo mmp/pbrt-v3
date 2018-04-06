@@ -11,6 +11,7 @@ import math
 # Transform callables
 
 # -----------------------------------------------------------------------------
+# Normalization into [-1,+1] range
 class NormalizeTransform:
 
     def __init__(self, min_val, max_val):
@@ -24,6 +25,25 @@ class NormalizeTransform:
         x = x / r
         if x < -1.0:
             return -1.0
+        elif x > 1.0:
+            return 1.0
+        else:
+            return x
+
+# -----------------------------------------------------------------------------
+# Normalization into [0,+1] range
+class NormalizePositiveTransform:
+
+    def __init__(self, min_val, max_val):
+        self.min_val = min_val
+        self.max_val = max_val
+
+    def __call__(self, x):
+        d = self.max_val - self.min_val
+        x = x - self.min_val
+        x = x / d
+        if x < 0.0:
+            return 0.0
         elif x > 1.0:
             return 1.0
         else:
@@ -48,6 +68,15 @@ class SqrtTransform:
         if x < 0.0:
             return 0.0
         return math.sqrt(x)
+
+# -----------------------------------------------------------------------------
+class GammaTransform:
+
+    def __init__(self, gm):
+        self.exponent = 1.0 / gm
+    
+    def __call__(self, x):
+        return x ** self.exponent
 
 # =============================================================================
 # Class definitions
@@ -90,6 +119,15 @@ class PfmImage:
         self.map(LogTransform())
         self.normalize(0.0, max_value)
     
+    # -------------------------------------------------------------------------
+    # Applies a natural logarithm followed by a gamma curve
+    # to boost the smaller values
+    # Normalizes according to the given max_value
+    def normalize_log_gamma(self, max_value, gamma):
+        self.map(LogTransform())
+        self.map(NormalizePositiveTransform(0.0, max_value))
+        self.map(GammaTransform(gamma))
+
     # -------------------------------------------------------------------------
     # 1 - Apply the square root
     # 2 - Normalize according to the max value. Min value is -1

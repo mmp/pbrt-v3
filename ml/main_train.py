@@ -8,8 +8,8 @@ import iispt_dataset
 import iispt_net
 import config
 
-NO_EPOCHS = 20
-BATCH_SIZE = 50
+NO_EPOCHS = 50
+BATCH_SIZE = 100
 NO_WORKERS = 2
 
 def main():
@@ -21,8 +21,11 @@ def main():
 
     net = iispt_net.IISPTNet().cuda()
 
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
     optimizer = optim.Adam(net.parameters(), lr=0.00003)
+
+    epoch_loss = []
+    running_loss = 0.0
 
     for epoch in range(NO_EPOCHS):
 
@@ -49,8 +52,13 @@ def main():
             # Print statistics
             running_loss = loss.data[0]
             print("Epoch [{}] example [{}] Running loss [{}]".format(epoch, i * BATCH_SIZE, running_loss))
+        
+        epoch_loss.append(running_loss)
 
     print("Finished training")
+
+    for i in range(len(epoch_loss)):
+        print("Epoch {} Loss {}".format(i, epoch_loss[i]))
 
     net = net.cpu()
     torch.save(net, config.model_path)

@@ -52,6 +52,7 @@ warnings.filterwarnings("ignore")
 # Constants
 
 TYPE_PREFIXES = ["p", "d", "n", "z"]
+GAMMA_VALUE = 2.2
 
 # =============================================================================
 # Utilities
@@ -101,10 +102,10 @@ class IISPTDataset(Dataset):
         z_pfm = pfm.load(z_name)
 
         # Transform P
-        p_pfm.normalize_log(log_normalization)
+        p_pfm.normalize_log_gamma(log_normalization, GAMMA_VALUE)
 
         # Transform D
-        d_pfm.normalize_log(log_normalization)
+        d_pfm.normalize_log_gamma(log_normalization, GAMMA_VALUE)
 
         # Transform N
         n_pfm.normalize(-1.0, 1.0)
