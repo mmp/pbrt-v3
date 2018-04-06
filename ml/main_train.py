@@ -8,9 +8,10 @@ import iispt_dataset
 import iispt_net
 import config
 
-NO_EPOCHS = 50
+NO_EPOCHS = 100
 BATCH_SIZE = 100
 NO_WORKERS = 2
+LEARNING_RATE = 0.00003
 
 def main():
 
@@ -22,7 +23,7 @@ def main():
     net = iispt_net.IISPTNet().cuda()
 
     criterion = nn.L1Loss()
-    optimizer = optim.Adam(net.parameters(), lr=0.00003)
+    optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
 
     epoch_loss = []
     running_loss = 0.0

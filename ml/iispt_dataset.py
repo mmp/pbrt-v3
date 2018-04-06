@@ -52,7 +52,7 @@ warnings.filterwarnings("ignore")
 # Constants
 
 TYPE_PREFIXES = ["p", "d", "n", "z"]
-GAMMA_VALUE = 2.2
+GAMMA_VALUE = 1.2
 
 # =============================================================================
 # Utilities

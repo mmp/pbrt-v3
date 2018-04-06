@@ -135,6 +135,15 @@ class PfmImage:
     def normalize_sqrt(self, max_value):
         self.map(SqrtTransform())
         self.normalize(-1.0, max_value)
+
+    # -------------------------------------------------------------------------
+    # 1 - Apply the square root
+    # 2 - Normalize according to max value into [0,1]
+    # 3 - Apply gamma correction
+    def normalize_sqrt_gamma(self, max_value, gamma):
+        self.map(SqrtTransform())
+        self.map(NormalizePositiveTransform(0.0, max_value))
+        self.map(GammaTransform(gamma))
     
     # -------------------------------------------------------------------------
     # Write out to .pfm file
