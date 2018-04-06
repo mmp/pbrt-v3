@@ -8,7 +8,7 @@ import iispt_dataset
 import iispt_net
 import config
 
-NO_EPOCHS = 100
+NO_EPOCHS = 2
 BATCH_SIZE = 100
 NO_WORKERS = 2
 LEARNING_RATE = 0.00003
