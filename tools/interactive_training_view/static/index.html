@@ -7,10 +7,28 @@
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular.min.js"></script>
         <!-- Async -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/async/2.6.0/async.min.js"></script>
+        <!-- Controllers -->
+        <script src="main.js"></script>
     </head>
-    <body>
+    <body ng-app="mainApp" ng-controller="main_controller">
         <div class="w3-container">
             <h3>Interactive Verification</h3>
+        </div>
+        <div class="w3-container">
+            <div class="w3-col s3">
+                <a href="#" class="w3-button w3-black" ng-click="button_load()">Load</a>
+            </div>
+            <div class="w3-col s3">
+                <a href="#" class="w3-button w3-black" ng-click="button_next()">Next</a>
+            </div>
+        </div>
+        <div class="w3-container">
+            <div class="w3-col s6">
+                <img src="blank.png" id="main_image_left">
+            </div>
+            <div class="w3-col s6">
+                <img src="blank.png" id="main_image_right">
+            </div>
         </div>
     </body>
 </html> 
