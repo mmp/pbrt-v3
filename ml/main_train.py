@@ -1,3 +1,5 @@
+import time
+
 import torch
 from torch import nn, optim
 from torch.autograd.variable import Variable
@@ -8,10 +10,18 @@ import iispt_dataset
 import iispt_net
 import config
 
-NO_EPOCHS = 50
+TRAINING_TIME_MINUTES = 240.0 # 4 hours
 BATCH_SIZE = 100
-NO_WORKERS = 2
+NO_WORKERS = 4
 LEARNING_RATE = 0.0001
+
+start_time = time.time()
+
+def minutes_elapsed():
+    current_seconds = time.time()
+    elapsed_seconds = current_seconds - start_time
+    elapsed_minutes = elapsed_seconds / 60.0
+    return elapsed_minutes
 
 def main():
 
@@ -28,7 +38,14 @@ def main():
     epoch_loss = []
     running_loss = 0.0
 
-    for epoch in range(NO_EPOCHS):
+    epoch = 0
+
+    while True:
+
+        elapsed_minutes = minutes_elapsed()
+        print("Training: elapsed {} minutes".format(elapsed_minutes))
+        if elapsed_minutes > TRAINING_TIME_MINUTES:
+            break
 
         # each i is a batch
         for i, data in enumerate(trainloader, 0):
