@@ -48,6 +48,9 @@ import pfm
 import warnings
 warnings.filterwarnings("ignore")
 
+# Initialize random fixed seed
+random.seed(0)
+
 # =============================================================================
 # Constants
 
