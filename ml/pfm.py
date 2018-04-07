@@ -11,6 +11,7 @@ import math
 # Transform callables
 
 # -----------------------------------------------------------------------------
+# Normalization into [-1,+1] range
 class NormalizeTransform:
 
     def __init__(self, min_val, max_val):
@@ -24,6 +25,25 @@ class NormalizeTransform:
         x = x / r
         if x < -1.0:
             return -1.0
+        elif x > 1.0:
+            return 1.0
+        else:
+            return x
+
+# -----------------------------------------------------------------------------
+# Normalization into [0,+1] range
+class NormalizePositiveTransform:
+
+    def __init__(self, min_val, max_val):
+        self.min_val = min_val
+        self.max_val = max_val
+
+    def __call__(self, x):
+        d = self.max_val - self.min_val
+        x = x - self.min_val
+        x = x / d
+        if x < 0.0:
+            return 0.0
         elif x > 1.0:
             return 1.0
         else:
@@ -48,6 +68,15 @@ class SqrtTransform:
         if x < 0.0:
             return 0.0
         return math.sqrt(x)
+
+# -----------------------------------------------------------------------------
+class GammaTransform:
+
+    def __init__(self, gm):
+        self.exponent = 1.0 / gm
+    
+    def __call__(self, x):
+        return x ** self.exponent
 
 # =============================================================================
 # Class definitions
@@ -91,12 +120,54 @@ class PfmImage:
         self.normalize(0.0, max_value)
     
     # -------------------------------------------------------------------------
+    # Applies a natural logarithm followed by a gamma curve
+    # to boost the smaller values
+    # Normalizes according to the given max_value
+    def normalize_log_gamma(self, max_value, gamma):
+        self.map(LogTransform())
+        self.map(NormalizePositiveTransform(0.0, max_value))
+        self.map(GammaTransform(gamma))
+
+    # -------------------------------------------------------------------------
     # 1 - Apply the square root
     # 2 - Normalize according to the max value. Min value is -1
     #     for the pixels that have no intersection
     def normalize_sqrt(self, max_value):
         self.map(SqrtTransform())
         self.normalize(-1.0, max_value)
+
+    # -------------------------------------------------------------------------
+    # 1 - Apply the square root
+    # 2 - Normalize according to max value into [0,1]
+    # 3 - Apply gamma correction
+    def normalize_sqrt_gamma(self, max_value, gamma):
+        self.map(SqrtTransform())
+        self.map(NormalizePositiveTransform(0.0, max_value))
+        self.map(GammaTransform(gamma))
+    
+    # -------------------------------------------------------------------------
+    # Write out to .pfm file
+    def save_pfm(self, out_path):
+        print("Writing {}".format(out_path))
+        out_file = open(out_path, "wb")
+
+        # Write identifier line
+        out_file.write(b"PF\n")
+
+        # Write dimensions line
+        width, height, channels = self.data.shape
+        out_file.write("{} {}\n".format(width, height).encode())
+
+        # Write scale factor and endianness
+        out_file.write(b"1\n")
+
+        # Write pixel values
+        for y in range(height):
+            for x in range(width):
+                for c in range(channels):
+                    write_float_32(out_file, self.data[y, x, c])
+
+        out_file.close()
 
 # =============================================================================
 # Utilities
@@ -114,6 +185,10 @@ def read_line(f):
 
 def read_float_32(f):
     return struct.unpack('f', f.read(4))[0]
+
+def write_float_32(f, v):
+    data = struct.pack('f', v)
+    f.write(data)
 
 def load_pixel(f, y, x, channels, data):
     for p in range(channels):
@@ -166,23 +241,31 @@ def load(file_path):
     return PfmImage(data)
 
 # =============================================================================
+# Load from flattened numpy array
+
+def load_from_flat_numpy(narray, width=32, height=32, channels=3):
+    shape = (height, width, channels)
+    narray = narray.reshape(shape)
+    return PfmImage(narray)
+
+# =============================================================================
 # Quick test
 
 def test_main():
     p = load("/home/gj/git/pbrt-v3-IISPT-dataset/barcelona_pavilion_day/p_160_420.pfm")
     p.print_shape()
     p.print_array()
+    p.save_pfm("test.pfm")
 
-    p.normalize(0.0, 100.0)
-    p.print_shape()
-    p.print_array()
+    # p.normalize(0.0, 100.0)
+    # p.print_shape()
+    # p.print_array()
 
-    p.normalize_log(2.0)
-    p.print_shape()
-    p.print_array()
+    # p.normalize_log(2.0)
+    # p.print_shape()
+    # p.print_array()
 
-    p.normalize_sqrt(2.0)
-    p.print_shape()
-    p.print_array()
-
+    # p.normalize_sqrt(2.0)
+    # p.print_shape()
+    # p.print_array()
 # test_main()

@@ -658,14 +658,33 @@ var readPfm = function(file_path, callback) {
 // Script ---------------------------------------------------------------------
 
 var main = function() {
-    if (argv_length() != 1) {
-        console.info("Expected 1 argument: input file");
+
+    var positionals = [];
+    var output_file_path = null;
+    var batch_mode = false;
+    for (var i = 0; i < argv_length(); i++) {
+        var an_arg = argv_get(i);
+        if (an_arg.startsWith("--")) {
+            var s = an_arg.split("=");
+            var key = s[0];
+            var val = s[1];
+            if (key == "--out") {
+                output_file_path = val;
+                batch_mode = true;
+                console.info("Forcing output to " + output_file_path);
+            }
+        } else {
+            positionals.push(an_arg);
+        }
+    }
+
+    if (positionals.length != 1) {
+        console.info("Usage: pfm <input.pfm> [--out=path.ppm]");
         process.exit();
     }
 
-    var input_file_path = argv_get(0);
+    var input_file_path = positionals[0];
     var pfm_image;
-    var output_file_path;
 
     async.waterfall([
 
@@ -684,6 +703,12 @@ var main = function() {
 
         // Generate output filename
         (callback) => {
+
+            if (output_file_path) {
+                // Output path was provided on command line
+                callback();
+                return;
+            }
 
             var MAX_ATTEMPTS = 25;
             var attempt = 0;
@@ -735,6 +760,12 @@ var main = function() {
 
         // Open viewer
         (callback) => {
+            if (batch_mode) {
+                // Do not open viewer in batch mode
+                callback();
+                return;
+            }
+
             var proc = spawn("ristretto", [output_file_path]);
             proc.on("close", function(code, signal) {
                 console.info("Ristretto exited with ["+code+"] ["+signal+"]");
@@ -744,6 +775,12 @@ var main = function() {
 
         // Delete the file
         (callback) => {
+            if (batch_mode) {
+                // Do not delete in batch mode
+                callback();
+                return;
+            }
+
             fs.unlink(output_file_path, (err) => {
                 callback(err);
             });
