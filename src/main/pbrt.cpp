@@ -99,6 +99,23 @@ Reformatting options:
 
 #include "tools/childprocess.hpp"
 
+static void test_main2() {
+    std::cerr << "Running test main 2" << std::endl;
+
+    char *const argv[] = {"python3", "-u", "/home/gj/git/pbrt-v3-IISPT/tools/test_python_child_bin.py", NULL};
+    ChildProcess cp (std::string("python3"), argv);
+    cp.write_float32(595.0);
+    Float fresult;
+    int status = cp.read_float32(&fresult);
+    if (status) {
+        std::cerr << "Error when reading the float" << std::endl;
+    } else {
+        std::cerr << "Got a float: " << fresult << std::endl;
+    }
+
+    exit(0);
+}
+
 static void test_main1() {
     std::cerr << "Running test main 1" << std::endl;
 
@@ -174,7 +191,7 @@ static void test_main0() {
 // ============================================================================
 // Main
 int main(int argc, char *argv[]) {
-    test_main1();
+    test_main2();
 
     google::InitGoogleLogging(argv[0]);
     FLAGS_stderrthreshold = 1; // Warning and above.

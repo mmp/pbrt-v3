@@ -75,6 +75,25 @@ public: // ====================================================================
         write(stdin_pipe[1], buffer, 1);
     }
 
+    // ------------------------------------------------------------------------
+    // Read float32
+    // Returns 0 if successful
+    // Returns 1 if error
+    int read_float32(float* buffer) {
+        ssize_t count = read(stdout_pipe[0], buffer, 4);
+        if (count != 4) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Write float32
+    void write_float32(float val) {
+        write(stdin_pipe[1], &val, 4);
+    }
+
 };
 
 }
