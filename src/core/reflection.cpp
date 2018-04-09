@@ -722,7 +722,7 @@ Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
             bxdf = bxdfs[i];
             break;
         }
-    CHECK_NOTNULL(bxdf);
+    CHECK(bxdf != nullptr);
     VLOG(2) << "BSDF::Sample_f chose comp = " << comp << " / matching = " <<
         matchingComps << ", bxdf: " << bxdf->ToString();
 

@@ -142,7 +142,7 @@ T PtexTexture<T>::Evaluate(const SurfaceInteraction &si) const {
     ++nLookups;
     Ptex::String error;
     Ptex::PtexTexture *texture = cache->get(filename.c_str(), error);
-    CHECK_NOTNULL(texture);
+    CHECK(texture != nullptr);
     // TODO: make the filter an option?
     Ptex::PtexFilter::Options opts(Ptex::PtexFilter::FilterType::f_bspline);
     Ptex::PtexFilter *filter = Ptex::PtexFilter::getFilter(texture, opts);
