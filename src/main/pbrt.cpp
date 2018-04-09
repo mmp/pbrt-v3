@@ -97,7 +97,25 @@ Reformatting options:
 #include <chrono>
 #include <thread>
 
-static void test_main() {
+#include "tools/childprocess.hpp"
+
+static void test_main1() {
+    std::cerr << "Running test main 1" << std::endl;
+
+    char *const argv[] = {"python3", "-u", "/home/gj/git/pbrt-v3-IISPT/tools/test_python_child.py", NULL};
+    ChildProcess cp (std::string("python3"), argv);
+    cp.write_char('b');
+    cp.write_char('\n');
+    while (1) {
+        char r = cp.read_char();
+        if (r == '\0') {
+            exit(0);
+        }
+        std::cerr << "["<< r <<"]" << std::endl;
+    }
+}
+
+static void test_main0() {
     std::cerr << "Running test main" << std::endl;
 
     pid_t pid;
@@ -156,7 +174,7 @@ static void test_main() {
 // ============================================================================
 // Main
 int main(int argc, char *argv[]) {
-    test_main();
+    test_main1();
 
     google::InitGoogleLogging(argv[0]);
     FLAGS_stderrthreshold = 1; // Warning and above.
