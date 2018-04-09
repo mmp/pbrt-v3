@@ -113,6 +113,11 @@ static void test_main2() {
         std::cerr << "Got a float: " << fresult << std::endl;
     }
 
+    status = cp.read_float32(&fresult);
+    if (status) {
+        std::cerr << "Reading got nothing" << std::endl;
+    }
+
     exit(0);
 }
 
