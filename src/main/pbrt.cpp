@@ -94,14 +94,18 @@ Reformatting options:
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <chrono>
+#include <thread>
 
 static void test_main() {
     std::cerr << "Running test main" << std::endl;
 
     pid_t pid;
-    int fd[2];
+    int stdout_pipe[2];
+    int stdin_pipe[2];
 
-    pipe(fd);
+    pipe(stdout_pipe);
+    pipe(stdin_pipe);
     pid = fork();
 
     if (pid == -1) {
@@ -110,11 +114,14 @@ static void test_main() {
     } if (pid==0) {
         // Child process
 
-        dup2(fd[1], STDOUT_FILENO);
-        close(fd[0]);
-        close(fd[1]);
+        dup2(stdout_pipe[1], STDOUT_FILENO); // Subprocess receives write end of stdout pipe
+        dup2(stdin_pipe[0], STDIN_FILENO); // Subprocess receives read end of stdin pipe
+        close(stdout_pipe[0]);
+        close(stdout_pipe[1]);
+        close(stdin_pipe[0]);
+        close(stdin_pipe[1]);
 
-        execlp("ls", "ls", "-lha", NULL); // Should never return in case of success
+        execlp("python3", "python3", "-u", "/home/gj/git/pbrt-v3-IISPT/tools/test_python_child.py", NULL); // Should never return in case of success
 
         std::cerr << "Failed execlp()" << std::endl;
 
@@ -126,19 +133,21 @@ static void test_main() {
 
     int buffsize = 100;
     char buffer[buffsize];
+    write(stdin_pipe[1], "b\n", 2);
     while (1) {
         std::cerr << "Reading..." << std::endl;
-        ssize_t count = read(fd[0], buffer, sizeof(buffer));
+        ssize_t count = read(stdout_pipe[0], buffer, sizeof(buffer)); // Read from stdout's read end
         std::cerr << "Read count is " << count << std::endl;
         if (count <= 0) {
             std::cerr << "EOF" << std::endl;
             break;
-        } else if (count < buffsize) {
-            std::cerr << "from child, last: " << buffer << std::endl;
-            break;
         } else {
-            std::cerr << "From child: " << buffer << std::endl;
+            std::cerr << "From child: [" << buffer << "]" << std::endl;
         }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cerr << "Parent: writing a" << std::endl;
+        write(stdin_pipe[1], "a\n", 2);
     }
 
     exit(0);
