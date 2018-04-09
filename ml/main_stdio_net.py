@@ -8,6 +8,8 @@ from torch.autograd.variable import Variable
 import numpy
 
 import config
+import iispt_transforms
+import iispt_dataset
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -34,11 +36,12 @@ def read_float_nparray(data, num):
     buff = sys.stdin.buffer.read(num * 4)
     floats = struct.unpack('{}f'.format(num), buff)
     for i in range(num):
-        data[num] = floats[num]
+        data[i] = floats[i]
 
 def read_float_raster_to_nparray(intensity_data):
-    read_float_nparray(data, intensity_data.shape[0])
+    read_float_nparray(intensity_data, intensity_data.shape[0])
 
+# Returns a flattened and processed numpy array
 def read_input():
     # Read intensity raster
     # intensity_data is a flattened array
@@ -54,9 +57,26 @@ def read_input():
     read_float_raster_to_nparray(normals_data)
 
     # Read intensity normalization
-
+    intensity_normalization = read_float()
 
     # Read distance normalization
+    distance_normalization = read_float()
+
+    print_stderr("Completed reading values")
+
+    # Transform intensity
+    intensity_data = numpy.vectorize(iispt_transforms.IntensitySequence(intensity_normalization, iispt_dataset.GAMMA_VALUE))(intensity_data)
+
+    # Transform normals
+    normals_data = numpy.vectorize(iispt_transforms.NormalizeTransform(-1.0, 1.0))(normals_data)
+
+    # Transform distance
+    distance_data = numpy.vectorize(iispt_transforms.DistanceSequence(distance_normalization, iispt_dataset.GAMMA_VALUE))(normals_data)
+
+    # Concatenate the arrays
+    concatenated = numpy.concatenate([intensity_data, normals_data, distance_data])
+
+    return concatenated
 
 # =============================================================================
 # Main
@@ -69,5 +89,6 @@ def main():
 
     # Read input from stdin
     input_data = read_input()
+    print_stderr("Got the input numpy array {}".format(input_data))
 
 main()

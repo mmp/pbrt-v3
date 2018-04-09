@@ -6,6 +6,8 @@ def read_float():
 
 fval = read_float()
 
+sys.stderr.write("CHILD STDERR\n")
+
 if fval < 10.0:
     sys.stdout.buffer.write(struct.pack('f', -101.5))
     sys.stdout.flush()
