@@ -10,9 +10,9 @@ import iispt_dataset
 import iispt_net
 import config
 
-TRAINING_TIME_MINUTES = 240.0 # 4 hours
+TRAINING_TIME_MINUTES = 240.0
 BATCH_SIZE = 100
-NO_WORKERS = 4
+NO_WORKERS = 2
 LEARNING_RATE = 0.0001
 
 start_time = time.time()

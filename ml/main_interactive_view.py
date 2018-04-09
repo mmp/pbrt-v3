@@ -25,11 +25,14 @@ def convert_image(pfm_path, output_path, png_path):
 def main():
 
     # Load dataset
-    trainset, testset = iispt_dataset.load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset", 0.0)
+    trainset, testset = iispt_dataset.load_dataset("/home/gj/git/pbrt-v3-IISPT-dataset", 0.1)
+
+    selected_set = testset
+    selected_set_len = testset.__len__()
 
     # Load model
     net = torch.load(config.model_path)
-    print_force("#LOADCOMPLETE")
+    print_force("#LOADCOMPLETE {}".format(selected_set_len))
 
 
     # Loop for console info
@@ -40,11 +43,11 @@ def main():
         idx = int(line)
         print_force("Requesting index {}".format(idx))
 
-        datum = trainset.get_datum(idx)
+        datum = selected_set.get_datum(idx)
         if datum is None:
             print_force("Out of range!")
             continue
-        item = trainset.__getitem__(idx)
+        item = selected_set.__getitem__(idx)
         item_input = item["t"]
         item_expected = item["p"]
 

@@ -109,7 +109,7 @@ priv.start_python_subprocess = function() {
     prc.proc = spawn("python3", [interactive_py_path]);
     prc.proc.stdout.on("line", (line) => {
         console.info("STDOUT: ["+ line +"]");
-        if (line.startsWith("Loaded")) {
+        if (line.startsWith("#LOADCOMPLETE")) {
             sp = line.split(" ");
             sp1 = sp[1];
             examples_count = parseInt(sp1);
