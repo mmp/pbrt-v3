@@ -57,6 +57,12 @@ command to also fetch the dependencies:
 ```bash
 $ git submodule update --init --recursive
 ```
+
+Use the `setup.sh` script to download additional dependencies such as Boost:
+```
+./setup.sh
+```
+
 pbrt uses [cmake](http://www.cmake.org/) for its build system.  On Linux
 and OS X, cmake is available via most package management systems.  For
 Windows, or to build it from source, see the [cmake downloads

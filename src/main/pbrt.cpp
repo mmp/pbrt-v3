@@ -84,8 +84,71 @@ Reformatting options:
 )");
 }
 
-// main program
+
+
+
+// ============================================================================
+// Test section
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+static void test_main() {
+    std::cerr << "Running test main" << std::endl;
+
+    pid_t pid;
+    int fd[2];
+
+    pipe(fd);
+    pid = fork();
+
+    if (pid == -1) {
+        std::cerr << "fork() failed" << std::endl;
+        exit(1);
+    } if (pid==0) {
+        // Child process
+
+        dup2(fd[1], STDOUT_FILENO);
+        close(fd[0]);
+        close(fd[1]);
+
+        execlp("ls", "ls", "-lha", NULL); // Should never return in case of success
+
+        std::cerr << "Failed execlp()" << std::endl;
+
+        exit(1);
+    }
+
+    // Original process
+    std::cerr << "This is the original process" << std::endl;
+
+    int buffsize = 100;
+    char buffer[buffsize];
+    while (1) {
+        std::cerr << "Reading..." << std::endl;
+        ssize_t count = read(fd[0], buffer, sizeof(buffer));
+        std::cerr << "Read count is " << count << std::endl;
+        if (count <= 0) {
+            std::cerr << "EOF" << std::endl;
+            break;
+        } else if (count < buffsize) {
+            std::cerr << "from child, last: " << buffer << std::endl;
+            break;
+        } else {
+            std::cerr << "From child: " << buffer << std::endl;
+        }
+    }
+
+    exit(0);
+}
+
+// ============================================================================
+// Main
 int main(int argc, char *argv[]) {
+    test_main();
+
     google::InitGoogleLogging(argv[0]);
     FLAGS_stderrthreshold = 1; // Warning and above.
 

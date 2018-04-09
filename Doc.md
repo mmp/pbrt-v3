@@ -1,5 +1,7 @@
 # ml/main_stdio_net.py
 
+Requires to run python with `-u` flag to turn on binary stdio.
+
 Expected stdin format:
 
 * Intensity raster: 32x32x3 = 3072 float (each 4 bytes)
