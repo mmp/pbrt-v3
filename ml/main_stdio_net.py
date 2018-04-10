@@ -79,6 +79,20 @@ def read_input():
     return concatenated
 
 # =============================================================================
+# Processing function
+def process_one(net):
+    # Read input from stdin
+    input_data = read_input()
+    print_stderr("Got the input numpy array {}".format(input_data))
+    torch_data = torch.from_numpy(input_data)
+    input_variable = Variable(torch_data)
+    output_variable = net(input_variable)
+    output_data = output_variable.data
+    print_stderr("Got the output data from network")
+    # TODO inverse transforms
+    # TODO output to stdout
+
+# =============================================================================
 # Main
 
 def main():
@@ -87,8 +101,7 @@ def main():
     net = torch.load(config.model_path)
     print_stderr("Model loaded")
 
-    # Read input from stdin
-    input_data = read_input()
-    print_stderr("Got the input numpy array {}".format(input_data))
+    while True:
+        process_one(net)
 
 main()

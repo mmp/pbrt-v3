@@ -162,7 +162,8 @@ void Film::AddSplat(const Point2f &p, Spectrum v) {
     for (int i = 0; i < 3; ++i) pixel.splatXYZ[i].Add(xyz[i]);
 }
 
-void Film::WriteImage(Float splatScale) {
+// ============================================================================
+std::unique_ptr<Float[]> Film::to_rgb_array(Float splatScale) {
     // Convert image to RGB and compute final pixel values
     LOG(INFO) <<
         "Converting image to RGB and computing final weighted pixel values";
@@ -199,6 +200,12 @@ void Film::WriteImage(Float splatScale) {
         rgb[3 * offset + 2] *= scale;
         ++offset;
     }
+    return rgb;
+}
+
+// ============================================================================
+void Film::WriteImage(Float splatScale) {
+    std::unique_ptr<Float[]> rgb = to_rgb_array(splatScale);
 
     // Write RGB image
     LOG(INFO) << "Writing image " << filename << " with bounds " <<
@@ -206,6 +213,27 @@ void Film::WriteImage(Float splatScale) {
     pbrt::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution);
 }
 
+// ============================================================================
+std::shared_ptr<IntensityFilm> Film::to_intensity_film() {
+    std::unique_ptr<Float[]> rgb = to_rgb_array(1.0);
+    int width = croppedPixelBounds.Diagonal().x;
+    int height = croppedPixelBounds.Diagonal().y;
+    std::shared_ptr<IntensityFilm> intensity_film (
+                new IntensityFilm(width, height)
+                );
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int offset = 3 * (y * width + x);
+            Float r = rgb[offset + 0];
+            Float g = rgb[offset + 1];
+            Float b = rgb[offset + 2];
+            intensity_film->set(x, y, r, g, b);
+        }
+    }
+    return intensity_film;
+}
+
+// ============================================================================
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
     int xres = params.FindOneInt("xresolution", 1280);
     int yres = params.FindOneInt("yresolution", 720);
