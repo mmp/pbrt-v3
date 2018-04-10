@@ -45,6 +45,7 @@
 #include "film/distancefilm.h"
 #include "film/normalfilm.h"
 #include "lightdistrib.h"
+#include "film/intensityfilm.h"
 
 namespace pbrt {
 
@@ -115,6 +116,8 @@ public:
                                           std::string distance_filename,
                                           std::string normal_filename
                                           );
+
+    std::shared_ptr<IntensityFilm> to_intensity_film(std::shared_ptr<Camera> camera);
 
 };
 

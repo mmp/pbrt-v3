@@ -542,6 +542,8 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
         // NOTE Passing a depth=0 here
         if (rayWeight > 0) {
             L = Li(ray, scene, *tile_sampler, arena, 0, pixel);
+            std::cerr << "Debug trace end. Shutting down..." << std::endl;
+            exit(0);
         }
 
         // Issue warning if unexpected radiance value returned
@@ -767,6 +769,8 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                              Point2i pixel
                              ) const {
 
+    std::cerr << "Debug trace start" << std::endl;
+
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L (0.f);
     Spectrum beta (1.f);
@@ -827,8 +831,15 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                         );
         });
     } else {
+        // Normal mode --------------------------------------------------------
         // Start rendering the hemispherical view
+        std::cerr << "Normal mode, starting hemispheric render" << std::endl;
         this->dintegrator->RenderView(scene, auxCamera);
+        std::cerr << "hemispheric render obtained. Getting intensity image" << std::endl;
+        std::shared_ptr<IntensityFilm> dcamera_intensity = dintegrator->to_intensity_film(auxCamera);
+        std::cerr << "Got the intensity image. Saving to /tmp/int.pfm" << std::endl;
+        dcamera_intensity->write(std::string("/tmp/int.pfm"));
+        std::cerr << "Saved." << std::endl;
     }
 
     if (PbrtOptions.referenceTiles > 0) {

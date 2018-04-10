@@ -196,7 +196,7 @@ static void test_main0() {
 // ============================================================================
 // Main
 int main(int argc, char *argv[]) {
-    test_main2();
+    // test_main2();
 
     google::InitGoogleLogging(argv[0]);
     FLAGS_stderrthreshold = 1; // Warning and above.

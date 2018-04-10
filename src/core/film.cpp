@@ -223,7 +223,8 @@ std::shared_ptr<IntensityFilm> Film::to_intensity_film() {
                 );
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            int offset = 3 * (y * width + x);
+            int yy = height - 1 - y; // Flip on Y to obtain the correctly oriented image
+            int offset = 3 * (yy * width + x);
             Float r = rgb[offset + 0];
             Float g = rgb[offset + 1];
             Float b = rgb[offset + 2];
