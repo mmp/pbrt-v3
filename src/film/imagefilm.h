@@ -73,6 +73,21 @@ public:
     // Write to PFM file
     void write(std::string filename);
 
+    // Get Width ==============================================================
+    int get_width() {
+        return width;
+    }
+
+    // Get Height =============================================================
+    int get_height() {
+        return height;
+    }
+
+    // Get Components =========================================================
+    int get_components() {
+        return num_components;
+    }
+
 };
 
 }; // namespace pbrt

@@ -34,6 +34,7 @@ def read_float():
 
 def read_float_nparray(data, num):
     buff = sys.stdin.buffer.read(num * 4)
+    print_stderr("read_float_nparray: read {} bytes".format(len(buff)))
     floats = struct.unpack('{}f'.format(num), buff)
     for i in range(num):
         data[i] = floats[i]
@@ -71,24 +72,32 @@ def read_input():
     normals_data = numpy.vectorize(iispt_transforms.NormalizeTransform(-1.0, 1.0))(normals_data)
 
     # Transform distance
-    distance_data = numpy.vectorize(iispt_transforms.DistanceSequence(distance_normalization, iispt_dataset.GAMMA_VALUE))(normals_data)
+    distance_data = numpy.vectorize(iispt_transforms.DistanceSequence(distance_normalization, iispt_dataset.GAMMA_VALUE))(distance_data)
 
     # Concatenate the arrays
     concatenated = numpy.concatenate([intensity_data, normals_data, distance_data])
+
+    print_stderr("Intensity shape {}".format(intensity_data.shape))
+    print_stderr("Normals shape {}".format(normals_data.shape))
+    print_stderr("Distance shape {}".format(distance_data.shape))
 
     return concatenated
 
 # =============================================================================
 # Processing function
 def process_one(net):
+    print_stderr("Waiting for input...")
     # Read input from stdin
     input_data = read_input()
     print_stderr("Got the input numpy array {}".format(input_data))
-    torch_data = torch.from_numpy(input_data)
+    print_stderr("Shape is {}".format(input_data.shape))
+    torch_data = torch.from_numpy(input_data).float()
     input_variable = Variable(torch_data)
     output_variable = net(input_variable)
     output_data = output_variable.data
     print_stderr("Got the output data from network")
+    print("Completed one")
+    sys.stdout.flush()
     # TODO inverse transforms
     # TODO output to stdout
 

@@ -95,6 +95,7 @@ public: // ====================================================================
     // ------------------------------------------------------------------------
     // Write float32
     void write_float32(float val) {
+        std::cerr << "childprocess.hpp: Writing " << val << std::endl;
         write(stdin_pipe[1], &val, 4);
     }
 

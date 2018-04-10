@@ -117,7 +117,11 @@ public:
                                           std::string normal_filename
                                           );
 
-    std::shared_ptr<IntensityFilm> to_intensity_film(std::shared_ptr<Camera> camera);
+    std::shared_ptr<IntensityFilm> get_intensity_film(std::shared_ptr<Camera> camera);
+
+    std::shared_ptr<NormalFilm> get_normal_film();
+
+    std::shared_ptr<DistanceFilm> get_distance_film();
 
 };
 

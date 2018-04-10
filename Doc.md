@@ -28,7 +28,7 @@ In the datasets:
 * z - uses custom exporter, Y is reversed
 * p - uses PBRT exporter, Y is reversed
 
-The ImageFilm object handles the Y direction in the same way as PBRT, maintaining consistency with the training dataset. Therefore once an ImageFilm object is obtained, there is no need to handle manual transformations. Normals and Distance keep their inverted axis, the neural network handles the axes automatically.
+The IntensityFilm object handles the Y direction in the same way as PBRT, maintaining consistency with the training dataset. Therefore once an IntensityFilm object is obtained, there is no need to handle manual transformations. Normals and Distance keep their inverted axis, the neural network handles the axes automatically.
 
 # Environment Variables
 

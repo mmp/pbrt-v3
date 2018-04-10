@@ -326,8 +326,20 @@ void IISPTdIntegrator::save_reference(std::shared_ptr<Camera> camera,
 
 // ============================================================================
 // To intensity film
-std::shared_ptr<IntensityFilm> IISPTdIntegrator::to_intensity_film(std::shared_ptr<Camera> camera) {
+std::shared_ptr<IntensityFilm> IISPTdIntegrator::get_intensity_film(std::shared_ptr<Camera> camera) {
     return camera->film->to_intensity_film();
+}
+
+// ============================================================================
+// Get normal film
+std::shared_ptr<NormalFilm> IISPTdIntegrator::get_normal_film() {
+    return normal_film;
+}
+
+// ============================================================================
+// Get distance film
+std::shared_ptr<DistanceFilm> IISPTdIntegrator::get_distance_film() {
+    return distance_film;
 }
 
 // Factory ====================================================================

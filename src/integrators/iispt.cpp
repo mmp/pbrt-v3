@@ -47,6 +47,7 @@
 #include "integrators/path.h"
 #include "integrators/volpath.h"
 #include "integrators/iispt_estimator_integrator.h"
+#include "integrators/iisptnnconnector.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -478,7 +479,7 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
 
     Preprocess(scene);
 
-    // Render image tiles in parallel
+    estimate_normalization(scene);
 
     // Create the auxiliary integrator for intersection-view
     this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(dcamera));
@@ -836,10 +837,29 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         std::cerr << "Normal mode, starting hemispheric render" << std::endl;
         this->dintegrator->RenderView(scene, auxCamera);
         std::cerr << "hemispheric render obtained. Getting intensity image" << std::endl;
-        std::shared_ptr<IntensityFilm> dcamera_intensity = dintegrator->to_intensity_film(auxCamera);
+        std::shared_ptr<IntensityFilm> dcamera_intensity = dintegrator->get_intensity_film(auxCamera);
         std::cerr << "Got the intensity image. Saving to /tmp/int.pfm" << std::endl;
         dcamera_intensity->write(std::string("/tmp/int.pfm"));
         std::cerr << "Saved." << std::endl;
+
+        // Get normals and distance films
+        std::shared_ptr<NormalFilm> dcamera_normal = dintegrator->get_normal_film();
+        std::shared_ptr<DistanceFilm> dcamera_distance = dintegrator->get_distance_film();
+
+        // Create the IISPT NN Connector
+        std::cerr << "Creating NN connector..." << std::endl;
+        std::unique_ptr<IisptNnConnector> nn_connector (
+                    new IisptNnConnector()
+                    );
+        std::cerr << "Calling communicate" << std::endl;
+        nn_connector->communicate(
+                    dcamera_intensity,
+                    dcamera_distance,
+                    dcamera_normal,
+                    max_intensity,
+                    max_distance
+                    );
+
     }
 
     if (PbrtOptions.referenceTiles > 0) {
@@ -869,7 +889,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     Vector3f wo = isect.wo;
     Float woLength = Dot(wo, wo);
     if (woLength == 0) {
-        fprintf(stderr, "Detected a 0 length wo");
+        fprintf(stderr, "iispt.cpp: Detected a 0 length wo");
         exit(1);
     }
 
