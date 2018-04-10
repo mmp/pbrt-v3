@@ -25,6 +25,10 @@ private:
     std::vector<std::vector<std::shared_ptr<PfmItem>>> rows;
 
 public:
+
+    // Make polymorphic
+    virtual ~ImageFilm() = default;
+
     // Constructor ============================================================
     ImageFilm(
             int width,

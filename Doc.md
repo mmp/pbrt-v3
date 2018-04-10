@@ -29,3 +29,7 @@ In the datasets:
 * p - uses PBRT exporter, Y is reversed
 
 The ImageFilm object handles the Y direction in the same way as PBRT, maintaining consistency with the training dataset. Therefore once an ImageFilm object is obtained, there is no need to handle manual transformations. Normals and Distance keep their inverted axis, the neural network handles the axes automatically.
+
+# Environment Variables
+
+`IISPT_STDIO_NET_PY_PATH` Location of `main_stdio_net.py` file which contains the python program to evaluate the neural network. Used by PBRT to start the child process. The environment variable is set up by the pbrt launcher.

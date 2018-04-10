@@ -82,6 +82,7 @@ public: // ====================================================================
     // Read float32
     // Returns 0 if successful
     // Returns 1 if error
+    // Result is written into <buffer>
     int read_float32(float* buffer) {
         ssize_t count = read(stdout_pipe[0], buffer, 4);
         if (count != 4) {

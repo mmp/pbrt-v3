@@ -126,6 +126,8 @@ Again, don't forget to recompile after making this change.
 
 # PBRT-IISPT options
 
+The use of `bin/pbrt` as launcher is recommended.
+
 ## Command line options
 
 ```
@@ -152,3 +154,7 @@ To enable the IISPT integrator, use `iispt` as integrator. For example
 Sampler "sobol" "integer pixelsamples" 1
 Integrator "iispt"
 ```
+
+## Additional info
+
+[Additional info and setup, including environment variables](Doc.md)

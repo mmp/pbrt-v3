@@ -17,6 +17,8 @@ private:
 
 public:
 
+    virtual ~NormalFilm() = default;
+
     // Constructor ============================================================
     NormalFilm(
             int width,

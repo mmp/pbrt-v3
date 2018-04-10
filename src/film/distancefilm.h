@@ -16,6 +16,8 @@ private:
 
 public:
 
+    virtual ~DistanceFilm() = default;
+
     // Constructor ============================================================
     DistanceFilm(
             int width,

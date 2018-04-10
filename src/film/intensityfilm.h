@@ -16,6 +16,8 @@ private:
 
 public:
 
+    virtual ~IntensityFilm() = default;
+
     // Constructor ============================================================
     IntensityFilm(
             int width,
