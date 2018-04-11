@@ -25,6 +25,7 @@ class NormalizeTransform:
 
 # -----------------------------------------------------------------------------
 # Normalization into [0,+1] range
+
 class NormalizePositiveTransform:
 
     def __init__(self, min_val, max_val):
@@ -42,7 +43,16 @@ class NormalizePositiveTransform:
         else:
             return x
 
+class NormalizeInvTransform:
+
+    def __init__(self, max_val):
+        self.max_val = max_val
+    
+    def __call__(self, x):
+        return x * max_val
+
 # -----------------------------------------------------------------------------
+
 class LogTransform:
 
     def __init__(self):
@@ -50,6 +60,14 @@ class LogTransform:
     
     def __call__(self, x):
         return math.log(x + 1.0)
+
+class LogInvTransform:
+
+    def __init__(self):
+        pass
+    
+    def __call__(self, y):
+        return math.exp(y) - 1.0
 
 # -----------------------------------------------------------------------------
 class SqrtTransform:
@@ -84,6 +102,7 @@ class Sequence:
 
 # -----------------------------------------------------------------------------
 # log, normalize+, gamma
+
 class IntensitySequence:
 
     def __init__(self, max_value, gamma):
@@ -91,6 +110,18 @@ class IntensitySequence:
         ts.append(LogTransform())
         ts.append(NormalizePositiveTransform(0.0, max_value))
         ts.append(GammaTransform(gamma))
+        self.seq = Sequence(ts)
+    
+    def __call__(self, x):
+        return self.seq(x)
+
+class IntensityInvSequence:
+
+    def __init__(self, max_value, gamma):
+        ts = []
+        ts.append(GammaTransform(1.0 / gamma))
+        ts.append(NormalizeInvTransform(max_value))
+        ts.append(LogInvTransform())
         self.seq = Sequence(ts)
     
     def __call__(self, x):

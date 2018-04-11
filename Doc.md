@@ -10,6 +10,11 @@ Expected stdin format:
 * Intensity normalization value: 1 float
 * Distance normalization value: 1 float
 
+Expected stdout format:
+
+* Intensity raster: 32x32x3 = 3072 float (each 4 bytes)
+* Magic characters sequence: 'x' '\n'
+
 # Saved images and PBRT internal image representation
 
 In PBRT, images coordiantes X and Y:
