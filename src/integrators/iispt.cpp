@@ -48,6 +48,7 @@
 #include "integrators/volpath.h"
 #include "integrators/iispt_estimator_integrator.h"
 #include "integrators/iisptnnconnector.h"
+#include "film/intensityfilm.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -852,12 +853,14 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                     new IisptNnConnector()
                     );
         std::cerr << "Calling communicate" << std::endl;
-        nn_connector->communicate(
+        int comm_status = -1;
+        std::shared_ptr<IntensityFilm> nn_film = nn_connector->communicate(
                     dcamera_intensity,
                     dcamera_distance,
                     dcamera_normal,
                     max_intensity,
-                    max_distance
+                    max_distance,
+                    comm_status
                     );
 
     }

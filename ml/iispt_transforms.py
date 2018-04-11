@@ -49,7 +49,7 @@ class NormalizeInvTransform:
         self.max_val = max_val
     
     def __call__(self, x):
-        return x * max_val
+        return x * self.max_val
 
 # -----------------------------------------------------------------------------
 
@@ -67,6 +67,8 @@ class LogInvTransform:
         pass
     
     def __call__(self, y):
+        if y < 0.0:
+            y = 0.0
         return math.exp(y) - 1.0
 
 # -----------------------------------------------------------------------------
@@ -87,6 +89,8 @@ class GammaTransform:
         self.exponent = 1.0 / gm
     
     def __call__(self, x):
+        if x < 0.0:
+            x = 0.0
         return x ** self.exponent
 
 # -----------------------------------------------------------------------------

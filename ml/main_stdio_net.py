@@ -39,8 +39,9 @@ def read_float():
     return struct.unpack('f', sys.stdin.buffer.read(4))[0]
 
 def write_float_array(xs):
-    data = struct.pack("{}f".format(len(xs)), xs)
-    sys.stdout.buffer.write(data)
+    for x in xs:
+        data = struct.pack("f", x)
+        sys.stdout.buffer.write(data)
     sys.stdout.flush()
 
 def write_char(c):
@@ -109,7 +110,7 @@ def read_input(prop):
 def inverse_transform(nparray, prop):
 
     # Inverse transform
-    nparray = numpy.vectorize(iispt_transforms.IntensityInvSequence(prop.int_norm, iispt_dataset.GAMMA_VALUE))
+    nparray = numpy.vectorize(iispt_transforms.IntensityInvSequence(prop.int_norm, iispt_dataset.GAMMA_VALUE))(nparray)
 
     return nparray
 
@@ -138,12 +139,16 @@ def process_one(net):
 
     # Run the network
     output_variable = net(input_variable)
+    print_stderr("output_variable type is {}".format(output_variable.data.type()))
     print_stderr("Got the output data from network")
 
     # Do inverse transform
+    output_numpy = output_variable.data.numpy()
+    print_stderr("output_numpy type is {}".format(output_numpy.dtype))
     output_transformed = inverse_transform(output_variable.data.numpy(), prop)
 
     # Output to STDOUT
+    output_to_stdout(output_transformed)
     print_stderr("Output to STDOUT complete")
 
 # =============================================================================

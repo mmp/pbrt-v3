@@ -21,6 +21,10 @@ private: // ===================================================================
 
     void pipe_image_film(std::shared_ptr<ImageFilm> film);
 
+    std::shared_ptr<IntensityFilm> read_image_film(
+            int &status
+            );
+
 public: // ====================================================================
 
     // Constructor
@@ -32,7 +36,8 @@ public: // ====================================================================
             std::shared_ptr<DistanceFilm> distance,
             std::shared_ptr<NormalFilm> normals,
             Float intensity_normalization,
-            Float distance_normalization
+            Float distance_normalization,
+            int &status
             );
 
 };

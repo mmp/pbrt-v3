@@ -71,14 +71,82 @@ void IisptNnConnector::pipe_image_film(std::shared_ptr<ImageFilm> film) {
 }
 
 // ============================================================================
+// Read image film
+
+// <status> becomes 1 if errors occurred
+//                  0 if all OK
+std::shared_ptr<IntensityFilm> IisptNnConnector::read_image_film(
+        int &status
+        )
+{
+    std::cerr << "iisptnnconnector.cpp: read_image_film" << std::endl;
+    int hemisize = PbrtOptions.iisptHemiSize;
+
+    std::shared_ptr<IntensityFilm> film (
+                new IntensityFilm(
+                    hemisize,
+                    hemisize
+                    )
+                );
+
+    // Get raster
+    for (int y = 0; y < hemisize; y++) {
+        for (int x = 0; x < hemisize; x++) {
+            Float r;
+            Float g;
+            Float b;
+
+            int code = child_process->read_float32(&r);
+            if (code) {
+                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
+                status = 1;
+                return film;
+            }
+
+            code = child_process->read_float32(&g);
+            if (code) {
+                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
+                status = 1;
+                return film;
+            }
+
+            code = child_process->read_float32(&b);
+            if (code) {
+                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
+                status = 1;
+                return film;
+            }
+
+            film->set(x, y, r, g, b);
+        }
+    }
+
+    // Check magic characters
+    char c0 = child_process->read_char();
+    char c1 = child_process->read_char();
+    if (c0 == 'x' && c1 == '\n') {
+        status = 0;
+        return film;
+    } else {
+        std::cerr << "iisptnnconnector.cpp: magic characters don't match: ["<< c0 <<"] ["<< c1 <<"]" << std::endl;
+        status = 1;
+        return film;
+    }
+
+}
+
+// ============================================================================
 // Communicate
 
+// <status> becomes 1 if an error occurred
+//                  0 if all ok
 std::shared_ptr<IntensityFilm> IisptNnConnector::communicate(
         std::shared_ptr<IntensityFilm> intensity,
         std::shared_ptr<DistanceFilm> distance,
         std::shared_ptr<NormalFilm> normals,
         Float intensity_normalization,
-        Float distance_normalization
+        Float distance_normalization,
+        int &status
         )
 {
     // Write rasters
@@ -93,11 +161,18 @@ std::shared_ptr<IntensityFilm> IisptNnConnector::communicate(
     child_process->write_float32(distance_normalization);
 
     // Read output from child process
-    // TODO: proper implementation
-    std::cerr << "Piped image to child process. Follows stdout:" << std::endl;
-    while (1) {
-        char c = child_process->read_char();
-        std::cerr << "["<< c <<"]" << std::endl;;
+    int st = -1;
+    std::shared_ptr<IntensityFilm> output_film = read_image_film(st);
+    if (st) {
+        std::cerr << "iisptnnconnector.cpp: An error occurred when reading output image" << std::endl;
+        status = 1;
+        return output_film;
+    } else {
+        std::cerr << "Obtained an output image. Saving to /tmp/da.pfm" << std::endl;
+        output_film->write(std::string("/tmp/da.pfm"));
+        std::cerr << "saved." << std::endl;
+        status = 0;
+        return output_film;
     }
 }
 
