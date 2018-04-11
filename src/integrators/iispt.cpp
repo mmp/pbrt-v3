@@ -544,6 +544,9 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
         // NOTE Passing a depth=0 here
         if (rayWeight > 0) {
             L = Li(ray, scene, *tile_sampler, arena, 0, pixel);
+            Float rgb[3];
+            L.ToRGB(rgb);
+            std::cerr << "Li returned a Spectrum ["<< rgb[0] <<"] ["<< rgb[1] <<"] ["<< rgb[2] <<"]" << std::endl;
             std::cerr << "Debug trace end. Shutting down..." << std::endl;
             exit(0);
         }
@@ -669,7 +672,9 @@ static Spectrum IISPTEstimateDirect(
     // Writes into wi the vector towards the light source. Derived from hem_x and hem_y
     // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
     // We don't need to have a visibility object
-    Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
+
+    //Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
+    Spectrum Li = auxCamera->get_light_sample_nn(hem_x, hem_y, &wi);
 
     // Combine incoming light, BRDF and viewing direction ---------------------
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -863,6 +868,8 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                     comm_status
                     );
 
+        // Save the neural network produced film in the camera
+        auxCamera->set_nn_film(nn_film);
     }
 
     if (PbrtOptions.referenceTiles > 0) {
