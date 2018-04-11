@@ -675,7 +675,6 @@ static Spectrum IISPTEstimateDirect(
 
     //Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
     Spectrum Li = auxCamera->get_light_sample_nn(hem_x, hem_y, &wi);
-    std::cerr << "NN Li is " << Li << std::endl;
 
     // Combine incoming light, BRDF and viewing direction ---------------------
     if (lightPdf > 0 && !Li.IsBlack()) {

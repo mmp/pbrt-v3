@@ -38,3 +38,63 @@ The IntensityFilm object handles the Y direction in the same way as PBRT, mainta
 # Environment Variables
 
 `IISPT_STDIO_NET_PY_PATH` Location of `main_stdio_net.py` file which contains the python program to evaluate the neural network. Used by PBRT to start the child process. The environment variable is set up by the pbrt launcher.
+
+`IISPT_SCHEDULE_RADIUS_START` Initial radius.
+
+`IISPT_SCHEDULE_RADIUS_RATIO` Radius update multiplier.
+
+`IISPT_SCHEDULE_INTERVAL` Radius interval samples.
+
+# IISPT Render Algorithm
+
+## Classes
+
+### IisptRenderRunner
+
+One render thread. It includes the main loop logic.
+
+Requires shared objects:
+
+* IISPTIntegrator
+* IisptScheduleMonitor
+* IisptFilmMonitor (includes sample density information)
+
+It creates its own instance of:
+
+* IISPTdIntegrator
+* IisptNnConnector (requires `dcamera` and `scene`)
+* RNG
+
+The render loop works as follows
+
+* Obtain current __radius__ from the __ScheduleMonitor__. The ScheduleMonitor updates its internal count automatically
+* Use the __RNG__ to generate 2 random pixel samples. Look up the density of the samples and select the one that has lower density
+* Obtain camera ray and shoot into scene. If no __intersection__ is found, evaluate infinite lights
+* Create __auxCamera__ and use the __dIntegrator__ to render a view
+* Use the __NnConnector__ to obtain the predicted intensity
+* Set the predicted intensity map on the __auxCamera__
+* Create a __filmTile__ in the radius section
+* For all pixels within __radius__ and whose intersection and materials are compatible with the original intersection, evaluate __Li__ and update the filmTile
+* Send the filmTile to the __filmMonitor__
+
+### IisptScheduleMonitor
+
+Maintains the schedule of influence radius and radius update interval.
+
+The radius schedule uses 2 parameters:
+
+* Initial radius. Defaults to 50, overridden by `IISPT_SCHEDULE_RADIUS_START`
+* Update multiplier. Defaults to 0.90, overridden by `IISPT_SCHEDULE_RADIUS_RATIO`
+
+When radius is <= 1, only the original pixel is affected.
+
+The radius update interval is the number of IISPT samples generated after the radius changes. A sample is considered to be generated at each call to __get_current_radius()__.
+
+Defaults to 500, overridden by `IISPT_SCHEDULE_INTERVAL`.
+
+### IisptFilmMonitor
+
+Maintains the main render film, accepts filmTiles from the runners.
+
+* createFilmTile(int xc, int yc, int r)
+* mergeFilmTile(FilmTile tile)
