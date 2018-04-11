@@ -451,6 +451,7 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
         rgb[1] = c[1];
         rgb[2] = c[2];
     }
+
     const RGBSpectrum &ToRGBSpectrum() const { return *this; }
     void ToXYZ(Float xyz[3]) const { RGBToXYZ(c, xyz); }
     static RGBSpectrum FromXYZ(const Float xyz[3],

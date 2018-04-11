@@ -675,6 +675,7 @@ static Spectrum IISPTEstimateDirect(
 
     //Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
     Spectrum Li = auxCamera->get_light_sample_nn(hem_x, hem_y, &wi);
+    std::cerr << "NN Li is " << Li << std::endl;
 
     // Combine incoming light, BRDF and viewing direction ---------------------
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -737,6 +738,8 @@ static Spectrum IISPTSampleHemisphere(
             L += IISPTEstimateDirect(it, hemi_x, hemi_y, auxCamera);
         }
     }
+
+    std::cerr << "Sum of all IISPTEstimateDirect is " << L << std::endl;
 
     int n_samples = PbrtOptions.iisptHemiSize * PbrtOptions.iisptHemiSize;
 
