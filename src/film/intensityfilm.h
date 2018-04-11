@@ -1,42 +1,38 @@
-#ifndef DISTANCEFILM_H
-#define DISTANCEFILM_H
+#ifndef INTENSITYFILM_H
+#define INTENSITYFILM_H
 
 #include <memory>
 #include <film/imagefilm.h>
+#include "geometry.h"
 
 namespace pbrt {
 
-class DistanceFilm
+class IntensityFilm
 {
 
 private:
-    int width;
-    int height;
+
     std::shared_ptr<ImageFilm> film;
 
 public:
 
-    virtual ~DistanceFilm() = default;
+    virtual ~IntensityFilm() = default;
 
     // Constructor ============================================================
-    DistanceFilm(
+    IntensityFilm(
             int width,
             int height
-            ) :
-        width(width),
-        height(height)
+            )
     {
         film = std::shared_ptr<ImageFilm>(
-                new ImageFilm(
-                    width,
-                    height,
-                    1
-                )
-        );
+                    new ImageFilm(
+                        width, height, 3
+                        )
+                    );
     }
 
     // Set pixel ==============================================================
-    void set(int x, int y, float val);
+    void set(int x, int y, Float r, Float g, Float b);
 
     // Write image ============================================================
     void write(std::string filename);
@@ -49,4 +45,4 @@ public:
 
 } // namespace pbrt
 
-#endif // DISTANCEFILM_H
+#endif // INTENSITYFILM_H

@@ -17,6 +17,8 @@ private:
 
 public:
 
+    virtual ~NormalFilm() = default;
+
     // Constructor ============================================================
     NormalFilm(
             int width,
@@ -35,6 +37,11 @@ public:
 
     // Write image ============================================================
     void write(std::string filename);
+
+    // Get Image Film =========================================================
+    std::shared_ptr<ImageFilm> get_image_film() {
+        return film;
+    }
 };
 
 } // namespace pbrt

@@ -9,7 +9,11 @@ var chalk = require("chalk");
 var log_dir = "/tmp/pbrt";
 var out_dir = "out";
 
-var PBRT_EXEC_PATH = '/home/gj/git/pbrt-v3-IISPT-build/pbrt';
+var PBRT_EXEC_PATH = '/home/gj/git/build-pbrt-v3-IISPT-Desktop-Default/pbrt';
+
+var dirname = __dirname; // root/bin
+var rootdir = path.dirname(dirname);
+var mldir = path.join(rootdir, "ml");
 
 // Utilities ------------------------------------------------------------------
 
@@ -44,6 +48,11 @@ var array_replace_last = function(arr, new_item) {
 
     var last_index = arr.length - 1;
     arr[last_index] = new_item;
+};
+
+var config_environment_variables = function() {
+    var stdio_net_py_path = path.join(mldir, "main_stdio_net.py");
+    process.env["IISPT_STDIO_NET_PY_PATH"] = stdio_net_py_path;
 };
 
 // Callback(exit_code, exit_signal)
@@ -199,6 +208,12 @@ var main = function() {
                 callback();
                 return;
             }
+        },
+
+        (callback) => {
+            // Set environment variables
+            config_environment_variables();
+            callback();
         },
 
         (callback) => {

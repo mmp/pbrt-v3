@@ -45,6 +45,7 @@
 #include "filter.h"
 #include "stats.h"
 #include "parallel.h"
+#include "film/intensityfilm.h"
 
 namespace pbrt {
 
@@ -82,21 +83,34 @@ private:
       return pixels[offset];
   }
 
+  std::unique_ptr<Float[]> to_rgb_array(Float splatScale);
+
 public:
   // Film Public Methods
   Film(const Point2i &resolution, const Bounds2f &cropWindow,
        std::unique_ptr<Filter> filter, Float diagonal,
        const std::string &filename, Float scale,
        Float maxSampleLuminance = Infinity);
+
   Bounds2i GetSampleBounds() const;
+
   Bounds2f GetPhysicalExtent() const;
+
   std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
+
   void MergeFilmTile(std::unique_ptr<FilmTile> tile);
+
   void SetImage(const Spectrum *img) const;
+
   void AddSplat(const Point2f &p, Spectrum v);
+
   void WriteImage(Float splatScale = 1);
+
   void WriteImage(Float splatScale, std::string out_filename);
+
   void Clear();
+
+  std::shared_ptr<IntensityFilm> to_intensity_film();
 
   // Film Public Data
   const Point2i fullResolution;
@@ -110,7 +124,7 @@ public:
       int width = croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x;
       int offset = (p.x - croppedPixelBounds.pMin.x) +
                    (p.y - croppedPixelBounds.pMin.y) * width;
-      Spectrum sp = Spectrum::FromRGB(pixels[offset].xyz);
+      Spectrum sp = Spectrum::FromXYZ(pixels[offset].xyz);
       return sp;
   }
 

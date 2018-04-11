@@ -25,6 +25,10 @@ private:
     std::vector<std::vector<std::shared_ptr<PfmItem>>> rows;
 
 public:
+
+    // Make polymorphic
+    virtual ~ImageFilm() = default;
+
     // Constructor ============================================================
     ImageFilm(
             int width,
@@ -68,6 +72,21 @@ public:
     // Write ==================================================================
     // Write to PFM file
     void write(std::string filename);
+
+    // Get Width ==============================================================
+    int get_width() {
+        return width;
+    }
+
+    // Get Height =============================================================
+    int get_height() {
+        return height;
+    }
+
+    // Get Components =========================================================
+    int get_components() {
+        return num_components;
+    }
 
 };
 

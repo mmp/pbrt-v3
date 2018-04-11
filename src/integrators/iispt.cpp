@@ -47,6 +47,8 @@
 #include "integrators/path.h"
 #include "integrators/volpath.h"
 #include "integrators/iispt_estimator_integrator.h"
+#include "integrators/iisptnnconnector.h"
+#include "film/intensityfilm.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -478,7 +480,7 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
 
     Preprocess(scene);
 
-    // Render image tiles in parallel
+    estimate_normalization(scene);
 
     // Create the auxiliary integrator for intersection-view
     this->dintegrator = std::shared_ptr<IISPTdIntegrator>(CreateIISPTdIntegrator(dcamera));
@@ -488,116 +490,103 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
     // Compute number of tiles, _nTiles_, to use for parallel rendering
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
     Vector2i sampleExtent = sampleBounds.Diagonal();
-    const int tileSize = 16;
-    Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
-                   (sampleExtent.y + tileSize - 1) / tileSize);
-    ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
-    {
-        ParallelFor2D([&](Point2i tile) {
 
-            // Render section of image corresponding to _tile_
+    // ------------------------------------------------------------------------
+    // Single threaded implementation
 
-            // Allocate _MemoryArena_ for tile
-            MemoryArena arena;
+    // Allocate memory arena
+    MemoryArena arena;
 
-            // Get sampler instance for tile
-            int seed = tile.y * nTiles.x + tile.x;
-            std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
+    // Get sample instance
+    int seed = 0;
+    std::unique_ptr<Sampler> tile_sampler = sampler->Clone(seed);
 
-            // Compute sample bounds for tile
-            int x0 = sampleBounds.pMin.x + tile.x * tileSize;
-            int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
-            int y0 = sampleBounds.pMin.y + tile.y * tileSize;
-            int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
-            Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
+    // Get tile bounds for entire frame
+    int x0 = 0;
+    int x1 = sampleExtent.x;
+    int y0 = 0;
+    int y1 = sampleExtent.y;
+    Bounds2i tile_bounds (Point2i(x0, y0), Point2i(x1, y1));
 
-            // Get _FilmTile_ for tile
-            std::unique_ptr<FilmTile> filmTile =
-                camera->film->GetFilmTile(tileBounds);
+    // Get film tile for entire frame
+    std::unique_ptr<FilmTile> filmTile =
+            camera->film->GetFilmTile(tile_bounds);
 
-            // Loop over pixels in tile to render them
-            for (Point2i pixel : tileBounds) {
+    // Loop over pixels
+    for (Point2i pixel : tile_bounds) {
 
-                // TODO remove debug stuff here
-                if (is_debug_pixel(pixel)) {
-                    LOG(INFO) << "IISPTIntegrator::Render: Starting pixel ["<< pixel.x <<"] ["<< pixel.y <<"]";
-                }
+        {
+            ProfilePhase pp(Prof::StartPixel);
+            tile_sampler->StartPixel(pixel);
+        }
 
-                {
-                    ProfilePhase pp(Prof::StartPixel);
-                    tileSampler->StartPixel(pixel);
-                }
+        // Do this check after the StartPixel() call; this keeps
+        // the usage of RNG values from (most) Samplers that use
+        // RNGs consistent, which improves reproducability /
+        // debugging.
+        if (!InsideExclusive(pixel, pixelBounds))
+            continue;
 
-                // Do this check after the StartPixel() call; this keeps
-                // the usage of RNG values from (most) Samplers that use
-                // RNGs consistent, which improves reproducability /
-                // debugging.
-                if (!InsideExclusive(pixel, pixelBounds))
-                    continue;
+        // Initialize _CameraSample_ for current sample
+        CameraSample cameraSample =
+            tile_sampler->GetCameraSample(pixel);
 
-                do {
-                    // Initialize _CameraSample_ for current sample
-                    CameraSample cameraSample =
-                        tileSampler->GetCameraSample(pixel);
+        // Generate camera ray for current sample
+        RayDifferential ray;
+        Float rayWeight =
+            camera->GenerateRayDifferential(cameraSample, &ray);
+        ray.ScaleDifferentials(
+            1 / std::sqrt((Float)tile_sampler->samplesPerPixel));
+        ++nCameraRays;
 
-                    // Generate camera ray for current sample
-                    RayDifferential ray;
-                    Float rayWeight =
-                        camera->GenerateRayDifferential(cameraSample, &ray);
-                    ray.ScaleDifferentials(
-                        1 / std::sqrt((Float)tileSampler->samplesPerPixel));
-                    ++nCameraRays;
+        // Evaluate radiance along camera ray
+        Spectrum L(0.f);
+        // NOTE Passing a depth=0 here
+        if (rayWeight > 0) {
+            L = Li(ray, scene, *tile_sampler, arena, 0, pixel);
+            std::cerr << "Debug trace end. Shutting down..." << std::endl;
+            exit(0);
+        }
 
-                    // Evaluate radiance along camera ray
-                    Spectrum L(0.f);
-                    // NOTE Passing a depth=0 here
-                    if (rayWeight > 0) {
-                        L = Li(ray, scene, *tileSampler, arena, 0, pixel);
-                    }
+        // Issue warning if unexpected radiance value returned
+        if (L.HasNaNs()) {
+            LOG(ERROR) << StringPrintf(
+                "Not-a-number radiance value returned "
+                "for pixel (%d, %d), sample %d. Setting to black.",
+                pixel.x, pixel.y,
+                (int)tile_sampler->CurrentSampleNumber());
+            L = Spectrum(0.f);
+        } else if (L.y() < -1e-5) {
+            LOG(ERROR) << StringPrintf(
+                "Negative luminance value, %f, returned "
+                "for pixel (%d, %d), sample %d. Setting to black.",
+                L.y(), pixel.x, pixel.y,
+                (int)tile_sampler->CurrentSampleNumber());
+            L = Spectrum(0.f);
+        } else if (std::isinf(L.y())) {
+              LOG(ERROR) << StringPrintf(
+                "Infinite luminance value returned "
+                "for pixel (%d, %d), sample %d. Setting to black.",
+                pixel.x, pixel.y,
+                (int)tile_sampler->CurrentSampleNumber());
+            L = Spectrum(0.f);
+        }
+        VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
+            ray << " -> L = " << L;
 
-                    // Issue warning if unexpected radiance value returned
-                    if (L.HasNaNs()) {
-                        LOG(ERROR) << StringPrintf(
-                            "Not-a-number radiance value returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
-                    } else if (L.y() < -1e-5) {
-                        LOG(ERROR) << StringPrintf(
-                            "Negative luminance value, %f, returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            L.y(), pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
-                    } else if (std::isinf(L.y())) {
-                          LOG(ERROR) << StringPrintf(
-                            "Infinite luminance value returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
-                    }
-                    VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
-                        ray << " -> L = " << L;
+        // Add camera ray's contribution to image
+        filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
 
-                    // Add camera ray's contribution to image
-                    filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
-
-                    // Free _MemoryArena_ memory from computing image sample
-                    // value
-                    arena.Reset();
-                } while (tileSampler->StartNextSample());
-            }
-
-            // Merge image tile into _Film_
-            camera->film->MergeFilmTile(std::move(filmTile));
-            reporter.Update();
-        }, nTiles);
-        reporter.Done();
+        // Free _MemoryArena_ memory from computing image sample
+        // value
+        arena.Reset();
     }
+
+    camera->film->MergeFilmTile(std::move(filmTile));
+
     LOG(INFO) << "Rendering finished";
 
+    // ------------------------------------------------------------------------
     // Save final image after rendering
     camera->film->WriteImage();
 }
@@ -672,16 +661,17 @@ static Spectrum IISPTEstimateDirect(
 
     // Sample light source with multiple importance sampling
     Vector3f wi;
-    Float lightPdf = 1.0 / 3.14;
+    Float lightPdf = 1.0 / 6.28;
     Float scatteringPdf = 0;
     VisibilityTester visibility;
 
-    // Sample_Li with custom code to sample from hemisphere instead
+    // Sample_Li with custom code to sample from hemisphere instead -----------
     // Writes into wi the vector towards the light source. Derived from hem_x and hem_y
     // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
     // We don't need to have a visibility object
     Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
 
+    // Combine incoming light, BRDF and viewing direction ---------------------
     if (lightPdf > 0 && !Li.IsBlack()) {
         // Compute BSDF or phase function's value for light sample
 
@@ -736,6 +726,7 @@ static Spectrum IISPTSampleHemisphere(
     Spectrum L(0.f);
 
     // Loop for every pixel in the hemisphere
+    // TODO adjust jacobian
     for (int hemi_x = 0; hemi_x < PbrtOptions.iisptHemiSize; hemi_x++) {
         for (int hemi_y = 0; hemi_y < PbrtOptions.iisptHemiSize; hemi_y++) {
             L += IISPTEstimateDirect(it, hemi_x, hemi_y, auxCamera);
@@ -780,8 +771,11 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                              Point2i pixel
                              ) const {
 
+    std::cerr << "Debug trace start" << std::endl;
+
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L (0.f);
+    Spectrum beta (1.f);
 
     // Find closest ray intersection or return background radiance
     SurfaceInteraction isect;
@@ -789,10 +783,10 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         if (PbrtOptions.referenceTiles > 0) {
             std::cerr << "No intersection" << std::endl;
         }
-        for (const auto &light : scene.lights) {
-            L += light->Le(ray);
-            return L;
+        for (const auto &light : scene.infiniteLights) {
+            L += beta * light->Le(ray);
         }
+        return L;
     }
 
     // Compute the hemisphere -------------------------------------------------
@@ -839,8 +833,36 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                         );
         });
     } else {
+        // Normal mode --------------------------------------------------------
         // Start rendering the hemispherical view
+        std::cerr << "Normal mode, starting hemispheric render" << std::endl;
         this->dintegrator->RenderView(scene, auxCamera);
+        std::cerr << "hemispheric render obtained. Getting intensity image" << std::endl;
+        std::shared_ptr<IntensityFilm> dcamera_intensity = dintegrator->get_intensity_film(auxCamera);
+        std::cerr << "Got the intensity image. Saving to /tmp/int.pfm" << std::endl;
+        dcamera_intensity->write(std::string("/tmp/int.pfm"));
+        std::cerr << "Saved." << std::endl;
+
+        // Get normals and distance films
+        std::shared_ptr<NormalFilm> dcamera_normal = dintegrator->get_normal_film();
+        std::shared_ptr<DistanceFilm> dcamera_distance = dintegrator->get_distance_film();
+
+        // Create the IISPT NN Connector
+        std::cerr << "Creating NN connector..." << std::endl;
+        std::unique_ptr<IisptNnConnector> nn_connector (
+                    new IisptNnConnector()
+                    );
+        std::cerr << "Calling communicate" << std::endl;
+        int comm_status = -1;
+        std::shared_ptr<IntensityFilm> nn_film = nn_connector->communicate(
+                    dcamera_intensity,
+                    dcamera_distance,
+                    dcamera_normal,
+                    max_intensity,
+                    max_distance,
+                    comm_status
+                    );
+
     }
 
     if (PbrtOptions.referenceTiles > 0) {
@@ -870,7 +892,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
     Vector3f wo = isect.wo;
     Float woLength = Dot(wo, wo);
     if (woLength == 0) {
-        fprintf(stderr, "Detected a 0 length wo");
+        fprintf(stderr, "iispt.cpp: Detected a 0 length wo");
         exit(1);
     }
 
