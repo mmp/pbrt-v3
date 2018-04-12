@@ -16,17 +16,27 @@ class IisptRenderRunner
 private:
     // Fields -----------------------------------------------------------------
 
+    int thread_no;
+
+    std::shared_ptr<Sampler> sampler;
+
     std::shared_ptr<IISPTIntegrator> iispt_integrator;
 
     std::shared_ptr<IisptScheduleMonitor> schedule_monitor;
 
     std::shared_ptr<IisptFilmMonitor> film_monitor;
 
+    std::shared_ptr<Camera> dcamera;
+
+    std::shared_ptr<const Camera> main_camera;
+
     std::unique_ptr<IISPTdIntegrator> d_integrator;
 
     std::unique_ptr<IisptNnConnector> nn_connector;
 
     std::unique_ptr<RNG> rng;
+
+    Bounds2i pixel_bounds;
 
     // Private methods --------------------------------------------------------
 
@@ -38,7 +48,12 @@ public:
     IisptRenderRunner(
             std::shared_ptr<IISPTIntegrator> iispt_integrator,
             std::shared_ptr<IisptScheduleMonitor> schedule_monitor,
-            std::shared_ptr<IisptFilmMonitor> film_monitor
+            std::shared_ptr<IisptFilmMonitor> film_monitor,
+            std::shared_ptr<const Camera> main_camera,
+            std::shared_ptr<Camera> dcamera,
+            std::shared_ptr<Sampler> sampler,
+            int thread_no,
+            Bounds2i pixel_bounds
             );
 
     // Public methods ---------------------------------------------------------

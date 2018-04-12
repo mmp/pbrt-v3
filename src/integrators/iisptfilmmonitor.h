@@ -24,7 +24,14 @@ private:
     std::vector<std::vector<int>> sampling_density;
 
     // Private methods --------------------------------------------------------
+
     void record_density_point(Point2i pt);
+
+    void absolute_to_density_array_coord(
+            Point2i pt,
+            int* x,
+            int* y
+            );
 
 public:
 
@@ -33,13 +40,15 @@ public:
 
     // Public methods ---------------------------------------------------------
 
-    std::shared_ptr<FilmTile> create_film_tile(
+    std::shared_ptr<IisptFilmTile> create_film_tile(
             int xc, int yc, float r
             );
 
     void merge_tile(std::shared_ptr<IisptFilmTile> tile);
 
     Bounds2i get_film_bounds();
+
+    int get_pixel_sampling_density(int x, int y);
 };
 
 } // namespace pbrt

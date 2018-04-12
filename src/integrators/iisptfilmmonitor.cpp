@@ -67,10 +67,11 @@ void IisptFilmMonitor::merge_tile(std::shared_ptr<IisptFilmTile> tile)
 
 void IisptFilmMonitor::record_density_point(Point2i pt)
 {
-    int xstart = get_film_bounds().pMin.x;
-    int ystart = get_film_bounds().pMin.y;
-    int xeffective = pt.x - xstart;
-    int yeffective = pt.y - ystart;
+    int xeffective;
+    int yeffective;
+    absolute_to_density_array_coord(
+                pt, &xeffective, &yeffective
+                );
     (sampling_density[yeffective])[xeffective] += 1;
 }
 
@@ -79,6 +80,32 @@ void IisptFilmMonitor::record_density_point(Point2i pt)
 Bounds2i IisptFilmMonitor::get_film_bounds()
 {
     return film->GetSampleBounds();
+}
+
+// ============================================================================
+
+void IisptFilmMonitor::absolute_to_density_array_coord(
+        Point2i pt,
+        int* x,
+        int* y
+        )
+{
+    int xstart = get_film_bounds().pMin.x;
+    int ystart = get_film_bounds().pMin.y;
+    *x = pt.x - xstart;
+    *y = pt.y - ystart;
+}
+
+// ============================================================================
+
+int IisptFilmMonitor::get_pixel_sampling_density(int x, int y)
+{
+    int xeffective;
+    int yeffective;
+    absolute_to_density_array_coord(
+                pt, &xeffective, &yeffective
+                );
+    return (sampling_density[yeffective])[xeffective];
 }
 
 } // namespace pbrt

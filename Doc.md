@@ -94,7 +94,21 @@ Defaults to 500, overridden by `IISPT_SCHEDULE_INTERVAL`.
 
 ### IisptFilmMonitor
 
-Maintains the main render film, accepts filmTiles from the runners.
+Represents the full rendering film used by IISPT.
 
-* createFilmTile(int xc, int yc, int r)
-* mergeFilmTile(FilmTile tile)
+All the coordinates in the public API are absolute x and y coordinates, and are converted to internal film indexes automatically.
+
+Holds a 2D array of IisptPixel.
+
+An IisptPixel has:
+
+* x, y, z color coordinates
+* sample_count number of samples obtained at the current location
+
+__TODO__ This replaces the old IisptFilmMonitor class
+
+Public methods:
+
+* constructor(Bounds2i)
+* add_sample(int x, int y, Spectrum s)
+* get_density(int x, int y)
