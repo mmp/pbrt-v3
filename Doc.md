@@ -98,12 +98,7 @@ Represents the full rendering film used by IISPT.
 
 All the coordinates in the public API are absolute x and y coordinates, and are converted to internal film indexes automatically.
 
-Holds a 2D array of IisptPixel.
-
-An IisptPixel has:
-
-* x, y, z color coordinates
-* sample_count number of samples obtained at the current location
+Holds a 2D array of __IisptPixel__.
 
 __TODO__ This replaces the old IisptFilmMonitor class
 
@@ -112,3 +107,10 @@ Public methods:
 * constructor(Bounds2i)
 * add_sample(int x, int y, Spectrum s)
 * get_density(int x, int y)
+
+### IisptPixel
+
+An IisptPixel has:
+
+* x, y, z color coordinates
+* sample_count number of samples obtained at the current location

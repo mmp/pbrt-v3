@@ -3,109 +3,73 @@
 namespace pbrt {
 
 // ============================================================================
-IisptFilmMonitor::IisptFilmMonitor(Film *film) {
+IisptFilmMonitor::IisptFilmMonitor(
+        Bounds2i film_bounds
+        ) {
 
-    this->film = film;
+    this->film_bounds = film_bounds;
 
     // Initialize sampling density map
-    Vector2i film_diagonal = film->GetSampleBounds().Diagonal();
+    Vector2i film_diagonal = film_bounds.Diagonal();
     for (int y = 0; y < film_diagonal.y; y++) {
-        std::vector<int> row;
+        std::vector<IisptPixel> row;
         for (int x = 0; x < film_diagonal.x; x++) {
-            row.push_back(0);
+            IisptPixel pix;
+            row.push_back(pix);
         }
-        sampling_density.push_back(row);
+        pixels.push_back(row);
     }
 }
 
 // ============================================================================
-std::shared_ptr<IisptFilmTile> IisptFilmMonitor::create_film_tile(
-        int xc,
-        int yc,
-        float r)
+
+void IisptFilmMonitor::add_sample(Point2i pt, Spectrum s)
 {
-    lock.lock();
+    execute_on_pixel([&](int fx, int fy) {
+        IisptPixel pix = (pixels[fy])[fx];
+        pix.sample_count += 1;
 
-    Bounds2i sample_bounds = film->GetSampleBounds();
-    int rr = std::ceil(r);
-    int x0 = std::max(sample_bounds.pMin.x, xc - rr);
-    int x1 = std::min(sample_bounds.pMax.x, xc + rr);
-    int y0 = std::max(sample_bounds.pMin.y, yc - rr);
-    int y1 = std::min(sample_bounds.pMax.y, yc + rr);
-    Bounds2i tile_bounds (
-                Point2i(x0, y0),
-                Point2i(x1, y1)
-                );
-    std::shared_ptr<FilmTile> film_tile = film->GetFilmTileShared(tile_bounds);
-    std::shared_ptr<IisptFilmTile> res (
-                IisptFilmTile(film_tile)
-                );
+        float rgb[3];
+        s.ToRGB(rgb);
+        pix.r += rgb[0];
+        pix.g += rgb[1];
+        pix.b += rgb[2];
 
-    lock.unlock();
-
-    return res;
-}
-
-// ============================================================================
-void IisptFilmMonitor::merge_tile(std::shared_ptr<IisptFilmTile> tile)
-{
-    lock.lock();
-
-    film->MergeFilmTile(tile->get_tile());
-
-    // Record sampled points to density map
-    std::vector<Point2i>* sampled_points = tile->get_sampled_points();
-    for (int i = 0; i < sampled_points->size(); i++) {
-        Point2i a_point = sampled_points->operator[](i);
-        record_density_point(a_point);
-    }
-
-    lock.unlock();
-}
-
-// ============================================================================
-
-void IisptFilmMonitor::record_density_point(Point2i pt)
-{
-    int xeffective;
-    int yeffective;
-    absolute_to_density_array_coord(
-                pt, &xeffective, &yeffective
-                );
-    (sampling_density[yeffective])[xeffective] += 1;
+        (pixels[fy])[fx] = pix;
+    }, pt.x, pt.y);
 }
 
 // ============================================================================
 
 Bounds2i IisptFilmMonitor::get_film_bounds()
 {
-    return film->GetSampleBounds();
+    return film_bounds;
 }
 
 // ============================================================================
 
-void IisptFilmMonitor::absolute_to_density_array_coord(
-        Point2i pt,
-        int* x,
-        int* y
-        )
+void IisptFilmMonitor::execute_on_pixel(
+        std::function<void (int, int)> func,
+        int x,
+        int y)
 {
     int xstart = get_film_bounds().pMin.x;
     int ystart = get_film_bounds().pMin.y;
-    *x = pt.x - xstart;
-    *y = pt.y - ystart;
+    int film_x = x - xstart;
+    int film_y = y - ystart;
+    func(film_x, film_y);
 }
 
 // ============================================================================
 
 int IisptFilmMonitor::get_pixel_sampling_density(int x, int y)
 {
-    int xeffective;
-    int yeffective;
-    absolute_to_density_array_coord(
-                pt, &xeffective, &yeffective
-                );
-    return (sampling_density[yeffective])[xeffective];
+    int res = 0;
+    execute_on_pixel([&](int fx, int fy) {
+        IisptPixel pix = (pixels[fy])[fx];
+        res = pix.sample_count;
+    }, x, y);
+    return res;
 }
 
 } // namespace pbrt

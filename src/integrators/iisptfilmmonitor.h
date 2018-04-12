@@ -4,8 +4,10 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <functional>
 #include "film.h"
 #include "integrators/iisptfilmtile.h"
+#include "integrators/iisptpixel.h"
 
 namespace pbrt {
 
@@ -18,37 +20,33 @@ private:
 
     std::recursive_mutex lock;
 
-    // Full film
-    Film* film;
+    std::vector<std::vector<IisptPixel>> pixels;
 
-    std::vector<std::vector<int>> sampling_density;
+    Bounds2i film_bounds;
 
     // Private methods --------------------------------------------------------
 
-    void record_density_point(Point2i pt);
-
-    void absolute_to_density_array_coord(
-            Point2i pt,
-            int* x,
-            int* y
+    // <func> void function(int film_x, int film_y)
+    void execute_on_pixel(
+            std::function<void(int, int)> func,
+            int x,
+            int y
             );
 
 public:
 
     // Constructor ------------------------------------------------------------
-    IisptFilmMonitor(Film* film);
-
-    // Public methods ---------------------------------------------------------
-
-    std::shared_ptr<IisptFilmTile> create_film_tile(
-            int xc, int yc, float r
+    IisptFilmMonitor(
+            Bounds2i film_bounds
             );
 
-    void merge_tile(std::shared_ptr<IisptFilmTile> tile);
+    // Public methods ---------------------------------------------------------
 
     Bounds2i get_film_bounds();
 
     int get_pixel_sampling_density(int x, int y);
+
+    void add_sample(Point2i pt, Spectrum s);
 };
 
 } // namespace pbrt
