@@ -42,4 +42,11 @@ void IisptFilmMonitor::merge_tile(std::unique_ptr<FilmTile> tile)
     lock.unlock();
 }
 
+// ============================================================================
+
+Bounds2i IisptFilmMonitor::get_film_bounds()
+{
+    return film->GetSampleBounds();
+}
+
 } // namespace pbrt

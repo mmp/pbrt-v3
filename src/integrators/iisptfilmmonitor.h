@@ -31,6 +31,8 @@ public:
             );
 
     void merge_tile(std::unique_ptr<FilmTile> tile);
+
+    Bounds2i get_film_bounds();
 };
 
 } // namespace pbrt
