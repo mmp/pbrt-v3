@@ -47,7 +47,7 @@ IisptRenderRunner::run()
         int pix2y;
         generate_random_pixel(&pix2x, &pix2y);
 
-
+        // TODO get density for the 2 pixels
 
         // --------------------------------------------------------------------
         //    * Obtain camera ray and shoot into scene. If no __intersection__ is found, evaluate infinite lights

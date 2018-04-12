@@ -3,7 +3,9 @@
 
 #include <memory>
 #include <mutex>
+#include <vector>
 #include "film.h"
+#include "integrators/iisptfilmtile.h"
 
 namespace pbrt {
 
@@ -19,6 +21,11 @@ private:
     // Full film
     Film* film;
 
+    std::vector<std::vector<int>> sampling_density;
+
+    // Private methods --------------------------------------------------------
+    void record_density_point(Point2i pt);
+
 public:
 
     // Constructor ------------------------------------------------------------
@@ -26,11 +33,11 @@ public:
 
     // Public methods ---------------------------------------------------------
 
-    std::unique_ptr<FilmTile> create_film_tile(
+    std::shared_ptr<FilmTile> create_film_tile(
             int xc, int yc, float r
             );
 
-    void merge_tile(std::unique_ptr<FilmTile> tile);
+    void merge_tile(std::shared_ptr<IisptFilmTile> tile);
 
     Bounds2i get_film_bounds();
 };

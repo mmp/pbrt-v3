@@ -102,6 +102,19 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
         maxSampleLuminance));
 }
 
+std::shared_ptr<FilmTile> Film::GetFilmTileShared(const Bounds2i &sampleBounds) {
+    // Bound image pixels that samples in _sampleBounds_ contribute to
+    Vector2f halfPixel = Vector2f(0.5f, 0.5f);
+    Bounds2f floatBounds = (Bounds2f)sampleBounds;
+    Point2i p0 = (Point2i)Ceil(floatBounds.pMin - halfPixel - filter->radius);
+    Point2i p1 = (Point2i)Floor(floatBounds.pMax - halfPixel + filter->radius) +
+                 Point2i(1, 1);
+    Bounds2i tilePixelBounds = Intersect(Bounds2i(p0, p1), croppedPixelBounds);
+    return std::shared_ptr<FilmTile>(new FilmTile(
+        tilePixelBounds, filter->radius, filterTable, filterTableWidth,
+        maxSampleLuminance));
+}
+
 void Film::Clear() {
     for (Point2i p : croppedPixelBounds) {
         Pixel &pixel = GetPixel(p);
@@ -112,6 +125,14 @@ void Film::Clear() {
 }
 
 void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
+    MergeFilmTile(tile.get());
+}
+
+void Film::MergeFilmTile(std::shared_ptr<FilmTile> tile) {
+    MergeFilmTile(tile.get());
+}
+
+void Film::MergeFilmTile(FilmTile* tile) {
     ProfilePhase p(Prof::MergeFilmTile);
     VLOG(1) << "Merging film tile " << tile->pixelBounds;
     std::lock_guard<std::mutex> lock(mutex);
