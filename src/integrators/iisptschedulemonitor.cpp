@@ -35,6 +35,8 @@ IisptScheduleMonitor::IisptScheduleMonitor() {
 
 // ============================================================================
 float IisptScheduleMonitor::get_current_radius() {
+    lock.lock();
+
     // Decrement samples count
     samples_count--;
     if (samples_count <= 0) {
@@ -44,6 +46,7 @@ float IisptScheduleMonitor::get_current_radius() {
     }
 
     // Return radius
+    lock.unlock();
     return current_radius;
 }
 
