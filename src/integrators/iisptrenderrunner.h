@@ -44,6 +44,15 @@ private:
 
     void generate_random_pixel(int* x, int* y);
 
+    bool find_intersection(
+            RayDifferential r,
+            const Scene &scene,
+            MemoryArena &arena,
+            SurfaceInteraction* isect_out,
+            Spectrum* beta_out,
+            Spectrum* background_out
+            );
+
 public:
 
     // Constructor ------------------------------------------------------------
@@ -59,7 +68,9 @@ public:
             );
 
     // Public methods ---------------------------------------------------------
-    virtual void run();
+    virtual void run(
+            const Scene &scene
+            );
 };
 
 }

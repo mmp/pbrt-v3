@@ -45,7 +45,7 @@ IisptRenderRunner::IisptRenderRunner(
 }
 
 // ============================================================================
-void IisptRenderRunner::run()
+void IisptRenderRunner::run(const Scene &scene)
 {
     while (1) {
 
@@ -89,19 +89,33 @@ void IisptRenderRunner::run()
         CameraSample camera_sample =
                 sampler->GetCameraSample(pixel);
 
-        RayDifferential ray;
+        RayDifferential r;
         Float ray_weight =
                 main_camera->GenerateRayDifferential(
                     camera_sample,
-                    &ray
+                    &r
                     );
-        ray.ScaleDifferentials(1.0); // Not scaling based on samples per
+        r.ScaleDifferentials(1.0); // Not scaling based on samples per
                                      // pixel here
 
-        // TODO the PBRT film is additive because it assumes that the
-        // number of samples per pixel is already known.
-        // We need to implement a custom film data structure that is able
-        // to work with arbitrary number of samples
+        for (int bounces = 0;; bounces++) {
+            std::cerr << "iisptrenderrunner.cpp::run. Pixel ["<< pixel <<"] Bounce " << bounces << std::endl;
+
+            RayDifferential ray (r);
+
+            SurfaceInteraction isect;
+            bool found_intersection = scene.Intersect(ray, &isect);
+
+            if (!found_intersection) {
+                // No intersection
+            }
+        }
+
+        // TODO
+        // Need a function find_intersection
+        // Takes the scene and the camera ray
+        // Returns an intersection object (if any)
+        // and a beta multiplier value
 
 
         // --------------------------------------------------------------------
@@ -137,6 +151,102 @@ void IisptRenderRunner::generate_random_pixel(int *x, int *y)
     int randy = rng->UniformUInt32(height);
     *x = randx + xmin;
     *y = randy + ymin;
+}
+
+// ============================================================================
+
+// If intersection is found, a SurfaceInteraction is returned with a Beta value
+// Otherwise, a background color is returned
+// If beta_out is 0, then the current pixel always is black and doesn't need
+// to be further evaluated
+bool IisptRenderRunner::find_intersection(
+        RayDifferential r,
+        const Scene &scene,
+        MemoryArena &arena,
+        SurfaceInteraction* isect_out,
+        Spectrum* beta_out,
+        Spectrum* background_out
+        )
+{
+    Spectrum beta (1.0);
+    RayDifferential ray (r);
+
+    for (bounces = 0; bounces < 24; ++bounces) {
+
+        // Compute intersection
+        SurfaceInteraction isect;
+        bool found_intersection = scene.Intersect(ray, &isect);
+
+        // If no intersection, returned beta-scaled background radiance
+        if (!found_intersection) {
+            Spectrum L (0.0);
+            for (const auto &light : scene.infiniteLights) {
+                L += beta * light->Le(ray);
+                *background_out = L;
+                return false;
+            }
+        }
+
+        // Compute scattering functions
+        isect.ComputeScatteringFunctions(ray, arena, true);
+        if (!isect.bsdf) {
+            // If BSDF is null, skip this intersection
+            ray = isect.SpawnRay(ray.d);
+            continue;
+        }
+
+        // Skip light sampling
+
+        // Sample BSDF for new path direction
+        Vector3f wo = -ray.d;
+        Vector3f wi;
+        Float pdf;
+        BxDFType flags;
+        Spectrum f =
+                isect.bsdf->Sample_f(
+                    wo,
+                    &wi,
+                    sampler->Get2D(),
+                    &pdf,
+                    BSDF_ALL,
+                    &flags
+                    );
+        // If BSDF is black or contribution is null,
+        // return a 0 beta
+        if (f.IsBlack() || pdf == 0.f) {
+            *beta_out = L(0.0);
+            return true;
+        }
+        // Check for specular bounce
+        bool specular_bounce = (flags & BSDF_SPECULAR) != 0;
+        if (!specular_bounce) {
+            // The current bounce is not specular, so we stop here
+            // and let IISPT proceed from the current point
+            // No need to update Beta here
+            *isect_out = isect;
+            *beta_out = beta;
+            return true;
+        }
+        // Follow the specular bounce
+        // Update beta value
+        beta *= f * AbsDot(wi, isect.shading.n) / pdf;
+        // Check for zero beta
+        if (beta.y() < 0.f || isNaN(beta.y())) {
+            *beta_out = L(0.0);
+            return true;
+        }
+        // Spawn the new ray
+        ray = isect.SpawnRay(wi);
+
+        // Skip subsurface scattering
+
+        // Skip RR termination
+
+    }
+
+    // Max depth reached, return 0 beta
+    *beta = L(0.0);
+    return true;
 }
 
 }
