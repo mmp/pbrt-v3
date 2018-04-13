@@ -69,7 +69,8 @@ public:
 
     // Public methods ---------------------------------------------------------
     virtual void run(
-            const Scene &scene
+            const Scene &scene,
+            MemoryArena &arena
             );
 };
 

@@ -45,7 +45,7 @@ IisptRenderRunner::IisptRenderRunner(
 }
 
 // ============================================================================
-void IisptRenderRunner::run(const Scene &scene)
+void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 {
     while (1) {
 
@@ -98,25 +98,37 @@ void IisptRenderRunner::run(const Scene &scene)
         r.ScaleDifferentials(1.0); // Not scaling based on samples per
                                      // pixel here
 
-        for (int bounces = 0;; bounces++) {
-            std::cerr << "iisptrenderrunner.cpp::run. Pixel ["<< pixel <<"] Bounce " << bounces << std::endl;
+        SurfaceInteraction isect;
+        Spectrum beta;
+        Spectrum background;
 
-            RayDifferential ray (r);
+        // Find intersection point
+        bool intersection_found = find_intersection(
+                    r,
+                    scene,
+                    arena,
+                    &isect,
+                    &beta,
+                    &background
+                    );
 
-            SurfaceInteraction isect;
-            bool found_intersection = scene.Intersect(ray, &isect);
-
-            if (!found_intersection) {
-                // No intersection
-            }
+        if (!intersection_found) {
+            // Record background light
+            film_monitor->add_sample(
+                        pixel,
+                        background
+                        );
+            continue;
+        } else if (intersection_found && beta <= 0.0) {
+            // Intersection found but black pixel
+            film_monitor->add_sample(
+                        pixel,
+                        L(0.0)
+                        );
+            continue;
         }
 
-        // TODO
-        // Need a function find_intersection
-        // Takes the scene and the camera ray
-        // Returns an intersection object (if any)
-        // and a beta multiplier value
-
+        // The intersection object is isect
 
         // --------------------------------------------------------------------
         //    * Create __auxCamera__ and use the __dIntegrator__ to render a view
@@ -129,9 +141,6 @@ void IisptRenderRunner::run(const Scene &scene)
 
         // --------------------------------------------------------------------
         //    * For all pixels within __radius__ and whose intersection and materials are compatible with the original intersection, evaluate __Li__ and update the filmTile
-
-        // --------------------------------------------------------------------
-        //    * Send the filmTile to the __filmMonitor__
 
     }
 }
