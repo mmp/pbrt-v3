@@ -209,6 +209,10 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
     // There is no preprocess here.
     // It must have already been called by the host.
 
+    // Clear normal and distance film
+    normal_film->clear();
+    distance_film->clear();
+
     // Render image tiles in parallel
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering

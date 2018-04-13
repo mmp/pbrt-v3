@@ -21,6 +21,7 @@ IisptRenderRunner::IisptRenderRunner(
     this->film_monitor = film_monitor;
 
     this->d_integrator = CreateIISPTdIntegrator(dcamera);
+    // Preprocess is called on run()
 
     this->nn_connector = std::shared_ptr<IisptNnConnector>(
                 new IisptNnConnector()
@@ -47,6 +48,8 @@ IisptRenderRunner::IisptRenderRunner(
 // ============================================================================
 void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 {
+    this->d_integrator->Preprocess(scene);
+
     while (1) {
 
         // --------------------------------------------------------------------
@@ -101,6 +104,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         SurfaceInteraction isect;
         Spectrum beta;
         Spectrum background;
+        RayDifferential ray;
 
         // Find intersection point
         bool intersection_found = find_intersection(
@@ -108,6 +112,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                     scene,
                     arena,
                     &isect,
+                    &ray,
                     &beta,
                     &background
                     );
@@ -133,8 +138,71 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         // --------------------------------------------------------------------
         //    * Create __auxCamera__ and use the __dIntegrator__ to render a view
 
+        // Invert normal if surface normal points inwards
+        Normal3f surface_normal = isect.n;
+        Vector3f sf_norm_vec = Vector3f(isect.n.x, isect.n.y, isect.n.z);
+        Vector3f ray_vec = Vector3f(ray.d.x, ray.d.y, ray.d.z);
+        if (Dot(sf_norm_vec, ray_vec) > 0.0) {
+            surface_normal = Normal3f(
+                        -isect.n.x,
+                        -isect.n.y,
+                        -isect.n.z
+                        );
+        }
+
+        // aux_ray is centered at the intersection point
+        // points towards the intersection surface normal
+        Ray aux_ray = isect.SpawnRay(Vector3f(surface_normal));
+
+        // Create aux camera
+        std::shared_ptr<HemisphericCamera> aux_camera (
+                    CreateHemisphericCamera(
+                        PbrtOptions.iisptHemiSize,
+                        PbrtOptions.iisptHemiSize,
+                        dcamera->medium,
+                        aux_ray.o,
+                        Point3f(aux_ray.d.x, aux_ray.d.y, aux_ray.d.z),
+                        pixel,
+                        std::string("/tmp/null")
+                        )
+                    );
+
+        // Run dintegrator render
+        d_integrator->RenderView(scene, aux_camera);
+
         // --------------------------------------------------------------------
         //    * Use the __NnConnector__ to obtain the predicted intensity
+
+        // Obtain intensity, normals, distance maps
+
+        std::shared_ptr<IntensityFilm> aux_intensity =
+                d_integrator->get_intensity_film(aux_camera);
+
+        std::shared_ptr<NormalFilm> aux_normals =
+                d_integrator->get_normal_film();
+
+        std::shared_ptr<DistanceFilm> aux_distance =
+                d_integrator->get_distance_film();
+
+        // Use NN Connector
+
+        int communicate_status = -1;
+        std::shared_ptr<IntensityFilm> nn_film =
+                nn_connector->communicate(
+                    aux_intensity,
+                    aux_distance,
+                    aux_normals,
+                    iispt_integrator->get_normalization_intensity(),
+                    iispt_integrator->get_normalization_distance(),
+                    communicate_status
+                    );
+
+        if (communicate_status) {
+            std::cerr << "NN communication issue" << std::endl;
+            raise(SIGKILL);
+        }
+
+        aux_camera->set_nn_film(nn_film);
 
         // --------------------------------------------------------------------
         //    * Set the predicted intensity map on the __auxCamera__
@@ -168,11 +236,13 @@ void IisptRenderRunner::generate_random_pixel(int *x, int *y)
 // Otherwise, a background color is returned
 // If beta_out is 0, then the current pixel always is black and doesn't need
 // to be further evaluated
+// <ray_out> returns the ray used to find the returned intersection
 bool IisptRenderRunner::find_intersection(
         RayDifferential r,
         const Scene &scene,
         MemoryArena &arena,
         SurfaceInteraction* isect_out,
+        RayDifferential* ray_out,
         Spectrum* beta_out,
         Spectrum* background_out
         )
@@ -233,6 +303,7 @@ bool IisptRenderRunner::find_intersection(
             // and let IISPT proceed from the current point
             // No need to update Beta here
             *isect_out = isect;
+            *ray_out = ray;
             *beta_out = beta;
             return true;
         }

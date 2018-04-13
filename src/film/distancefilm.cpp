@@ -15,4 +15,13 @@ void DistanceFilm::write(std::string filename) {
     film->write(filename);
 }
 
+// ============================================================================
+void DistanceFilm::clear()
+{
+    std::shared_ptr<PfmItem> item (
+                new RgbPfmItem(0.0, 0.0, 0.0)
+                );
+    film->set_all(item);
+}
+
 } // namespace pbrt

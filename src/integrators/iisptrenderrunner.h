@@ -9,6 +9,7 @@
 #include "rng.h"
 #include "sampler.h"
 #include "camera.h"
+#include "cameras/hemispheric.h"
 
 namespace pbrt {
 
@@ -20,7 +21,7 @@ private:
 
     int thread_no;
 
-    std::shared_ptr<Sampler> sampler;
+    // Shared objects
 
     std::shared_ptr<IISPTIntegrator> iispt_integrator;
 
@@ -32,11 +33,15 @@ private:
 
     std::shared_ptr<const Camera> main_camera;
 
+    // Single objects
+
     std::shared_ptr<IISPTdIntegrator> d_integrator;
 
     std::shared_ptr<IisptNnConnector> nn_connector;
 
     std::shared_ptr<RNG> rng;
+
+    std::shared_ptr<Sampler> sampler;
 
     Bounds2i pixel_bounds;
 
@@ -49,6 +54,7 @@ private:
             const Scene &scene,
             MemoryArena &arena,
             SurfaceInteraction* isect_out,
+            RayDifferential* ray_out,
             Spectrum* beta_out,
             Spectrum* background_out
             );
