@@ -7,6 +7,8 @@
 #include "integrators/iisptschedulemonitor.h"
 #include "integrators/iispt_d.h"
 #include "rng.h"
+#include "sampler.h"
+#include "camera.h"
 
 namespace pbrt {
 
@@ -30,11 +32,11 @@ private:
 
     std::shared_ptr<const Camera> main_camera;
 
-    std::unique_ptr<IISPTdIntegrator> d_integrator;
+    std::shared_ptr<IISPTdIntegrator> d_integrator;
 
-    std::unique_ptr<IisptNnConnector> nn_connector;
+    std::shared_ptr<IisptNnConnector> nn_connector;
 
-    std::unique_ptr<RNG> rng;
+    std::shared_ptr<RNG> rng;
 
     Bounds2i pixel_bounds;
 

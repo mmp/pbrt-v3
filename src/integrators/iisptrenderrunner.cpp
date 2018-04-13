@@ -20,16 +20,14 @@ IisptRenderRunner::IisptRenderRunner(
 
     this->film_monitor = film_monitor;
 
-    this->d_integrator = std::unique_ptr(
-                CreateIISPTdIntegrator(camera)
-                );
+    this->d_integrator = CreateIISPTdIntegrator(dcamera);
 
-    this->nn_connector = std::unique_ptr(
+    this->nn_connector = std::shared_ptr<IisptNnConnector>(
                 new IisptNnConnector()
                 );
 
     // TODO remove fixed seed
-    this->rng = std::unique_ptr(
+    this->rng = std::shared_ptr<RNG>(
                 new RNG(thread_no)
                 );
 
@@ -47,7 +45,7 @@ IisptRenderRunner::IisptRenderRunner(
 }
 
 // ============================================================================
-IisptRenderRunner::run()
+void IisptRenderRunner::run()
 {
     while (1) {
 
@@ -79,14 +77,6 @@ IisptRenderRunner::run()
         }
         Point2i pixel = Point2i(x, y);
 
-        // --------------------------------------------------------------------
-        //    * Create a __filmTile__ in the radius section
-        std::shared_ptr<IisptFilmTile> film_tile =
-                film_monitor->create_film_tile(
-                    x,
-                    y,
-                    radius
-                    );
 
         // --------------------------------------------------------------------
         //    * Obtain camera ray and shoot into scene. If no __intersection__ is found, evaluate infinite lights

@@ -8,6 +8,7 @@
 #include "film.h"
 #include "integrators/iisptfilmtile.h"
 #include "integrators/iisptpixel.h"
+#include "film/intensityfilm.h"
 
 namespace pbrt {
 
@@ -47,6 +48,8 @@ public:
     int get_pixel_sampling_density(int x, int y);
 
     void add_sample(Point2i pt, Spectrum s);
+
+    std::shared_ptr<IntensityFilm> to_intensity_film();
 };
 
 } // namespace pbrt

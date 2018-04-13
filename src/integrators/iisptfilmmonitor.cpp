@@ -11,9 +11,9 @@ IisptFilmMonitor::IisptFilmMonitor(
 
     // Initialize sampling density map
     Vector2i film_diagonal = film_bounds.Diagonal();
-    for (int y = 0; y < film_diagonal.y; y++) {
+    for (int y = 0; y <= film_diagonal.y; y++) {
         std::vector<IisptPixel> row;
-        for (int x = 0; x < film_diagonal.x; x++) {
+        for (int x = 0; x <= film_diagonal.x; x++) {
             IisptPixel pix;
             row.push_back(pix);
         }
@@ -25,6 +25,8 @@ IisptFilmMonitor::IisptFilmMonitor(
 
 void IisptFilmMonitor::add_sample(Point2i pt, Spectrum s)
 {
+    lock.lock();
+
     execute_on_pixel([&](int fx, int fy) {
         IisptPixel pix = (pixels[fy])[fx];
         pix.sample_count += 1;
@@ -37,6 +39,8 @@ void IisptFilmMonitor::add_sample(Point2i pt, Spectrum s)
 
         (pixels[fy])[fx] = pix;
     }, pt.x, pt.y);
+
+    lock.unlock();
 }
 
 // ============================================================================
@@ -64,12 +68,59 @@ void IisptFilmMonitor::execute_on_pixel(
 
 int IisptFilmMonitor::get_pixel_sampling_density(int x, int y)
 {
+    lock.lock();
+
     int res = 0;
     execute_on_pixel([&](int fx, int fy) {
         IisptPixel pix = (pixels[fy])[fx];
         res = pix.sample_count;
     }, x, y);
+
+    lock.unlock();
+
     return res;
+}
+
+// ============================================================================
+
+std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film()
+{
+    lock.lock();
+
+    Vector2i diagonal = film_bounds.Diagonal();
+    int width = diagonal.x + 1;
+    int height = diagonal.y + 1;
+    std::cerr << "Width and height are ["<< width <<"] ["<< height <<"]" << std::endl;
+    std::cerr << "Computed assuming exclusive pMax are ["<< (film_bounds.pMax.x - film_bounds.pMin.x) <<"] ["<< (film_bounds.pMax.y - film_bounds.pMin.y) <<"]" << std::endl;
+
+    std::shared_ptr<IntensityFilm> intensity_film (
+                new IntensityFilm(
+                    width,
+                    height
+                    )
+                );
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            IisptPixel pix = (pixels[y])[x];
+            if (pix.sample_count > 0) {
+                double r = pix.r / ((double)pix.sample_count);
+                double g = pix.g / ((double)pix.sample_count);
+                double b = pix.b / ((double)pix.sample_count);
+                intensity_film->set_camera_coord(
+                            x,
+                            y,
+                            (float) r,
+                            (float) g,
+                            (float) b
+                            );
+            }
+        }
+    }
+
+    lock.unlock();
+
+    return intensity_film;
 }
 
 } // namespace pbrt

@@ -36,6 +36,8 @@ public:
 
     void set(int x, int y, Float r, Float g, Float b);
 
+    void set_camera_coord(int cx, int cy, float r, float g, float b);
+
     // Write image ============================================================
 
     void write(std::string filename);
