@@ -3,6 +3,101 @@
 namespace pbrt {
 
 // ============================================================================
+// Estimate direct (evaluate 1 hemisphere pixel)
+static Spectrum estimate_direct(
+        const Interaction &it,
+        int hem_x,
+        int hem_y,
+        HemisphericCamera* auxCamera
+        ) {
+
+    bool specular = false; // Default value
+
+    BxDFType bsdfFlags =
+        specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
+    Spectrum Ld(0.f);
+
+    // Sample light source with multiple importance sampling
+    Vector3f wi;
+    Float lightPdf = 1.0 / 6.28;
+    Float scatteringPdf = 0;
+    VisibilityTester visibility;
+
+    // Sample_Li with custom code to sample from hemisphere instead -----------
+    // Writes into wi the vector towards the light source. Derived from hem_x and hem_y
+    // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
+    // We don't need to have a visibility object
+
+    // Get jacobian-adjusted sample, camera coordinates
+    Spectrum Li = auxCamera->get_light_sample_nn(hem_x, hem_y, &wi);
+
+    // Combine incoming light, BRDF and viewing direction ---------------------
+    if (lightPdf > 0 && !Li.IsBlack()) {
+        // Compute BSDF or phase function's value for light sample
+
+        Spectrum f;
+
+        if (it.IsSurfaceInteraction()) {
+
+            // Evaluate BSDF for light sampling strategy
+            const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
+
+            f = isect.bsdf->f(isect.wo, wi, bsdfFlags) * AbsDot(wi, isect.shading.n);
+
+            scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
+
+        } else {
+
+            // Evaluate phase function for light sampling strategy
+            const MediumInteraction &mi = (const MediumInteraction &)it;
+            Float p = mi.phase->p(mi.wo, wi);
+            f = Spectrum(p);
+            scatteringPdf = p;
+
+        }
+
+        if (!f.IsBlack()) {
+            // Compute effect of visibility for light source sample
+            // Always unoccluded visibility using hemispherical map
+
+            // Add light's contribution to reflected radiance
+            if (!Li.IsBlack()) {
+                Ld += f * Li / lightPdf;
+            }
+        }
+    }
+
+    // Skipping sampling BSDF with multiple importance sampling
+    // because we gather all information from lights (hemisphere)
+
+    return Ld;
+
+}
+
+// ============================================================================
+// Sample hemisphere
+static Spectrum sample_hemisphere(
+        const Interaction &it,
+        const Scene &scene,
+        MemoryArena &arena,
+        Sampler &sampler,
+        HemisphericCamera* auxCamera
+        ) {
+    Spectrum L(0.f);
+
+    // Loop for every pixel in the hemisphere
+    for (int hemi_x = 0; hemi_x < PbrtOptions.iisptHemiSize; hemi_x++) {
+        for (int hemi_y = 0; hemi_y < PbrtOptions.iisptHemiSize; hemi_y++) {
+            L += estimate_direct(it, hemi_x, hemi_y, auxCamera);
+        }
+    }
+
+    int n_samples = PbrtOptions.iisptHemiSize * PbrtOptions.iisptHemiSize;
+
+    return L / n_samples;
+}
+
+// ============================================================================
 IisptRenderRunner::IisptRenderRunner(
         std::shared_ptr<IISPTIntegrator> iispt_integrator,
         std::shared_ptr<IisptScheduleMonitor> schedule_monitor,
@@ -202,13 +297,118 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             raise(SIGKILL);
         }
 
-        aux_camera->set_nn_film(nn_film);
-
         // --------------------------------------------------------------------
         //    * Set the predicted intensity map on the __auxCamera__
 
+        aux_camera->set_nn_film(nn_film);
+
         // --------------------------------------------------------------------
         //    * For all pixels within __radius__ and whose intersection and materials are compatible with the original intersection, evaluate __Li__ and update the filmTile
+
+        // TODO move from a square area to a circular area
+
+        // TODO add special case for very small radius
+
+        int filter_start_x = std::max(
+                    film_monitor->get_film_bounds().pMin.x,
+                    std::round(((float) x) - radius)
+                    );
+
+        int filter_end_x = std::min(
+                    film_monitor->get_film_bounds().pMax.x,
+                    std::round(((float) x) + radius)
+                    );
+
+        int filter_start_y = std::max(
+                    film_monitor->get_film_bounds().pMin.y,
+                    std::round(((float) y) - radius)
+                    );
+
+        int filter_end_y = std::min(
+                    film_monitor->get_film_bounds().pMax.y,
+                    std::round(((float) y) + radius)
+                    );
+
+        for (int fy = filter_start_y; fy <= filter_end_y; fy++) {
+            for (int fx = filter_start_x; fx <= filter_end_x; fx++) {
+
+                Point2i f_pixel = Point2i(fx, fy);
+
+                CameraSample f_camera_sample =
+                        sampler->GetCameraSample(f_pixel);
+
+                RayDifferential f_r;
+                Float f_ray_weight =
+                        main_camera->GenerateRayDifferential(
+                            f_camera_sample,
+                            &f_r
+                            );
+                f_r.ScaleDifferentials(1.0);
+
+                SurfaceInteraction f_isect;
+                Spectrum f_beta;
+                Spectrum f_background;
+                RayDifferential f_ray;
+
+                // Find intersection point
+                bool f_intersection_found = find_intersection(
+                            f_r,
+                            scene,
+                            arena,
+                            &f_isect,
+                            &f_ray,
+                            &f_beta,
+                            &f_background
+                            );
+
+                if (!f_intersection_found) {
+                    // No intersection found, nothing to do
+                    continue;
+                } else if (f_intersection_found && f_beta <= 0.0) {
+                    // Intersection found but black pixel
+                    // Nothing to do
+                    continue;
+                }
+
+                // Valid intersection found
+
+                // Compute scattering functions for surface interaction
+                f_isect.ComputeScatteringFunctions(f_ray, arena);
+                if (!isect.bsdf) {
+                    // This should not be possible, because find_intersection()
+                    // would have skipped the intersection
+                    // so do nothing
+                    continue;
+                }
+
+                // wo is vector towards viewer, from intersection
+                Vector3f wo = f_isect.wo;
+                Float wo_length = Dot(wo, wo);
+                if (wo_length == 0) {
+                    std::cerr << "iisptrenderrunner.cpp: Detected a 0 length wo" << std::endl;
+                    raise(SIGKILL);
+                    exit(1);
+                }
+
+                Spectrum L (0.0);
+
+                // Compute emitted light if ray hit an area light source
+                L += f_isect.Le(wo);
+
+                // Compute hemispheric contribution
+                L += sample_hemisphere(
+                            f_isect,
+                            scene,
+                            arena,
+                            sampler,
+                            aux_camera.get()
+                            );
+
+                // Record sample
+                film_monitor->add_sample(f_pixel, L);
+
+            }
+        }
 
     }
 }
