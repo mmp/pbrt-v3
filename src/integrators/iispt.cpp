@@ -49,6 +49,9 @@
 #include "integrators/iispt_estimator_integrator.h"
 #include "integrators/iisptnnconnector.h"
 #include "film/intensityfilm.h"
+#include "integrators/iisptschedulemonitor.h"
+#include "integrators/iisptfilmmonitor.h"
+#include "integrators/iisptrenderrunner.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -466,8 +469,9 @@ void IISPTIntegrator::estimate_normalization(const Scene &scene) {
 void IISPTIntegrator::Render(const Scene &scene) {
     if (PbrtOptions.referenceTiles <= 0) {
         // Normal render of the scene
-        std::cerr << "Starting normal render" << std::endl;
-        render_normal(scene);
+        std::cerr << "Starting normal 2 render" << std::endl;
+        render_normal_2(scene);
+        // render_normal(scene);
     } else {
         // Render reference training views
         std::cerr << "Starting reference render" << std::endl;
@@ -544,6 +548,9 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
         // NOTE Passing a depth=0 here
         if (rayWeight > 0) {
             L = Li(ray, scene, *tile_sampler, arena, 0, pixel);
+            Float rgb[3];
+            L.ToRGB(rgb);
+            std::cerr << "Li returned a Spectrum ["<< rgb[0] <<"] ["<< rgb[1] <<"] ["<< rgb[2] <<"]" << std::endl;
             std::cerr << "Debug trace end. Shutting down..." << std::endl;
             exit(0);
         }
@@ -589,6 +596,50 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
     // ------------------------------------------------------------------------
     // Save final image after rendering
     camera->film->WriteImage();
+}
+
+// ============================================================================
+// Render normal 2
+void IISPTIntegrator::render_normal_2(const Scene &scene) {
+
+    Preprocess(scene);
+
+    estimate_normalization(scene);
+
+    // Create: IisptScheduleMonitor, IisptFilmMonitor,
+    // IisptRenderRunner
+
+    std::shared_ptr<IisptScheduleMonitor> schedule_monitor (
+                new IisptScheduleMonitor()
+                );
+
+    std::shared_ptr<IisptFilmMonitor> film_monitor (
+                new IisptFilmMonitor(
+                    camera->film->GetSampleBounds()
+                    )
+                );
+
+    std::shared_ptr<IisptRenderRunner> render_runner (
+                new IisptRenderRunner(
+                    this,
+                    schedule_monitor,
+                    film_monitor,
+                    camera,
+                    dcamera,
+                    sampler,
+                    0,
+                    camera->film->GetSampleBounds()
+                    )
+                );
+
+    MemoryArena arena;
+
+    render_runner->run(scene, arena);
+
+    std::shared_ptr<IntensityFilm> output_film =
+            film_monitor->to_intensity_film_reversed();
+
+    output_film->write("/tmp/iispt.pfm");
 }
 
 // Render reference ===========================================================
@@ -669,7 +720,9 @@ static Spectrum IISPTEstimateDirect(
     // Writes into wi the vector towards the light source. Derived from hem_x and hem_y
     // For the hemisphere, lightPdf would be a constant (probably 1/(2pi))
     // We don't need to have a visibility object
-    Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
+
+    //Spectrum Li = auxCamera->getLightSample(hem_x, hem_y, &wi);
+    Spectrum Li = auxCamera->get_light_sample_nn(hem_x, hem_y, &wi);
 
     // Combine incoming light, BRDF and viewing direction ---------------------
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -732,6 +785,8 @@ static Spectrum IISPTSampleHemisphere(
             L += IISPTEstimateDirect(it, hemi_x, hemi_y, auxCamera);
         }
     }
+
+    std::cerr << "Sum of all IISPTEstimateDirect is " << L << std::endl;
 
     int n_samples = PbrtOptions.iisptHemiSize * PbrtOptions.iisptHemiSize;
 
@@ -863,6 +918,8 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
                     comm_status
                     );
 
+        // Save the neural network produced film in the camera
+        auxCamera->set_nn_film(nn_film);
     }
 
     if (PbrtOptions.referenceTiles > 0) {

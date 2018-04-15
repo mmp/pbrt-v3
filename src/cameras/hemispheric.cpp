@@ -11,6 +11,7 @@
 
 namespace pbrt {
 
+// ============================================================================
 Float HemisphericCamera::GenerateRay(
         const CameraSample &sample,
         Ray* ray
@@ -39,6 +40,7 @@ Float HemisphericCamera::GenerateRay(
 
 }
 
+// ============================================================================
 Spectrum HemisphericCamera::getLightSample(
         int x,
         int y,
@@ -56,6 +58,34 @@ Spectrum HemisphericCamera::getLightSample(
     return film->get_pixel_as_spectrum(Point2i(x, y));
 }
 
+// ============================================================================
+void HemisphericCamera::set_nn_film(
+        std::shared_ptr<IntensityFilm> nn_film
+        )
+{
+    this->nn_film = nn_film;
+}
+
+// ============================================================================
+Spectrum HemisphericCamera::get_light_sample_nn(
+        int x,
+        int y,
+        Vector3f* wi
+        ) {
+    Float theta = Pi * y / film->fullResolution.y;
+    Float phi = Pi * x / film->fullResolution.x;
+    Vector3f dir(std::sin(theta) * std::cos(phi), std::cos(theta),
+                 std::sin(theta) * std::sin(phi));
+    Ray ray = Ray(Point3f(0, 0, 0), dir, Infinity,
+               Lerp(0.0, shutterOpen, shutterClose));
+    ray = CameraToWorld(ray);
+    *wi = ray.d;
+
+    std::shared_ptr<PfmItem> rgbpix = nn_film->get_camera_coord_jacobian(x, y);
+    return rgbpix->as_spectrum();
+}
+
+// ============================================================================
 HemisphericCamera* CreateHemisphericCamera(
         int xres,
         int yres,

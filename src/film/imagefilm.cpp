@@ -71,4 +71,15 @@ void ImageFilm::write(std::string filename) {
 
 // ============================================================================
 
+void ImageFilm::set_all(
+        std::shared_ptr<PfmItem> pix
+        )
+{
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            set(x, y, pix);
+        }
+    }
+}
+
 } // namespace pbrt

@@ -1,6 +1,9 @@
 #ifndef RGBPFMITEM_H
 #define RGBPFMITEM_H
 
+#include "pbrt.h"
+#include "spectrum.h"
+
 namespace pbrt {
 
 // Implementation of PfmItem for a single scalar value
@@ -34,6 +37,25 @@ public:
         rr = r;
         gg = g;
         bb = b;
+    }
+
+    virtual std::shared_ptr<PfmItem> scalar_multiply(float c) {
+        std::shared_ptr<RgbPfmItem> res (
+                    new RgbPfmItem(
+                        r * c,
+                        g * c,
+                        b * c
+                        )
+                    );
+        return res;
+    }
+
+    virtual Spectrum as_spectrum() {
+        Float rgb[3];
+        get_triple_component(rgb[0], rgb[1], rgb[2]);
+        return Spectrum::FromRGB(
+                    rgb
+                    );
     }
 
 };

@@ -98,7 +98,13 @@ public:
 
   std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
 
+  std::shared_ptr<FilmTile> GetFilmTileShared(const Bounds2i &sampleBounds);
+
   void MergeFilmTile(std::unique_ptr<FilmTile> tile);
+
+  void MergeFilmTile(std::shared_ptr<FilmTile> tile);
+
+  void MergeFilmTile(FilmTile* tile);
 
   void SetImage(const Spectrum *img) const;
 

@@ -38,6 +38,8 @@
 #ifndef PBRT_INTEGRATORS_IISPT_H
 #define PBRT_INTEGRATORS_IISPT_H
 
+#include <signal.h>
+
 // integrators/iispt.h*
 #include "pbrt.h"
 #include "integrator.h"
@@ -53,7 +55,7 @@ class IISPTIntegrator : public SamplerIntegrator {
 public:
     // IISPTIntegrator Public Methods
 
-    // Constructor
+    // Constructor ------------------------------------------------------------
     IISPTIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
                    std::shared_ptr<Sampler> sampler,
                    const Bounds2i &pixelBounds,
@@ -61,6 +63,8 @@ public:
                    Float rrThreshold = 1,
                    const std::string &lightSampleStrategy = "spatial"
     );
+
+    // Public methods ---------------------------------------------------------
 
     void Preprocess(const Scene &scene);
 
@@ -83,10 +87,28 @@ public:
 
     void render_normal(const Scene &scene);
 
+    void render_normal_2(const Scene &scene);
+
     void render_reference(const Scene &scene);
 
+    Float get_normalization_intensity() {
+        if (max_intensity == -1) {
+            std::cerr << "iispt.h: max_intensity was not populated";
+            raise(SIGKILL);
+        }
+        return max_intensity;
+    }
+
+    Float get_normalization_distance() {
+        if (max_distance == -1) {
+            std::cerr << "iispt.h: max_distance was not populated";
+            raise(SIGKILL);
+        }
+        return max_distance;
+    }
+
 private:
-    // IISPTIntegrator Private Data
+    // IISPTIntegrator Private Data -------------------------------------------
     const int maxDepth;
     const Float rrThreshold;
     const std::string lightSampleStrategy;
@@ -98,6 +120,8 @@ private:
 
     Float max_intensity = -1;
     Float max_distance = -1;
+
+    // Private methods --------------------------------------------------------
 
     Spectrum SpecularTransmit(
             const RayDifferential &ray,
@@ -136,6 +160,7 @@ private:
             );
 
     void write_info_file(std::string out_filename);
+
 };
 
 IISPTIntegrator *CreateIISPTIntegrator(

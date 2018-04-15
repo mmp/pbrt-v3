@@ -15,4 +15,13 @@ void NormalFilm::write(std::string filename) {
     film->write(filename);
 }
 
+// ============================================================================
+void NormalFilm::clear()
+{
+    std::shared_ptr<PfmItem> item (
+                new RgbPfmItem(0.0, 0.0, 0.0)
+                );
+    film->set_all(item);
+}
+
 }// namespace pbrt

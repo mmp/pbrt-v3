@@ -88,6 +88,11 @@ public:
         return num_components;
     }
 
+    // Set all pixels =========================================================
+    void set_all(
+            std::shared_ptr<PfmItem> pix
+            );
+
 };
 
 }; // namespace pbrt

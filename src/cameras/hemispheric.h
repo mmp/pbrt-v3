@@ -9,14 +9,22 @@
 // cameras/hemispheric.h*
 #include "camera.h"
 #include "film.h"
+#include "film/intensityfilm.h"
 
 namespace pbrt {
+
+// ============================================================================
 
 // HemisphericCamera Declarations
 class HemisphericCamera : public Camera {
 
+private:
+    // Fields -----------------------------------------------------------------
+    std::shared_ptr<IntensityFilm> nn_film = nullptr;
+
 public:
 
+    // Constructor ------------------------------------------------------------
     HemisphericCamera(
             const AnimatedTransform &CameraToWorld,
             Float shutterOpen,
@@ -25,6 +33,8 @@ public:
             const Medium* medium
             ) :
         Camera(CameraToWorld, shutterOpen, shutterClose, film, medium) {}
+
+    // Public methods =========================================================
 
     Float GenerateRay(
             const CameraSample &sample,
@@ -37,8 +47,19 @@ public:
             Vector3f* wi
             );
 
+    void set_nn_film(
+            std::shared_ptr<IntensityFilm> nn_film
+            );
+
+    Spectrum get_light_sample_nn(
+            int x,
+            int y,
+            Vector3f* wi
+            );
+
 };
 
+// ============================================================================
 
 HemisphericCamera* CreateHemisphericCamera(
         int xres,

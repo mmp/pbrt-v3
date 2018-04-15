@@ -42,6 +42,9 @@ public:
     std::shared_ptr<ImageFilm> get_image_film() {
         return film;
     }
+
+    // Clear ==================================================================
+    void clear();
 };
 
 } // namespace pbrt
