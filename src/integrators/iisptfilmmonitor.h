@@ -50,6 +50,8 @@ public:
     void add_sample(Point2i pt, Spectrum s);
 
     std::shared_ptr<IntensityFilm> to_intensity_film();
+
+    std::shared_ptr<IntensityFilm> to_intensity_film_reversed();
 };
 
 } // namespace pbrt

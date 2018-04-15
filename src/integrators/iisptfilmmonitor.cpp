@@ -123,4 +123,48 @@ std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film()
     return intensity_film;
 }
 
+// ============================================================================
+// Reverse intensity film
+// If the current film is a camera film and output is for viewing
+
+std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film_reversed()
+{
+    lock.lock();
+
+    Vector2i diagonal = film_bounds.Diagonal();
+    int width = diagonal.x + 1;
+    int height = diagonal.y + 1;
+    std::cerr << "Width and height are ["<< width <<"] ["<< height <<"]" << std::endl;
+    std::cerr << "Computed assuming exclusive pMax are ["<< (film_bounds.pMax.x - film_bounds.pMin.x) <<"] ["<< (film_bounds.pMax.y - film_bounds.pMin.y) <<"]" << std::endl;
+
+    std::shared_ptr<IntensityFilm> intensity_film (
+                new IntensityFilm(
+                    width,
+                    height
+                    )
+                );
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            IisptPixel pix = (pixels[y])[x];
+            if (pix.sample_count > 0) {
+                double r = pix.r / ((double)pix.sample_count);
+                double g = pix.g / ((double)pix.sample_count);
+                double b = pix.b / ((double)pix.sample_count);
+                intensity_film->set_camera_coord(
+                            x,
+                            height - 1 - y,
+                            (float) r,
+                            (float) g,
+                            (float) b
+                            );
+            }
+        }
+    }
+
+    lock.unlock();
+
+    return intensity_film;
+}
+
 } // namespace pbrt
