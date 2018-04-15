@@ -87,6 +87,8 @@ public:
 
     void render_normal(const Scene &scene);
 
+    void render_normal_2(const Scene &scene);
+
     void render_reference(const Scene &scene);
 
     Float get_normalization_intensity() {

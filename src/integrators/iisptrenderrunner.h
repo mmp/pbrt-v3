@@ -21,9 +21,11 @@ private:
 
     int thread_no;
 
+    bool stop = false;
+
     // Shared objects
 
-    std::shared_ptr<IISPTIntegrator> iispt_integrator;
+    IISPTIntegrator* iispt_integrator;
 
     std::shared_ptr<IisptScheduleMonitor> schedule_monitor;
 
@@ -63,7 +65,7 @@ public:
 
     // Constructor ------------------------------------------------------------
     IisptRenderRunner(
-            std::shared_ptr<IISPTIntegrator> iispt_integrator,
+            IISPTIntegrator* iispt_integrator,
             std::shared_ptr<IisptScheduleMonitor> schedule_monitor,
             std::shared_ptr<IisptFilmMonitor> film_monitor,
             std::shared_ptr<const Camera> main_camera,

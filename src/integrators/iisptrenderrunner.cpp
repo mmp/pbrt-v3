@@ -99,7 +99,7 @@ static Spectrum sample_hemisphere(
 
 // ============================================================================
 IisptRenderRunner::IisptRenderRunner(
-        std::shared_ptr<IISPTIntegrator> iispt_integrator,
+        IISPTIntegrator* iispt_integrator,
         std::shared_ptr<IisptScheduleMonitor> schedule_monitor,
         std::shared_ptr<IisptFilmMonitor> film_monitor,
         std::shared_ptr<const Camera> main_camera,
@@ -146,6 +146,10 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
     this->d_integrator->Preprocess(scene);
 
     while (1) {
+
+        if (stop) {
+            return;
+        }
 
         // --------------------------------------------------------------------
         //    * Obtain current __radius__ from the __ScheduleMonitor__. The ScheduleMonitor updates its internal count automatically
@@ -372,6 +376,9 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 
                 // Valid intersection found
 
+                // TODO check if intersection is within valid range
+                // and that has similar material and normal facing
+
                 // Compute scattering functions for surface interaction
                 f_isect.ComputeScatteringFunctions(f_ray, arena);
                 if (!isect.bsdf) {
@@ -409,6 +416,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 
             }
         }
+
+        stop = true;
 
     }
 }

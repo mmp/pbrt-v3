@@ -49,6 +49,9 @@
 #include "integrators/iispt_estimator_integrator.h"
 #include "integrators/iisptnnconnector.h"
 #include "film/intensityfilm.h"
+#include "integrators/iisptschedulemonitor.h"
+#include "integrators/iisptfilmmonitor.h"
+#include "integrators/iisptrenderrunner.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -466,8 +469,9 @@ void IISPTIntegrator::estimate_normalization(const Scene &scene) {
 void IISPTIntegrator::Render(const Scene &scene) {
     if (PbrtOptions.referenceTiles <= 0) {
         // Normal render of the scene
-        std::cerr << "Starting normal render" << std::endl;
-        render_normal(scene);
+        std::cerr << "Starting normal 2 render" << std::endl;
+        render_normal_2(scene);
+        // render_normal(scene);
     } else {
         // Render reference training views
         std::cerr << "Starting reference render" << std::endl;
@@ -592,6 +596,50 @@ void IISPTIntegrator::render_normal(const Scene &scene) {
     // ------------------------------------------------------------------------
     // Save final image after rendering
     camera->film->WriteImage();
+}
+
+// ============================================================================
+// Render normal 2
+void IISPTIntegrator::render_normal_2(const Scene &scene) {
+
+    Preprocess(scene);
+
+    estimate_normalization(scene);
+
+    // Create: IisptScheduleMonitor, IisptFilmMonitor,
+    // IisptRenderRunner
+
+    std::shared_ptr<IisptScheduleMonitor> schedule_monitor (
+                new IisptScheduleMonitor();
+                );
+
+    std::shared_ptr<IisptFilmMonitor> film_monitor (
+                new IisptFilmMonitor(
+                    camera->film->GetSampleBounds()
+                    )
+                );
+
+    std::shared_ptr<IisptRenderRunner> render_runner (
+                new IisptRenderRunner(
+                    this,
+                    schedule_monitor,
+                    film_monitor,
+                    camera,
+                    dcamera,
+                    sampler,
+                    0,
+                    camera->film->GetSampleBounds()
+                    )
+                );
+
+    MemoryArena arena;
+
+    render_runner->run(scene, arena);
+
+    std::shared_ptr<IntensityFilm> output_film =
+            film_monitor->to_intensity_film();
+
+    output_film->write("/tmp/iispt.pfm");
 }
 
 // Render reference ===========================================================
