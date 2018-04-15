@@ -185,8 +185,10 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             continue;
         }
 
+        std::cerr << "Getting camera sample...\n";
         CameraSample camera_sample =
                 sampler->GetCameraSample(pixel);
+        std::cerr << "Got the camera sample\n";
 
         RayDifferential r;
         Float ray_weight =
@@ -334,9 +336,12 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             for (int fx = filter_start_x; fx <= filter_end_x; fx++) {
 
                 Point2i f_pixel = Point2i(fx, fy);
+                sampler->StartPixel(f_pixel);
 
+                std::cerr << "Loop get camera sample\n";
                 CameraSample f_camera_sample =
                         sampler->GetCameraSample(f_pixel);
+                std::cerr << "got.\n";
 
                 RayDifferential f_r;
                 Float f_ray_weight =

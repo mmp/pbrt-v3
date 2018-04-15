@@ -127,7 +127,6 @@ def output_to_stdout(nparray):
 # =============================================================================
 # Processing function
 def process_one(net):
-    print_stderr("Waiting for input...")
 
     # Read input from stdin
     prop = km.KM()
