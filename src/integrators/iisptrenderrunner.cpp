@@ -78,9 +78,6 @@ static Spectrum estimate_direct(
 // Sample hemisphere
 static Spectrum sample_hemisphere(
         const Interaction &it,
-        const Scene &scene,
-        MemoryArena &arena,
-        Sampler &sampler,
         HemisphericCamera* auxCamera
         ) {
     Spectrum L(0.f);
@@ -223,11 +220,11 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                         background
                         );
             continue;
-        } else if (intersection_found && beta <= 0.0) {
+        } else if (intersection_found && beta.y() <= 0.0) {
             // Intersection found but black pixel
             film_monitor->add_sample(
                         pixel,
-                        L(0.0)
+                        Spectrum(0.0)
                         );
             continue;
         }
@@ -315,22 +312,22 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 
         int filter_start_x = std::max(
                     film_monitor->get_film_bounds().pMin.x,
-                    std::round(((float) x) - radius)
+                    (int) std::round(((float) x) - radius)
                     );
 
         int filter_end_x = std::min(
                     film_monitor->get_film_bounds().pMax.x,
-                    std::round(((float) x) + radius)
+                    (int) std::round(((float) x) + radius)
                     );
 
         int filter_start_y = std::max(
                     film_monitor->get_film_bounds().pMin.y,
-                    std::round(((float) y) - radius)
+                    (int) std::round(((float) y) - radius)
                     );
 
         int filter_end_y = std::min(
                     film_monitor->get_film_bounds().pMax.y,
-                    std::round(((float) y) + radius)
+                    (int) std::round(((float) y) + radius)
                     );
 
         for (int fy = filter_start_y; fy <= filter_end_y; fy++) {
@@ -368,7 +365,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                 if (!f_intersection_found) {
                     // No intersection found, nothing to do
                     continue;
-                } else if (f_intersection_found && f_beta <= 0.0) {
+                } else if (f_intersection_found && f_beta.y() <= 0.0) {
                     // Intersection found but black pixel
                     // Nothing to do
                     continue;
@@ -405,9 +402,6 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                 // Compute hemispheric contribution
                 L += sample_hemisphere(
                             f_isect,
-                            scene,
-                            arena,
-                            sampler,
                             aux_camera.get()
                             );
 
@@ -459,7 +453,7 @@ bool IisptRenderRunner::find_intersection(
     Spectrum beta (1.0);
     RayDifferential ray (r);
 
-    for (bounces = 0; bounces < 24; ++bounces) {
+    for (int bounces = 0; bounces < 24; ++bounces) {
 
         // Compute intersection
         SurfaceInteraction isect;
@@ -502,7 +496,7 @@ bool IisptRenderRunner::find_intersection(
         // If BSDF is black or contribution is null,
         // return a 0 beta
         if (f.IsBlack() || pdf == 0.f) {
-            *beta_out = L(0.0);
+            *beta_out = Spectrum(0.0);
             return true;
         }
         // Check for specular bounce
@@ -521,7 +515,7 @@ bool IisptRenderRunner::find_intersection(
         beta *= f * AbsDot(wi, isect.shading.n) / pdf;
         // Check for zero beta
         if (beta.y() < 0.f || isNaN(beta.y())) {
-            *beta_out = L(0.0);
+            *beta_out = Spectrum(0.0);
             return true;
         }
         // Spawn the new ray
@@ -534,7 +528,7 @@ bool IisptRenderRunner::find_intersection(
     }
 
     // Max depth reached, return 0 beta
-    *beta = L(0.0);
+    *beta_out = Spectrum(0.0);
     return true;
 }
 

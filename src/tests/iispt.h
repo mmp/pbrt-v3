@@ -75,7 +75,7 @@ void test_main4() {
     std::shared_ptr<IntensityFilm> intensity_film =
             film_monitor->to_intensity_film();
     intensity_film->write(std::string("/tmp/if.pfm"));
-    std::cerr << "Written to /tmp/if.pfm" << std::endl;`
+    std::cerr << "Written to /tmp/if.pfm" << std::endl;
 }
 
 void test_main3() {

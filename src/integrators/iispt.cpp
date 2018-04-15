@@ -610,7 +610,7 @@ void IISPTIntegrator::render_normal_2(const Scene &scene) {
     // IisptRenderRunner
 
     std::shared_ptr<IisptScheduleMonitor> schedule_monitor (
-                new IisptScheduleMonitor();
+                new IisptScheduleMonitor()
                 );
 
     std::shared_ptr<IisptFilmMonitor> film_monitor (

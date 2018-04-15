@@ -90,7 +90,7 @@ Reformatting options:
 // ============================================================================
 // Main
 int main(int argc, char *argv[]) {
-    test_main4(); exit(0);
+    // test_main4(); exit(0);
 
     google::InitGoogleLogging(argv[0]);
     FLAGS_stderrthreshold = 1; // Warning and above.

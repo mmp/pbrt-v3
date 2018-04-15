@@ -1,6 +1,7 @@
 #include "distancefilm.h"
 
 #include "film/scalarpfmitem.h"
+#include "film/rgbpfmitem.h"
 
 namespace pbrt {
 
