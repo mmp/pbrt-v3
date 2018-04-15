@@ -141,8 +141,10 @@ IisptRenderRunner::IisptRenderRunner(
 void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 {
     this->d_integrator->Preprocess(scene);
+    int loop_count = 0;
 
     while (1) {
+
 
         if (stop) {
             return;
@@ -338,10 +340,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                 Point2i f_pixel = Point2i(fx, fy);
                 sampler->StartPixel(f_pixel);
 
-                std::cerr << "Loop get camera sample\n";
                 CameraSample f_camera_sample =
                         sampler->GetCameraSample(f_pixel);
-                std::cerr << "got.\n";
 
                 RayDifferential f_r;
                 Float f_ray_weight =
@@ -416,7 +416,10 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             }
         }
 
-        stop = true;
+        loop_count++;
+        if (loop_count > 20) {
+            stop = true;
+        }
 
     }
 }
