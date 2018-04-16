@@ -33,6 +33,12 @@ void IntensityFilm::write(std::string filename) {
 }
 
 // ============================================================================
+void IntensityFilm::pbrt_write(std::string filename)
+{
+    film->pbrt_write_image(filename);
+}
+
+// ============================================================================
 
 // Get a pixel
 // Uses image coordinates: Y is from top to bottom
