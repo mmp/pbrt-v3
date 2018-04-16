@@ -38,12 +38,9 @@ void IisptNnConnector::pipe_image_film(std::shared_ptr<ImageFilm> film) {
     if (film == NULL) {
         std::cerr << "Film is null!" << std::endl;
     }
-    std::cerr << "Pipe image film start" << std::endl;
     int height = film->get_height();
-    std::cerr << "Got the height" << std::endl;
     int width = film->get_width();
     int components = film->get_components();
-    std::cerr << "Got the dimensions" << std::endl;
 
     // The input ImageFilm is assumed to already have the
     // correct Y axis direction
@@ -79,7 +76,6 @@ std::shared_ptr<IntensityFilm> IisptNnConnector::read_image_film(
         int &status
         )
 {
-    std::cerr << "iisptnnconnector.cpp: read_image_film" << std::endl;
     int hemisize = PbrtOptions.iisptHemiSize;
 
     std::shared_ptr<IntensityFilm> film (
@@ -151,12 +147,9 @@ std::shared_ptr<IntensityFilm> IisptNnConnector::communicate(
 {
     // Write rasters
     pipe_image_film(intensity->get_image_film());
-    std::cerr << "Piping distance" << std::endl;
     pipe_image_film(distance->get_image_film());
-    std::cerr << "Piping normals" << std::endl;
     pipe_image_film(normals->get_image_film());
     // Write normalization
-    std::cerr << "Piping normalization values" << std::endl;
     child_process->write_float32(intensity_normalization);
     child_process->write_float32(distance_normalization);
 
@@ -168,9 +161,6 @@ std::shared_ptr<IntensityFilm> IisptNnConnector::communicate(
         status = 1;
         return output_film;
     } else {
-        std::cerr << "Obtained an output image. Saving to /tmp/da.pfm" << std::endl;
-        output_film->write(std::string("/tmp/da.pfm"));
-        std::cerr << "saved." << std::endl;
         status = 0;
         return output_film;
     }

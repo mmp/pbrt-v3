@@ -187,10 +187,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             continue;
         }
 
-        std::cerr << "Getting camera sample...\n";
         CameraSample camera_sample =
                 sampler->GetCameraSample(pixel);
-        std::cerr << "Got the camera sample\n";
 
         RayDifferential r;
         Float ray_weight =
@@ -266,6 +264,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                         std::string("/tmp/null")
                         )
                     );
+
 
         // Run dintegrator render
         d_integrator->RenderView(scene, aux_camera);
@@ -411,7 +410,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                             );
 
                 // Record sample
-                film_monitor->add_sample(f_pixel, L);
+                film_monitor->add_sample(f_pixel, f_beta * L);
 
             }
         }
@@ -458,6 +457,7 @@ bool IisptRenderRunner::find_intersection(
         Spectrum* background_out
         )
 {
+
     Spectrum beta (1.0);
     RayDifferential ray (r);
 
@@ -465,6 +465,8 @@ bool IisptRenderRunner::find_intersection(
 
         // Compute intersection
         SurfaceInteraction isect;
+
+
         bool found_intersection = scene.Intersect(ray, &isect);
 
         // If no intersection, returned beta-scaled background radiance
@@ -472,9 +474,9 @@ bool IisptRenderRunner::find_intersection(
             Spectrum L (0.0);
             for (const auto &light : scene.infiniteLights) {
                 L += beta * light->Le(ray);
-                *background_out = L;
-                return false;
             }
+            *background_out = L;
+            return false;
         }
 
         // Compute scattering functions
