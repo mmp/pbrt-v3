@@ -187,10 +187,10 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             continue;
         }
 
-        std::cerr << "Getting camera sample...\n";
+        std::cerr << "iisptrenderrunner.cpp: Getting camera sample...\n";
         CameraSample camera_sample =
                 sampler->GetCameraSample(pixel);
-        std::cerr << "Got the camera sample\n";
+        std::cerr << "iisptrenderrunner.cpp: Got the camera sample\n";
 
         RayDifferential r;
         Float ray_weight =
@@ -200,6 +200,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                     );
         r.ScaleDifferentials(1.0); // Not scaling based on samples per
                                      // pixel here
+        std::cerr << "iisptrenderrunner.cpp: generated ray differential\n";
 
         SurfaceInteraction isect;
         Spectrum beta;
@@ -207,6 +208,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         RayDifferential ray;
 
         // Find intersection point
+        std::cerr << "iisptrenderrunner.cpp: before find intersection\n";
         bool intersection_found = find_intersection(
                     r,
                     scene,
@@ -216,6 +218,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                     &beta,
                     &background
                     );
+        std::cerr << "iisptrenderrunner.cpp: find_intersection returned\n";
 
         if (!intersection_found) {
             // Record background light
@@ -267,8 +270,12 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                         )
                     );
 
+        std::cerr << "iisptrenderrunner.cpp: aux camera created\n";
+
         // Run dintegrator render
         d_integrator->RenderView(scene, aux_camera);
+
+        std::cerr << "iisptrenderrunner.cpp: aux render complete\n";
 
         // --------------------------------------------------------------------
         //    * Use the __NnConnector__ to obtain the predicted intensity
@@ -296,6 +303,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                     iispt_integrator->get_normalization_distance(),
                     communicate_status
                     );
+
+        std::cerr << "iisptrenderrunner.cpp: NN communication done\n";
 
         if (communicate_status) {
             std::cerr << "NN communication issue" << std::endl;
@@ -333,6 +342,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                     film_monitor->get_film_bounds().pMax.y,
                     (int) std::round(((float) y) + radius)
                     );
+
+        std::cerr << "iisptrenderrunner.cpp: start filter loop\n";
 
         for (int fy = filter_start_y; fy <= filter_end_y; fy++) {
             for (int fx = filter_start_x; fx <= filter_end_x; fx++) {
@@ -411,10 +422,12 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                             );
 
                 // Record sample
-                film_monitor->add_sample(f_pixel, L);
+                film_monitor->add_sample(f_pixel, f_beta * L);
 
             }
         }
+
+        std::cerr << "########## iisptrenderrunner.cpp: end filter loop\n";
 
         loop_count++;
         if (loop_count > 20) {
@@ -458,6 +471,8 @@ bool IisptRenderRunner::find_intersection(
         Spectrum* background_out
         )
 {
+    std::cerr << "iisptrenderrunner.cpp: find_intersection entry\n";
+
     Spectrum beta (1.0);
     RayDifferential ray (r);
 
@@ -465,21 +480,28 @@ bool IisptRenderRunner::find_intersection(
 
         // Compute intersection
         SurfaceInteraction isect;
+
+        std::cerr << "iisptrenderrunner.cpp: find_intersection. Bounce ["<< bounces <<"]. Calling scene.Intersect\n";
+
         bool found_intersection = scene.Intersect(ray, &isect);
 
         // If no intersection, returned beta-scaled background radiance
         if (!found_intersection) {
+            std::cerr << "iisptrenderrunner.cpp: find_intersection !found_intersection\n";
             Spectrum L (0.0);
             for (const auto &light : scene.infiniteLights) {
                 L += beta * light->Le(ray);
-                *background_out = L;
-                return false;
             }
+            *background_out = L;
+            return false;
         }
 
         // Compute scattering functions
+        std::cerr << "iisptrenderrunner.cpp: find_intersection. Calling ComputeScatteringFunctions\n";
         isect.ComputeScatteringFunctions(ray, arena, true);
+        std::cerr << "iisptrenderrunner.cpp: find_intersection. ComputeScatteringFunctions returned\n";
         if (!isect.bsdf) {
+            std::cerr << "iisptrenderrunner.cpp: find_intersection. isect.bsdf is null\n";
             // If BSDF is null, skip this intersection
             ray = isect.SpawnRay(ray.d);
             continue;
@@ -492,6 +514,7 @@ bool IisptRenderRunner::find_intersection(
         Vector3f wi;
         Float pdf;
         BxDFType flags;
+        std::cerr << "iisptrenderrunner.cpp: find_intersection calling Sample_f\n";
         Spectrum f =
                 isect.bsdf->Sample_f(
                     wo,
@@ -501,15 +524,18 @@ bool IisptRenderRunner::find_intersection(
                     BSDF_ALL,
                     &flags
                     );
+        std::cerr << "iisptrenderrunner.cpp: find_intersection Sample_f returned\n";
         // If BSDF is black or contribution is null,
         // return a 0 beta
         if (f.IsBlack() || pdf == 0.f) {
+            std::cerr << "iisptrenderrunner.cpp: find_intersection f is black or pdf is 0, returning black beta\n";
             *beta_out = Spectrum(0.0);
             return true;
         }
         // Check for specular bounce
         bool specular_bounce = (flags & BSDF_SPECULAR) != 0;
         if (!specular_bounce) {
+            std::cerr << "iisptrenderrunner.cpp: find_intersection not a specular bounce, return normal case\n";
             // The current bounce is not specular, so we stop here
             // and let IISPT proceed from the current point
             // No need to update Beta here
@@ -523,10 +549,12 @@ bool IisptRenderRunner::find_intersection(
         beta *= f * AbsDot(wi, isect.shading.n) / pdf;
         // Check for zero beta
         if (beta.y() < 0.f || isNaN(beta.y())) {
+            std::cerr << "iisptrenderrunner.cpp: find_intersection beta is zero, return zero beta\n";
             *beta_out = Spectrum(0.0);
             return true;
         }
         // Spawn the new ray
+        std::cerr << "iisptrenderrunner.cpp: find_intersection spawn next ray\n";
         ray = isect.SpawnRay(wi);
 
         // Skip subsurface scattering
