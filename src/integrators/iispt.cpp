@@ -640,6 +640,7 @@ void IISPTIntegrator::render_normal_2(const Scene &scene) {
             film_monitor->to_intensity_film_reversed();
 
     output_film->write("/tmp/iispt.pfm");
+    output_film->pbrt_write("/tmp/iispt.exr");
 }
 
 // Render reference ===========================================================

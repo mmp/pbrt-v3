@@ -42,6 +42,8 @@ public:
 
     void write(std::string filename);
 
+    void pbrt_write(std::string filename);
+
     // Get Image Film =========================================================
 
     std::shared_ptr<ImageFilm> get_image_film() {

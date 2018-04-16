@@ -70,8 +70,12 @@ public:
     std::shared_ptr<PfmItem> get(int x, int y);
 
     // Write ==================================================================
+
     // Write to PFM file
     void write(std::string filename);
+
+    // Write using PBRT methods
+    void pbrt_write_image(std::string filename);
 
     // Get Width ==============================================================
     int get_width() {
