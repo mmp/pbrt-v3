@@ -221,7 +221,7 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
     const int tileSize = 16;
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
-    ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
+    // ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
         ParallelFor2D([&](Point2i tile) {
             // Render section of image corresponding to _tile_
@@ -311,9 +311,9 @@ void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> ca
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
-            reporter.Update();
+            // reporter.Update();
         }, nTiles);
-        reporter.Done();
+        // reporter.Done();
     }
 
 }

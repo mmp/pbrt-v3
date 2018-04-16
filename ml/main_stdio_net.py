@@ -50,7 +50,6 @@ def write_char(c):
 
 def read_float_nparray(data, num):
     buff = sys.stdin.buffer.read(num * 4)
-    print_stderr("read_float_nparray: read {} bytes".format(len(buff)))
     floats = struct.unpack('{}f'.format(num), buff)
     for i in range(num):
         data[i] = floats[i]
@@ -80,8 +79,6 @@ def read_input(prop):
     # Read distance normalization
     distance_normalization = read_float()
 
-    print_stderr("Completed reading values")
-
     # Populate prop
     prop.int_norm = intensity_normalization
     prop.dist_norm = distance_normalization
@@ -97,10 +94,6 @@ def read_input(prop):
 
     # Concatenate the arrays
     concatenated = numpy.concatenate([intensity_data, normals_data, distance_data])
-
-    print_stderr("Intensity shape {}".format(intensity_data.shape))
-    print_stderr("Normals shape {}".format(normals_data.shape))
-    print_stderr("Distance shape {}".format(distance_data.shape))
 
     return concatenated
 
@@ -131,19 +124,14 @@ def process_one(net):
     # Read input from stdin
     prop = km.KM()
     input_data = read_input(prop)
-    print_stderr("Got the input numpy array {}".format(input_data))
-    print_stderr("Shape is {}".format(input_data.shape))
     torch_data = torch.from_numpy(input_data).float()
     input_variable = Variable(torch_data)
 
     # Run the network
     output_variable = net(input_variable)
-    print_stderr("output_variable type is {}".format(output_variable.data.type()))
-    print_stderr("Got the output data from network")
 
     # Do inverse transform
     output_numpy = output_variable.data.numpy()
-    print_stderr("output_numpy type is {}".format(output_numpy.dtype))
     output_transformed = inverse_transform(output_variable.data.numpy(), prop)
 
     # Output to STDOUT
