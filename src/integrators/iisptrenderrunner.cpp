@@ -153,6 +153,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 
     while (1) {
 
+        std::cerr << "iisptrenderrunner.cpp loop count " << loop_count << std::endl;
 
         if (stop) {
             return;
@@ -357,7 +358,9 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                             &f_weight_scaling
                             );
 
-
+                if (f_weight_scaling * f_weight < 0.001) {
+                    continue;
+                }
 
                 Point2i f_pixel = Point2i(fx, fy);
                 sampler->StartPixel(f_pixel);
@@ -434,7 +437,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                 L += sample_hemisphere(
                             f_isect,
                             aux_camera.get(),
-                            f_weight
+                            f_weight * HEMI_IMPORTANCE
                             );
 
                 // Record sample
@@ -447,7 +450,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         }
 
         loop_count++;
-        if (loop_count > 250) {
+        if (loop_count > 1000) {
             stop = true;
         }
 

@@ -21,6 +21,8 @@ class IisptRenderRunner
 private:
     // Fields -----------------------------------------------------------------
 
+    double HEMI_IMPORTANCE = 5.0;
+
     int thread_no;
 
     bool stop = false;
