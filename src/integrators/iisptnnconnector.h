@@ -21,7 +21,7 @@ private: // ===================================================================
 
     void pipe_image_film(std::shared_ptr<ImageFilm> film);
 
-    std::shared_ptr<IntensityFilm> read_image_film(
+    std::unique_ptr<IntensityFilm> read_image_film(
             int &status
             );
 
@@ -31,7 +31,7 @@ public: // ====================================================================
     IisptNnConnector();
 
     // Communicate
-    std::shared_ptr<IntensityFilm> communicate(
+    std::unique_ptr<IntensityFilm> communicate(
             std::shared_ptr<IntensityFilm> intensity,
             std::shared_ptr<DistanceFilm> distance,
             std::shared_ptr<NormalFilm> normals,

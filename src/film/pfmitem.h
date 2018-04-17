@@ -34,7 +34,7 @@ public:
     }
 
     // Scalar multiply
-    virtual std::shared_ptr<PfmItem> scalar_multiply(float c) {
+    virtual std::unique_ptr<PfmItem> scalar_multiply(float c) {
         std::cerr << "pfmitem.h: scalar_multiply() calling method on interface" << std::endl;
         exit(1);
     }
@@ -42,6 +42,12 @@ public:
     // Get as spectrum
     virtual Spectrum as_spectrum() {
         std::cerr << "pfmitem.h: as_spectrum() calling method on interface" << std::endl;
+        exit(1);
+    }
+
+    // Clone
+    virtual std::unique_ptr<PfmItem> clone() {
+        std::cerr << "pfmitem.h: clone() calling method on interface" << std::endl;
         exit(1);
     }
 

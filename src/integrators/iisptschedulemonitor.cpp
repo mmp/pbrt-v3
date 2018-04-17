@@ -10,7 +10,7 @@ IisptScheduleMonitor::IisptScheduleMonitor() {
     // Read environment variables
     char* radius_start_env = std::getenv("IISPT_SCHEDULE_RADIUS_START");
     if (radius_start_env == NULL) {
-        current_radius = 50.0;
+        current_radius = 100.0;
     } else {
         current_radius = std::stof(std::string(radius_start_env));
     }
@@ -24,7 +24,7 @@ IisptScheduleMonitor::IisptScheduleMonitor() {
 
     char* update_interval_env = std::getenv("IISPT_SCHEDULE_INTERVAL");
     if (update_interval_env == NULL) {
-        update_interval = 100;
+        update_interval = 200;
     } else {
         update_interval = std::stoi(std::string(update_interval_env));
     }

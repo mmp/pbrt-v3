@@ -30,6 +30,12 @@ public:
         exit(1);
     }
 
+    virtual std::unique_ptr<PfmItem> clone() {
+        return std::unique_ptr<PfmItem> (
+                    new ScalarPfmItem(value)
+                    );
+    }
+
 };
 
 } // namespace pbrt

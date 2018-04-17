@@ -15,16 +15,18 @@ static void write_float_value(std::ofstream &ofs, float val) {
 
 
 // ============================================================================
-void ImageFilm::set(int x, int y, std::shared_ptr<PfmItem> pixel) {
+void ImageFilm::set(int x, int y, std::unique_ptr<PfmItem> pixel) {
 
-    (rows[y])[x] = pixel;
+    int idx = y * width + x;
+    data[idx] = pixel->clone();
 
 }
 
 // ============================================================================
-std::shared_ptr<PfmItem> ImageFilm::get(int x, int y) {
+std::unique_ptr<PfmItem> ImageFilm::get(int x, int y) {
 
-    return (rows[y])[x];
+    int idx = y * width + x;
+    return data[idx]->clone();
 
 }
 
@@ -49,7 +51,7 @@ void ImageFilm::write(std::string filename) {
     // Write pixels
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            std::shared_ptr<PfmItem> pix = (rows[y])[x];
+            PfmItem* pix = data[y * width + x].get();
             if (num_components == 1) {
                 float val = pix->get_single_component();
                 write_float_value(ofs, val);
@@ -90,7 +92,7 @@ void ImageFilm::pbrt_write_image(std::string filename) {
     // Populate the array
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            std::shared_ptr<PfmItem> item = get(x, y);
+            std::unique_ptr<PfmItem> item = get(x, y);
             if (num_components == 1) {
                 Float it = item->get_single_component();
                 rgb[y*width + x] = it;
@@ -113,12 +115,12 @@ void ImageFilm::pbrt_write_image(std::string filename) {
 // ============================================================================
 
 void ImageFilm::set_all(
-        std::shared_ptr<PfmItem> pix
+        std::unique_ptr<PfmItem> pix
         )
 {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            set(x, y, pix);
+            set(x, y, pix->clone());
         }
     }
 }

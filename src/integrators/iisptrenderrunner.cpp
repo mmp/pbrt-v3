@@ -450,7 +450,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         }
 
         loop_count++;
-        if (loop_count > 1000) {
+        if (loop_count > 2000) {
             stop = true;
         }
 

@@ -47,7 +47,7 @@ void IisptNnConnector::pipe_image_film(std::shared_ptr<ImageFilm> film) {
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            std::shared_ptr<PfmItem> pixel_item = film->get(x, y);
+            std::unique_ptr<PfmItem> pixel_item = film->get(x, y);
             if (components == 1) {
                 Float val = pixel_item->get_single_component();
                 child_process->write_float32(val);
@@ -72,13 +72,13 @@ void IisptNnConnector::pipe_image_film(std::shared_ptr<ImageFilm> film) {
 
 // <status> becomes 1 if errors occurred
 //                  0 if all OK
-std::shared_ptr<IntensityFilm> IisptNnConnector::read_image_film(
+std::unique_ptr<IntensityFilm> IisptNnConnector::read_image_film(
         int &status
         )
 {
     int hemisize = PbrtOptions.iisptHemiSize;
 
-    std::shared_ptr<IntensityFilm> film (
+    std::unique_ptr<IntensityFilm> film (
                 new IntensityFilm(
                     hemisize,
                     hemisize
@@ -136,7 +136,7 @@ std::shared_ptr<IntensityFilm> IisptNnConnector::read_image_film(
 
 // <status> becomes 1 if an error occurred
 //                  0 if all ok
-std::shared_ptr<IntensityFilm> IisptNnConnector::communicate(
+std::unique_ptr<IntensityFilm> IisptNnConnector::communicate(
         std::shared_ptr<IntensityFilm> intensity,
         std::shared_ptr<DistanceFilm> distance,
         std::shared_ptr<NormalFilm> normals,
@@ -155,7 +155,7 @@ std::shared_ptr<IntensityFilm> IisptNnConnector::communicate(
 
     // Read output from child process
     int st = -1;
-    std::shared_ptr<IntensityFilm> output_film = read_image_film(st);
+    std::unique_ptr<IntensityFilm> output_film = read_image_film(st);
     if (st) {
         std::cerr << "iisptnnconnector.cpp: An error occurred when reading output image" << std::endl;
         status = 1;

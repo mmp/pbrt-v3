@@ -39,8 +39,8 @@ public:
         bb = b;
     }
 
-    virtual std::shared_ptr<PfmItem> scalar_multiply(float c) {
-        std::shared_ptr<RgbPfmItem> res (
+    virtual std::unique_ptr<PfmItem> scalar_multiply(float c) {
+        std::unique_ptr<RgbPfmItem> res (
                     new RgbPfmItem(
                         r * c,
                         g * c,
@@ -56,6 +56,13 @@ public:
         return Spectrum::FromRGB(
                     rgb
                     );
+    }
+
+    virtual std::unique_ptr<PfmItem> clone() {
+        std::unique_ptr<PfmItem> res (
+                    new RgbPfmItem(r, g, b)
+                    );
+        return res;
     }
 
 };

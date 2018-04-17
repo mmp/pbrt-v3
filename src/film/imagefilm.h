@@ -22,12 +22,9 @@ private:
     int height;
     int num_components;
 
-    std::vector<std::vector<std::shared_ptr<PfmItem>>> rows;
+    std::vector<std::unique_ptr<PfmItem>> data;
 
 public:
-
-    // Make polymorphic
-    virtual ~ImageFilm() = default;
 
     // Constructor ============================================================
     ImageFilm(
@@ -46,28 +43,19 @@ public:
         }
 
         for (int y = 0; y < height; y++) {
-            std::vector<std::shared_ptr<PfmItem>> a_row;
             for (int x = 0; x < width; x++) {
-                std::shared_ptr<PfmItem> a_null_item (new NullPfmItem());
-                a_row.push_back(
-                    a_null_item
-                );
+                std::unique_ptr<PfmItem> a_null_item (new NullPfmItem());
+                data.push_back(std::move(a_null_item));
             }
-            rows.push_back(a_row);
         }
 
-        if (rows.size() != height) {
-            std::cerr << "imagefilm.h: construct ImageFilm: specified height is "
-                      << height << " but actual height is " << rows.size() << std::endl;
-            exit(1);
-        }
     }
 
     // Set ====================================================================
-    void set(int x, int y, std::shared_ptr<PfmItem> pixel);
+    void set(int x, int y, std::unique_ptr<PfmItem> pixel);
 
     // Get ====================================================================
-    std::shared_ptr<PfmItem> get(int x, int y);
+    std::unique_ptr<PfmItem> get(int x, int y);
 
     // Write ==================================================================
 
@@ -94,7 +82,7 @@ public:
 
     // Set all pixels =========================================================
     void set_all(
-            std::shared_ptr<PfmItem> pix
+            std::unique_ptr<PfmItem> pix
             );
 
 };
