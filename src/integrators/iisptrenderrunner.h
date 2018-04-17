@@ -68,7 +68,9 @@ private:
             int cy,
             int fx, // Current filter pixel
             int fy,
-            float radius // Filter radius
+            float radius, // Filter radius,
+            double* scaling_factor // Scaling factor to obtain a gaussian curve
+                                   // which has point X=0, Y=1
             );
 
     Spectrum sample_hemisphere(

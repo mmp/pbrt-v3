@@ -347,18 +347,17 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             for (int fx = filter_start_x; fx <= filter_end_x; fx++) {
 
                 // Compute filter weights
+                double f_weight_scaling;
                 double f_weight = compute_filter_weight(
                             x,
                             y,
                             fx,
                             fy,
-                            radius
+                            radius,
+                            &f_weight_scaling
                             );
 
-                // Skip if weight is too small
-                if (f_weight < 0.01) {
-                    continue;
-                }
+
 
                 Point2i f_pixel = Point2i(fx, fy);
                 sampler->StartPixel(f_pixel);
@@ -439,7 +438,10 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                             );
 
                 // Record sample
-                film_monitor->add_sample(f_pixel, f_beta * L, f_weight);
+                film_monitor->add_sample(
+                            f_pixel,
+                            f_beta * L,
+                            f_weight * f_weight_scaling);
 
             }
         }
@@ -579,7 +581,9 @@ double IisptRenderRunner::compute_filter_weight(
         int cy,
         int fx, // Current filter pixel
         int fy,
-        float radius // Filter radius
+        float radius, // Filter radius,
+        double* scaling_factor // Scaling factor to obtain a gaussian curve
+                               // which has point X=0, Y=1
         )
 {
     double sigma = radius / 3.0;
@@ -595,8 +599,8 @@ double IisptRenderRunner::compute_filter_weight(
 
     // Compute gaussian weight
     double gaussian_weight = iispt::gauss(sigma, distance);
-    double gaussian_scale = iispt::gauss(sigma, 0.0);
-    return gaussian_weight / gaussian_scale;
+    *scaling_factor = 1.0 / iispt::gauss(sigma, 0.0);
+    return gaussian_weight;
 }
 
 }
