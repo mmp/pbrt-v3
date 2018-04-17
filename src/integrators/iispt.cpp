@@ -632,9 +632,7 @@ void IISPTIntegrator::render_normal_2(const Scene &scene) {
                     )
                 );
 
-    MemoryArena arena;
-
-    render_runner->run(scene, arena);
+    render_runner->run(scene);
 
     std::shared_ptr<IntensityFilm> output_film =
             film_monitor->to_intensity_film();

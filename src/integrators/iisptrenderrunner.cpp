@@ -146,7 +146,7 @@ IisptRenderRunner::IisptRenderRunner(
 }
 
 // ============================================================================
-void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
+void IisptRenderRunner::run(const Scene &scene)
 {
     d_integrator->Preprocess(scene);
     int loop_count = 0;
@@ -158,6 +158,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         if (stop) {
             return;
         }
+
+        MemoryArena arena;
 
         // --------------------------------------------------------------------
         //    * Obtain current __radius__ from the __ScheduleMonitor__. The ScheduleMonitor updates its internal count automatically
