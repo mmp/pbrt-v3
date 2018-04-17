@@ -451,6 +451,7 @@ FILE ( GLOB PBRT_SOURCE
   src/shapes/*.cpp
   src/textures/*.cpp
   src/media/*.cpp
+  src/tools/*.cpp
   )
 
 INCLUDE_DIRECTORIES ( src )

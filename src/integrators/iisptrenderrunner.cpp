@@ -338,6 +338,20 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         for (int fy = filter_start_y; fy <= filter_end_y; fy++) {
             for (int fx = filter_start_x; fx <= filter_end_x; fx++) {
 
+                // Compute filter weights
+                double f_weight = compute_filter_weight(
+                            x,
+                            y,
+                            fx,
+                            fy,
+                            radius
+                            );
+
+                // Skip if weight is too small
+                if (f_weight < 0.01) {
+                    continue;
+                }
+
                 Point2i f_pixel = Point2i(fx, fy);
                 sampler->StartPixel(f_pixel);
 
@@ -411,7 +425,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                             );
 
                 // Record sample
-                film_monitor->add_sample(f_pixel, f_beta * L);
+                film_monitor->add_sample(f_pixel, f_beta * L, f_weight);
 
             }
         }

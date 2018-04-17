@@ -62,6 +62,14 @@ private:
             Spectrum* background_out
             );
 
+    double compute_filter_weight(
+            int cx, // Centre sampling pixel
+            int cy,
+            int fx, // Current filter pixel
+            int fy,
+            float radius // Filter radius
+            );
+
 public:
 
     // Constructor ------------------------------------------------------------

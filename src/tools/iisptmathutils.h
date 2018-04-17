@@ -7,7 +7,7 @@ namespace pbrt {
 
 namespace iispt {
 
-double gauss(
+static double gauss(
         double sigma,
         double x
         )
