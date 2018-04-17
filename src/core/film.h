@@ -116,7 +116,7 @@ public:
 
   void Clear();
 
-  std::shared_ptr<IntensityFilm> to_intensity_film();
+  std::unique_ptr<IntensityFilm> to_intensity_film();
 
   // Film Public Data
   const Point2i fullResolution;

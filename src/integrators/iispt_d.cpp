@@ -205,7 +205,7 @@ Spectrum IISPTdIntegrator::Li(const RayDifferential &r,
 
 }
 
-void IISPTdIntegrator::RenderView(const Scene &scene, std::shared_ptr<Camera> camera) {
+void IISPTdIntegrator::RenderView(const Scene &scene, Camera* camera) {
     // There is no preprocess here.
     // It must have already been called by the host.
 
@@ -330,20 +330,22 @@ void IISPTdIntegrator::save_reference(std::shared_ptr<Camera> camera,
 
 // ============================================================================
 // To intensity film
-std::shared_ptr<IntensityFilm> IISPTdIntegrator::get_intensity_film(std::shared_ptr<Camera> camera) {
+std::unique_ptr<IntensityFilm> IISPTdIntegrator::get_intensity_film(
+        Camera* camera)
+{
     return camera->film->to_intensity_film();
 }
 
 // ============================================================================
 // Get normal film
-std::shared_ptr<NormalFilm> IISPTdIntegrator::get_normal_film() {
-    return normal_film;
+NormalFilm* IISPTdIntegrator::get_normal_film() {
+    return normal_film.get();
 }
 
 // ============================================================================
 // Get distance film
-std::shared_ptr<DistanceFilm> IISPTdIntegrator::get_distance_film() {
-    return distance_film;
+DistanceFilm* IISPTdIntegrator::get_distance_film() {
+    return distance_film.get();
 }
 
 // Factory ====================================================================

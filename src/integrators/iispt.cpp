@@ -881,7 +881,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         direct_reference_names.push_back(reference_n_name);
         exec_if_one_not_exists(direct_reference_names, [&]() {
             // Start rendering the hemispherical view
-            this->dintegrator->RenderView(scene, auxCamera);
+            this->dintegrator->RenderView(scene, auxCamera.get());
             dintegrator->save_reference(
                         auxCamera,
                         reference_z_name, // distance map
@@ -892,16 +892,16 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         // Normal mode --------------------------------------------------------
         // Start rendering the hemispherical view
         std::cerr << "Normal mode, starting hemispheric render" << std::endl;
-        this->dintegrator->RenderView(scene, auxCamera);
+        this->dintegrator->RenderView(scene, auxCamera.get());
         std::cerr << "hemispheric render obtained. Getting intensity image" << std::endl;
-        std::shared_ptr<IntensityFilm> dcamera_intensity = dintegrator->get_intensity_film(auxCamera);
+        std::unique_ptr<IntensityFilm> dcamera_intensity = dintegrator->get_intensity_film(auxCamera.get());
         std::cerr << "Got the intensity image. Saving to /tmp/int.pfm" << std::endl;
         dcamera_intensity->write(std::string("/tmp/int.pfm"));
         std::cerr << "Saved." << std::endl;
 
         // Get normals and distance films
-        std::shared_ptr<NormalFilm> dcamera_normal = dintegrator->get_normal_film();
-        std::shared_ptr<DistanceFilm> dcamera_distance = dintegrator->get_distance_film();
+        NormalFilm* dcamera_normal = dintegrator->get_normal_film();
+        DistanceFilm* dcamera_distance = dintegrator->get_distance_film();
 
         // Create the IISPT NN Connector
         std::cerr << "Creating NN connector..." << std::endl;
@@ -911,7 +911,7 @@ Spectrum IISPTIntegrator::Li(const RayDifferential &ray,
         std::cerr << "Calling communicate" << std::endl;
         int comm_status = -1;
         std::shared_ptr<IntensityFilm> nn_film = nn_connector->communicate(
-                    dcamera_intensity,
+                    dcamera_intensity.get(),
                     dcamera_distance,
                     dcamera_normal,
                     max_intensity,

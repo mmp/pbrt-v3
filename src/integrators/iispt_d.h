@@ -63,8 +63,9 @@ private:
   Bounds2i pixelBounds;
   const int maxDepth;
   std::vector<int> nLightSamples;
-  std::shared_ptr<DistanceFilm> distance_film;
-  std::shared_ptr<NormalFilm> normal_film;
+
+  std::unique_ptr<DistanceFilm> distance_film;
+  std::unique_ptr<NormalFilm> normal_film;
 
   const Float rrThreshold = 0.5;
   const std::string lightSampleStrategy = std::string("spatial");
@@ -85,17 +86,20 @@ public:
         pixelBounds(pixelBounds),
         maxDepth(maxDepth)
     {
-        distance_film = std::shared_ptr<DistanceFilm>(
+        distance_film = std::unique_ptr<DistanceFilm>(
             new DistanceFilm(
                 pixelBounds.pMax.x,
                 pixelBounds.pMax.y
             )
         );
 
-        normal_film = std::make_shared<NormalFilm>(
-                    pixelBounds.pMax.x,
-                    pixelBounds.pMax.y
+        normal_film = std::unique_ptr<NormalFilm>(
+                    new NormalFilm(
+                        pixelBounds.pMax.x,
+                        pixelBounds.pMax.y
+                        )
                     );
+
     }
 
     Spectrum Li(const RayDifferential &ray,
@@ -110,18 +114,18 @@ public:
 
     void Preprocess(const Scene &scene);
 
-    void RenderView(const Scene &scene, std::shared_ptr<Camera> camera);
+    void RenderView(const Scene &scene, Camera* camera);
 
     void save_reference(std::shared_ptr<Camera> camera,
                                           std::string distance_filename,
                                           std::string normal_filename
                                           );
 
-    std::shared_ptr<IntensityFilm> get_intensity_film(std::shared_ptr<Camera> camera);
+    std::unique_ptr<IntensityFilm> get_intensity_film(Camera *camera);
 
-    std::shared_ptr<NormalFilm> get_normal_film();
+    NormalFilm* get_normal_film();
 
-    std::shared_ptr<DistanceFilm> get_distance_film();
+    DistanceFilm* get_distance_film();
 
 };
 

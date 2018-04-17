@@ -43,11 +43,11 @@ private:
 
     std::shared_ptr<IISPTdIntegrator> d_integrator;
 
-    std::shared_ptr<IisptNnConnector> nn_connector;
+    std::unique_ptr<IisptNnConnector> nn_connector;
 
-    std::shared_ptr<IisptRng> rng;
+    std::unique_ptr<IisptRng> rng;
 
-    std::shared_ptr<Sampler> sampler;
+    std::unique_ptr<Sampler> sampler;
 
     Bounds2i pixel_bounds;
 

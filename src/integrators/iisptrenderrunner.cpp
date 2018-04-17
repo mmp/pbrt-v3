@@ -123,16 +123,16 @@ IisptRenderRunner::IisptRenderRunner(
     this->d_integrator = CreateIISPTdIntegrator(dcamera);
     // Preprocess is called on run()
 
-    this->nn_connector = std::shared_ptr<IisptNnConnector>(
+    this->nn_connector = std::unique_ptr<IisptNnConnector>(
                 new IisptNnConnector()
                 );
 
     // TODO remove fixed seed
-    this->rng = std::shared_ptr<IisptRng>(
+    this->rng = std::unique_ptr<IisptRng>(
                 new IisptRng(thread_no)
                 );
 
-    this->sampler = std::shared_ptr<Sampler>(
+    this->sampler = std::unique_ptr<Sampler>(
                 sampler->Clone(thread_no)
                 );
 
@@ -148,7 +148,7 @@ IisptRenderRunner::IisptRenderRunner(
 // ============================================================================
 void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 {
-    this->d_integrator->Preprocess(scene);
+    d_integrator->Preprocess(scene);
     int loop_count = 0;
 
     while (1) {
@@ -264,7 +264,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         Ray aux_ray = isect.SpawnRay(Vector3f(surface_normal));
 
         // Create aux camera
-        std::shared_ptr<HemisphericCamera> aux_camera (
+        std::unique_ptr<HemisphericCamera> aux_camera (
                     CreateHemisphericCamera(
                         PbrtOptions.iisptHemiSize,
                         PbrtOptions.iisptHemiSize,
@@ -278,20 +278,20 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 
 
         // Run dintegrator render
-        d_integrator->RenderView(scene, aux_camera);
+        d_integrator->RenderView(scene, aux_camera.get());
 
         // --------------------------------------------------------------------
         //    * Use the __NnConnector__ to obtain the predicted intensity
 
         // Obtain intensity, normals, distance maps
 
-        std::shared_ptr<IntensityFilm> aux_intensity =
-                d_integrator->get_intensity_film(aux_camera);
+        std::unique_ptr<IntensityFilm> aux_intensity =
+                d_integrator->get_intensity_film(aux_camera.get());
 
-        std::shared_ptr<NormalFilm> aux_normals =
+        NormalFilm* aux_normals =
                 d_integrator->get_normal_film();
 
-        std::shared_ptr<DistanceFilm> aux_distance =
+        DistanceFilm* aux_distance =
                 d_integrator->get_distance_film();
 
         // Use NN Connector
@@ -299,7 +299,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         int communicate_status = -1;
         std::shared_ptr<IntensityFilm> nn_film =
                 nn_connector->communicate(
-                    aux_intensity,
+                    aux_intensity.get(),
                     aux_distance,
                     aux_normals,
                     iispt_integrator->get_normalization_intensity(),

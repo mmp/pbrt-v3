@@ -137,9 +137,9 @@ std::unique_ptr<IntensityFilm> IisptNnConnector::read_image_film(
 // <status> becomes 1 if an error occurred
 //                  0 if all ok
 std::unique_ptr<IntensityFilm> IisptNnConnector::communicate(
-        std::shared_ptr<IntensityFilm> intensity,
-        std::shared_ptr<DistanceFilm> distance,
-        std::shared_ptr<NormalFilm> normals,
+        IntensityFilm* intensity,
+        DistanceFilm* distance,
+        NormalFilm* normals,
         Float intensity_normalization,
         Float distance_normalization,
         int &status
