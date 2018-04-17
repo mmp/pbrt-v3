@@ -11,6 +11,7 @@
 #include "camera.h"
 #include "cameras/hemispheric.h"
 #include "tools/iisptmathutils.h"
+#include "tools/iisptrng.h"
 
 namespace pbrt {
 
@@ -42,7 +43,7 @@ private:
 
     std::shared_ptr<IisptNnConnector> nn_connector;
 
-    std::shared_ptr<RNG> rng;
+    std::shared_ptr<IisptRng> rng;
 
     std::shared_ptr<Sampler> sampler;
 
@@ -68,6 +69,12 @@ private:
             int fx, // Current filter pixel
             int fy,
             float radius // Filter radius
+            );
+
+    Spectrum sample_hemisphere(
+            const Interaction &it,
+            HemisphericCamera* auxCamera,
+            double probability
             );
 
 public:

@@ -76,22 +76,30 @@ static Spectrum estimate_direct(
 
 // ============================================================================
 // Sample hemisphere
-static Spectrum sample_hemisphere(
+Spectrum IisptRenderRunner::sample_hemisphere(
         const Interaction &it,
-        HemisphericCamera* auxCamera
+        HemisphericCamera* auxCamera,
+        double probability
         ) {
     Spectrum L(0.f);
+
+    int n_samples = 0;
 
     // Loop for every pixel in the hemisphere
     for (int hemi_x = 0; hemi_x < PbrtOptions.iisptHemiSize; hemi_x++) {
         for (int hemi_y = 0; hemi_y < PbrtOptions.iisptHemiSize; hemi_y++) {
-            L += estimate_direct(it, hemi_x, hemi_y, auxCamera);
+            if (rng->bool_probability(probability)) {
+                L += estimate_direct(it, hemi_x, hemi_y, auxCamera);
+                n_samples++;
+            }
         }
     }
 
-    int n_samples = PbrtOptions.iisptHemiSize * PbrtOptions.iisptHemiSize;
-
-    return L / n_samples;
+    if (n_samples > 0) {
+        return L / n_samples;
+    } else {
+        return Spectrum(0.f);
+    }
 }
 
 // ============================================================================
@@ -120,8 +128,8 @@ IisptRenderRunner::IisptRenderRunner(
                 );
 
     // TODO remove fixed seed
-    this->rng = std::shared_ptr<RNG>(
-                new RNG(thread_no)
+    this->rng = std::shared_ptr<IisptRng>(
+                new IisptRng(thread_no)
                 );
 
     this->sampler = std::shared_ptr<Sampler>(
@@ -382,7 +390,12 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                             );
 
                 if (!f_intersection_found) {
-                    // No intersection found, nothing to do
+                    // No intersection found, record background
+                    film_monitor->add_sample(
+                                f_pixel,
+                                f_background,
+                                f_weight
+                                );
                     continue;
                 } else if (f_intersection_found && f_beta.y() <= 0.0) {
                     // Intersection found but black pixel
@@ -421,7 +434,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                 // Compute hemispheric contribution
                 L += sample_hemisphere(
                             f_isect,
-                            aux_camera.get()
+                            aux_camera.get(),
+                            f_weight
                             );
 
                 // Record sample
@@ -449,8 +463,8 @@ void IisptRenderRunner::generate_random_pixel(int *x, int *y)
     int ymax = bounds.pMax.y;
     int width = xmax - xmin;
     int height = ymax - ymin;
-    int randx = rng->UniformUInt32(width);
-    int randy = rng->UniformUInt32(height);
+    int randx = rng->uniform_uint32(width);
+    int randy = rng->uniform_uint32(height);
     *x = randx + xmin;
     *y = randy + ymin;
 }
