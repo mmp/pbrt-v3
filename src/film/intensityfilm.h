@@ -52,11 +52,11 @@ public:
 
     // Get pixel ==============================================================
 
-    std::unique_ptr<PfmItem> get_image_coord(int x, int y);
+    PfmItem get_image_coord(int x, int y);
 
-    std::unique_ptr<PfmItem> get_camera_coord(int x, int y);
+    PfmItem get_camera_coord(int x, int y);
 
-    std::unique_ptr<PfmItem> get_camera_coord_jacobian(int x, int y);
+    PfmItem get_camera_coord_jacobian(int x, int y);
 };
 
 } // namespace pbrt

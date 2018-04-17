@@ -47,15 +47,15 @@ void IisptNnConnector::pipe_image_film(std::shared_ptr<ImageFilm> film) {
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            std::unique_ptr<PfmItem> pixel_item = film->get(x, y);
+            PfmItem pixel_item = film->get(x, y);
             if (components == 1) {
-                Float val = pixel_item->get_single_component();
+                Float val = pixel_item.get_single_component();
                 child_process->write_float32(val);
             } else if (components == 3) {
                 Float r;
                 Float g;
                 Float b;
-                pixel_item->get_triple_component(r, g, b);
+                pixel_item.get_triple_component(r, g, b);
                 child_process->write_float32(r);
                 child_process->write_float32(g);
                 child_process->write_float32(b);

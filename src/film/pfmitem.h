@@ -9,46 +9,69 @@
 
 namespace pbrt {
 
-// Interface ==================================================================
 class PfmItem {
 
+private:
+
+    // Fields -----------------------------------------------------------------
+    float r = 0.0;
+    float g = 0.0;
+    float b = 0.0;
+    bool rgb = false;
+
 public:
+
+    // Constructor ------------------------------------------------------------
+
+    PfmItem(float r, float g, float b)
+    {
+        this->r = r;
+        this->g = g;
+        this->b = b;
+        this->rgb = true;
+    }
+
+    PfmItem(float v)
+    {
+        this->r = r;
+        this->rgb = false;
+    }
+
     // Either 1 or 3
-    virtual int get_number_components() {
-        std::cerr << "pfmitem.h: get_number_components() calling method on interface" << std::endl;
-        exit(1);
-        return 0;
+    int get_number_components() {
+        if (rgb) {
+            return 3;
+        } else {
+            return 1;
+        }
     }
 
     // Get scalar component
-    virtual float get_single_component() {
-        std::cerr << "pfmitem.h: get_single_component() calling method on interface" << std::endl;
-        exit(1);
-        return 0.0;
+    float get_single_component() {
+        return r;
     }
 
     // Get triple component
-    virtual void get_triple_component(float &r, float &g, float &b) {
-        std::cerr << "pfmitem.h: get_triple_component() calling method on interface" << std::endl;
-        exit(1);
+    void get_triple_component(float &rr, float &gg, float &bb) {
+        rr = r;
+        gg = g;
+        bb = b;
     }
 
     // Scalar multiply
-    virtual std::unique_ptr<PfmItem> scalar_multiply(float c) {
-        std::cerr << "pfmitem.h: scalar_multiply() calling method on interface" << std::endl;
-        exit(1);
+    PfmItem scalar_multiply(float c) {
+        if (rgb) {
+            return PfmItem(r*c, g*c, b*c);
+        } else {
+            return PfmItem(r*c);
+        }
     }
 
     // Get as spectrum
-    virtual Spectrum as_spectrum() {
-        std::cerr << "pfmitem.h: as_spectrum() calling method on interface" << std::endl;
-        exit(1);
-    }
-
-    // Clone
-    virtual std::unique_ptr<PfmItem> clone() {
-        std::cerr << "pfmitem.h: clone() calling method on interface" << std::endl;
-        exit(1);
+    Spectrum as_spectrum() {
+        Float rgb[3];
+        get_triple_component(rgb[0], rgb[1], rgb[2]);
+        return Spectrum::FromRGB(rgb);
     }
 
 };

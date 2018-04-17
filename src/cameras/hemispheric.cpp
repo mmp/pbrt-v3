@@ -81,8 +81,8 @@ Spectrum HemisphericCamera::get_light_sample_nn(
     ray = CameraToWorld(ray);
     *wi = ray.d;
 
-    std::shared_ptr<PfmItem> rgbpix = nn_film->get_camera_coord_jacobian(x, y);
-    return rgbpix->as_spectrum();
+    PfmItem rgbpix = nn_film->get_camera_coord_jacobian(x, y);
+    return rgbpix.as_spectrum();
 }
 
 // ============================================================================

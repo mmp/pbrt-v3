@@ -15,18 +15,18 @@ static void write_float_value(std::ofstream &ofs, float val) {
 
 
 // ============================================================================
-void ImageFilm::set(int x, int y, std::unique_ptr<PfmItem> pixel) {
+void ImageFilm::set(int x, int y, PfmItem pixel) {
 
     int idx = y * width + x;
-    data[idx] = pixel->clone();
+    data[idx] = pixel;
 
 }
 
 // ============================================================================
-std::unique_ptr<PfmItem> ImageFilm::get(int x, int y) {
+PfmItem ImageFilm::get(int x, int y) {
 
     int idx = y * width + x;
-    return data[idx]->clone();
+    return data[idx];
 
 }
 
@@ -51,15 +51,15 @@ void ImageFilm::write(std::string filename) {
     // Write pixels
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            PfmItem* pix = data[y * width + x].get();
+            PfmItem pix = data[y * width + x];
             if (num_components == 1) {
-                float val = pix->get_single_component();
+                float val = pix.get_single_component();
                 write_float_value(ofs, val);
             } else {
                 float r;
                 float g;
                 float b;
-                pix->get_triple_component(r, g, b);
+                pix.get_triple_component(r, g, b);
                 write_float_value(ofs, r);
                 write_float_value(ofs, g);
                 write_float_value(ofs, b);
@@ -92,13 +92,13 @@ void ImageFilm::pbrt_write_image(std::string filename) {
     // Populate the array
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            std::unique_ptr<PfmItem> item = get(x, y);
+            PfmItem item = get(x, y);
             if (num_components == 1) {
-                Float it = item->get_single_component();
+                Float it = item.get_single_component();
                 rgb[y*width + x] = it;
             } else {
                 Float r, g, b;
-                item->get_triple_component(r, g, b);
+                item.get_triple_component(r, g, b);
                 int pix_index = y * width + x;
                 int array_index = 3 * pix_index;
                 rgb[array_index + 0] = r;
@@ -115,12 +115,12 @@ void ImageFilm::pbrt_write_image(std::string filename) {
 // ============================================================================
 
 void ImageFilm::set_all(
-        std::unique_ptr<PfmItem> pix
+        PfmItem pix
         )
 {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            set(x, y, pix->clone());
+            set(x, y, pix);
         }
     }
 }

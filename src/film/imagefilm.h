@@ -7,7 +7,6 @@
 #include <cstdlib>
 
 #include "pfmitem.h"
-#include "film/nullpfmitem.h"
 
 namespace pbrt {
 
@@ -22,7 +21,7 @@ private:
     int height;
     int num_components;
 
-    std::vector<std::unique_ptr<PfmItem>> data;
+    std::vector<PfmItem> data;
 
 public:
 
@@ -44,18 +43,17 @@ public:
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                std::unique_ptr<PfmItem> a_null_item (new NullPfmItem());
-                data.push_back(std::move(a_null_item));
+                data.push_back(PfmItem(0.0, 0.0, 0.0));
             }
         }
 
     }
 
     // Set ====================================================================
-    void set(int x, int y, std::unique_ptr<PfmItem> pixel);
+    void set(int x, int y, PfmItem pixel);
 
     // Get ====================================================================
-    std::unique_ptr<PfmItem> get(int x, int y);
+    PfmItem get(int x, int y);
 
     // Write ==================================================================
 
@@ -82,7 +80,7 @@ public:
 
     // Set all pixels =========================================================
     void set_all(
-            std::unique_ptr<PfmItem> pix
+            PfmItem pix
             );
 
 };
