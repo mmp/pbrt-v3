@@ -81,6 +81,25 @@ private:
             double probability
             );
 
+    Spectrum path_uniform_sample_one_light(
+            Interaction &it,
+            const Scene &scene,
+            MemoryArena &arena,
+            bool handleMedia,
+            const Distribution1D* lightDistrib
+            );
+
+    Spectrum estimate_direct_lighting(
+            Interaction &it,
+            const Point2f &uScattering,
+            const Light &light,
+            const Point2f &uLight,
+            const Scene &scene,
+            MemoryArena &arena,
+            bool handleMedia,
+            bool specular
+            );
+
 public:
 
     // Constructor ------------------------------------------------------------
