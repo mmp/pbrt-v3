@@ -360,7 +360,7 @@ void IisptRenderRunner::run(const Scene &scene)
                             &f_weight_scaling
                             );
 
-                if (f_weight < 0.01) {
+                if (f_weight < 0.003) {
                     continue;
                 }
 
