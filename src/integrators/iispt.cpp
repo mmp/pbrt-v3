@@ -637,7 +637,7 @@ void IISPTIntegrator::render_normal_2(const Scene &scene) {
     render_runner->run(scene, arena);
 
     std::shared_ptr<IntensityFilm> output_film =
-            film_monitor->to_intensity_film_reversed();
+            film_monitor->to_intensity_film();
 
     output_film->write("/tmp/iispt.pfm");
     output_film->pbrt_write("/tmp/iispt.exr");

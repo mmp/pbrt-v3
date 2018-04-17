@@ -10,6 +10,7 @@
 #include "sampler.h"
 #include "camera.h"
 #include "cameras/hemispheric.h"
+#include "tools/iisptmathutils.h"
 
 namespace pbrt {
 

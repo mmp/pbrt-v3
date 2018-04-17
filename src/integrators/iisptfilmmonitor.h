@@ -34,6 +34,9 @@ private:
             int y
             );
 
+    std::shared_ptr<IntensityFilm> to_intensity_film_priv(
+            bool reversed);
+
 public:
 
     // Constructor ------------------------------------------------------------
@@ -45,9 +48,9 @@ public:
 
     Bounds2i get_film_bounds();
 
-    int get_pixel_sampling_density(int x, int y);
+    double get_pixel_sampling_density(int x, int y);
 
-    void add_sample(Point2i pt, Spectrum s);
+    void add_sample(Point2i pt, Spectrum s, double weight);
 
     std::shared_ptr<IntensityFilm> to_intensity_film();
 

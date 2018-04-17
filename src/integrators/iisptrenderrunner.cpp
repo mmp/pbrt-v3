@@ -164,8 +164,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         int pix2y;
         generate_random_pixel(&pix2x, &pix2y);
 
-        int pix1d = film_monitor->get_pixel_sampling_density(pix1x, pix1y);
-        int pix2d = film_monitor->get_pixel_sampling_density(pix2x, pix2y);
+        double pix1d = film_monitor->get_pixel_sampling_density(pix1x, pix1y);
+        double pix2d = film_monitor->get_pixel_sampling_density(pix2x, pix2y);
 
         int x;
         int y;
@@ -219,14 +219,16 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             // Record background light
             film_monitor->add_sample(
                         pixel,
-                        background
+                        background,
+                        1.0
                         );
             continue;
         } else if (intersection_found && beta.y() <= 0.0) {
             // Intersection found but black pixel
             film_monitor->add_sample(
                         pixel,
-                        Spectrum(0.0)
+                        Spectrum(0.0),
+                        1.0
                         );
             continue;
         }
@@ -343,11 +345,10 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                         sampler->GetCameraSample(f_pixel);
 
                 RayDifferential f_r;
-                Float f_ray_weight =
-                        main_camera->GenerateRayDifferential(
-                            f_camera_sample,
-                            &f_r
-                            );
+                main_camera->GenerateRayDifferential(
+                    f_camera_sample,
+                    &f_r
+                    );
                 f_r.ScaleDifferentials(1.0);
 
                 SurfaceInteraction f_isect;
@@ -540,6 +541,34 @@ bool IisptRenderRunner::find_intersection(
     // Max depth reached, return 0 beta
     *beta_out = Spectrum(0.0);
     return true;
+}
+
+// ============================================================================
+// Compute weights
+// Gaussian filtering weight
+double IisptRenderRunner::compute_filter_weight(
+        int cx, // Centre sampling pixel
+        int cy,
+        int fx, // Current filter pixel
+        int fy,
+        float radius // Filter radius
+        )
+{
+    double sigma = radius / 3.0;
+
+    // Compute distance
+    double dx2 = (double) (cx - fx);
+    dx2 = dx2 * dx2;
+    double dy2 = (double) (cy - fy);
+    dy2 = dy2 * dy2;
+    double distance = std::sqrt(
+                dx2 + dy2
+                );
+
+    // Compute gaussian weight
+    double gaussian_weight = iispt::gauss(sigma, distance);
+    double gaussian_scale = iispt::gauss(sigma, 0.0);
+    return gaussian_weight / gaussian_scale;
 }
 
 }

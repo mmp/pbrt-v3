@@ -7,7 +7,7 @@ struct IisptPixel {
     double r = 0.0;
     double g = 0.0;
     double b = 0.0;
-    int sample_count = 0;
+    double weight = 0.0;
 };
 
 }
