@@ -64,10 +64,15 @@ static const Float OneMinusEpsilon = FloatOneMinusEpsilon;
 class RNG {
   public:
     // RNG Public Methods
+
     RNG();
+
     RNG(uint64_t sequenceIndex) { SetSequence(sequenceIndex); }
+
     void SetSequence(uint64_t sequenceIndex);
+
     uint32_t UniformUInt32();
+
     uint32_t UniformUInt32(uint32_t b) {
         uint32_t threshold = (~b + 1u) % b;
         while (true) {
@@ -75,6 +80,7 @@ class RNG {
             if (r >= threshold) return r % b;
         }
     }
+
     Float UniformFloat() {
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
         return std::min(OneMinusEpsilon,
@@ -83,12 +89,14 @@ class RNG {
         return std::min(OneMinusEpsilon, Float(UniformUInt32() * 0x1p-32f));
 #endif
     }
+
     template <typename Iterator>
     void Shuffle(Iterator begin, Iterator end) {
         for (Iterator it = end - 1; it > begin; --it)
             std::iter_swap(it,
                            begin + UniformUInt32((uint32_t)(it - begin + 1)));
     }
+
     void Advance(int64_t idelta) {
         uint64_t cur_mult = PCG32_MULT, cur_plus = inc, acc_mult = 1u,
                  acc_plus = 0u, delta = (uint64_t)idelta;
@@ -103,6 +111,7 @@ class RNG {
         }
         state = acc_mult * state + acc_plus;
     }
+
     int64_t operator-(const RNG &other) const {
         CHECK_EQ(inc, other.inc);
         uint64_t cur_mult = PCG32_MULT, cur_plus = inc, cur_state = other.state,

@@ -12,8 +12,26 @@
 #include "tools/childprocess.hpp"
 #include "integrators/iisptschedulemonitor.h"
 #include "integrators/iisptfilmmonitor.h"
+#include "tools/iisptrng.h"
 
 using namespace pbrt;
+
+void test_main5()
+{
+    std::cerr << "Running test main 5\n";
+
+    std::unique_ptr<IisptRng> rng (
+                new IisptRng(0)
+                );
+
+    for (int i = 0; i < 25; i++) {
+        float f = rng->uniform_float();
+        // std::cerr << f << std::endl;
+
+        bool b = rng->bool_probability(0.9);
+        std::cerr << b << std::endl;
+    }
+}
 
 void test_main4() {
     std::cerr << "Running test main 4: IisptFilmMonitor" << std::endl;
@@ -36,7 +54,8 @@ void test_main4() {
             rgb[2] = 0.0;
             film_monitor->add_sample(
                         Point2i(x, y),
-                        Spectrum::FromRGB(rgb)
+                        Spectrum::FromRGB(rgb),
+                        0.3
                         );
         }
     }

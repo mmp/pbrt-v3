@@ -23,13 +23,13 @@ IisptFilmMonitor::IisptFilmMonitor(
 
 // ============================================================================
 
-void IisptFilmMonitor::add_sample(Point2i pt, Spectrum s)
+void IisptFilmMonitor::add_sample(Point2i pt, Spectrum s, double weight)
 {
     lock.lock();
 
     execute_on_pixel([&](int fx, int fy) {
         IisptPixel pix = (pixels[fy])[fx];
-        pix.sample_count += 1;
+        pix.weight += weight;
 
         float rgb[3];
         s.ToRGB(rgb);
@@ -66,14 +66,14 @@ void IisptFilmMonitor::execute_on_pixel(
 
 // ============================================================================
 
-int IisptFilmMonitor::get_pixel_sampling_density(int x, int y)
+double IisptFilmMonitor::get_pixel_sampling_density(int x, int y)
 {
     lock.lock();
 
-    int res = 0;
+    double res = 0;
     execute_on_pixel([&](int fx, int fy) {
         IisptPixel pix = (pixels[fy])[fx];
-        res = pix.sample_count;
+        res = pix.weight;
     }, x, y);
 
     lock.unlock();
@@ -83,10 +83,9 @@ int IisptFilmMonitor::get_pixel_sampling_density(int x, int y)
 
 // ============================================================================
 
-std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film()
+std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film_priv(
+        bool reversed)
 {
-    lock.lock();
-
     Vector2i diagonal = film_bounds.Diagonal();
     int width = diagonal.x + 1;
     int height = diagonal.y + 1;
@@ -103,20 +102,42 @@ std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film()
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             IisptPixel pix = (pixels[y])[x];
-            if (pix.sample_count > 0) {
-                double r = pix.r / ((double)pix.sample_count);
-                double g = pix.g / ((double)pix.sample_count);
-                double b = pix.b / ((double)pix.sample_count);
-                intensity_film->set_camera_coord(
-                            x,
-                            y,
-                            (float) r,
-                            (float) g,
-                            (float) b
-                            );
+            if (pix.weight > 0.0) {
+                double r = pix.r / (pix.weight);
+                double g = pix.g / (pix.weight);
+                double b = pix.b / (pix.weight);
+                if (reversed) {
+                    intensity_film->set_camera_coord(
+                                x,
+                                y,
+                                (float) r,
+                                (float) g,
+                                (float) b
+                                );
+                } else {
+                    intensity_film->set(
+                                x,
+                                y,
+                                (float) r,
+                                (float) g,
+                                (float) b
+                                );
+                }
             }
         }
     }
+
+    return intensity_film;
+}
+
+// ============================================================================
+
+std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film()
+{
+    lock.lock();
+
+    std::shared_ptr<IntensityFilm> intensity_film =
+            to_intensity_film_priv(false);
 
     lock.unlock();
 
@@ -131,36 +152,8 @@ std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film_reversed()
 {
     lock.lock();
 
-    Vector2i diagonal = film_bounds.Diagonal();
-    int width = diagonal.x + 1;
-    int height = diagonal.y + 1;
-    std::cerr << "Width and height are ["<< width <<"] ["<< height <<"]" << std::endl;
-    std::cerr << "Computed assuming exclusive pMax are ["<< (film_bounds.pMax.x - film_bounds.pMin.x) <<"] ["<< (film_bounds.pMax.y - film_bounds.pMin.y) <<"]" << std::endl;
-
-    std::shared_ptr<IntensityFilm> intensity_film (
-                new IntensityFilm(
-                    width,
-                    height
-                    )
-                );
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            IisptPixel pix = (pixels[y])[x];
-            if (pix.sample_count > 0) {
-                double r = pix.r / ((double)pix.sample_count);
-                double g = pix.g / ((double)pix.sample_count);
-                double b = pix.b / ((double)pix.sample_count);
-                intensity_film->set_camera_coord(
-                            x,
-                            height - 1 - y,
-                            (float) r,
-                            (float) g,
-                            (float) b
-                            );
-            }
-        }
-    }
+    std::shared_ptr<IntensityFilm> intensity_film =
+            to_intensity_film_priv(true);
 
     lock.unlock();
 

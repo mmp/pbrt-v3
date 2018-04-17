@@ -10,6 +10,8 @@
 #include "sampler.h"
 #include "camera.h"
 #include "cameras/hemispheric.h"
+#include "tools/iisptmathutils.h"
+#include "tools/iisptrng.h"
 
 namespace pbrt {
 
@@ -18,6 +20,8 @@ class IisptRenderRunner
 {
 private:
     // Fields -----------------------------------------------------------------
+
+    double HEMI_IMPORTANCE = 5.0;
 
     int thread_no;
 
@@ -39,11 +43,11 @@ private:
 
     std::shared_ptr<IISPTdIntegrator> d_integrator;
 
-    std::shared_ptr<IisptNnConnector> nn_connector;
+    std::unique_ptr<IisptNnConnector> nn_connector;
 
-    std::shared_ptr<RNG> rng;
+    std::unique_ptr<IisptRng> rng;
 
-    std::shared_ptr<Sampler> sampler;
+    std::unique_ptr<Sampler> sampler;
 
     Bounds2i pixel_bounds;
 
@@ -59,6 +63,22 @@ private:
             RayDifferential* ray_out,
             Spectrum* beta_out,
             Spectrum* background_out
+            );
+
+    double compute_filter_weight(
+            int cx, // Centre sampling pixel
+            int cy,
+            int fx, // Current filter pixel
+            int fy,
+            float radius, // Filter radius,
+            double* scaling_factor // Scaling factor to obtain a gaussian curve
+                                   // which has point X=0, Y=1
+            );
+
+    Spectrum sample_hemisphere(
+            const Interaction &it,
+            HemisphericCamera* auxCamera,
+            double probability
             );
 
 public:
@@ -77,8 +97,7 @@ public:
 
     // Public methods ---------------------------------------------------------
     virtual void run(
-            const Scene &scene,
-            MemoryArena &arena
+            const Scene &scene
             );
 };
 

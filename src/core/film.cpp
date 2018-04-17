@@ -235,11 +235,11 @@ void Film::WriteImage(Float splatScale) {
 }
 
 // ============================================================================
-std::shared_ptr<IntensityFilm> Film::to_intensity_film() {
+std::unique_ptr<IntensityFilm> Film::to_intensity_film() {
     std::unique_ptr<Float[]> rgb = to_rgb_array(1.0);
     int width = croppedPixelBounds.Diagonal().x;
     int height = croppedPixelBounds.Diagonal().y;
-    std::shared_ptr<IntensityFilm> intensity_film (
+    std::unique_ptr<IntensityFilm> intensity_film (
                 new IntensityFilm(width, height)
                 );
     for (int y = 0; y < height; y++) {

@@ -76,22 +76,30 @@ static Spectrum estimate_direct(
 
 // ============================================================================
 // Sample hemisphere
-static Spectrum sample_hemisphere(
+Spectrum IisptRenderRunner::sample_hemisphere(
         const Interaction &it,
-        HemisphericCamera* auxCamera
+        HemisphericCamera* auxCamera,
+        double probability
         ) {
     Spectrum L(0.f);
+
+    int n_samples = 0;
 
     // Loop for every pixel in the hemisphere
     for (int hemi_x = 0; hemi_x < PbrtOptions.iisptHemiSize; hemi_x++) {
         for (int hemi_y = 0; hemi_y < PbrtOptions.iisptHemiSize; hemi_y++) {
-            L += estimate_direct(it, hemi_x, hemi_y, auxCamera);
+            if (rng->bool_probability(probability)) {
+                L += estimate_direct(it, hemi_x, hemi_y, auxCamera);
+                n_samples++;
+            }
         }
     }
 
-    int n_samples = PbrtOptions.iisptHemiSize * PbrtOptions.iisptHemiSize;
-
-    return L / n_samples;
+    if (n_samples > 0) {
+        return L / n_samples;
+    } else {
+        return Spectrum(0.f);
+    }
 }
 
 // ============================================================================
@@ -115,16 +123,16 @@ IisptRenderRunner::IisptRenderRunner(
     this->d_integrator = CreateIISPTdIntegrator(dcamera);
     // Preprocess is called on run()
 
-    this->nn_connector = std::shared_ptr<IisptNnConnector>(
+    this->nn_connector = std::unique_ptr<IisptNnConnector>(
                 new IisptNnConnector()
                 );
 
     // TODO remove fixed seed
-    this->rng = std::shared_ptr<RNG>(
-                new RNG(thread_no)
+    this->rng = std::unique_ptr<IisptRng>(
+                new IisptRng(thread_no)
                 );
 
-    this->sampler = std::shared_ptr<Sampler>(
+    this->sampler = std::unique_ptr<Sampler>(
                 sampler->Clone(thread_no)
                 );
 
@@ -138,17 +146,20 @@ IisptRenderRunner::IisptRenderRunner(
 }
 
 // ============================================================================
-void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
+void IisptRenderRunner::run(const Scene &scene)
 {
-    this->d_integrator->Preprocess(scene);
+    d_integrator->Preprocess(scene);
     int loop_count = 0;
 
     while (1) {
 
+        std::cerr << "iisptrenderrunner.cpp loop count " << loop_count << std::endl;
 
         if (stop) {
             return;
         }
+
+        MemoryArena arena;
 
         // --------------------------------------------------------------------
         //    * Obtain current __radius__ from the __ScheduleMonitor__. The ScheduleMonitor updates its internal count automatically
@@ -164,8 +175,8 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         int pix2y;
         generate_random_pixel(&pix2x, &pix2y);
 
-        int pix1d = film_monitor->get_pixel_sampling_density(pix1x, pix1y);
-        int pix2d = film_monitor->get_pixel_sampling_density(pix2x, pix2y);
+        double pix1d = film_monitor->get_pixel_sampling_density(pix1x, pix1y);
+        double pix2d = film_monitor->get_pixel_sampling_density(pix2x, pix2y);
 
         int x;
         int y;
@@ -219,14 +230,16 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
             // Record background light
             film_monitor->add_sample(
                         pixel,
-                        background
+                        background,
+                        1.0
                         );
             continue;
         } else if (intersection_found && beta.y() <= 0.0) {
             // Intersection found but black pixel
             film_monitor->add_sample(
                         pixel,
-                        Spectrum(0.0)
+                        Spectrum(0.0),
+                        1.0
                         );
             continue;
         }
@@ -253,7 +266,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         Ray aux_ray = isect.SpawnRay(Vector3f(surface_normal));
 
         // Create aux camera
-        std::shared_ptr<HemisphericCamera> aux_camera (
+        std::unique_ptr<HemisphericCamera> aux_camera (
                     CreateHemisphericCamera(
                         PbrtOptions.iisptHemiSize,
                         PbrtOptions.iisptHemiSize,
@@ -267,20 +280,20 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
 
 
         // Run dintegrator render
-        d_integrator->RenderView(scene, aux_camera);
+        d_integrator->RenderView(scene, aux_camera.get());
 
         // --------------------------------------------------------------------
         //    * Use the __NnConnector__ to obtain the predicted intensity
 
         // Obtain intensity, normals, distance maps
 
-        std::shared_ptr<IntensityFilm> aux_intensity =
-                d_integrator->get_intensity_film(aux_camera);
+        std::unique_ptr<IntensityFilm> aux_intensity =
+                d_integrator->get_intensity_film(aux_camera.get());
 
-        std::shared_ptr<NormalFilm> aux_normals =
+        NormalFilm* aux_normals =
                 d_integrator->get_normal_film();
 
-        std::shared_ptr<DistanceFilm> aux_distance =
+        DistanceFilm* aux_distance =
                 d_integrator->get_distance_film();
 
         // Use NN Connector
@@ -288,7 +301,7 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         int communicate_status = -1;
         std::shared_ptr<IntensityFilm> nn_film =
                 nn_connector->communicate(
-                    aux_intensity,
+                    aux_intensity.get(),
                     aux_distance,
                     aux_normals,
                     iispt_integrator->get_normalization_intensity(),
@@ -336,6 +349,21 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
         for (int fy = filter_start_y; fy <= filter_end_y; fy++) {
             for (int fx = filter_start_x; fx <= filter_end_x; fx++) {
 
+                // Compute filter weights
+                double f_weight_scaling;
+                double f_weight = compute_filter_weight(
+                            x,
+                            y,
+                            fx,
+                            fy,
+                            radius,
+                            &f_weight_scaling
+                            );
+
+                if (f_weight < 0.003) {
+                    continue;
+                }
+
                 Point2i f_pixel = Point2i(fx, fy);
                 sampler->StartPixel(f_pixel);
 
@@ -343,11 +371,10 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                         sampler->GetCameraSample(f_pixel);
 
                 RayDifferential f_r;
-                Float f_ray_weight =
-                        main_camera->GenerateRayDifferential(
-                            f_camera_sample,
-                            &f_r
-                            );
+                main_camera->GenerateRayDifferential(
+                    f_camera_sample,
+                    &f_r
+                    );
                 f_r.ScaleDifferentials(1.0);
 
                 SurfaceInteraction f_isect;
@@ -367,7 +394,12 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                             );
 
                 if (!f_intersection_found) {
-                    // No intersection found, nothing to do
+                    // No intersection found, record background
+                    film_monitor->add_sample(
+                                f_pixel,
+                                f_background,
+                                f_weight
+                                );
                     continue;
                 } else if (f_intersection_found && f_beta.y() <= 0.0) {
                     // Intersection found but black pixel
@@ -406,17 +438,21 @@ void IisptRenderRunner::run(const Scene &scene, MemoryArena &arena)
                 // Compute hemispheric contribution
                 L += sample_hemisphere(
                             f_isect,
-                            aux_camera.get()
+                            aux_camera.get(),
+                            f_weight * HEMI_IMPORTANCE
                             );
 
                 // Record sample
-                film_monitor->add_sample(f_pixel, f_beta * L);
+                film_monitor->add_sample(
+                            f_pixel,
+                            f_beta * L,
+                            f_weight * f_weight_scaling);
 
             }
         }
 
         loop_count++;
-        if (loop_count > 250) {
+        if (loop_count > 2000) {
             stop = true;
         }
 
@@ -434,8 +470,8 @@ void IisptRenderRunner::generate_random_pixel(int *x, int *y)
     int ymax = bounds.pMax.y;
     int width = xmax - xmin;
     int height = ymax - ymin;
-    int randx = rng->UniformUInt32(width);
-    int randy = rng->UniformUInt32(height);
+    int randx = rng->uniform_uint32(width);
+    int randy = rng->uniform_uint32(height);
     *x = randx + xmin;
     *y = randy + ymin;
 }
@@ -540,6 +576,36 @@ bool IisptRenderRunner::find_intersection(
     // Max depth reached, return 0 beta
     *beta_out = Spectrum(0.0);
     return true;
+}
+
+// ============================================================================
+// Compute weights
+// Gaussian filtering weight
+double IisptRenderRunner::compute_filter_weight(
+        int cx, // Centre sampling pixel
+        int cy,
+        int fx, // Current filter pixel
+        int fy,
+        float radius, // Filter radius,
+        double* scaling_factor // Scaling factor to obtain a gaussian curve
+                               // which has point X=0, Y=1
+        )
+{
+    double sigma = radius / 3.0;
+
+    // Compute distance
+    double dx2 = (double) (cx - fx);
+    dx2 = dx2 * dx2;
+    double dy2 = (double) (cy - fy);
+    dy2 = dy2 * dy2;
+    double distance = std::sqrt(
+                dx2 + dy2
+                );
+
+    // Compute gaussian weight
+    double gaussian_weight = iispt::gauss(sigma, distance);
+    *scaling_factor = 1.0 / iispt::gauss(sigma, 0.0);
+    return gaussian_weight;
 }
 
 }

@@ -24,7 +24,7 @@ IisptScheduleMonitor::IisptScheduleMonitor() {
 
     char* update_interval_env = std::getenv("IISPT_SCHEDULE_INTERVAL");
     if (update_interval_env == NULL) {
-        update_interval = 50;
+        update_interval = 250;
     } else {
         update_interval = std::stoi(std::string(update_interval_env));
     }

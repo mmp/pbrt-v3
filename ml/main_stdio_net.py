@@ -136,7 +136,6 @@ def process_one(net):
 
     # Output to STDOUT
     output_to_stdout(output_transformed)
-    print_stderr("Output to STDOUT complete")
 
 # =============================================================================
 # Main
