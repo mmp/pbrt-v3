@@ -444,7 +444,7 @@ void IisptRenderRunner::run(const Scene &scene)
 
                 // Sample one direct lighting
                 const Distribution1D* distribution = lightDistribution->Lookup(f_isect.p);
-                L += f_beta * path_uniform_sample_one_light(
+                L += path_uniform_sample_one_light(
                             f_isect,
                             scene,
                             arena,
