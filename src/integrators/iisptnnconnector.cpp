@@ -23,12 +23,16 @@ IisptNnConnector::IisptNnConnector() {
         NULL
     };
 
+    std::cerr << "iisptnnconnector.cpp: Starting child process\n";
+
     child_process = std::unique_ptr<ChildProcess>(
                 new ChildProcess(
                     std::string("python3"),
                     argv
                     )
                 );
+
+    std::cerr << "iisptnnconnector.cpp: Child process started\n";
 
 }
 

@@ -203,7 +203,8 @@ void IisptRenderRunner::run(const Scene &scene)
         // --------------------------------------------------------------------
         //    * Obtain camera ray and shoot into scene. If no __intersection__ is found, evaluate infinite lights
 
-        sampler->StartPixel(pixel);
+        // sampler->StartPixel(pixel);
+        sampler_next_pixel();
         if (!InsideExclusive(pixel, pixel_bounds)) {
             continue;
         }
@@ -375,8 +376,8 @@ void IisptRenderRunner::run(const Scene &scene)
                 }
 
                 Point2i f_pixel = Point2i(fx, fy);
-                sampler->StartPixel(f_pixel);
 
+                sampler_next_pixel();
                 CameraSample f_camera_sample =
                         sampler->GetCameraSample(f_pixel);
 
@@ -521,7 +522,6 @@ bool IisptRenderRunner::find_intersection(
 
         // Compute intersection
         SurfaceInteraction isect;
-
 
         bool found_intersection = scene.Intersect(ray, &isect);
 
@@ -776,6 +776,25 @@ Spectrum IisptRenderRunner::estimate_direct_lighting(
         }
     }
     return Ld;
+}
+
+// ============================================================================
+// This method increments the sampler pixel count to make sure that we
+// never use two pixel values more than once, increasing sampling diversity
+
+void IisptRenderRunner::sampler_next_pixel()
+{
+
+    int x = sampler_pixel_counter.x;
+    int y = sampler_pixel_counter.y;
+    if (x == INT_MAX) {
+        x = -1;
+        y++;
+    }
+    x++;
+    sampler_pixel_counter = Point2i(x, y);
+    sampler->StartPixel(sampler_pixel_counter);
+
 }
 
 }
