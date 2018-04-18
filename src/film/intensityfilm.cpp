@@ -1,6 +1,7 @@
 #include "intensityfilm.h"
 
 #include <math.h>
+#include <csignal>
 
 namespace pbrt {
 
@@ -56,11 +57,93 @@ PfmItem IntensityFilm::get_camera_coord_jacobian(int x, int y) {
     return pix.scalar_multiply(jacobian_factor);
 }
 
+PfmItem IntensityFilm::get_image_coord_jacobian(int x, int y) {
+    PfmItem pix = get_image_coord(x, y);
+    Float abs_vertical_value = ((Float) y) / film->get_height();
+    Float polar_vertical_value = M_PI * abs_vertical_value;
+    Float jacobian_factor = sin(polar_vertical_value);
+    return pix.scalar_multiply(jacobian_factor);
+}
+
 // ============================================================================
 // Populate from float array
 
 void IntensityFilm::populate_from_float_array(float* floatarray) {
     film->populate_from_float_array(floatarray);
 }
+
+// ============================================================================
+// Compute CDFs
+
+void IntensityFilm::compute_cdfs()
+{
+    // Initialize data structures
+    pixel_cdfs = std::unique_ptr<std::vector<float>>(
+        new std::vector<float>(width * height));
+    row_cdfs = std::unique_ptr<std::vector<float>>(
+        new std::vector<float>(height));
+
+    // Compute CDFs for each row
+    float sum = 0.0;
+    for (int y = 0; y < height; y++) {
+        sum += compute_row_cdf(y);
+        row_cdfs->operator[](y) = sum;
+    }
+
+    cdf_computed = true;
+}
+
+// ============================================================================
+// Compute row CDFs
+// (private)
+float IntensityFilm::compute_row_cdf(
+        int y
+        )
+{
+    int idx = y * width;
+    float sum = 0.0;
+    for (int x = 0; x < width; x++) {
+        PfmItem item = get_image_coord_jacobian();
+        float r, g, b;
+        item.get_triple_component(r, g, b);
+        float rgbsum = r + g + b;
+        sum += rgbsum;
+        pixel_cdfs->operator[](idx) = sum;
+        idx++;
+    }
+    return sum;
+}
+
+// ============================================================================
+// Importance sampling
+
+PfmItem IntensityFilm::importance_sample(
+        float rx, // uniform random float
+        float ry,
+        int* cx, // sampled image-coordinate pixels
+        int* cy
+        )
+{
+    if (!cdf_computed) {
+        std::cerr << "intensityfilm.cpp: Error, calling importance_sample_camera_coord, but this object doesn't have compute_row_cdf yet\n";
+        std::raise(SIGKILL);
+    }
+
+    // Scale ry by the maximum value in the row_cdfs
+    ry *= row_cdfs->operator[](row_cdfs->size() - 1);
+
+    // Iterate to find the row
+    for (int y = 0; y < height; y++) {
+        if (ry > row_cdfs->operator[](y)) {
+            int chosen_y = y - 1;
+            *cy = chosen_y;
+            return importance_sample_row(chosen_y, rx, cx);
+        }
+    }
+    int chosen_y = height - 1;
+    *cy = chosen_y;
+    return importance_sample_row(chosen_y, rx, cx);
+}
+
 
 } // namespace pbrt

@@ -14,6 +14,15 @@ private:
 
     std::shared_ptr<ImageFilm> film;
 
+    int width;
+    int height;
+
+    // CDF sampling data
+    // All CDF data is in image coordinates
+    bool cdf_computed = false;
+    std::unique_ptr<std::vector<float>> pixel_cdfs;
+    std::unique_ptr<std::vector<float>> row_cdfs;
+
 public:
 
     virtual ~IntensityFilm() = default;
@@ -25,6 +34,8 @@ public:
             int height
             )
     {
+        this->width = width;
+        this->height = height;
         film = std::shared_ptr<ImageFilm>(
                     new ImageFilm(
                         width, height, 3
