@@ -17,6 +17,54 @@
 
 using namespace pbrt;
 
+// Test importance sampling and CDFs
+void test_main7()
+{
+    std::cerr << "test_main7()\n";
+
+    std::unique_ptr<IntensityFilm> intensity (
+                new IntensityFilm(
+                    32, 32
+                    )
+                );
+
+    for (int y = 0; y < 32; y++) {
+        for (int x = 0; x < 32; x++) {
+            intensity->set(x, y, 0.2, 0.2, 0.2);
+        }
+    }
+
+    // Set higher intensity in corner [0, 0] - [5, 5]
+    for (int y = 0; y <= 5; y++) {
+        for (int x = 0; x <= 5; x++) {
+            intensity->set(x, y, 10.0, 10.0, 10.0);
+        }
+    }
+
+    intensity->compute_cdfs();
+
+    std::unique_ptr<IisptRng> rng (
+                new IisptRng(0)
+                );
+
+    for (int i = 0; i < 1000; i++) {
+        float rx = rng->uniform_float();
+        float ry = rng->uniform_float();
+        std::cerr << "Randoms ["<< rx <<"] ["<< ry <<"]\n";
+        int cx;
+        int cy;
+        float prob;
+        PfmItem item = intensity->importance_sample(
+                    rx,
+                    ry,
+                    &cx,
+                    &cy,
+                    &prob
+                    );
+        std::cerr << "Sampled ["<< item.magnitude() <<"] at ["<< cx <<"]-["<< cy <<"] with prob ["<< prob <<"]\n";
+    }
+}
+
 // Benchmark performance of the python NN module
 void test_main6()
 {

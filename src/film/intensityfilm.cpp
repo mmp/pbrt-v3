@@ -91,6 +91,12 @@ void IntensityFilm::compute_cdfs()
     }
     probability_magnitude = sum;
 
+    std::cerr << "Computed CDFs. Row values are\n";
+    for (int y = 0; y < height; y++) {
+        float a_val = row_cdfs->operator[](y);
+        std::cerr << a_val << std::endl;
+    }
+
     cdf_computed = true;
 }
 
@@ -132,18 +138,33 @@ PfmItem IntensityFilm::importance_sample(
     ry *= row_cdfs->operator[](row_cdfs->size() - 1);
 
     // Iterate to find the row
+    int chosen_y = -1;
     for (int y = 0; y < height; y++) {
-        if (ry > row_cdfs->operator[](y)) {
-            int chosen_y = y - 1;
-            *cy = chosen_y;
-            return importance_sample_row(chosen_y, rx, cx, prob);
+        float a_row_cdf_val = row_cdfs->operator[](y);
+        if (a_row_cdf_val > ry) {
+            chosen_y = y - 1;
+            break;
         }
     }
-    int chosen_y = height - 1;
+    if (chosen_y == -1) {
+        chosen_y = height - 1;
+    }
     *cy = chosen_y;
     return importance_sample_row(chosen_y, rx, cx, prob);
 }
 
+PfmItem IntensityFilm::importance_sample_camera_coord(
+        float rx, // uniform random floats
+        float ry,
+        int* cx, // sampled camera-coordinate pixels
+        int* cy,
+        float* prob // probability
+        )
+{
+    PfmItem res = importance_sample(rx, ry, cx, cy, prob);
+    *cy = height - (*cy) - 1;
+    return res;
+}
 
 // ============================================================================
 PfmItem IntensityFilm::importance_sample_row(
@@ -161,7 +182,7 @@ PfmItem IntensityFilm::importance_sample_row(
     int chosen_x = -1;
     for (int x = 0; x < width; x++) {
         int idx = rowstart + x;
-        if (rx > pixel_cdfs->operator[](idx)) {
+        if (pixel_cdfs->operator[](idx) > rx) {
             chosen_x = x - 1;
             break;
         }
@@ -176,6 +197,5 @@ PfmItem IntensityFilm::importance_sample_row(
     *prob = magnitude / probability_magnitude;
     return res;
 }
-
 
 } // namespace pbrt

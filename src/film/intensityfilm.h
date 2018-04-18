@@ -36,7 +36,7 @@ private:
             float rx,
             int* cx,
             float* prob
-            )
+            );
 
 public:
 
@@ -97,6 +97,14 @@ public:
             float rx, // uniform random float
             float ry,
             int* cx, // sampled image-coordinate pixels
+            int* cy,
+            float* prob // probability
+            );
+
+    PfmItem importance_sample_camera_coord(
+            float rx, // uniform random floats
+            float ry,
+            int* cx, // sampled camera-coordinate pixels
             int* cy,
             float* prob // probability
             );
