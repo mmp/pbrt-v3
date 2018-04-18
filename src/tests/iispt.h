@@ -54,7 +54,7 @@ void test_main7()
         int cx;
         int cy;
         float prob;
-        PfmItem item = intensity->importance_sample(
+        PfmItem item = intensity->importance_sample_camera_coord(
                     rx,
                     ry,
                     &cx,

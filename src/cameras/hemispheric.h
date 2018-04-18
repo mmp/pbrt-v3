@@ -57,6 +57,15 @@ public:
             Vector3f* wi
             );
 
+    Spectrum get_light_sample_nn_importance(
+            float rx, // Random rx and ry uniform floats
+            float ry,
+            Vector3f* wi,
+            float* prob // Probability of getting the selected sample
+            );
+
+    void compute_cdfs();
+
 };
 
 // ============================================================================

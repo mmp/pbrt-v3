@@ -18,6 +18,7 @@ private:
 
     int width;
     int height;
+    int num_pixels;
 
     // CDF sampling data
     // All CDF data is in image coordinates
@@ -40,8 +41,6 @@ private:
 
 public:
 
-    virtual ~IntensityFilm() = default;
-
     // Constructor ============================================================
 
     IntensityFilm(
@@ -51,6 +50,7 @@ public:
     {
         this->width = width;
         this->height = height;
+        this->num_pixels = width * height;
         film = std::shared_ptr<ImageFilm>(
                     new ImageFilm(
                         width, height, 3

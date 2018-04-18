@@ -7,10 +7,15 @@ namespace pbrt {
 
 // ============================================================================
 // Estimate direct (evaluate 1 hemisphere pixel)
+// Output is scaled by 1/pp(x)
+//        which is the probability of sampling the specific
+//        pp is not a 0-1 probability but it's 1-centered
+//        for a uniform distribution
+// See intensityfilm.cpp for more detail
 static Spectrum estimate_direct(
         const Interaction &it,
-        int hem_x,
-        int hem_y,
+        float rx, // input uniform random floats
+        float ry,
         HemisphericCamera* auxCamera
         ) {
 
@@ -32,7 +37,16 @@ static Spectrum estimate_direct(
     // We don't need to have a visibility object
 
     // Get jacobian-adjusted sample, camera coordinates
-    Spectrum Li = auxCamera->get_light_sample_nn(hem_x, hem_y, &wi);
+    float pp_prob;
+    Spectrum Li = auxCamera->get_light_sample_nn_importance(
+                rx,
+                ry,
+                &wi,
+                &pp_prob
+                );
+    if (pp_prob <= 1e-5) {
+        return Spectrum(0.0);
+    }
 
     // Combine incoming light, BRDF and viewing direction ---------------------
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -73,7 +87,7 @@ static Spectrum estimate_direct(
     // Skipping sampling BSDF with multiple importance sampling
     // because we gather all information from lights (hemisphere)
 
-    return Ld;
+    return Ld / pp_prob;
 
 }
 
@@ -81,28 +95,21 @@ static Spectrum estimate_direct(
 // Sample hemisphere
 Spectrum IisptRenderRunner::sample_hemisphere(
         const Interaction &it,
-        HemisphericCamera* auxCamera,
-        double probability
-        ) {
+        HemisphericCamera* auxCamera
+        )
+{
     Spectrum L(0.f);
 
-    int n_samples = 0;
+    auxCamera->compute_cdfs();
 
-    // Loop for every pixel in the hemisphere
-    for (int hemi_x = 0; hemi_x < PbrtOptions.iisptHemiSize; hemi_x++) {
-        for (int hemi_y = 0; hemi_y < PbrtOptions.iisptHemiSize; hemi_y++) {
-            if (rng->bool_probability(probability)) {
-                L += estimate_direct(it, hemi_x, hemi_y, auxCamera);
-                n_samples++;
-            }
-        }
+    for (int i = 0; i < HEMISPHERIC_IMPORTANCE_SAMPLES; i++) {
+        float rx = rng->uniform_float();
+        float ry = rng->uniform_float();
+        L += estimate_direct(it, rx, ry, auxCamera);
     }
 
-    if (n_samples > 0) {
-        return L / n_samples;
-    } else {
-        return Spectrum(0.f);
-    }
+    return L / HEMISPHERIC_IMPORTANCE_SAMPLES;
+
 }
 
 // ============================================================================
@@ -452,8 +459,7 @@ void IisptRenderRunner::run(const Scene &scene)
                 // Compute hemispheric contribution
                 L += sample_hemisphere(
                             f_isect,
-                            aux_camera.get(),
-                            0.01
+                            aux_camera.get()
                             );
 
                 // Record sample
@@ -575,9 +581,7 @@ void IisptRenderRunner::run(const Scene &scene)
                 // Compute hemispheric contribution
                 L += sample_hemisphere(
                             f_isect,
-                            aux_camera.get(),
-                            f_weight * HEMI_IMPORTANCE
-                            );
+                            aux_camera.get()                            );
 
                 // Record sample
                 film_monitor->add_sample(

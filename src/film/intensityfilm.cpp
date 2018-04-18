@@ -77,6 +77,10 @@ void IntensityFilm::populate_from_float_array(float* floatarray) {
 
 void IntensityFilm::compute_cdfs()
 {
+    if (cdf_computed) {
+        return;
+    }
+
     // Initialize data structures
     pixel_cdfs = std::unique_ptr<std::vector<float>>(
         new std::vector<float>(width * height));
@@ -90,12 +94,6 @@ void IntensityFilm::compute_cdfs()
         row_cdfs->operator[](y) = sum;
     }
     probability_magnitude = sum;
-
-    std::cerr << "Computed CDFs. Row values are\n";
-    for (int y = 0; y < height; y++) {
-        float a_val = row_cdfs->operator[](y);
-        std::cerr << a_val << std::endl;
-    }
 
     cdf_computed = true;
 }
@@ -121,6 +119,8 @@ float IntensityFilm::compute_row_cdf(
 // ============================================================================
 // Importance sampling
 
+// Note that prob receives not a 0-1 probability value
+// but a 1-centered probability value for uniform distributions
 PfmItem IntensityFilm::importance_sample(
         float rx, // uniform random float
         float ry,
@@ -153,6 +153,8 @@ PfmItem IntensityFilm::importance_sample(
     return importance_sample_row(chosen_y, rx, cx, prob);
 }
 
+// Note that prob receives not a 0-1 probability value
+// but a 1-centered probability value for uniform distributions
 PfmItem IntensityFilm::importance_sample_camera_coord(
         float rx, // uniform random floats
         float ry,
@@ -194,7 +196,7 @@ PfmItem IntensityFilm::importance_sample_row(
     *cx = chosen_x;
     PfmItem res = get_image_coord_jacobian(chosen_x, chosen_y);
     float magnitude = res.magnitude();
-    *prob = magnitude / probability_magnitude;
+    *prob = num_pixels * magnitude / probability_magnitude;
     return res;
 }
 
