@@ -1,4 +1,5 @@
 #include "iisptrenderrunner.h"
+#include "lightdistrib.h"
 
 namespace pbrt {
 
@@ -123,9 +124,11 @@ IisptRenderRunner::IisptRenderRunner(
     this->d_integrator = CreateIISPTdIntegrator(dcamera);
     // Preprocess is called on run()
 
+    std::cerr << "iisptrenderrunner.cpp: Creating NN connector\n";
     this->nn_connector = std::unique_ptr<IisptNnConnector>(
                 new IisptNnConnector()
                 );
+    std::cerr << "iisptrenderrunner.cpp: NN connector created\n";
 
     // TODO remove fixed seed
     this->rng = std::unique_ptr<IisptRng>(
@@ -148,12 +151,19 @@ IisptRenderRunner::IisptRenderRunner(
 // ============================================================================
 void IisptRenderRunner::run(const Scene &scene)
 {
+    std::cerr << "iisptrenderrunner.cpp: Preprocessing on d integrator\n";
     d_integrator->Preprocess(scene);
     int loop_count = 0;
+    std::cerr << "iisptrenderrunner.cpp: Creating light distribution\n";
+    std::unique_ptr<LightDistribution> lightDistribution =
+            CreateLightSampleDistribution(std::string("spatial"), scene);
+    float radius = 0.0;
+
+    std::cerr << "iisptrenderrunner.cpp: Starting render loop\n";
 
     while (1) {
 
-        std::cerr << "iisptrenderrunner.cpp loop count " << loop_count << std::endl;
+        std::cerr << "iisptrenderrunner.cpp loop count " << loop_count << " radius ["<< radius <<"]" << std::endl;
 
         if (stop) {
             return;
@@ -163,7 +173,7 @@ void IisptRenderRunner::run(const Scene &scene)
 
         // --------------------------------------------------------------------
         //    * Obtain current __radius__ from the __ScheduleMonitor__. The ScheduleMonitor updates its internal count automatically
-        float radius = schedule_monitor->get_current_radius();
+        radius = schedule_monitor->get_current_radius();
 
         // --------------------------------------------------------------------
         //    * Use the __RNG__ to generate 2 random pixel samples. Look up the density of the samples and select the one that has lower density
@@ -193,7 +203,8 @@ void IisptRenderRunner::run(const Scene &scene)
         // --------------------------------------------------------------------
         //    * Obtain camera ray and shoot into scene. If no __intersection__ is found, evaluate infinite lights
 
-        sampler->StartPixel(pixel);
+        // sampler->StartPixel(pixel);
+        sampler_next_pixel();
         if (!InsideExclusive(pixel, pixel_bounds)) {
             continue;
         }
@@ -365,8 +376,8 @@ void IisptRenderRunner::run(const Scene &scene)
                 }
 
                 Point2i f_pixel = Point2i(fx, fy);
-                sampler->StartPixel(f_pixel);
 
+                sampler_next_pixel();
                 CameraSample f_camera_sample =
                         sampler->GetCameraSample(f_pixel);
 
@@ -431,6 +442,16 @@ void IisptRenderRunner::run(const Scene &scene)
                 }
 
                 Spectrum L (0.0);
+
+                // Sample one direct lighting
+                const Distribution1D* distribution = lightDistribution->Lookup(f_isect.p);
+                L += path_uniform_sample_one_light(
+                            f_isect,
+                            scene,
+                            arena,
+                            false,
+                            distribution
+                            );
 
                 // Compute emitted light if ray hit an area light source
                 L += f_isect.Le(wo);
@@ -501,7 +522,6 @@ bool IisptRenderRunner::find_intersection(
 
         // Compute intersection
         SurfaceInteraction isect;
-
 
         bool found_intersection = scene.Intersect(ray, &isect);
 
@@ -606,6 +626,175 @@ double IisptRenderRunner::compute_filter_weight(
     double gaussian_weight = iispt::gauss(sigma, distance);
     *scaling_factor = 1.0 / iispt::gauss(sigma, 0.0);
     return gaussian_weight;
+}
+
+// ============================================================================
+
+Spectrum IisptRenderRunner::path_uniform_sample_one_light(
+        Interaction &it,
+        const Scene &scene,
+        MemoryArena &arena,
+        bool handleMedia,
+        const Distribution1D* lightDistrib
+        )
+{
+    // Randomly choose a single light to sample
+    int nLights = int(scene.lights.size());
+    if (nLights == 0) {
+        return Spectrum(0.0);
+    }
+
+    int lightNum;
+    float lightPdf;
+    if (lightDistrib) {
+        lightNum = lightDistrib->SampleDiscrete(sampler->Get1D(), &lightPdf);
+        if (lightPdf == 0) {
+            return Spectrum(0.0);
+        }
+    } else {
+        lightNum = std::min((int)(sampler->Get1D() * nLights), nLights - 1);
+        lightPdf = Float(1) / nLights;
+    }
+
+    const std::shared_ptr<Light> &light = scene.lights[lightNum];
+    Point2f uLight = sampler->Get2D();
+    Point2f uScattering = sampler->Get2D();
+    return estimate_direct_lighting(it, uScattering, *light, uLight,
+                          scene, arena, handleMedia, false) / lightPdf;
+}
+
+// ============================================================================
+
+Spectrum IisptRenderRunner::estimate_direct_lighting(
+        Interaction &it,
+        const Point2f &uScattering,
+        const Light &light,
+        const Point2f &uLight,
+        const Scene &scene,
+        MemoryArena &arena,
+        bool handleMedia,
+        bool specular
+        )
+{
+    BxDFType bsdfFlags =
+        specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
+    Spectrum Ld(0.f);
+    // Sample light source with multiple importance sampling
+    Vector3f wi;
+    Float lightPdf = 0, scatteringPdf = 0;
+    VisibilityTester visibility;
+    Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
+    if (lightPdf > 0 && !Li.IsBlack()) {
+        // Compute BSDF or phase function's value for light sample
+        Spectrum f;
+        if (it.IsSurfaceInteraction()) {
+            // Evaluate BSDF for light sampling strategy
+            const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
+            f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
+                AbsDot(wi, isect.shading.n);
+            scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
+        } else {
+            // Evaluate phase function for light sampling strategy
+            const MediumInteraction &mi = (const MediumInteraction &)it;
+            Float p = mi.phase->p(mi.wo, wi);
+            f = Spectrum(p);
+            scatteringPdf = p;
+        }
+        if (!f.IsBlack()) {
+            // Compute effect of visibility for light source sample
+            if (handleMedia) {
+                Li *= visibility.Tr(scene, *sampler);
+            } else {
+              if (!visibility.Unoccluded(scene)) {
+                Li = Spectrum(0.f);
+              }
+            }
+
+            // Add light's contribution to reflected radiance
+            if (!Li.IsBlack()) {
+                if (IsDeltaLight(light.flags)) {
+                    Ld += f * Li / lightPdf;
+                } else {
+                    Float weight =
+                        PowerHeuristic(1, lightPdf, 1, scatteringPdf);
+                    Ld += f * Li * weight / lightPdf;
+                }
+            }
+        }
+    }
+
+    // Sample BSDF with multiple importance sampling
+    if (!IsDeltaLight(light.flags)) {
+        Spectrum f;
+        bool sampledSpecular = false;
+        if (it.IsSurfaceInteraction()) {
+            // Sample scattered direction for surface interactions
+            BxDFType sampledType;
+            const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
+            f = isect.bsdf->Sample_f(isect.wo, &wi, uScattering, &scatteringPdf,
+                                     bsdfFlags, &sampledType);
+            f *= AbsDot(wi, isect.shading.n);
+            sampledSpecular = (sampledType & BSDF_SPECULAR) != 0;
+        } else {
+            // Sample scattered direction for medium interactions
+            const MediumInteraction &mi = (const MediumInteraction &)it;
+            Float p = mi.phase->Sample_p(mi.wo, &wi, uScattering);
+            f = Spectrum(p);
+            scatteringPdf = p;
+        }
+        if (!f.IsBlack() && scatteringPdf > 0) {
+            // Account for light contributions along sampled direction _wi_
+            Float weight = 1;
+            if (!sampledSpecular) {
+                lightPdf = light.Pdf_Li(it, wi);
+                if (lightPdf == 0) {
+                    return Ld;
+                }
+                weight = PowerHeuristic(1, scatteringPdf, 1, lightPdf);
+            }
+
+            // Find intersection and compute transmittance
+            SurfaceInteraction lightIsect;
+            Ray ray = it.SpawnRay(wi);
+            Spectrum Tr(1.f);
+            bool foundSurfaceInteraction =
+                handleMedia ? scene.IntersectTr(ray, *sampler, &lightIsect, &Tr)
+                            : scene.Intersect(ray, &lightIsect);
+
+            // Add light contribution from material sampling
+            Spectrum Li(0.f);
+            if (foundSurfaceInteraction) {
+                if (lightIsect.primitive->GetAreaLight() == &light) {
+                    Li = lightIsect.Le(-wi);
+                }
+            } else {
+                Li = light.Le(ray);
+            }
+            if (!Li.IsBlack()) {
+                Ld += f * Li * Tr * weight / scatteringPdf;
+            }
+        }
+    }
+    return Ld;
+}
+
+// ============================================================================
+// This method increments the sampler pixel count to make sure that we
+// never use two pixel values more than once, increasing sampling diversity
+
+void IisptRenderRunner::sampler_next_pixel()
+{
+
+    int x = sampler_pixel_counter.x;
+    int y = sampler_pixel_counter.y;
+    if (x == INT_MAX) {
+        x = -1;
+        y++;
+    }
+    x++;
+    sampler_pixel_counter = Point2i(x, y);
+    sampler->StartPixel(sampler_pixel_counter);
+
 }
 
 }

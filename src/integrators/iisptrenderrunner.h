@@ -1,6 +1,8 @@
 #ifndef IISPTRENDERRUNNER_H
 #define IISPTRENDERRUNNER_H
 
+#include <climits>
+
 #include "integrators/iispt.h"
 #include "integrators/iisptfilmmonitor.h"
 #include "integrators/iisptnnconnector.h"
@@ -21,11 +23,13 @@ class IisptRenderRunner
 private:
     // Fields -----------------------------------------------------------------
 
-    double HEMI_IMPORTANCE = 5.0;
+    double HEMI_IMPORTANCE = 10.0;
 
     int thread_no;
 
     bool stop = false;
+
+    Point2i sampler_pixel_counter = Point2i(0, 0);
 
     // Shared objects
 
@@ -80,6 +84,27 @@ private:
             HemisphericCamera* auxCamera,
             double probability
             );
+
+    Spectrum path_uniform_sample_one_light(
+            Interaction &it,
+            const Scene &scene,
+            MemoryArena &arena,
+            bool handleMedia,
+            const Distribution1D* lightDistrib
+            );
+
+    Spectrum estimate_direct_lighting(
+            Interaction &it,
+            const Point2f &uScattering,
+            const Light &light,
+            const Point2f &uLight,
+            const Scene &scene,
+            MemoryArena &arena,
+            bool handleMedia,
+            bool specular
+            );
+
+    void sampler_next_pixel();
 
 public:
 
