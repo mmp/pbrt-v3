@@ -1,6 +1,8 @@
 #include "iisptrenderrunner.h"
 #include "lightdistrib.h"
 
+#include <chrono>
+
 namespace pbrt {
 
 // ============================================================================
@@ -356,6 +358,120 @@ void IisptRenderRunner::run(const Scene &scene)
                     film_monitor->get_film_bounds().pMax.y,
                     (int) std::round(((float) y) + radius)
                     );
+
+        // Temporary ----------------------------------------------------------
+        // Evaluate for all pixels in the image
+        Bounds2i bounds = film_monitor->get_film_bounds();
+        std::chrono::steady_clock::time_point time_start =
+                std::chrono::steady_clock::now();
+        for (int fy = bounds.pMin.y; fy < bounds.pMax.y; fy++) {
+            std::cerr << fy << std::endl;
+            for (int fx = bounds.pMin.x; fx < bounds.pMax.x; fx++) {
+
+                Point2i f_pixel = Point2i(fx, fy);
+
+                sampler_next_pixel();
+                CameraSample f_camera_sample =
+                        sampler->GetCameraSample(f_pixel);
+
+                RayDifferential f_r;
+                main_camera->GenerateRayDifferential(
+                    f_camera_sample,
+                    &f_r
+                    );
+                f_r.ScaleDifferentials(1.0);
+
+                SurfaceInteraction f_isect;
+                Spectrum f_beta;
+                Spectrum f_background;
+                RayDifferential f_ray;
+
+                // Find intersection point
+                bool f_intersection_found = find_intersection(
+                            f_r,
+                            scene,
+                            arena,
+                            &f_isect,
+                            &f_ray,
+                            &f_beta,
+                            &f_background
+                            );
+
+                if (!f_intersection_found) {
+                    // No intersection found, record background
+                    film_monitor->add_sample(
+                                f_pixel,
+                                f_background,
+                                1.0
+                                );
+                    continue;
+                } else if (f_intersection_found && f_beta.y() <= 0.0) {
+                    // Intersection found but black pixel
+                    // Nothing to do
+                    continue;
+                }
+
+                // Valid intersection found
+
+                // TODO check if intersection is within valid range
+                // and that has similar material and normal facing
+
+                // Compute scattering functions for surface interaction
+                f_isect.ComputeScatteringFunctions(f_ray, arena);
+                if (!isect.bsdf) {
+                    // This should not be possible, because find_intersection()
+                    // would have skipped the intersection
+                    // so do nothing
+                    continue;
+                }
+
+                // wo is vector towards viewer, from intersection
+                Vector3f wo = f_isect.wo;
+                Float wo_length = Dot(wo, wo);
+                if (wo_length == 0) {
+                    std::cerr << "iisptrenderrunner.cpp: Detected a 0 length wo" << std::endl;
+                    raise(SIGKILL);
+                    exit(1);
+                }
+
+                Spectrum L (0.0);
+
+                // Sample one direct lighting
+                const Distribution1D* distribution = lightDistribution->Lookup(f_isect.p);
+                L += path_uniform_sample_one_light(
+                            f_isect,
+                            scene,
+                            arena,
+                            false,
+                            distribution
+                            );
+
+                // Compute emitted light if ray hit an area light source
+                L += f_isect.Le(wo);
+
+                // Compute hemispheric contribution
+                L += sample_hemisphere(
+                            f_isect,
+                            aux_camera.get(),
+                            0.01
+                            );
+
+                // Record sample
+                film_monitor->add_sample(
+                            f_pixel,
+                            f_beta * L,
+                            1.0);
+            }
+        }
+        std::chrono::steady_clock::time_point time_end =
+                std::chrono::steady_clock::now();
+        auto elapsed_milliseconds =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    time_end - time_start
+                    ).count();
+        std::cerr << "iisptrenderrunner.cpp: Full frame evaluation loop took ["<< elapsed_milliseconds <<"] milliseconds\n";
+        return;
+        // end temporary ------------------------------------------------------
 
         for (int fy = filter_start_y; fy <= filter_end_y; fy++) {
             for (int fx = filter_start_x; fx <= filter_end_x; fx++) {
