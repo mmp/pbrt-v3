@@ -75,7 +75,8 @@ void test_main6()
     double millis_per_iter = ((double)elapsed_milliseconds) / ITERATIONS;
     std::cerr << "Milliseconds per iteration :" << millis_per_iter << std::endl;
 
-    // Measured 53ms/iteration
+    // Measured 53ms/iteration for the full loop
+    // Measured 27ms/iteration just for the NN
 
 }
 

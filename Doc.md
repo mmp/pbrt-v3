@@ -15,6 +15,15 @@ Expected stdout format:
 * Intensity raster: 32x32x3 = 3072 float (each 4 bytes)
 * Magic characters sequence: 'x' '\n'
 
+## Performance
+
+```
+Full time from C++: 51ms/iteration
+NN evaluation time: 27ms/iteration
+NN evaluation from/to random numpy arrays: 27ms/iteration
+NN evaluation with all transforms: 34ms/iteration
+```
+
 # Saved images and PBRT internal image representation
 
 In PBRT, images coordiantes X and Y:

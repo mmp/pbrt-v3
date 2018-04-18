@@ -59,6 +59,8 @@ class LogTransform:
         pass
     
     def __call__(self, x):
+        if (x + 1.0) <= 0.0:
+            return 0.0
         return math.log(x + 1.0)
 
 class LogInvTransform:

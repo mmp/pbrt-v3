@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 import struct
+import time
 
 import torch
 from torch.autograd.variable import Variable
@@ -39,9 +40,8 @@ def read_float():
     return struct.unpack('f', sys.stdin.buffer.read(4))[0]
 
 def write_float_array(xs):
-    for x in xs:
-        data = struct.pack("f", x)
-        sys.stdout.buffer.write(data)
+    data = struct.pack("{}f".format(len(xs)), *xs)
+    sys.stdout.buffer.write(data)
     sys.stdout.flush()
 
 def write_char(c):
@@ -149,4 +149,93 @@ def main():
     while True:
         process_one(net)
 
+def main_benchmark():
+
+    # Load model
+    net = torch.load(config.model_path)
+    print_stderr("Model loaded")
+
+    torch_data = torch.randn(7168).float()
+    input_variable = Variable(torch_data)
+
+    ITERATIONS = 100
+
+    start = time.time()
+
+    for i in range(ITERATIONS):
+        output_variable = net(input_variable)
+
+    end = time.time()
+
+    elapsed_millis = (end - start) * 1000.0
+    elapsed_per_iter = elapsed_millis / ITERATIONS
+    print_stderr("Time per iteration: {}".format(elapsed_per_iter))
+
+def main_benchmark_with_numpy():
+
+    # Load model
+    net = torch.load(config.model_path)
+    print_stderr("Model loaded")
+
+    ITERATIONS = 100
+
+    start = time.time()
+
+    for i in range(ITERATIONS):
+        intensity_data = numpy.random.randn(IISPT_IMAGE_SIZE * IISPT_IMAGE_SIZE * 3)
+        distance_data = numpy.random.randn(IISPT_IMAGE_SIZE * IISPT_IMAGE_SIZE * 1)
+        normals_data = numpy.random.randn(IISPT_IMAGE_SIZE * IISPT_IMAGE_SIZE * 3)
+        input_data = numpy.concatenate([intensity_data, normals_data, distance_data])
+        torch_data = torch.from_numpy(input_data).float()
+        input_variable = Variable(torch_data)
+
+        output_variable = net(input_variable)
+        output_numpy = output_variable.data.numpy()
+
+    end = time.time()
+
+    elapsed_millis = (end - start) * 1000.0
+    elapsed_per_iter = elapsed_millis / ITERATIONS
+    print_stderr("Time per iteration: {}".format(elapsed_per_iter))
+
+def main_benchmark_with_transforms():
+
+    # Load model
+    net = torch.load(config.model_path)
+    print_stderr("Model loaded")
+
+    ITERATIONS = 100
+
+    start = time.time()
+
+    for i in range(ITERATIONS):
+        intensity_data = numpy.random.randn(IISPT_IMAGE_SIZE * IISPT_IMAGE_SIZE * 3)
+        distance_data = numpy.random.randn(IISPT_IMAGE_SIZE * IISPT_IMAGE_SIZE * 1)
+        normals_data = numpy.random.randn(IISPT_IMAGE_SIZE * IISPT_IMAGE_SIZE * 3)
+        
+        intensity_normalization = 12.0
+        distance_normalization = 1.0
+
+        intensity_data = numpy.vectorize(iispt_transforms.IntensitySequence(intensity_normalization, iispt_dataset.GAMMA_VALUE))(intensity_data)
+
+        normals_data = numpy.vectorize(iispt_transforms.NormalizeTransform(-1.0, 1.0))(normals_data)
+
+        distance_data = numpy.vectorize(iispt_transforms.DistanceSequence(distance_normalization, iispt_dataset.GAMMA_VALUE))(distance_data)
+        
+        input_data = numpy.concatenate([intensity_data, normals_data, distance_data])
+
+        torch_data = torch.from_numpy(input_data).float()
+        input_variable = Variable(torch_data)
+
+        output_variable = net(input_variable)
+        output_numpy = output_variable.data.numpy()
+
+    end = time.time()
+
+    elapsed_millis = (end - start) * 1000.0
+    elapsed_per_iter = elapsed_millis / ITERATIONS
+    print_stderr("Time per iteration: {}".format(elapsed_per_iter))
+
+
+#main_benchmark_with_transforms()
 main()
