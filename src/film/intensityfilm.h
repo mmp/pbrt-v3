@@ -57,6 +57,9 @@ public:
     PfmItem get_camera_coord(int x, int y);
 
     PfmItem get_camera_coord_jacobian(int x, int y);
+
+    // Populate from array ====================================================
+    void populate_from_float_array(float* floatarray);
 };
 
 } // namespace pbrt

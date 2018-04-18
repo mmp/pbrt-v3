@@ -13,8 +13,72 @@
 #include "integrators/iisptschedulemonitor.h"
 #include "integrators/iisptfilmmonitor.h"
 #include "tools/iisptrng.h"
+#include "integrators/iisptnnconnector.h"
 
 using namespace pbrt;
+
+// Benchmark performance of the python NN module
+void test_main6()
+{
+    std::unique_ptr<IisptNnConnector> nn_connector =
+            std::unique_ptr<IisptNnConnector>(
+                new IisptNnConnector()
+                );
+
+    std::unique_ptr<IntensityFilm> intensity =
+            std::unique_ptr<IntensityFilm>(
+                new IntensityFilm(32, 32)
+                );
+    std::unique_ptr<DistanceFilm> distance =
+            std::unique_ptr<DistanceFilm>(
+                new DistanceFilm(32, 32)
+                );
+    std::unique_ptr<NormalFilm> normals =
+            std::unique_ptr<NormalFilm>(
+                new NormalFilm(32, 32)
+                );
+    for (int y = 0; y < 32; y++) {
+        for (int x = 0; x < 32; x++) {
+            intensity->set(x, y, 12.0, 23.0, 13.0);
+            distance->set(x, y, 0.59);
+            normals->set(x, y, Normal3f(1.0, 0.25, 0.36));
+        }
+    }
+    float intensity_normalization = 10.0;
+    float distance_normalization = 1.0;
+
+    int status;
+
+    std::chrono::steady_clock::time_point start =
+            std::chrono::steady_clock::now();
+
+    int ITERATIONS = 100;
+
+    for (int i = 0; i < ITERATIONS; i++) {
+        nn_connector->communicate(
+                    intensity.get(),
+                    distance.get(),
+                    normals.get(),
+                    intensity_normalization,
+                    distance_normalization,
+                    status
+                    );
+    }
+
+    std::chrono::steady_clock::time_point end =
+            std::chrono::steady_clock::now();
+
+    auto elapsed_milliseconds =
+            std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    std::cerr << "Milliseconds elapsed: " << elapsed_milliseconds << std::endl;
+    double millis_per_iter = ((double)elapsed_milliseconds) / ITERATIONS;
+    std::cerr << "Milliseconds per iteration :" << millis_per_iter << std::endl;
+
+    // Measured 53ms/iteration for the full loop
+    // Measured 27ms/iteration just for the NN
+
+}
 
 void test_main5()
 {

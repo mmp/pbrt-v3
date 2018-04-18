@@ -93,9 +93,31 @@ public: // ====================================================================
     }
 
     // ------------------------------------------------------------------------
+    // Read N float32
+    // Returns 0 if successful
+    // Returns 1 if error
+    // Result is written into <buffer>
+    int read_n_float32(float* buffer, int n) {
+        int bytes = n * 4;
+        ssize_t count = read(stdout_pipe[0], buffer, bytes);
+        if (count != bytes) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // ------------------------------------------------------------------------
     // Write float32
     void write_float32(float val) {
         write(stdin_pipe[1], &val, 4);
+    }
+
+    // ------------------------------------------------------------------------
+    // Write N float32
+    void write_n_float32(float* val, int n) {
+        int bytes = n * 4;
+        write(stdin_pipe[1], val, bytes);
     }
 
 };

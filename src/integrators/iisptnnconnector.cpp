@@ -49,26 +49,32 @@ void IisptNnConnector::pipe_image_film(std::shared_ptr<ImageFilm> film) {
     // The input ImageFilm is assumed to already have the
     // correct Y axis direction
 
+    int nfloats = height * width * components;
+    std::vector<float> floatarray (nfloats);
+
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             PfmItem pixel_item = film->get(x, y);
             if (components == 1) {
-                Float val = pixel_item.get_single_component();
-                child_process->write_float32(val);
+                int idx = y * width + x;
+                floatarray[idx] = pixel_item.get_single_component();
             } else if (components == 3) {
                 Float r;
                 Float g;
                 Float b;
                 pixel_item.get_triple_component(r, g, b);
-                child_process->write_float32(r);
-                child_process->write_float32(g);
-                child_process->write_float32(b);
+                int idx = 3 * (y * width + x);
+                floatarray[idx + 0] = r;
+                floatarray[idx + 1] = g;
+                floatarray[idx + 2] = b;
             } else {
                 std::cerr << "iisptnnconnector.cpp: Error, components is neither 1 nor 3. Stopping..." << std::endl;
                 exit(1);
             }
         }
     }
+
+    child_process->write_n_float32(&floatarray[0], nfloats);
 }
 
 // ============================================================================
@@ -89,37 +95,18 @@ std::unique_ptr<IntensityFilm> IisptNnConnector::read_image_film(
                     )
                 );
 
-    // Get raster
-    for (int y = 0; y < hemisize; y++) {
-        for (int x = 0; x < hemisize; x++) {
-            Float r;
-            Float g;
-            Float b;
+    int nfloat = hemisize * hemisize * 3;
+    std::vector<float> floatarray (nfloat);
 
-            int code = child_process->read_float32(&r);
-            if (code) {
-                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
-                status = 1;
-                return film;
-            }
-
-            code = child_process->read_float32(&g);
-            if (code) {
-                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
-                status = 1;
-                return film;
-            }
-
-            code = child_process->read_float32(&b);
-            if (code) {
-                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
-                status = 1;
-                return film;
-            }
-
-            film->set(x, y, r, g, b);
-        }
+    // Read
+    int code = child_process->read_n_float32(&floatarray[0], nfloat);
+    if (code) {
+        std::cerr << "iisptnnconnector.cpp: Error when reading float array" << std::endl;
+        status = 1;
+        return film;
     }
+
+    film->populate_from_float_array(&floatarray[0]);
 
     // Check magic characters
     char c0 = child_process->read_char();

@@ -125,4 +125,31 @@ void ImageFilm::set_all(
     }
 }
 
+// ============================================================================
+// Populate from float array
+
+void ImageFilm::populate_from_float_array(float* floats) {
+    if (num_components == 1) {
+        int fidx = 0;
+        int limit = width * height;
+        for (int i = 0; i < limit; i++) {
+            data[i] = PfmItem(floats[fidx]);
+            fidx++;
+        }
+    } else {
+        int fidx = 0;
+        int limit = width * height;
+        for (int i = 0; i < limit; i++) {
+            float r, g, b;
+            r = floats[fidx];
+            fidx++;
+            g = floats[fidx];
+            fidx++;
+            b = floats[fidx];
+            fidx++;
+            data[i] = PfmItem(r, g, b);
+        }
+    }
+}
+
 } // namespace pbrt
