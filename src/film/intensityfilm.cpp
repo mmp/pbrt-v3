@@ -89,6 +89,7 @@ void IntensityFilm::compute_cdfs()
         sum += compute_row_cdf(y);
         row_cdfs->operator[](y) = sum;
     }
+    probability_magnitude = sum;
 
     cdf_computed = true;
 }
@@ -103,11 +104,8 @@ float IntensityFilm::compute_row_cdf(
     int idx = y * width;
     float sum = 0.0;
     for (int x = 0; x < width; x++) {
-        PfmItem item = get_image_coord_jacobian();
-        float r, g, b;
-        item.get_triple_component(r, g, b);
-        float rgbsum = r + g + b;
-        sum += rgbsum;
+        PfmItem item = get_image_coord_jacobian(x, y);
+        sum += item.magnitude();
         pixel_cdfs->operator[](idx) = sum;
         idx++;
     }
@@ -121,7 +119,8 @@ PfmItem IntensityFilm::importance_sample(
         float rx, // uniform random float
         float ry,
         int* cx, // sampled image-coordinate pixels
-        int* cy
+        int* cy,
+        float* prob // probability
         )
 {
     if (!cdf_computed) {
@@ -137,12 +136,45 @@ PfmItem IntensityFilm::importance_sample(
         if (ry > row_cdfs->operator[](y)) {
             int chosen_y = y - 1;
             *cy = chosen_y;
-            return importance_sample_row(chosen_y, rx, cx);
+            return importance_sample_row(chosen_y, rx, cx, prob);
         }
     }
     int chosen_y = height - 1;
     *cy = chosen_y;
-    return importance_sample_row(chosen_y, rx, cx);
+    return importance_sample_row(chosen_y, rx, cx, prob);
+}
+
+
+// ============================================================================
+PfmItem IntensityFilm::importance_sample_row(
+        int chosen_y,
+        float rx,
+        int* cx,
+        float* prob
+        )
+{
+    // Scale rx by the maximum value in the current row
+    int rowstart = chosen_y * width;
+    rx *= pixel_cdfs->operator[](rowstart + width - 1);
+
+    // Iterate to find the pixel
+    int chosen_x = -1;
+    for (int x = 0; x < width; x++) {
+        int idx = rowstart + x;
+        if (rx > pixel_cdfs->operator[](idx)) {
+            chosen_x = x - 1;
+            break;
+        }
+    }
+    if (chosen_x == -1) {
+        chosen_x = width - 1;
+    }
+
+    *cx = chosen_x;
+    PfmItem res = get_image_coord_jacobian(chosen_x, chosen_y);
+    float magnitude = res.magnitude();
+    *prob = magnitude / probability_magnitude;
+    return res;
 }
 
 

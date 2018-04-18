@@ -12,6 +12,8 @@ class IntensityFilm
 
 private:
 
+    // Fields =================================================================
+
     std::shared_ptr<ImageFilm> film;
 
     int width;
@@ -22,6 +24,19 @@ private:
     bool cdf_computed = false;
     std::unique_ptr<std::vector<float>> pixel_cdfs;
     std::unique_ptr<std::vector<float>> row_cdfs;
+    float probability_magnitude;
+
+    // Private methods ========================================================
+    float compute_row_cdf(
+            int y
+            );
+
+    PfmItem importance_sample_row(
+            int chosen_y,
+            float rx,
+            int* cx,
+            float* prob
+            )
 
 public:
 
@@ -69,8 +84,22 @@ public:
 
     PfmItem get_camera_coord_jacobian(int x, int y);
 
+    PfmItem get_image_coord_jacobian(int x, int y);
+
     // Populate from array ====================================================
     void populate_from_float_array(float* floatarray);
+
+    // Compute CDFs ===========================================================
+    void compute_cdfs();
+
+    // Importance sampling ====================================================
+    PfmItem importance_sample(
+            float rx, // uniform random float
+            float ry,
+            int* cx, // sampled image-coordinate pixels
+            int* cy,
+            float* prob // probability
+            );
 };
 
 } // namespace pbrt
