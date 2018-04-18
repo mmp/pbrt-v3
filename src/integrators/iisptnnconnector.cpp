@@ -95,37 +95,18 @@ std::unique_ptr<IntensityFilm> IisptNnConnector::read_image_film(
                     )
                 );
 
-    // Get raster
-    for (int y = 0; y < hemisize; y++) {
-        for (int x = 0; x < hemisize; x++) {
-            Float r;
-            Float g;
-            Float b;
+    int nfloat = hemisize * hemisize * 3;
+    std::vector<float> floatarray (nfloat);
 
-            int code = child_process->read_float32(&r);
-            if (code) {
-                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
-                status = 1;
-                return film;
-            }
-
-            code = child_process->read_float32(&g);
-            if (code) {
-                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
-                status = 1;
-                return film;
-            }
-
-            code = child_process->read_float32(&b);
-            if (code) {
-                std::cerr << "iisptnnconnector.cpp: Error when reading a float32" << std::endl;
-                status = 1;
-                return film;
-            }
-
-            film->set(x, y, r, g, b);
-        }
+    // Read
+    int code = child_process->read_n_float32(&floatarray[0], nfloat);
+    if (code) {
+        std::cerr << "iisptnnconnector.cpp: Error when reading float array" << std::endl;
+        status = 1;
+        return film;
     }
+
+    film->populate_from_float_array(&floatarray[0]);
 
     // Check magic characters
     char c0 = child_process->read_char();

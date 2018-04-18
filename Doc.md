@@ -20,6 +20,7 @@ Expected stdout format:
 ```
 Full time from C++: 51ms/iteration
 Full time from C++, optimized writes: 48ms/iteration
+Full time from C++, optimized read and writes: 47ms/iteration
 NN evaluation time: 27ms/iteration
 NN evaluation from/to random numpy arrays: 27ms/iteration
 NN evaluation with all transforms: 34ms/iteration

@@ -56,4 +56,11 @@ PfmItem IntensityFilm::get_camera_coord_jacobian(int x, int y) {
     return pix.scalar_multiply(jacobian_factor);
 }
 
+// ============================================================================
+// Populate from float array
+
+void IntensityFilm::populate_from_float_array(float* floatarray) {
+    film->populate_from_float_array(floatarray);
+}
+
 } // namespace pbrt
