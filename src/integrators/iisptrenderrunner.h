@@ -24,6 +24,7 @@ private:
     // Fields -----------------------------------------------------------------
 
     double HEMI_IMPORTANCE = 10.0;
+    int HEMISPHERIC_IMPORTANCE_SAMPLES = 10;
 
     int thread_no;
 
@@ -81,8 +82,7 @@ private:
 
     Spectrum sample_hemisphere(
             const Interaction &it,
-            HemisphericCamera* auxCamera,
-            double probability
+            HemisphericCamera* auxCamera
             );
 
     Spectrum path_uniform_sample_one_light(

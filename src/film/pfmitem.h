@@ -74,6 +74,10 @@ public:
         return Spectrum::FromRGB(rgb);
     }
 
+    float magnitude() {
+        return r + g + b;
+    }
+
 };
 
 }

@@ -1,14 +1,21 @@
 #include "iisptrenderrunner.h"
 #include "lightdistrib.h"
 
+#include <chrono>
+
 namespace pbrt {
 
 // ============================================================================
 // Estimate direct (evaluate 1 hemisphere pixel)
+// Output is scaled by 1/pp(x)
+//        which is the probability of sampling the specific
+//        pp is not a 0-1 probability but it's 1-centered
+//        for a uniform distribution
+// See intensityfilm.cpp for more detail
 static Spectrum estimate_direct(
         const Interaction &it,
-        int hem_x,
-        int hem_y,
+        float rx, // input uniform random floats
+        float ry,
         HemisphericCamera* auxCamera
         ) {
 
@@ -30,7 +37,16 @@ static Spectrum estimate_direct(
     // We don't need to have a visibility object
 
     // Get jacobian-adjusted sample, camera coordinates
-    Spectrum Li = auxCamera->get_light_sample_nn(hem_x, hem_y, &wi);
+    float pp_prob;
+    Spectrum Li = auxCamera->get_light_sample_nn_importance(
+                rx,
+                ry,
+                &wi,
+                &pp_prob
+                );
+    if (pp_prob <= 1e-5) {
+        return Spectrum(0.0);
+    }
 
     // Combine incoming light, BRDF and viewing direction ---------------------
     if (lightPdf > 0 && !Li.IsBlack()) {
@@ -71,7 +87,7 @@ static Spectrum estimate_direct(
     // Skipping sampling BSDF with multiple importance sampling
     // because we gather all information from lights (hemisphere)
 
-    return Ld;
+    return Ld / pp_prob;
 
 }
 
@@ -79,28 +95,21 @@ static Spectrum estimate_direct(
 // Sample hemisphere
 Spectrum IisptRenderRunner::sample_hemisphere(
         const Interaction &it,
-        HemisphericCamera* auxCamera,
-        double probability
-        ) {
+        HemisphericCamera* auxCamera
+        )
+{
     Spectrum L(0.f);
 
-    int n_samples = 0;
+    auxCamera->compute_cdfs();
 
-    // Loop for every pixel in the hemisphere
-    for (int hemi_x = 0; hemi_x < PbrtOptions.iisptHemiSize; hemi_x++) {
-        for (int hemi_y = 0; hemi_y < PbrtOptions.iisptHemiSize; hemi_y++) {
-            if (rng->bool_probability(probability)) {
-                L += estimate_direct(it, hemi_x, hemi_y, auxCamera);
-                n_samples++;
-            }
-        }
+    for (int i = 0; i < HEMISPHERIC_IMPORTANCE_SAMPLES; i++) {
+        float rx = rng->uniform_float();
+        float ry = rng->uniform_float();
+        L += estimate_direct(it, rx, ry, auxCamera);
     }
 
-    if (n_samples > 0) {
-        return L / n_samples;
-    } else {
-        return Spectrum(0.f);
-    }
+    return L / HEMISPHERIC_IMPORTANCE_SAMPLES;
+
 }
 
 // ============================================================================
@@ -357,6 +366,119 @@ void IisptRenderRunner::run(const Scene &scene)
                     (int) std::round(((float) y) + radius)
                     );
 
+        // Temporary ----------------------------------------------------------
+        // Evaluate for all pixels in the image
+        Bounds2i bounds = film_monitor->get_film_bounds();
+        std::chrono::steady_clock::time_point time_start =
+                std::chrono::steady_clock::now();
+        for (int fy = bounds.pMin.y; fy < bounds.pMax.y; fy++) {
+            std::cerr << fy << std::endl;
+            for (int fx = bounds.pMin.x; fx < bounds.pMax.x; fx++) {
+
+                Point2i f_pixel = Point2i(fx, fy);
+
+                sampler_next_pixel();
+                CameraSample f_camera_sample =
+                        sampler->GetCameraSample(f_pixel);
+
+                RayDifferential f_r;
+                main_camera->GenerateRayDifferential(
+                    f_camera_sample,
+                    &f_r
+                    );
+                f_r.ScaleDifferentials(1.0);
+
+                SurfaceInteraction f_isect;
+                Spectrum f_beta;
+                Spectrum f_background;
+                RayDifferential f_ray;
+
+                // Find intersection point
+                bool f_intersection_found = find_intersection(
+                            f_r,
+                            scene,
+                            arena,
+                            &f_isect,
+                            &f_ray,
+                            &f_beta,
+                            &f_background
+                            );
+
+                if (!f_intersection_found) {
+                    // No intersection found, record background
+                    film_monitor->add_sample(
+                                f_pixel,
+                                f_background,
+                                1.0
+                                );
+                    continue;
+                } else if (f_intersection_found && f_beta.y() <= 0.0) {
+                    // Intersection found but black pixel
+                    // Nothing to do
+                    continue;
+                }
+
+                // Valid intersection found
+
+                // TODO check if intersection is within valid range
+                // and that has similar material and normal facing
+
+                // Compute scattering functions for surface interaction
+                f_isect.ComputeScatteringFunctions(f_ray, arena);
+                if (!isect.bsdf) {
+                    // This should not be possible, because find_intersection()
+                    // would have skipped the intersection
+                    // so do nothing
+                    continue;
+                }
+
+                // wo is vector towards viewer, from intersection
+                Vector3f wo = f_isect.wo;
+                Float wo_length = Dot(wo, wo);
+                if (wo_length == 0) {
+                    std::cerr << "iisptrenderrunner.cpp: Detected a 0 length wo" << std::endl;
+                    raise(SIGKILL);
+                    exit(1);
+                }
+
+                Spectrum L (0.0);
+
+                // Sample one direct lighting
+                const Distribution1D* distribution = lightDistribution->Lookup(f_isect.p);
+                L += path_uniform_sample_one_light(
+                            f_isect,
+                            scene,
+                            arena,
+                            false,
+                            distribution
+                            );
+
+                // Compute emitted light if ray hit an area light source
+                L += f_isect.Le(wo);
+
+                // Compute hemispheric contribution
+                L += sample_hemisphere(
+                            f_isect,
+                            aux_camera.get()
+                            );
+
+                // Record sample
+                film_monitor->add_sample(
+                            f_pixel,
+                            f_beta * L,
+                            1.0);
+            }
+        }
+        std::chrono::steady_clock::time_point time_end =
+                std::chrono::steady_clock::now();
+        auto elapsed_milliseconds =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    time_end - time_start
+                    ).count();
+        std::cerr << "iisptrenderrunner.cpp: Full frame evaluation loop took ["<< elapsed_milliseconds <<"] milliseconds\n";
+        return;
+        // end temporary ------------------------------------------------------
+
         for (int fy = filter_start_y; fy <= filter_end_y; fy++) {
             for (int fx = filter_start_x; fx <= filter_end_x; fx++) {
 
@@ -459,9 +581,7 @@ void IisptRenderRunner::run(const Scene &scene)
                 // Compute hemispheric contribution
                 L += sample_hemisphere(
                             f_isect,
-                            aux_camera.get(),
-                            f_weight * HEMI_IMPORTANCE
-                            );
+                            aux_camera.get()                            );
 
                 // Record sample
                 film_monitor->add_sample(
