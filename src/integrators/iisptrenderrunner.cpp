@@ -114,6 +114,44 @@ Spectrum IisptRenderRunner::sample_hemisphere(
 }
 
 // ============================================================================
+// Sample hemisphere with multiple cameras and weights
+Spectrum IisptRenderRunner::sample_hemisphere(
+        const Interaction &it,
+        std::vector<float> &weights,
+        std::vector<HemisphericCamera*> &cameras
+        )
+{
+    Spectrum L(0.f);
+
+    int samples_taken = 0;
+
+    for (int i = 0; i < cameras.size(); i++) {
+        HemisphericCamera* a_camera = cameras[i];
+        a_camera->compute_cdfs();
+        float a_weight = weights[i];
+
+        // Attempt HEMISPHERIC_IMPORTANCE_SAMPLES to sample this camera
+        // The expected number of samples across all the cameras will be
+        // HEMISPHERIC_IMPORTANCE_SAMPLES
+        for (int j = 0; j < HEMISPHERIC_IMPORTANCE_SAMPLES; j++) {
+            float rr = rng->uniform_float();
+            if (rr < a_weight) {
+                float rx = rng->uniform_float();
+                float ry = rng->uniform_float();
+                L += estimate_direct(it, rx, ry, a_camera);
+                samples_taken++;
+            }
+        }
+    }
+
+    if (samples_taken > 0) {
+        return L / samples_taken;
+    } else {
+        return Spectrum(0.0);
+    }
+}
+
+// ============================================================================
 IisptRenderRunner::IisptRenderRunner(
         IISPTIntegrator* iispt_integrator,
         std::shared_ptr<IisptScheduleMonitor> schedule_monitor,
@@ -633,7 +671,7 @@ void IisptRenderRunner::run(const Scene &scene)
         // Use a HashMap to store the hemi points
         std::unordered_map<
                 IisptPoint2i,
-                std::unique_ptr<HemisphericCamera>
+                std::shared_ptr<HemisphericCamera>
                 > hemi_points;
 
         // Check the iteration space of the tiles
@@ -795,6 +833,7 @@ void IisptRenderRunner::run(const Scene &scene)
         for (int fy = sm_task.y0; fy < sm_task.y1; fy++) {
             for (int fx = sm_task.x0; fx < sm_task.x1; fx++) {
 
+                Point2i f_pixel (fx, fy);
 
                 Point2i neigh_s (
                             fx - (fx % sm_task.tilesize),
@@ -813,26 +852,169 @@ void IisptRenderRunner::run(const Scene &scene)
                                 )
                             );
 
-                if (rng->uniform_float() < 0.001) {
-                    std::cerr << "Neighbour S of ["<< fx <<"]["<< fy <<"] is ["<< neigh_s <<"], E is ["<< neigh_e <<"]\n";
+                Point2i neigh_r (
+                            neigh_e.x,
+                            neigh_s.y
+                            );
+
+                Point2i neigh_b (
+                            neigh_s.x,
+                            neigh_e.y
+                            );
+
+                // Compute distances from the neighbours
+                float dist_s = iispt::points_distance(f_pixel, neigh_s);
+                float dist_r = iispt::points_distance(f_pixel, neigh_r);
+                float dist_b = iispt::points_distance(f_pixel, neigh_b);
+                float dist_e = iispt::points_distance(f_pixel, neigh_e);
+
+                // Normalize the distances
+                float dist_sum = dist_s + dist_r + dist_b + dist_e;
+                if (dist_sum <= 0.0) {
+                    // Degenerate tile
+                    continue;
                 }
 
-                // Check that S and E are present in the hashmap
-                IisptPoint2i key_s;
-                key_s.x = neigh_s.x;
-                key_s.y = neigh_s.y;
-                if (!(hemi_points.count(key_s) > 0)) {
-                    std::cerr << "iisptrenderrunner.cpp: Error, item ["<< key_s.x <<"]["<< key_s.y <<"] is not in the hemi points!\n";
-                    std::raise(SIGKILL);
+                dist_s /= dist_sum;
+                dist_r /= dist_sum;
+                dist_b /= dist_sum;
+                dist_e /= dist_sum;
+
+                // Constructor vectors for sampling
+                std::vector<float> hemi_sampling_weights (4);
+                hemi_sampling_weights[0] = dist_s;
+                hemi_sampling_weights[1] = dist_r;
+                hemi_sampling_weights[2] = dist_b;
+                hemi_sampling_weights[3] = dist_e;
+
+                std::vector<HemisphericCamera*> hemi_sampling_cameras (4);
+                auto hemi_point_get = [&](Point2i pt) {
+                    IisptPoint2i pt_key;
+                    pt_key.x = pt.x;
+                    pt_key.y = pt.y;
+                    std::shared_ptr<HemisphericCamera> a_cmr =
+                            hemi_points.at(pt_key);
+                    if (a_cmr == nullptr) {
+                        return NULL;
+                    } else {
+                        return a_cmr.get();
+                    }
+                };
+
+                hemi_sampling_cameras[0] = hemi_point_get(neigh_s);
+                hemi_sampling_cameras[1] = hemi_point_get(neigh_r);
+                hemi_sampling_cameras[2] = hemi_point_get(neigh_b);
+                hemi_sampling_cameras[3] = hemi_point_get(neigh_e);
+
+                sampler_next_pixel();
+                CameraSample f_camera_sample =
+                        sampler->GetCameraSample(f_pixel);
+
+                RayDifferential f_r;
+                main_camera->GenerateRayDifferential(
+                    f_camera_sample,
+                    &f_r
+                    );
+                f_r.ScaleDifferentials(1.0);
+
+                SurfaceInteraction f_isect;
+                Spectrum f_beta;
+                Spectrum f_background;
+                RayDifferential f_ray;
+
+                // Find intersection point
+                bool f_intersection_found = find_intersection(
+                            f_r,
+                            scene,
+                            arena,
+                            &f_isect,
+                            &f_ray,
+                            &f_beta,
+                            &f_background
+                            );
+
+                if (!f_intersection_found) {
+                    // No intersection found, record background
+                    film_monitor->add_sample(
+                                f_pixel,
+                                f_background,
+                                1.0
+                                );
+                    continue;
+                } else if (f_intersection_found && f_beta.y() <= 0.0) {
+                    // Intersection found but black pixel
+                    // Nothing to do
+                    continue;
                 }
 
-                IisptPoint2i key_e;
-                key_e.x = neigh_e.x;
-                key_e.y = neigh_e.y;
-                if (!(hemi_points.count(key_e) > 0)) {
-                    std::cerr << "iisptrenderrunner.cpp: Error, item ["<< key_e.x <<"]["<< key_e.y <<"] is not in the hemi points!\n";
-                    std::raise(SIGKILL);
+                // Valid intersection found
+
+                // Compute scattering functions for surface interaction
+                f_isect.ComputeScatteringFunctions(f_ray, arena);
+                if (!isect.bsdf) {
+                    // This should not be possible, because find_intersection()
+                    // would have skipped the intersection
+                    // so do nothing
+                    continue;
                 }
+
+                // wo is vector towards viewer, from intersection
+                Vector3f wo = f_isect.wo;
+                Float wo_length = Dot(wo, wo);
+                if (wo_length == 0) {
+                    std::cerr << "iisptrenderrunner.cpp: Detected a 0 length wo" << std::endl;
+                    raise(SIGKILL);
+                    exit(1);
+                }
+
+                Spectrum L (0.0);
+
+                // Sample one direct lighting
+                const Distribution1D* distribution = lightDistribution->Lookup(f_isect.p);
+                L += path_uniform_sample_one_light(
+                            f_isect,
+                            scene,
+                            arena,
+                            false,
+                            distribution
+                            );
+
+                // Compute emitted light if ray hit an area light source
+                L += f_isect.Le(wo);
+
+                // Compute hemispheric contribution
+                L += sample_hemisphere(
+                            f_isect,
+                            hemi_sampling_weights,
+                            hemi_sampling_cameras
+                            );
+
+                // Record sample
+                film_monitor->add_sample(
+                            f_pixel,
+                            f_beta * L,
+                            1.0);
+
+//                if (rng->uniform_float() < 0.001) {
+//                    std::cerr << "Neighbour S of ["<< fx <<"]["<< fy <<"] is ["<< neigh_s <<"], E is ["<< neigh_e <<"]\n";
+//                }
+
+//                // Check that S and E are present in the hashmap
+//                IisptPoint2i key_s;
+//                key_s.x = neigh_s.x;
+//                key_s.y = neigh_s.y;
+//                if (!(hemi_points.count(key_s) > 0)) {
+//                    std::cerr << "iisptrenderrunner.cpp: Error, item ["<< key_s.x <<"]["<< key_s.y <<"] is not in the hemi points!\n";
+//                    std::raise(SIGKILL);
+//                }
+
+//                IisptPoint2i key_e;
+//                key_e.x = neigh_e.x;
+//                key_e.y = neigh_e.y;
+//                if (!(hemi_points.count(key_e) > 0)) {
+//                    std::cerr << "iisptrenderrunner.cpp: Error, item ["<< key_e.x <<"]["<< key_e.y <<"] is not in the hemi points!\n";
+//                    std::raise(SIGKILL);
+//                }
             }
         }
 

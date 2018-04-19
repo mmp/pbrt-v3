@@ -87,6 +87,12 @@ private:
             HemisphericCamera* auxCamera
             );
 
+    Spectrum sample_hemisphere(
+            const Interaction &it,
+            std::vector<float> &weights,
+            std::vector<HemisphericCamera*> &cameras
+            );
+
     Spectrum path_uniform_sample_one_light(
             Interaction &it,
             const Scene &scene,
