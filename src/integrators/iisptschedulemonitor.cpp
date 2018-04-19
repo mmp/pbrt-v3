@@ -19,7 +19,7 @@ IisptScheduleMonitor::IisptScheduleMonitor(Bounds2i bounds) {
 
     char* radius_ratio_env = std::getenv("IISPT_SCHEDULE_RADIUS_RATIO");
     if (radius_ratio_env == NULL) {
-        update_multiplier = 0.50;
+        update_multiplier = 0.60;
     } else {
         update_multiplier = std::stof(std::string(radius_ratio_env));
     }

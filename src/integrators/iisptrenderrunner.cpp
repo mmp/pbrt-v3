@@ -661,7 +661,7 @@ void IisptRenderRunner::run(const Scene &scene)
         loop_count++;
         std::cerr << "iisptrenderrunner.cpp loop count " << loop_count << std::endl;
 
-        if (loop_count > 1) {
+        if (loop_count > 6) {
             return;
         }
 
@@ -884,6 +884,12 @@ void IisptRenderRunner::run(const Scene &scene)
                 dist_r /= dist_sum;
                 dist_b /= dist_sum;
                 dist_e /= dist_sum;
+
+                // Invert
+                dist_s = 1.0 - dist_s;
+                dist_r = 1.0 - dist_r;
+                dist_b = 1.0 - dist_b;
+                dist_e = 1.0 - dist_e;
 
                 // Constructor vectors for sampling
                 std::vector<float> hemi_sampling_weights (4);
