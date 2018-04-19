@@ -631,7 +631,10 @@ void IisptRenderRunner::run(const Scene &scene)
         std::cerr << "Obtained new task: ["<< sm_task.x0 <<"]["<< sm_task.y0 <<"]-["<< sm_task.x1 <<"]["<< sm_task.y1 <<"] tilesize ["<< sm_task.tilesize <<"]\n";
 
         // Use a HashMap to store the hemi points
-        std::unordered_map<IisptPoint2i, bool> hemi_points;
+        std::unordered_map<
+                IisptPoint2i,
+                std::unique_ptr<HemisphericCamera>
+                > hemi_points;
 
         // Check the iteration space of the tiles
         int tile_x = sm_task.x0;
@@ -642,10 +645,117 @@ void IisptRenderRunner::run(const Scene &scene)
             IisptPoint2i hemi_key;
             hemi_key.x = tile_x;
             hemi_key.y = tile_y;
-            hemi_points[hemi_key] = true;
 
-            bool advance_tile_y = false;
+            Point2i pixel (tile_x, tile_y);
+
+            // Obtain camera ray and shoot into scene.
+
+            sampler_next_pixel();
+
+            CameraSample camera_sample =
+                    sampler->GetCameraSample(pixel);
+
+            RayDifferential r;
+            main_camera->GenerateRayDifferential(
+                        camera_sample,
+                        &r
+                        );
+            r.ScaleDifferentials(1.0);
+
+            // Find intersection
+
+            SurfaceInteraction isect;
+            Spectrum beta;
+            Spectrum background;
+            RayDifferential ray;
+
+            bool intersection_found = find_intersection(
+                        r,
+                        scene,
+                        arena,
+                        &isect,
+                        &ray,
+                        &beta,
+                        &background
+                        );
+
+            if (!intersection_found || beta.y() <= 0.0) {
+
+                // Set a black hemi
+                hemi_points[hemi_key] = nullptr;
+
+            } else {
+
+                // Invert normal if surface normal points inwards
+                Normal3f surface_normal = isect.n;
+                Vector3f sf_norm_vec = Vector3f(isect.n.x, isect.n.y, isect.n.z);
+                Vector3f ray_vec = Vector3f(ray.d.x, ray.d.y, ray.d.z);
+                if (Dot(sf_norm_vec, ray_vec) > 0.0) {
+                    surface_normal = Normal3f(
+                                -isect.n.x,
+                                -isect.n.y,
+                                -isect.n.z
+                                );
+                }
+
+                // aux_ray is centered at the intersection point
+                // points towards the intersection surface normal
+                Ray aux_ray = isect.SpawnRay(Vector3f(surface_normal));
+
+                // Create aux camera
+                std::unique_ptr<HemisphericCamera> aux_camera (
+                            CreateHemisphericCamera(
+                                PbrtOptions.iisptHemiSize,
+                                PbrtOptions.iisptHemiSize,
+                                dcamera->medium,
+                                aux_ray.o,
+                                Point3f(aux_ray.d.x, aux_ray.d.y, aux_ray.d.z),
+                                pixel,
+                                std::string("/tmp/null")
+                                )
+                            );
+
+                // Run dintegrator render
+                std::cerr << "Rendering view for ["<< pixel <<"]\n";
+                d_integrator->RenderView(scene, aux_camera.get());
+
+                // Use NN Connector
+
+                // Obtain intensity, normals, distance maps
+
+                std::unique_ptr<IntensityFilm> aux_intensity =
+                        d_integrator->get_intensity_film(aux_camera.get());
+
+                NormalFilm* aux_normals =
+                        d_integrator->get_normal_film();
+
+                DistanceFilm* aux_distance =
+                        d_integrator->get_distance_film();
+
+                int communicate_status = -1;
+                std::shared_ptr<IntensityFilm> nn_film =
+                        nn_connector->communicate(
+                            aux_intensity.get(),
+                            aux_distance,
+                            aux_normals,
+                            iispt_integrator->get_normalization_intensity(),
+                            iispt_integrator->get_normalization_distance(),
+                            communicate_status
+                            );
+
+                if (communicate_status) {
+                    std::cerr << "NN communication issue" << std::endl;
+                    raise(SIGKILL);
+                }
+
+                aux_camera->set_nn_film(nn_film);
+
+                hemi_points[hemi_key] = std::move(aux_camera);
+
+            }
+
             // Advance to the next tile
+            bool advance_tile_y = false;
             if (tile_x == sm_task.x1 - 1) {
                 // This was the last tile of the row, go to next row
                 tile_x = sm_task.x0;
