@@ -125,3 +125,7 @@ An IisptPixel has:
 
 * x, y, z color coordinates
 * sample_count number of samples obtained at the current location
+
+# Iispt Render Algorithm 2
+
+The new render algorithm uses a regular grid of hemispheric samples, and interpolates between them. The rendering frame is subdivided into smaller rectangular chunks, and each pass will first obtain all the hemispheric samples, and then evaluate all the relevant pixels.

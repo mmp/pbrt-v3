@@ -7,6 +7,7 @@ namespace pbrt {
 
 namespace iispt {
 
+// ============================================================================
 static double gauss(
         double sigma,
         double x
@@ -33,6 +34,19 @@ static double gauss(
                     )
                 );
     return gauss_left * gauss_right;
+}
+
+// ============================================================================
+static float points_distance(
+        Point2i a,
+        Point2i b
+        )
+{
+    float dx2 = a.x - b.x;
+    dx2 = dx2 * dx2;
+    float dy2 = a.y - b.y;
+    dy2 = dy2 * dy2;
+    return std::sqrt(dx2 + dy2);
 }
 
 } // namespace iispt

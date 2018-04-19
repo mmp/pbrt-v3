@@ -2,6 +2,7 @@
 #define IISPTRENDERRUNNER_H
 
 #include <climits>
+#include <unordered_map>
 
 #include "integrators/iispt.h"
 #include "integrators/iisptfilmmonitor.h"
@@ -14,6 +15,7 @@
 #include "cameras/hemispheric.h"
 #include "tools/iisptmathutils.h"
 #include "tools/iisptrng.h"
+#include "tools/iisptpoint2i.h"
 
 namespace pbrt {
 
@@ -24,7 +26,7 @@ private:
     // Fields -----------------------------------------------------------------
 
     double HEMI_IMPORTANCE = 10.0;
-    int HEMISPHERIC_IMPORTANCE_SAMPLES = 10;
+    int HEMISPHERIC_IMPORTANCE_SAMPLES = 16;
 
     int thread_no;
 
@@ -85,6 +87,12 @@ private:
             HemisphericCamera* auxCamera
             );
 
+    Spectrum sample_hemisphere(
+            const Interaction &it,
+            std::vector<float> &weights,
+            std::vector<HemisphericCamera*> &cameras
+            );
+
     Spectrum path_uniform_sample_one_light(
             Interaction &it,
             const Scene &scene,
@@ -121,7 +129,10 @@ public:
             );
 
     // Public methods ---------------------------------------------------------
-    virtual void run(
+
+    virtual void run(const Scene &scene);
+
+    virtual void run_old(
             const Scene &scene
             );
 };
