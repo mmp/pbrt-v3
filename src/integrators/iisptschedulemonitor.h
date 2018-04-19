@@ -2,8 +2,18 @@
 #define IISPTSCHEDULEMONITOR_H
 
 #include <mutex>
+#include "geometry.h"
 
 namespace pbrt {
+
+// ============================================================================
+// End points are assumed to be exclusive
+struct IisptScheduleMonitorTask
+{
+    int x;
+    int y;
+    int distance;
+};
 
 // ============================================================================
 class IisptScheduleMonitor
@@ -13,7 +23,8 @@ private:
     // ------------------------------------------------------------------------
     // Members
 
-    std::recursive_mutex lock;
+    // Film bounds
+    Bounds2i bounds;
 
     float current_radius;
 
@@ -22,17 +33,18 @@ private:
     // Reset point for samples counter
     int update_interval;
 
-    // Partial counter, downward
-    int samples_count;
+    // Current pixels in the film
+    int nextx;
+    int nexty;
 
 public:
 
     // Constructor ------------------------------------------------------------
-    IisptScheduleMonitor();
+    IisptScheduleMonitor(Bounds2i bounds);
 
     // Public methods ---------------------------------------------------------
 
-    float get_current_radius();
+    IisptScheduleMonitorTask next_task();
 
 };
 
