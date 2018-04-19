@@ -619,7 +619,7 @@ void IisptRenderRunner::run(const Scene &scene)
         loop_count++;
         std::cerr << "iisptrenderrunner.cpp loop count " << loop_count << std::endl;
 
-        if (loop_count > 10) {
+        if (loop_count > 1) {
             return;
         }
 
@@ -665,6 +665,39 @@ void IisptRenderRunner::run(const Scene &scene)
                                 tile_y + sm_task.tilesize,
                                 sm_task.y1 - 1
                                 );
+                }
+            }
+        }
+
+        // Check neighbour hemi points for each pixel in the task
+        // Neigh:
+        //     S - top left
+        //     R - top right
+        //     B - bottom left
+        //     E - bottom right
+        for (int fy = sm_task.y0; fy < sm_task.y1; fy++) {
+            for (int fx = sm_task.x0; fx < sm_task.x1; fx++) {
+
+
+                Point2i neigh_s (
+                            fx - (fx % sm_task.tilesize),
+                            fy - (fy % sm_task.tilesize)
+                            );
+
+
+                Point2i neigh_e (
+                            std::min(
+                                neigh_s.x + sm_task.tilesize,
+                                sm_task.x1 - 1
+                                ),
+                            std::min(
+                                neigh_s.y + sm_task.tilesize,
+                                sm_task.y1 - 1
+                                )
+                            );
+
+                if (rng->uniform_float() < 0.01) {
+                    std::cerr << "Neighbour S of ["<< fx <<"]["<< fy <<"] is ["<< neigh_s <<"], E is ["<< neigh_e <<"]\n";
                 }
             }
         }
