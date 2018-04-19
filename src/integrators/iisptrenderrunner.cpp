@@ -127,7 +127,9 @@ Spectrum IisptRenderRunner::sample_hemisphere(
 
     for (int i = 0; i < cameras.size(); i++) {
         HemisphericCamera* a_camera = cameras[i];
-        a_camera->compute_cdfs();
+        if (a_camera != NULL) {
+            a_camera->compute_cdfs();
+        }
         float a_weight = weights[i];
 
         // Attempt HEMISPHERIC_IMPORTANCE_SAMPLES to sample this camera
@@ -136,10 +138,12 @@ Spectrum IisptRenderRunner::sample_hemisphere(
         for (int j = 0; j < HEMISPHERIC_IMPORTANCE_SAMPLES; j++) {
             float rr = rng->uniform_float();
             if (rr < a_weight) {
-                float rx = rng->uniform_float();
-                float ry = rng->uniform_float();
-                L += estimate_direct(it, rx, ry, a_camera);
                 samples_taken++;
+                if (a_camera != NULL) {
+                    float rx = rng->uniform_float();
+                    float ry = rng->uniform_float();
+                    L += estimate_direct(it, rx, ry, a_camera);
+                }
             }
         }
     }
@@ -831,6 +835,7 @@ void IisptRenderRunner::run(const Scene &scene)
         //     B - bottom left
         //     E - bottom right
         for (int fy = sm_task.y0; fy < sm_task.y1; fy++) {
+            std::cerr << "iisptrenderrunner.cpp: fy is " << fy << std::endl;
             for (int fx = sm_task.x0; fx < sm_task.x1; fx++) {
 
                 Point2i f_pixel (fx, fy);
@@ -895,7 +900,7 @@ void IisptRenderRunner::run(const Scene &scene)
                     std::shared_ptr<HemisphericCamera> a_cmr =
                             hemi_points.at(pt_key);
                     if (a_cmr == nullptr) {
-                        return NULL;
+                        return (HemisphericCamera*) NULL;
                     } else {
                         return a_cmr.get();
                     }
@@ -951,7 +956,7 @@ void IisptRenderRunner::run(const Scene &scene)
 
                 // Compute scattering functions for surface interaction
                 f_isect.ComputeScatteringFunctions(f_ray, arena);
-                if (!isect.bsdf) {
+                if (!f_isect.bsdf) {
                     // This should not be possible, because find_intersection()
                     // would have skipped the intersection
                     // so do nothing
