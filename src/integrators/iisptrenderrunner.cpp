@@ -661,7 +661,7 @@ void IisptRenderRunner::run(const Scene &scene)
         loop_count++;
         std::cerr << "iisptrenderrunner.cpp loop count " << loop_count << std::endl;
 
-        if (loop_count > 6) {
+        if (loop_count > 10) {
             return;
         }
 
@@ -758,7 +758,6 @@ void IisptRenderRunner::run(const Scene &scene)
                             );
 
                 // Run dintegrator render
-                std::cerr << "Rendering view for ["<< pixel <<"]\n";
                 d_integrator->RenderView(scene, aux_camera.get());
 
                 // Use NN Connector
@@ -835,7 +834,6 @@ void IisptRenderRunner::run(const Scene &scene)
         //     B - bottom left
         //     E - bottom right
         for (int fy = sm_task.y0; fy < sm_task.y1; fy++) {
-            std::cerr << "iisptrenderrunner.cpp: fy is " << fy << std::endl;
             for (int fx = sm_task.x0; fx < sm_task.x1; fx++) {
 
                 Point2i f_pixel (fx, fy);
@@ -1006,26 +1004,7 @@ void IisptRenderRunner::run(const Scene &scene)
                             f_beta * L,
                             1.0);
 
-//                if (rng->uniform_float() < 0.001) {
-//                    std::cerr << "Neighbour S of ["<< fx <<"]["<< fy <<"] is ["<< neigh_s <<"], E is ["<< neigh_e <<"]\n";
-//                }
 
-//                // Check that S and E are present in the hashmap
-//                IisptPoint2i key_s;
-//                key_s.x = neigh_s.x;
-//                key_s.y = neigh_s.y;
-//                if (!(hemi_points.count(key_s) > 0)) {
-//                    std::cerr << "iisptrenderrunner.cpp: Error, item ["<< key_s.x <<"]["<< key_s.y <<"] is not in the hemi points!\n";
-//                    std::raise(SIGKILL);
-//                }
-
-//                IisptPoint2i key_e;
-//                key_e.x = neigh_e.x;
-//                key_e.y = neigh_e.y;
-//                if (!(hemi_points.count(key_e) > 0)) {
-//                    std::cerr << "iisptrenderrunner.cpp: Error, item ["<< key_e.x <<"]["<< key_e.y <<"] is not in the hemi points!\n";
-//                    std::raise(SIGKILL);
-//                }
             }
         }
 

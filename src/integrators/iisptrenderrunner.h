@@ -26,7 +26,7 @@ private:
     // Fields -----------------------------------------------------------------
 
     double HEMI_IMPORTANCE = 10.0;
-    int HEMISPHERIC_IMPORTANCE_SAMPLES = 10;
+    int HEMISPHERIC_IMPORTANCE_SAMPLES = 16;
 
     int thread_no;
 
