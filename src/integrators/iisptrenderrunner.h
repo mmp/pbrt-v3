@@ -2,6 +2,7 @@
 #define IISPTRENDERRUNNER_H
 
 #include <climits>
+#include <unordered_map>
 
 #include "integrators/iispt.h"
 #include "integrators/iisptfilmmonitor.h"
@@ -14,6 +15,7 @@
 #include "cameras/hemispheric.h"
 #include "tools/iisptmathutils.h"
 #include "tools/iisptrng.h"
+#include "tools/iisptpoint2i.h"
 
 namespace pbrt {
 

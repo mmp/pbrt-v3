@@ -630,12 +630,19 @@ void IisptRenderRunner::run(const Scene &scene)
         // sm_task end points are exclusive
         std::cerr << "Obtained new task: ["<< sm_task.x0 <<"]["<< sm_task.y0 <<"]-["<< sm_task.x1 <<"]["<< sm_task.y1 <<"] tilesize ["<< sm_task.tilesize <<"]\n";
 
+        // Use a HashMap to store the hemi points
+        std::unordered_map<IisptPoint2i, bool> hemi_points;
+
         // Check the iteration space of the tiles
         int tile_x = sm_task.x0;
         int tile_y = sm_task.y0;
         while (1) {
             // Process current tile
             std::cerr << "Hemi point ["<< tile_x <<"] ["<< tile_y <<"]\n";
+            IisptPoint2i hemi_key;
+            hemi_key.x = tile_x;
+            hemi_key.y = tile_y;
+            hemi_points[hemi_key] = true;
 
             bool advance_tile_y = false;
             // Advance to the next tile
@@ -696,8 +703,25 @@ void IisptRenderRunner::run(const Scene &scene)
                                 )
                             );
 
-                if (rng->uniform_float() < 0.01) {
+                if (rng->uniform_float() < 0.001) {
                     std::cerr << "Neighbour S of ["<< fx <<"]["<< fy <<"] is ["<< neigh_s <<"], E is ["<< neigh_e <<"]\n";
+                }
+
+                // Check that S and E are present in the hashmap
+                IisptPoint2i key_s;
+                key_s.x = neigh_s.x;
+                key_s.y = neigh_s.y;
+                if (!(hemi_points.count(key_s) > 0)) {
+                    std::cerr << "iisptrenderrunner.cpp: Error, item ["<< key_s.x <<"]["<< key_s.y <<"] is not in the hemi points!\n";
+                    std::raise(SIGKILL);
+                }
+
+                IisptPoint2i key_e;
+                key_e.x = neigh_e.x;
+                key_e.y = neigh_e.y;
+                if (!(hemi_points.count(key_e) > 0)) {
+                    std::cerr << "iisptrenderrunner.cpp: Error, item ["<< key_e.x <<"]["<< key_e.y <<"] is not in the hemi points!\n";
+                    std::raise(SIGKILL);
                 }
             }
         }
