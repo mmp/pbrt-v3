@@ -121,7 +121,10 @@ public:
             );
 
     // Public methods ---------------------------------------------------------
-    virtual void run(
+
+    virtual void run(const Scene &scene);
+
+    virtual void run_old(
             const Scene &scene
             );
 };

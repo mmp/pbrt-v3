@@ -2,6 +2,7 @@
 #include "lightdistrib.h"
 
 #include <chrono>
+#include <csignal>
 
 namespace pbrt {
 
@@ -158,7 +159,7 @@ IisptRenderRunner::IisptRenderRunner(
 }
 
 // ============================================================================
-void IisptRenderRunner::run(const Scene &scene)
+void IisptRenderRunner::run_old(const Scene &scene)
 {
     std::cerr << "iisptrenderrunner.cpp: Preprocessing on d integrator\n";
     d_integrator->Preprocess(scene);
@@ -596,6 +597,76 @@ void IisptRenderRunner::run(const Scene &scene)
         loop_count++;
         if (loop_count > 2000) {
             stop = true;
+        }
+
+    }
+}
+
+// ============================================================================
+
+void IisptRenderRunner::run(const Scene &scene)
+{
+    std::cerr << "iisptrenderrunner.cpp: New tiled renderer\n";
+    d_integrator->Preprocess(scene);
+    int loop_count = 0;
+    std::unique_ptr<LightDistribution> lightDistribution =
+            CreateLightSampleDistribution(std::string("spatial"), scene);
+
+    std::cerr << "iisptrenderrunner.cpp: start render loop\n";
+
+    while (1) {
+
+        loop_count++;
+        std::cerr << "iisptrenderrunner.cpp loop count " << loop_count << std::endl;
+
+        if (loop_count > 10) {
+            return;
+        }
+
+        MemoryArena arena;
+
+        // Obtain the current task
+        IisptScheduleMonitorTask sm_task = schedule_monitor->next_task();
+        // sm_task end points are exclusive
+        std::cerr << "Obtained new task: ["<< sm_task.x0 <<"]["<< sm_task.y0 <<"]-["<< sm_task.x1 <<"]["<< sm_task.y1 <<"] tilesize ["<< sm_task.tilesize <<"]\n";
+
+        // Check the iteration space of the tiles
+        int tile_x = sm_task.x0;
+        int tile_y = sm_task.y0;
+        while (1) {
+            // Process current tile
+            std::cerr << "Hemi point ["<< tile_x <<"] ["<< tile_y <<"]\n";
+
+            bool advance_tile_y = false;
+            // Advance to the next tile
+            if (tile_x == sm_task.x1 - 1) {
+                // This was the last tile of the row, go to next row
+                tile_x = sm_task.x0;
+                advance_tile_y = true;
+            } else if (tile_x >= sm_task.x1) {
+                std::cerr << "iisptrenderrunner: ERROR tile has gone past the end\n";
+                std::raise(SIGKILL);
+            } else {
+                // Advance x only
+                tile_x = std::min(
+                            tile_x + sm_task.tilesize,
+                            sm_task.x1 - 1
+                            );
+            }
+
+            if (advance_tile_y) {
+                if (tile_y == sm_task.y1 - 1) {
+                    // This was the last row,
+                    // complete the loop
+                    break;
+                } else {
+                    // Advance to the next row
+                    tile_y = std::min(
+                                tile_y + sm_task.tilesize,
+                                sm_task.y1 - 1
+                                );
+                }
+            }
         }
 
     }
