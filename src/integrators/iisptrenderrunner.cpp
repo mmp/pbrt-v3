@@ -182,7 +182,8 @@ void IisptRenderRunner::run(const Scene &scene)
 
         // --------------------------------------------------------------------
         //    * Obtain current __radius__ from the __ScheduleMonitor__. The ScheduleMonitor updates its internal count automatically
-        radius = schedule_monitor->get_current_radius();
+        IisptScheduleMonitorTask sm_task = schedule_monitor->next_task();
+        radius = sm_task.tilesize;
 
         // --------------------------------------------------------------------
         //    * Use the __RNG__ to generate 2 random pixel samples. Look up the density of the samples and select the one that has lower density

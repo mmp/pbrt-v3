@@ -10,9 +10,11 @@ namespace pbrt {
 // End points are assumed to be exclusive
 struct IisptScheduleMonitorTask
 {
-    int x;
-    int y;
-    int distance;
+    int x0;
+    int y0;
+    int x1;
+    int y1;
+    int tilesize;
 };
 
 // ============================================================================
@@ -23,15 +25,19 @@ private:
     // ------------------------------------------------------------------------
     // Members
 
-    // Film bounds
-    Bounds2i bounds;
+    // Number of tiles per side in each task
+    int NUMBER_TILES = 10;
 
+    // Size of a tile
     float current_radius;
 
     float update_multiplier;
 
     // Reset point for samples counter
     int update_interval;
+
+    // Film bounds
+    Bounds2i bounds;
 
     // Current pixels in the film
     int nextx;

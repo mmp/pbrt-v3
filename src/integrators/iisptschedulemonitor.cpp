@@ -12,7 +12,7 @@ IisptScheduleMonitor::IisptScheduleMonitor(Bounds2i bounds) {
     // Read environment variables
     char* radius_start_env = std::getenv("IISPT_SCHEDULE_RADIUS_START");
     if (radius_start_env == NULL) {
-        current_radius = 50.0;
+        current_radius = 100.0;
     } else {
         current_radius = std::stof(std::string(radius_start_env));
     }
@@ -43,20 +43,24 @@ IisptScheduleMonitorTask IisptScheduleMonitor::next_task() {
         effective_radius = 1;
     }
 
+    int task_size = effective_radius * NUMBER_TILES;
+
     // Form the result
     // The current nextx and nexty are valid starting coordinates
     IisptScheduleMonitorTask res;
-    res.x = nextx;
-    res.y = nexty;
-    res.distance = effective_radius;
+    res.x0 = nextx;
+    res.y0 = nexty;
+    res.x1 = std::min(res.x0 + task_size, bounds.pMax.x);
+    res.y1 = std::min(res.y0 + task_size, bounds.pMax.y);
+    res.tilesize = effective_radius;
 
     // Advance to the next tile
 
-    nextx += effective_radius;
+    nextx += task_size;
     if (nextx >= bounds.pMax.x) {
         // Reset x, advance y
         nextx = bounds.pMin.x;
-        nexty += effective_radius;
+        nexty += task_size;
     }
 
     if (nexty >= bounds.pMax.y) {

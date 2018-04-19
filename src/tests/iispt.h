@@ -17,6 +17,27 @@
 
 using namespace pbrt;
 
+// Test the new iispt schedule monitor
+void test_main8()
+{
+    std::cerr << "test_main8()\n";
+
+    std::unique_ptr<IisptScheduleMonitor> schedule_monitor (
+                new IisptScheduleMonitor(
+                    Bounds2i(
+                        Point2i(10, 10),
+                        Point2i(1280, 720)
+                        )
+                    )
+                );
+
+    for (int i = 0; i < 250; i++) {
+        IisptScheduleMonitorTask task =
+                schedule_monitor->next_task();
+        std::cerr << "Start ["<< task.x0 <<"]["<< task.y0 <<"] Finish ["<< task.x1 <<"]["<< task.y1 <<"] Radius ["<< task.tilesize <<"]\n";
+    }
+}
+
 // Test importance sampling and CDFs
 void test_main7()
 {
@@ -207,24 +228,6 @@ void test_main4() {
             film_monitor->to_intensity_film();
     intensity_film->write(std::string("/tmp/if.pfm"));
     std::cerr << "Written to /tmp/if.pfm" << std::endl;
-}
-
-void test_main3() {
-    std::cerr << "Running test main 3" << std::endl;
-    std::unique_ptr<IisptScheduleMonitor> schedule_monitor (
-                new IisptScheduleMonitor()
-                );
-    int i = 0;
-    while (1) {
-        float r = schedule_monitor->get_current_radius();
-        if (r < 1.0) {
-            exit(0);
-        }
-        if (i % 50 == 0) {
-            std::cerr << "Iteration ["<< i <<"] Radius ["<< r <<"]" << std::endl;
-        }
-        i++;
-    }
 }
 
 void test_main2() {
