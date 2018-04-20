@@ -66,23 +66,6 @@ void IisptFilmMonitor::execute_on_pixel(
 
 // ============================================================================
 
-double IisptFilmMonitor::get_pixel_sampling_density(int x, int y)
-{
-    lock.lock();
-
-    double res = 0;
-    execute_on_pixel([&](int fx, int fy) {
-        IisptPixel pix = (pixels[fy])[fx];
-        res = pix.weight;
-    }, x, y);
-
-    lock.unlock();
-
-    return res;
-}
-
-// ============================================================================
-
 std::shared_ptr<IntensityFilm> IisptFilmMonitor::to_intensity_film_priv(
         bool reversed)
 {

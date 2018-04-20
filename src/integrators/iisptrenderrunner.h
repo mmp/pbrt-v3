@@ -84,11 +84,6 @@ private:
 
     Spectrum sample_hemisphere(
             const Interaction &it,
-            HemisphericCamera* auxCamera
-            );
-
-    Spectrum sample_hemisphere(
-            const Interaction &it,
             std::vector<float> &weights,
             std::vector<HemisphericCamera*> &cameras
             );
@@ -132,9 +127,6 @@ public:
 
     virtual void run(const Scene &scene);
 
-    virtual void run_old(
-            const Scene &scene
-            );
 };
 
 }
