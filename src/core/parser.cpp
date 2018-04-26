@@ -71,6 +71,7 @@ static char decodeEscaped(int ch) {
     switch (ch) {
     case EOF:
         Error("premature EOF after character escape '\\'");
+        exit(1);
     case 'b':
         return '\b';
     case 'f':
@@ -89,6 +90,7 @@ static char decodeEscaped(int ch) {
         return '\"';
     default:
         Error("unexpected escaped character \"%c\"", ch);
+        exit(1);
     }
     return 0;  // NOTREACHED
 }
