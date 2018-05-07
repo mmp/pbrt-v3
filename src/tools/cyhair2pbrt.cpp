@@ -404,7 +404,7 @@ bool CyHair::ToCubicBezierCurves(std::vector<float> *vertices,
 #include <vector>
 
 int main(int argc, char *argv[]) {
-    if (argc <= 3 || strcmp(argv[1], "--help") == 0 ||
+    if (argc <= 2 || strcmp(argv[1], "--help") == 0 ||
         strcmp(argv[1], "-h") == 0) {
         fprintf(stderr,
                 "usage: cyhair2pbrt [CyHair filename] [pbrt output filename] "
@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (argc > 4) {
-        user_thickness = atoi(argv[4]);
+        user_thickness = atof(argv[4]);
     }
 
     cyhair::CyHair hair;
