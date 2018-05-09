@@ -143,7 +143,7 @@ void HairMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                               bool allowMultipleLobes) const {
     Float bm = beta_m->Evaluate(*si);
     Float bn = beta_n->Evaluate(*si);
-    Float a = Radians(alpha->Evaluate(*si));
+    Float a = alpha->Evaluate(*si);
     Float e = eta->Evaluate(*si);
 
     si->bsdf = ARENA_ALLOC(arena, BSDF)(*si, e);
