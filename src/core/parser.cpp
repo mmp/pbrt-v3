@@ -320,8 +320,10 @@ string_view Tokenizer::Next() {
 static double parseNumber(string_view str) {
     // Fast path for a single digit
     if (str.size() == 1) {
-        if (!(str[0] >= '0' && str[0] <= '9'))
+        if (!(str[0] >= '0' && str[0] <= '9')) {
             Error("\"%c\": expected a number", str[0]);
+            exit(1);
+        }
         return str[0] - '0';
     }
 
@@ -355,19 +357,23 @@ static double parseNumber(string_view str) {
     else
         val = strtod(bufp, &endptr);
 
-    if (val == 0 && endptr == bufp)
+    if (val == 0 && endptr == bufp) {
         Error("%s: expected a number", toString(str).c_str());
+        exit(1);
+    }
 
     return val;
 }
 
 inline bool isQuotedString(string_view str) {
-    return str[0] == '"' && str.back() == '"';
+    return str.size() >= 3 && str[0] == '"' && str.back() == '"';
 }
 
 static string_view dequoteString(string_view str) {
-    if (!isQuotedString(str))
+    if (!isQuotedString(str)) {
         Error("\"%s\": expected quoted string", toString(str).c_str());
+        exit(1);
+    }
 
     str.remove_prefix(1);
     str.remove_suffix(1);
@@ -719,8 +725,10 @@ ParamSet parseParams(Next nextToken, Unget ungetToken, MemoryArena &arena,
 
         auto addVal = [&](string_view val) {
             if (isQuotedString(val)) {
-                if (item.doubleValues)
+                if (item.doubleValues) {
                     Error("mixed string and numeric parameters");
+                    exit(1);
+                }
                 if (item.size == nAlloc) {
                     nAlloc = std::max<size_t>(2 * item.size, 4);
                     const char **newData = arena.Alloc<const char *>(nAlloc);
@@ -735,8 +743,10 @@ ParamSet parseParams(Next nextToken, Unget ungetToken, MemoryArena &arena,
                 buf[val.size()] = '\0';
                 item.stringValues[item.size++] = buf;
             } else {
-                if (item.stringValues)
+                if (item.stringValues) {
                     Error("mixed string and numeric parameters");
+                    exit(1);
+                }
 
                 if (item.size == nAlloc) {
                     nAlloc = std::max<size_t>(2 * item.size, 4);
@@ -790,7 +800,10 @@ static void parse(std::unique_ptr<Tokenizer> t) {
         }
 
         if (fileStack.empty()) {
-            if (flags & TokenRequired) Error("premature EOF");
+            if (flags & TokenRequired) {
+                Error("premature EOF");
+                exit(1);
+            }
             parserLoc = nullptr;
             return {};
         }
@@ -839,7 +852,9 @@ static void parse(std::unique_ptr<Tokenizer> t) {
     auto basicParamListEntrypoint = [&](
         SpectrumType spectrumType,
         std::function<void(const std::string &n, ParamSet p)> apiFunc) {
-        std::string n = toString(dequoteString(nextToken(TokenRequired)));
+        string_view token = nextToken(TokenRequired);
+        string_view dequoted = dequoteString(token);
+        std::string n = toString(dequoted);
         ParamSet params =
             parseParams(nextToken, ungetToken, arena, spectrumType);
         apiFunc(n, std::move(params));
@@ -1074,7 +1089,7 @@ static void parse(std::unique_ptr<Tokenizer> t) {
 void pbrtParseFile(std::string filename) {
     if (filename != "-") SetSearchDirectory(DirectoryContaining(filename));
 
-    auto tokError = [](const char *msg) { Error("%s", msg); };
+    auto tokError = [](const char *msg) { Error("%s", msg); exit(1); };
     std::unique_ptr<Tokenizer> t =
         Tokenizer::CreateFromFile(filename, tokError);
     if (!t) return;
@@ -1082,7 +1097,7 @@ void pbrtParseFile(std::string filename) {
 }
 
 void pbrtParseString(std::string str) {
-    auto tokError = [](const char *msg) { Error("%s", msg); };
+    auto tokError = [](const char *msg) { Error("%s", msg); exit(1); };
     std::unique_ptr<Tokenizer> t =
         Tokenizer::CreateFromString(std::move(str), tokError);
     if (!t) return;
