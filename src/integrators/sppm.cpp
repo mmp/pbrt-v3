@@ -158,6 +158,8 @@ void SPPMIntegrator::Render(const Scene &scene) {
                     RayDifferential ray;
                     Spectrum beta =
                         camera->GenerateRayDifferential(cameraSample, &ray);
+                    if (beta.IsBlack())
+                        continue;
                     ray.ScaleDifferentials(invSqrtSPP);
 
                     // Follow camera ray path until a visible point is created
