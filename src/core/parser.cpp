@@ -366,7 +366,7 @@ static double parseNumber(string_view str) {
 }
 
 inline bool isQuotedString(string_view str) {
-    return str.size() >= 3 && str[0] == '"' && str.back() == '"';
+    return str.size() >= 2 && str[0] == '"' && str.back() == '"';
 }
 
 static string_view dequoteString(string_view str) {
