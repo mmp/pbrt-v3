@@ -44,6 +44,7 @@
 #include <chrono>
 #include <string>
 #include <functional>
+#include <mutex>
 
 namespace pbrt {
 
@@ -53,6 +54,8 @@ class StatRegisterer {
   public:
     // StatRegisterer Public Methods
     StatRegisterer(std::function<void(StatsAccumulator &)> func) {
+        static std::mutex mutex;
+        std::lock_guard<std::mutex> lock(mutex);
         if (!funcs)
             funcs = new std::vector<std::function<void(StatsAccumulator &)>>;
         funcs->push_back(func);
