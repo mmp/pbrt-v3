@@ -67,11 +67,10 @@ ProjectionLight::ProjectionLight(const Transform &LightToWorld,
     yon = 1e30f;
     lightProjection = Perspective(fov, hither, yon);
 
-    // Compute cosine of cone surrounding projection directions
-    // Distance from origin to a corner of the screen window.
-    Float h = (screenBounds.pMin.x * screenBounds.pMin.x +
-               screenBounds.pMin.y * screenBounds.pMin.y + 1);
-    cosTotalWidth = 1 / h;
+    Transform screenToLight = Inverse(lightProjection);
+    Point3f pCorner(screenBounds.pMax.x, screenBounds.pMax.y, 0);
+    Vector3f wCorner = Normalize(Vector3f(screenToLight(pCorner)));
+    cosTotalWidth = wCorner.z;
 }
 
 Spectrum ProjectionLight::Sample_Li(const Interaction &ref, const Point2f &u,
