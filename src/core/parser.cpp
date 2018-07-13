@@ -158,7 +158,11 @@ std::unique_ptr<Tokenizer> Tokenizer::CreateFromFile(
         return errorReportLambda();
     }
 
-    size_t len = GetFileSize(fileHandle, 0);
+    LARGE_INTEGER liLen;
+    if (!GetFileSizeEx(fileHandle, &liLen)) {
+        return errorReportLambda();
+    }
+    size_t len = liLen.QuadPart;
 
     HANDLE mapping = CreateFileMapping(fileHandle, 0, PAGE_READONLY, 0, 0, 0);
     CloseHandle(fileHandle);
@@ -171,8 +175,6 @@ std::unique_ptr<Tokenizer> Tokenizer::CreateFromFile(
     if (ptr == nullptr) {
         return errorReportLambda();
     }
-
-    std::string str(static_cast<const char *>(ptr), len);
 
     return std::unique_ptr<Tokenizer>(
         new Tokenizer(ptr, len, filename, std::move(errorCallback)));
