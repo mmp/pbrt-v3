@@ -303,7 +303,7 @@ static PBRT_CONSTEXPR bool hostLittleEndian =
   #endif
 #else
   #if defined(__LITTLE_ENDIAN__) || defined(__i386__) || defined(__x86_64__) || \
-      defined(WIN32)
+      defined(_WIN32) || defined(WIN32)
     true
   #elif defined(__BIG_ENDIAN__)
     false
