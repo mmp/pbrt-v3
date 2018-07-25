@@ -64,6 +64,8 @@ IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
   ADD_DEFINITIONS (-DNDEBUG)
 ENDIF()
 
+SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
+
 ###########################################################################
 # Annoying compiler-specific details
 
@@ -297,7 +299,7 @@ IF(NOT ZLIB_FOUND)
 
   SET(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib")
   SET(ZLIB_LIBRARY zlibstatic)
-  SET_PROPERTY(TARGET zlibstatic PROPERTY FOLDER "dependencies")
+  SET_PROPERTY(TARGET zlibstatic PROPERTY FOLDER "ext")
   INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/src/ext/zlib")
 ENDIF()
 INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIRS})
@@ -312,7 +314,7 @@ SET(ILMBASE_BUILD_SHARED_LIBS    OFF CACHE BOOL " " FORCE)
 
 ADD_SUBDIRECTORY(src/ext/openexr)
 
-SET_PROPERTY(TARGET IexMath eLut toFloat b44ExpLogTable dwaLookups CopyIlmBaseLibs IlmThread Half Iex Imath IlmImf PROPERTY FOLDER "dependencies")
+SET_PROPERTY(TARGET IexMath eLut toFloat b44ExpLogTable dwaLookups CopyIlmBaseLibs IlmThread Half Iex Imath IlmImf PROPERTY FOLDER "ext")
 
 INCLUDE_DIRECTORIES (
   src/ext/openexr/IlmBase/Imath
@@ -334,7 +336,7 @@ ENDIF()
 SET(WITH_GFLAGS OFF CACHE BOOL "Use gflags")
 SET(BUILD_SHARED_LIBS OFF CACHE BOOL " " FORCE)
 ADD_SUBDIRECTORY(src/ext/glog)
-SET_PROPERTY(TARGET glog PROPERTY FOLDER "dependencies")
+SET_PROPERTY(TARGET glog logging_unittest demangle_unittest utilities_unittest stl_logging_unittest PROPERTY FOLDER "ext")
 INCLUDE_DIRECTORIES (
   src/ext/glog/src
   ${CMAKE_BINARY_DIR}/src/ext/glog
@@ -355,7 +357,7 @@ IF ( WIN32 )
   ADD_DEFINITIONS ( /D PTEX_STATIC)
 ENDIF ()
 ADD_SUBDIRECTORY(src/ext/ptex)
-SET_PROPERTY(TARGET Ptex_static PROPERTY FOLDER "dependencies")
+SET_PROPERTY(TARGET Ptex_static ptxinfo halftest ftest rtest wtest PROPERTY FOLDER "ext")
 INCLUDE_DIRECTORIES ( src/ext/ptex/src/ptex )
 
 ###########################################################################
