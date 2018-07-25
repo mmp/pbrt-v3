@@ -9,6 +9,18 @@ SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 PROJECT ( PBRT-V3 )
 
+OPTION(PBRT_FLOAT_AS_DOUBLE "Use 64-bit floats" OFF)
+
+IF (PBRT_FLOAT_AS_DOUBLE)
+  ADD_DEFINITIONS ( -D PBRT_FLOAT_AS_DOUBLE )
+ENDIF()
+
+OPTION(PBRT_SAMPLED_SPECTRUM "Use SampledSpectrum rather than RGBSpectrum" OFF)
+
+IF (PBRT_SAMPLED_SPECTRUM)
+  ADD_DEFINITIONS ( -D PBRT_SAMPLED_SPECTRUM )
+ENDIF()
+
 ENABLE_TESTING()
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -26,21 +38,21 @@ endif()
 
 if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/glog/cmake")
   message(FATAL_ERROR "The glog submodule directory is missing! "
-    "You probably did not clone the project with --recursive, or first checked out "
+    "You probably did not clone the project with --recursive, or you first checked out "
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
 endif()
 
 if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/ptex/src")
   message(FATAL_ERROR "The ptex submodule directory is missing! "
-    "You probably did not clone the project with --recursive, or first checked out "
+    "You probably did not clone the project with --recursive, or you first checked out "
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
 endif()
 
 if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib/doc")
   message(FATAL_ERROR "The zlib submodule directory is missing! "
-    "You probably did not clone the project with --recursive, or first checked out "
+    "You probably did not clone the project with --recursive, or you first checked out "
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
 endif()

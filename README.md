@@ -93,28 +93,22 @@ message indicating that they were built for debugging at startup time.
 
 ### Build Configurations ###
 
-There are two configuration settings that must be set at compile time. The
-first controls whether pbrt uses 32-bit or 64-bit values for floating-point
-computation, and the second controls whether tristimulus RGB values or
-sampled spectral values are used for rendering.  (Both of these aren't
-amenable to being chosen at runtime, but must be determined at compile time
-for efficiency).
 
-To change them from their defaults (respectively, 32-bit
-and RGB.), edit the file `src/core/pbrt.h`.
 
-To select 64-bit floating point values, remove the comment symbol before
-the line:
-```
-//#define PBRT_FLOAT_AS_DOUBLE
-```
-and recompile the system.
 
-To select full-spectral rendering, comment out the first of these two
-typedefs and remove the comment from the second one:
-```
-typedef RGBSpectrum Spectrum;
-// typedef SampledSpectrum Spectrum;
-```
-Again, don't forget to recompile after making this change.
 
+There are two configuration settings that must be set when configuring the
+build. The first controls whether pbrt uses 32-bit or 64-bit values for
+floating-point computation, and the second controls whether tristimulus RGB
+values or sampled spectral values are used for rendering.  (Both of these
+aren't amenable to being chosen at runtime, but must be determined at
+compile time for efficiency).  The cmake configuration variables
+`PBRT_FLOAT_AS_DOUBLE` and `PBRT_SAMPLED_SPECTRUM` configure them,
+respectively.
+
+If you're using a GUI version of cmake, those settings should be available
+in the list of configuration variables; set them as desired before choosing
+'Generate'.
+
+With command-line cmake, their values can be specified when you cmake via
+`-DPBRT_FLOAT_AS_DOUBLE=1`, for example.
