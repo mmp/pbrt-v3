@@ -52,6 +52,10 @@
 #error "gtest.h must be #included before pbrt.h; on Windows, pbrt.h #defines Infinity, which is also the name of a method in gtest.h"
 #endif // PBRT_CORE_PBRT_H
 
+#if _MSC_VER > 1910
+#define GTEST_HAS_TR1_TUPLE 0
+#endif
+
 #ifndef GTEST_INCLUDE_GTEST_GTEST_H_
 #define GTEST_INCLUDE_GTEST_GTEST_H_
 
