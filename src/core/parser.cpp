@@ -817,19 +817,6 @@ static void parse(std::unique_ptr<Tokenizer> t) {
             fileStack.pop_back();
             if (!fileStack.empty()) parserLoc = &fileStack.back()->loc;
             return nextToken(flags);
-        } else if (tok == "Include") {
-            // Switch to the given file.
-            std::string filename =
-                toString(dequoteString(nextToken(TokenRequired)));
-            filename = AbsolutePath(ResolveFilename(filename));
-            auto tokError = [](const char *msg) { Error("%s", msg); };
-            std::unique_ptr<Tokenizer> tinc =
-                Tokenizer::CreateFromFile(filename, tokError);
-            if (tinc) {
-                fileStack.push_back(std::move(tinc));
-                parserLoc = &fileStack.back()->loc;
-            }
-            return nextToken(flags);
         } else if (tok[0] == '#') {
             // Swallow comments, unless --cat or --toply was given, in
             // which case they're printed to stdout.
@@ -928,7 +915,23 @@ static void parse(std::unique_ptr<Tokenizer> t) {
             if (tok == "Integrator")
                 basicParamListEntrypoint(SpectrumType::Reflectance,
                                          pbrtIntegrator);
-            else if (tok == "Identity")
+            else if (tok == "Include") {
+                // Switch to the given file.
+                std::string filename =
+                    toString(dequoteString(nextToken(TokenRequired)));
+                if (PbrtOptions.cat || PbrtOptions.toPly)
+                    printf("%*sInclude \"%s\"\n", catIndentCount, "", filename.c_str());
+                else {
+                    filename = AbsolutePath(ResolveFilename(filename));
+                    auto tokError = [](const char *msg) { Error("%s", msg); };
+                    std::unique_ptr<Tokenizer> tinc =
+                        Tokenizer::CreateFromFile(filename, tokError);
+                    if (tinc) {
+                        fileStack.push_back(std::move(tinc));
+                        parserLoc = &fileStack.back()->loc;
+                    }
+                }
+            } else if (tok == "Identity")
                 pbrtIdentity();
             else
                 syntaxError(tok);
