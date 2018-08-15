@@ -314,7 +314,7 @@ SET(ILMBASE_BUILD_SHARED_LIBS    OFF CACHE BOOL " " FORCE)
 
 ADD_SUBDIRECTORY(src/ext/openexr)
 
-SET_PROPERTY(TARGET IexMath eLut toFloat b44ExpLogTable dwaLookups CopyIlmBaseLibs IlmThread Half Iex Imath IlmImf PROPERTY FOLDER "ext")
+SET_PROPERTY(TARGET IexMath eLut toFloat b44ExpLogTable dwaLookups IlmThread Half Iex Imath IlmImf PROPERTY FOLDER "ext")
 
 INCLUDE_DIRECTORIES (
   src/ext/openexr/IlmBase/Imath
