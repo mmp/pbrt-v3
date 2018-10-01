@@ -178,7 +178,7 @@ static void WriteImageEXR(const std::string &name, const Float *pixels,
 
     try {
         RgbaOutputFile file(name.c_str(), displayWindow, dataWindow,
-                            WRITE_RGBA);
+                            WRITE_RGB);
         file.setFrameBuffer(hrgba - xOffset - yOffset * xRes, 1, xRes);
         file.writePixels(yRes);
     } catch (const std::exception &exc) {
