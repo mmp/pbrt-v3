@@ -449,7 +449,7 @@ std::vector<std::shared_ptr<Shape>> CreateCurveShape(const Transform *o2w,
     else if (curveType == "cylinder")
         type = CurveType::Cylinder;
     else {
-        Error("Unknown curve type \"%s\".  Using \"flat\".", curveType.c_str());
+        Error("Unknown curve type \"%s\".  Using \"cylinder\".", curveType.c_str());
         type = CurveType::Cylinder;
     }
 
