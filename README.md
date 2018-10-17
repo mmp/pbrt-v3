@@ -10,9 +10,10 @@ Theory to Implementation*, by [Matt Pharr](http://pharr.org/matt), [Wenzel
 Jakob](http://www.mitsuba-renderer.org/~wenzel/), and Greg Humphreys.  As
 before, the code is available under the BSD license.
 
-The [pbrt website](http://pbrt.org) has general information about
-both the *Physically Based Rendering* book as well as many other resources
-for pbrt.
+The [pbrt website](http://pbrt.org) has general information about both the
+*Physically Based Rendering* book as well as many other resources for pbrt.
+As of October 2018, the full [text of the book](http://www.pbr-book.org) is
+now available online, for free.
 
 Example scenes
 --------------
