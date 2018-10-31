@@ -87,7 +87,7 @@ class DisneyMaterial : public Material {
   private:
     // DisneyMaterial Private Data
     std::shared_ptr<Texture<Spectrum>> color;
-    std::shared_ptr<Texture<Float>> baseColor, metallic, eta;
+    std::shared_ptr<Texture<Float>> metallic, eta;
     std::shared_ptr<Texture<Float>> roughness, specularTint, anisotropic, sheen;
     std::shared_ptr<Texture<Float>> sheenTint, clearcoat, clearcoatGloss;
     std::shared_ptr<Texture<Float>> specTrans;
