@@ -450,22 +450,35 @@ SET ( PBRT_CORE_HEADERS
   )
 
 FILE ( GLOB PBRT_SOURCE
-  src/ext/*.c
-  src/ext/*.cpp
-  src/accelerators/*.cpp
-  src/cameras/*.cpp
-  src/filters/*.cpp
-  src/integrators/*.cpp
-  src/lights/*.cpp
-  src/materials/*.cpp
-  src/samplers/*.cpp
-  src/shapes/*.cpp
-  src/textures/*.cpp
-  src/media/*.cpp
+  src/ext/*
+  src/accelerators/*
+  src/cameras/*
+  src/filters/*
+  src/integrators/*
+  src/lights/*
+  src/materials/*
+  src/samplers/*
+  src/shapes/*
+  src/textures/*
+  src/media/*
   )
 
 INCLUDE_DIRECTORIES ( src )
 INCLUDE_DIRECTORIES ( src/core )
+
+# Visual Studio source folders
+SOURCE_GROUP (core REGULAR_EXPRESSION src/core/.*)
+SOURCE_GROUP (ext REGULAR_EXPRESSION src/ext/.*)
+SOURCE_GROUP (accelerators REGULAR_EXPRESSION src/accelerators/.*)
+SOURCE_GROUP (cameras REGULAR_EXPRESSION src/cameras/.*)
+SOURCE_GROUP (filters REGULAR_EXPRESSION src/filters/.*)
+SOURCE_GROUP (integrators REGULAR_EXPRESSION src/integrators/.*)
+SOURCE_GROUP (lights REGULAR_EXPRESSION src/lights/.*)
+SOURCE_GROUP (materials REGULAR_EXPRESSION src/materials/.*)
+SOURCE_GROUP (samplers REGULAR_EXPRESSION src/samplers/.*)
+SOURCE_GROUP (shapes REGULAR_EXPRESSION src/shapes/.*)
+SOURCE_GROUP (textures REGULAR_EXPRESSION src/textures/.*)
+SOURCE_GROUP (media REGULAR_EXPRESSION src/media/.*)
 
 ###########################################################################
 # pbrt libraries and executables
