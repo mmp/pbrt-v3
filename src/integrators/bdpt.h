@@ -100,6 +100,7 @@ class ScopedAssignment {
     ScopedAssignment(const ScopedAssignment &) = delete;
     ScopedAssignment &operator=(const ScopedAssignment &) = delete;
     ScopedAssignment &operator=(ScopedAssignment &&other) {
+        if (target) *target = backup;
         target = other.target;
         backup = other.backup;
         other.target = nullptr;
