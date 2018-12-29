@@ -251,27 +251,36 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u,
         return intr;
     }
 
+    // Sample sphere uniformly inside subtended cone
+
     // Compute coordinate system for sphere sampling
-    Vector3f wc = Normalize(pCenter - ref.p);
+    Float dc = Distance(ref.p, pCenter);
+    Float invDc = 1 / dc;
+    Vector3f wc = (pCenter - ref.p) * invDc;
     Vector3f wcX, wcY;
     CoordinateSystem(wc, &wcX, &wcY);
 
-    // Sample sphere uniformly inside subtended cone
-
     // Compute $\theta$ and $\phi$ values for sample in cone
-    Float sinThetaMax2 = radius * radius / DistanceSquared(ref.p, pCenter);
-    Float cosThetaMax = std::sqrt(std::max((Float)0, 1 - sinThetaMax2));
-    Float cosTheta = (1 - u[0]) + u[0] * cosThetaMax;
-    Float sinTheta = std::sqrt(std::max((Float)0, 1 - cosTheta * cosTheta));
-    Float phi = u[1] * 2 * Pi;
+    Float sinThetaMax = radius * invDc;
+    Float sinThetaMax2 = sinThetaMax * sinThetaMax;
+    Float invSinThetaMax = 1 / sinThetaMax;
+    Float cosThetaMax = std::sqrt(std::max((Float)0.f, 1 - sinThetaMax2));
+
+    Float cosTheta  = (cosThetaMax - 1) * u[0] + 1;
+    Float sinTheta2 = 1 - cosTheta * cosTheta;
+
+    if (sinThetaMax2 < 0.00068523f /* sin^2(1.5 deg) */) {
+        /* Fall back to a Taylor series expansion for small angles, where
+           the standard approach suffers from severe cancellation errors */
+        sinTheta2 = sinThetaMax2 * u[0];
+        cosTheta = std::sqrt(1 - sinTheta2);
+    }
 
     // Compute angle $\alpha$ from center of sphere to sampled point on surface
-    Float dc = Distance(ref.p, pCenter);
-    Float ds = dc * cosTheta -
-               std::sqrt(std::max(
-                   (Float)0, radius * radius - dc * dc * sinTheta * sinTheta));
-    Float cosAlpha = (dc * dc + radius * radius - ds * ds) / (2 * dc * radius);
-    Float sinAlpha = std::sqrt(std::max((Float)0, 1 - cosAlpha * cosAlpha));
+    Float cosAlpha = sinTheta2 * invSinThetaMax +
+        cosTheta * std::sqrt(std::max((Float)0.f, 1.f - sinTheta2 * invSinThetaMax * invSinThetaMax));
+    Float sinAlpha = std::sqrt(std::max((Float)0.f, 1.f - cosAlpha*cosAlpha));
+    Float phi = u[1] * 2 * Pi;
 
     // Compute surface normal and sampled point on sphere
     Vector3f nWorld =

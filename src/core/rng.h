@@ -52,7 +52,7 @@ static const double DoubleOneMinusEpsilon = 0x1.fffffffffffffp-1;
 static const float FloatOneMinusEpsilon = 0x1.fffffep-1;
 #endif
 
-#ifdef PBRT_FLOAT_IS_DOUBLE
+#ifdef PBRT_FLOAT_AS_DOUBLE
 static const Float OneMinusEpsilon = DoubleOneMinusEpsilon;
 #else
 static const Float OneMinusEpsilon = FloatOneMinusEpsilon;

@@ -63,7 +63,7 @@ static Float Mp(Float cosThetaI, Float cosThetaO, Float sinThetaI,
 inline Float I0(Float x) {
     Float val = 0;
     Float x2i = 1;
-    int ifact = 1;
+    int64_t ifact = 1;
     int i4 = 1;
     // I0(x) \approx Sum_i x^(2i) / (4^i (i!)^2)
     for (int i = 0; i < 10; ++i) {
