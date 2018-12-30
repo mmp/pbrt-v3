@@ -73,8 +73,7 @@ bool Disk::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     // Find parametric representation of disk hit
     Float u = phi / phiMax;
     Float rHit = std::sqrt(dist2);
-    Float oneMinusV = ((rHit - innerRadius) / (radius - innerRadius));
-    Float v = 1 - oneMinusV;
+    Float v = (radius - rHit) / (radius - innerRadius);
     Vector3f dpdu(-phiMax * pHit.y, phiMax * pHit.x, 0);
     Vector3f dpdv =
         Vector3f(pHit.x, pHit.y, 0.) * (innerRadius - radius) / rHit;
