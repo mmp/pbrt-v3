@@ -2,7 +2,7 @@
 # (https://www.slideshare.net/DanielPfeifer1/cmake-48475415) are violated
 # in this file. Would be nice to address some of these.
 
-CMAKE_MINIMUM_REQUIRED ( VERSION 2.8.4 )
+CMAKE_MINIMUM_REQUIRED ( VERSION 3.1.0 )
 
 # For sanitizers
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
