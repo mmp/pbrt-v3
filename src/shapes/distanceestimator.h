@@ -17,33 +17,37 @@
 #include "shape.h"
 
 namespace pbrt {
+
+struct DistanceEstimatorParams {
+    int maxIters = 1000; // Number of steps along the ray until we give up (default 1000)
+    float hitEpsilon = 1; // how close to the surface we must be before we say we "hit" it 
+    float rayEpsilonMultiplier = 10; // how much we multiply hitEpsilon by to get pError 
+    float normalEpsilon = 1; // The epsilon we send to CalculateNormal()
+};
+
   
 // DistanceEstimator Declarations
 class DistanceEstimator : public Shape {
   public:
     // DistanceEstimator Public Methods
     DistanceEstimator(const Transform *ObjectToWorld, const Transform *WorldToObject,
-		      bool reverseOrientation, Float radius, Float zMin, Float zMax,
-           Float phiMax)
-        : Shape(ObjectToWorld, WorldToObject, reverseOrientation),
-          radius(radius),
-          zMin(Clamp(std::min(zMin, zMax), -radius, radius)),
-          zMax(Clamp(std::max(zMin, zMax), -radius, radius)),
-          thetaMin(std::acos(Clamp(std::min(zMin, zMax) / radius, -1, 1))),
-          thetaMax(std::acos(Clamp(std::max(zMin, zMax) / radius, -1, 1))),
-          phiMax(Radians(Clamp(phiMax, 0, 360))) {}
-    Bounds3f ObjectBound() const;
-    bool Intersect(const Ray& ray, Float *tHit, SurfaceInteraction *isect,
+		      bool reverseOrientation, Float radius, int maxIters, Float hitEpsilon, Float rayEpsilonMultiplier, Float normalEpsilon)
+				: Shape(ObjectToWorld, WorldToObject, reverseOrientation) {}
+    virtual Bounds3f ObjectBound() const;
+    virtual bool Intersect(const Ray& ray, Float *tHit, SurfaceInteraction *isect,
 		   bool testAlphaTexture = true) const;
-    Float Area() const;
-    Interaction Sample(const Point2f &u, Float *pdf) const;
-
+    virtual Float Area() const;
+    virtual Interaction Sample(const Point2f &u, Float *pdf) const;
+	
+	virtual Float Evaluate(const Point3f& p) const;
+	virtual Vector3f CalculateNormal(const Point3f& pos, float eps, 
+       const Vector3f& defaultNormal) const;
   protected:
     // DistanceEstimator Protected Data
-    //DistanceEstimatorParams params;
-    Float radius;
-    Float zMin, zMax;
-    Float thetaMin, thetaMax, phiMax;
+    DistanceEstimatorParams params;
+    Float radius, hitEpsilon, rayEpsilonMultiplier, normalEpsilon;
+	int maxIters;
+	
 };
 
 std::shared_ptr<Shape> CreateDistanceEstimatorShape(const Transform *o2w,
