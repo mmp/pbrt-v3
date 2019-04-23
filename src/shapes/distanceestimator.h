@@ -20,9 +20,9 @@ namespace pbrt {
 
 struct DistanceEstimatorParams {
     int maxIters = 1000; // Number of steps along the ray until we give up (default 1000)
-    float hitEpsilon = 1; // how close to the surface we must be before we say we "hit" it 
-    float rayEpsilonMultiplier = 10; // how much we multiply hitEpsilon by to get pError 
-    float normalEpsilon = 1; // The epsilon we send to CalculateNormal()
+    Float hitEpsilon = 1e-5; // how close to the surface we must be before we say we "hit" it
+    Float rayEpsilonMultiplier = 10; // how much we multiply hitEpsilon by to get pError
+    Float normalEpsilon = 1e-5; // The epsilon we send to CalculateNormal()
 };
 
   
@@ -31,8 +31,10 @@ class DistanceEstimator : public Shape {
   public:
     // DistanceEstimator Public Methods
     DistanceEstimator(const Transform *ObjectToWorld, const Transform *WorldToObject,
-		      bool reverseOrientation, Float radius, int maxIters, Float hitEpsilon, Float rayEpsilonMultiplier, Float normalEpsilon)
-				: Shape(ObjectToWorld, WorldToObject, reverseOrientation) {}
+		      bool reverseOrientation, Float radius, DistanceEstimatorParams DEparams)
+				: Shape(ObjectToWorld, WorldToObject, reverseOrientation),
+                    radius(radius),
+                    DEparams(DEparams){}
     virtual Bounds3f ObjectBound() const;
     virtual bool Intersect(const Ray& ray, Float *tHit, SurfaceInteraction *isect,
 		   bool testAlphaTexture = true) const;
@@ -44,9 +46,11 @@ class DistanceEstimator : public Shape {
        const Vector3f& defaultNormal) const;
   protected:
     // DistanceEstimator Protected Data
-    DistanceEstimatorParams params;
-    Float radius, hitEpsilon, rayEpsilonMultiplier, normalEpsilon;
-	int maxIters;
+    
+    const Float radius;
+    const DistanceEstimatorParams DEparams;
+//    const Float hitEpsilon, rayEpsilonMultiplier, normalEpsilon;
+//    const int maxIters;
 	
 };
 

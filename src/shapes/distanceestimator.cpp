@@ -22,19 +22,23 @@ Bounds3f DistanceEstimator::ObjectBound() const {
 
 
 bool DistanceEstimator::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect, bool testAlphaTexture) const {
-	
+	// Initialize the parameters
+    Float hitEpsilon = DEparams.hitEpsilon;
+    int maxIters = DEparams.maxIters;
+    Float rayEpsilonMultiplier = DEparams.rayEpsilonMultiplier;
+    Float normalEpsilon = DEparams.normalEpsilon;
+    
 	ProfilePhase p(Prof::ShapeIntersect);
-	Float phi;
 	Point3f pHit;	
 	// Transform _Ray_ to object space
 	Vector3f oErr, dErr;
 	Ray ray = (*WorldToObject)(r, &oErr, &dErr);
 	
 	int step = 0;
-	Float t, dist = 0;
+	Float t =0, dist = 0;
 	
 	pHit = ray(t); 
-	while((dist = Evaluate(pHit)) > hitEpsilon) {
+    while((dist = Evaluate(pHit)) > hitEpsilon) {
 		t += (dist / (ray.d).Length());
 		if (t > ray.tMax || ++step > maxIters || std::isinf(t)) {
 			return false;
@@ -104,12 +108,13 @@ std::shared_ptr<Shape> CreateDistanceEstimatorShape(const Transform *o2w,
                                          const Transform *w2o,
                                          bool reverseOrientation,
                                          const ParamSet &params)   {
+  DistanceEstimatorParams DEparams;
   Float radius = params.FindOneFloat("radius", 1.f);
-  int maxIters = params.FindOneInt("maxiters", 1000);
-  Float hitEpsilon = params.FindOneFloat("hitEpsilon", 1e-5);
-  Float rayEpsilonMultiplier = params.FindOneFloat("rayEpsilonMultiplier", 10);
-  Float normalEpsilon = params.FindOneFloat("normalEpsilon", 1e-5);
-  return std::make_shared<DistanceEstimator>(o2w, w2o, reverseOrientation, radius, maxIters, hitEpsilon, rayEpsilonMultiplier, normalEpsilon);
+  DEparams.maxIters = params.FindOneInt("maxIters", 1000000);
+  DEparams.hitEpsilon = params.FindOneFloat("hitEpsilon", 1e-5);
+  DEparams.rayEpsilonMultiplier = params.FindOneFloat("rayEpsilonMultiplier", 10);
+  DEparams.normalEpsilon = params.FindOneFloat("normalEpsilon", 1e-5);
+  return std::make_shared<DistanceEstimator>(o2w, w2o, reverseOrientation, radius, DEparams);
 }
 
 }  // namespace pbrt
