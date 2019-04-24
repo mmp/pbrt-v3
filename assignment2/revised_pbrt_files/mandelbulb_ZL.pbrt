@@ -1,0 +1,43 @@
+
+#
+# The following lines define the size of the output image and the name of
+# of the file containing the result of rendering
+#
+Film "image" "string filename" ["mandelbulb_ZL.exr"]
+	"integer xresolution" [300] "integer yresolution" [300]
+
+#
+# Sampling specification: PBRT will shoot 4 samples rays per pixel.
+# Increasing the number of samples per pixel will increase image quality
+# at the cost of increased rendering time.  Feel free to crank this value
+# up in your final images.
+#
+Sampler "halton" "integer pixelsamples" [16] 
+
+Integrator "path" "integer maxdepth" [1]
+
+#
+# Camera configuration: the camera is located on the Z axis, and is
+# pointed at the center of the scene
+#
+LookAt 0 0 2.0  0 0 0   0 1 0
+Camera "perspective" "float fov" [60]
+
+
+
+WorldBegin
+
+LightSource "spot" "color I" [25 10 10] "point from" [1.0 0 4] "point to" [0 0 0] "float coneangle" [30]
+LightSource "spot" "color I" [10 25 10] "point from" [-0.5 0.866 4] "point to" [0 0 0] "float coneangle" [30]
+LightSource "spot" "color I" [10 10 25] "point from" [-0.5 -0.866 4] "point to" [0 0 0] "float coneangle" [30]
+
+
+Material "uber" "color Kd" [1 1 1 ] "color Ks" [.05 .05 .05]
+AttributeBegin
+Rotate 90 1 0 0
+Shape "mandelbulbde" "integer maxiters" [1000]
+AttributeEnd
+
+WorldEnd
+
+

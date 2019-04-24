@@ -1,0 +1,24 @@
+Film "image" "string filename" ["infiniteroundbox.exr"]
+    "integer xresolution" [300] "integer yresolution" [300]
+
+Sampler "halton" "integer pixelsamples" [128] 
+
+Integrator "path" "integer maxdepth" [1]
+
+LookAt 5.5 -8.4 17.9  -0.2 0.5 0   0 1 0
+Camera "perspective" "float fov" [60]
+
+WorldBegin
+
+LightSource "point" "color I" [100 50 900] "point from" [-3.0 -1 2.4]
+LightSource "point" "color I" [300 5200 50] "point from" [30.0 12.7 -8.4]
+
+# The following sections define scene geometry and the material properties
+Material "uber" "color Kd" [1 1 1] "color Ks" [.05 .05 .05]
+AttributeBegin
+Shape "infiniteroundboxde" "float cellSize" [10.0] "integer maxiters" [1000] "float radius" [.5] "vector box" [1.3 1.3 1.3]
+AttributeEnd
+
+WorldEnd
+
+
