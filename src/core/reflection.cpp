@@ -691,8 +691,9 @@ Spectrum BSDF::rho(int nSamples, const Point2f *samples1,
     return ret;
 }
 
-Spectrum BSDF::rho(const Vector3f &wo, int nSamples, const Point2f *samples,
+Spectrum BSDF::rho(const Vector3f &woWorld, int nSamples, const Point2f *samples,
                    BxDFType flags) const {
+    Vector3f wo = WorldToLocal(woWorld);
     Spectrum ret(0.f);
     for (int i = 0; i < nBxDFs; ++i)
         if (bxdfs[i]->MatchesFlags(flags))
