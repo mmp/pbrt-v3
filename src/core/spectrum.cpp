@@ -1267,7 +1267,7 @@ void ResampleLinearSpectrum(const Float *lambdaIn, const Float *vIn, int nIn,
             // Linear search from the starting point. (Presumably more
             // efficient than a binary search from scratch, or doesn't
             // matter either way.)
-            end = start;
+            end = start > 0 ? start : 0;
             while (end < nIn && lambda + delta > lambdaIn[end]) ++end;
         }
 
