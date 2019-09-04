@@ -156,12 +156,13 @@ void Film::AddSplat(const Point2f &p, Spectrum v) {
         return;
     }
 
-    if (!InsideExclusive((Point2i)p, croppedPixelBounds)) return;
+    Point2i pi = Point2i(Floor(p));
+    if (!InsideExclusive(pi, croppedPixelBounds)) return;
     if (v.y() > maxSampleLuminance)
         v *= maxSampleLuminance / v.y();
     Float xyz[3];
     v.ToXYZ(xyz);
-    Pixel &pixel = GetPixel((Point2i)p);
+    Pixel &pixel = GetPixel(pi);
     for (int i = 0; i < 3; ++i) pixel.splatXYZ[i].Add(xyz[i]);
 }
 
