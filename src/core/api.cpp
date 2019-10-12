@@ -323,16 +323,14 @@ void TransformCache::Insert(Transform *tNew) {
     if (++hashTableOccupancy == hashTable.size() / 2)
         Grow();
 
-    int offset = Hash(*tNew) & (hashTable.size() - 1);
-    int step = 1;
-    while (true) {
+    int baseOffset = Hash(*tNew) & (hashTable.size() - 1);
+    for (int nProbes = 0;; ++nProbes) {
+        // Quadratic probing.
+        int offset = (baseOffset + nProbes/2 + nProbes*nProbes/2) & (hashTable.size() - 1);
         if (hashTable[offset] == nullptr) {
             hashTable[offset] = tNew;
             return;
         }
-        // Advance using quadratic probing.
-        offset = (offset + step * step) & (hashTable.size() - 1);
-        ++step;
     }
 }
 
@@ -344,16 +342,14 @@ void TransformCache::Grow() {
     for (Transform *tEntry : hashTable) {
         if (!tEntry) continue;
 
-        int offset = Hash(*tEntry) & (newTable.size() - 1);
-        int step = 1;
-        while (true) {
+        int baseOffset = Hash(*tEntry) & (hashTable.size() - 1);
+        for (int nProbes = 0;; ++nProbes) {
+            // Quadratic probing.
+            int offset = (baseOffset + nProbes/2 + nProbes*nProbes/2) & (hashTable.size() - 1);
             if (newTable[offset] == nullptr) {
                 newTable[offset] = tEntry;
                 break;
             }
-            // Advance using quadratic probing.
-            offset = (offset + step * step) & (hashTable.size() - 1);
-            ++step;
         }
     }
 
