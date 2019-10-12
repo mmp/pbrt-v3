@@ -88,7 +88,8 @@ class EFloat {
     }
     explicit operator float() const { return v; }
     explicit operator double() const { return v; }
-    float GetAbsoluteError() const { return high - low; }
+    float GetAbsoluteError() const { return NextFloatUp(std::max(std::abs(high - v),
+                                                                 std::abs(v - low))); }
     float UpperBound() const { return high; }
     float LowerBound() const { return low; }
 #ifndef NDEBUG
