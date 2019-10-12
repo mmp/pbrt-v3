@@ -72,7 +72,7 @@ class MarbleTexture : public Texture<Spectrum> {
         };
 #define NC sizeof(c) / sizeof(c[0])
 #define NSEG (NC - 3)
-        int first = std::floor(t * NSEG);
+        int first = std::min(1, int(std::floor(t * NSEG)));
         t = (t * NSEG - first);
         Spectrum c0 = Spectrum::FromRGB(c[first]);
         Spectrum c1 = Spectrum::FromRGB(c[first + 1]);
