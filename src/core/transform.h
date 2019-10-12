@@ -279,10 +279,10 @@ inline Point3<T> Transform::operator()(const Point3<T> &p,
                                        Vector3<T> *pError) const {
     T x = p.x, y = p.y, z = p.z;
     // Compute transformed coordinates from point _pt_
-    T xp = m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z + m.m[0][3];
-    T yp = m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z + m.m[1][3];
-    T zp = m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z + m.m[2][3];
-    T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
+    T xp = (m.m[0][0] * x + m.m[0][1] * y) + (m.m[0][2] * z + m.m[0][3]);
+    T yp = (m.m[1][0] * x + m.m[1][1] * y) + (m.m[1][2] * z + m.m[1][3]);
+    T zp = (m.m[2][0] * x + m.m[2][1] * y) + (m.m[2][2] * z + m.m[2][3]);
+    T wp = (m.m[3][0] * x + m.m[3][1] * y) + (m.m[3][2] * z + m.m[3][3]);
 
     // Compute absolute error for transformed point
     T xAbsSum = (std::abs(m.m[0][0] * x) + std::abs(m.m[0][1] * y) +
@@ -304,10 +304,10 @@ inline Point3<T> Transform::operator()(const Point3<T> &pt,
                                        const Vector3<T> &ptError,
                                        Vector3<T> *absError) const {
     T x = pt.x, y = pt.y, z = pt.z;
-    T xp = m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z + m.m[0][3];
-    T yp = m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z + m.m[1][3];
-    T zp = m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z + m.m[2][3];
-    T wp = m.m[3][0] * x + m.m[3][1] * y + m.m[3][2] * z + m.m[3][3];
+    T xp = (m.m[0][0] * x + m.m[0][1] * y) + (m.m[0][2] * z + m.m[0][3]);
+    T yp = (m.m[1][0] * x + m.m[1][1] * y) + (m.m[1][2] * z + m.m[1][3]);
+    T zp = (m.m[2][0] * x + m.m[2][1] * y) + (m.m[2][2] * z + m.m[2][3]);
+    T wp = (m.m[3][0] * x + m.m[3][1] * y) + (m.m[3][2] * z + m.m[3][3]);
     absError->x =
         (gamma(3) + (T)1) *
             (std::abs(m.m[0][0]) * ptError.x + std::abs(m.m[0][1]) * ptError.y +
