@@ -212,7 +212,7 @@ bool Curve::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
 
     Float eps =
         std::max(common->width[0], common->width[1]) * .05f;  // width / 20
-    auto Log2 = [](Float v) -> int {
+    auto Log2 = [](float v) -> int {
         if (v < 1) return 0;
         uint32_t bits = FloatToBits(v);
         // https://graphics.stanford.edu/~seander/bithacks.html#IntegerLog
