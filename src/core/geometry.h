@@ -1440,12 +1440,6 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, const Vector3f &invDir,
 inline Point3f OffsetRayOrigin(const Point3f &p, const Vector3f &pError,
                                const Normal3f &n, const Vector3f &w) {
     Float d = Dot(Abs(n), pError);
-#ifdef PBRT_FLOAT_AS_DOUBLE
-    // We have tons of precision; for now bump up the offset a bunch just
-    // to be extra sure that we start on the right side of the surface
-    // (In case of any bugs in the epsilons code...)
-    d *= 1024.;
-#endif
     Vector3f offset = d * Vector3f(n);
     if (Dot(w, n) < 0) offset = -offset;
     Point3f po = p + offset;
