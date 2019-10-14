@@ -344,6 +344,9 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
 
     // Override surface normal in _isect_ for triangle
     isect->n = isect->shading.n = Normal3f(Normalize(Cross(dp02, dp12)));
+    if (reverseOrientation ^ transformSwapsHandedness)
+        isect->n = isect->shading.n = -isect->n;
+
     if (mesh->n || mesh->s) {
         // Initialize _Triangle_ shading geometry
 
@@ -414,11 +417,6 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
         isect->SetShadingGeometry(ss, ts, dndu, dndv, true);
     }
 
-    // Ensure correct orientation of the geometric normal
-    if (mesh->n)
-        isect->n = Faceforward(isect->n, isect->shading.n);
-    else if (reverseOrientation ^ transformSwapsHandedness)
-        isect->n = isect->shading.n = -isect->n;
     *tHit = t;
     ++nHits;
     return true;
