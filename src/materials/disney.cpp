@@ -552,7 +552,7 @@ void DisneyMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
     Fresnel *fresnel =
         ARENA_ALLOC(arena, DisneyFresnel)(Cspec0, metallicWeight, e);
     si->bsdf->Add(
-        ARENA_ALLOC(arena, MicrofacetReflection)(c, distrib, fresnel));
+        ARENA_ALLOC(arena, MicrofacetReflection)(Spectrum(1.), distrib, fresnel));
 
     // Clearcoat
     Float cc = clearcoat->Evaluate(*si);
