@@ -414,6 +414,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
             }
         } else
             dndu = dndv = Normal3f(0, 0, 0);
+        if (reverseOrientation) ts = -ts;
         isect->SetShadingGeometry(ss, ts, dndu, dndv, true);
     }
 
