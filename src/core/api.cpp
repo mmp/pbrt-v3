@@ -1534,11 +1534,11 @@ void pbrtObjectEnd() {
     VERIFY_WORLD("ObjectEnd");
     if (!renderOptions->currentInstance)
         Error("ObjectEnd called outside of instance definition");
+    if (PbrtOptions.cat || PbrtOptions.toPly)
+        printf("%*sObjectEnd\n", catIndentCount, "");
     renderOptions->currentInstance = nullptr;
     pbrtAttributeEnd();
     ++nObjectInstancesCreated;
-    if (PbrtOptions.cat || PbrtOptions.toPly)
-        printf("%*sObjectEnd\n", catIndentCount, "");
 }
 
 STAT_COUNTER("Scene/Object instances used", nObjectInstancesUsed);
