@@ -290,28 +290,28 @@ Spectrum HairBSDF::f(const Vector3f &wo, const Vector3f &wi) const {
     std::array<Spectrum, pMax + 1> ap = Ap(cosThetaO, eta, h, T);
     Spectrum fsum(0.);
     for (int p = 0; p < pMax; ++p) {
-        // Compute $\sin \thetai$ and $\cos \thetai$ terms accounting for scales
-        Float sinThetaIp, cosThetaIp;
+        // Compute $\sin \thetao$ and $\cos \thetao$ terms accounting for scales
+        Float sinThetaOp, cosThetaOp;
         if (p == 0) {
-            sinThetaIp = sinThetaI * cos2kAlpha[1] + cosThetaI * sin2kAlpha[1];
-            cosThetaIp = cosThetaI * cos2kAlpha[1] - sinThetaI * sin2kAlpha[1];
+            sinThetaOp = sinThetaO * cos2kAlpha[1] - cosThetaO * sin2kAlpha[1];
+            cosThetaOp = cosThetaO * cos2kAlpha[1] + sinThetaO * sin2kAlpha[1];
         }
 
         // Handle remainder of $p$ values for hair scale tilt
         else if (p == 1) {
-            sinThetaIp = sinThetaI * cos2kAlpha[0] - cosThetaI * sin2kAlpha[0];
-            cosThetaIp = cosThetaI * cos2kAlpha[0] + sinThetaI * sin2kAlpha[0];
+            sinThetaOp = sinThetaO * cos2kAlpha[0] + cosThetaO * sin2kAlpha[0];
+            cosThetaOp = cosThetaO * cos2kAlpha[0] - sinThetaO * sin2kAlpha[0];
         } else if (p == 2) {
-            sinThetaIp = sinThetaI * cos2kAlpha[2] - cosThetaI * sin2kAlpha[2];
-            cosThetaIp = cosThetaI * cos2kAlpha[2] + sinThetaI * sin2kAlpha[2];
+            sinThetaOp = sinThetaO * cos2kAlpha[2] + cosThetaO * sin2kAlpha[2];
+            cosThetaOp = cosThetaO * cos2kAlpha[2] - sinThetaO * sin2kAlpha[2];
         } else {
-            sinThetaIp = sinThetaI;
-            cosThetaIp = cosThetaI;
+            sinThetaOp = sinThetaO;
+            cosThetaOp = cosThetaO;
         }
 
-        // Handle out-of-range $\cos \thetai$ from scale adjustment
-        cosThetaIp = std::abs(cosThetaIp);
-        fsum += Mp(cosThetaIp, cosThetaO, sinThetaIp, sinThetaO, v[p]) * ap[p] *
+        // Handle out-of-range $\cos \thetao$ from scale adjustment
+        cosThetaOp = std::abs(cosThetaOp);
+        fsum += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, v[p]) * ap[p] *
                 Np(phi, p, s, gammaO, gammaT);
     }
 
@@ -367,29 +367,31 @@ Spectrum HairBSDF::Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u2,
         u[0][0] -= apPdf[p];
     }
 
+    // Rotate $\sin \thetao$ and $\cos \thetao$ to account for hair scale tilt
+    Float sinThetaOp, cosThetaOp;
+    if (p == 0) {
+        sinThetaOp = sinThetaO * cos2kAlpha[1] - cosThetaO * sin2kAlpha[1];
+        cosThetaOp = cosThetaO * cos2kAlpha[1] + sinThetaO * sin2kAlpha[1];
+    }
+    else if (p == 1) {
+        sinThetaOp = sinThetaO * cos2kAlpha[0] + cosThetaO * sin2kAlpha[0];
+        cosThetaOp = cosThetaO * cos2kAlpha[0] - sinThetaO * sin2kAlpha[0];
+    } else if (p == 2) {
+        sinThetaOp = sinThetaO * cos2kAlpha[2] + cosThetaO * sin2kAlpha[2];
+        cosThetaOp = cosThetaO * cos2kAlpha[2] - sinThetaO * sin2kAlpha[2];
+    } else {
+        sinThetaOp = sinThetaO;
+        cosThetaOp = cosThetaO;
+    }
+
     // Sample $M_p$ to compute $\thetai$
     u[1][0] = std::max(u[1][0], Float(1e-5));
     Float cosTheta =
         1 + v[p] * std::log(u[1][0] + (1 - u[1][0]) * std::exp(-2 / v[p]));
     Float sinTheta = SafeSqrt(1 - Sqr(cosTheta));
     Float cosPhi = std::cos(2 * Pi * u[1][1]);
-    Float sinThetaI = -cosTheta * sinThetaO + sinTheta * cosPhi * cosThetaO;
+    Float sinThetaI = -cosTheta * sinThetaOp + sinTheta * cosPhi * cosThetaOp;
     Float cosThetaI = SafeSqrt(1 - Sqr(sinThetaI));
-
-    // Update sampled $\sin \thetai$ and $\cos \thetai$ to account for scales
-    Float sinThetaIp = sinThetaI, cosThetaIp = cosThetaI;
-    if (p == 0) {
-        sinThetaIp = sinThetaI * cos2kAlpha[1] - cosThetaI * sin2kAlpha[1];
-        cosThetaIp = cosThetaI * cos2kAlpha[1] + sinThetaI * sin2kAlpha[1];
-    } else if (p == 1) {
-        sinThetaIp = sinThetaI * cos2kAlpha[0] + cosThetaI * sin2kAlpha[0];
-        cosThetaIp = cosThetaI * cos2kAlpha[0] - sinThetaI * sin2kAlpha[0];
-    } else if (p == 2) {
-        sinThetaIp = sinThetaI * cos2kAlpha[2] + cosThetaI * sin2kAlpha[2];
-        cosThetaIp = cosThetaI * cos2kAlpha[2] - sinThetaI * sin2kAlpha[2];
-    }
-    sinThetaI = sinThetaIp;
-    cosThetaI = cosThetaIp;
 
     // Sample $N_p$ to compute $\Delta\phi$
 
@@ -412,28 +414,28 @@ Spectrum HairBSDF::Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u2,
     // Compute PDF for sampled hair scattering direction _wi_
     *pdf = 0;
     for (int p = 0; p < pMax; ++p) {
-        // Compute $\sin \thetai$ and $\cos \thetai$ terms accounting for scales
-        Float sinThetaIp, cosThetaIp;
+        // Compute $\sin \thetao$ and $\cos \thetao$ terms accounting for scales
+        Float sinThetaOp, cosThetaOp;
         if (p == 0) {
-            sinThetaIp = sinThetaI * cos2kAlpha[1] + cosThetaI * sin2kAlpha[1];
-            cosThetaIp = cosThetaI * cos2kAlpha[1] - sinThetaI * sin2kAlpha[1];
+            sinThetaOp = sinThetaO * cos2kAlpha[1] - cosThetaO * sin2kAlpha[1];
+            cosThetaOp = cosThetaO * cos2kAlpha[1] + sinThetaO * sin2kAlpha[1];
         }
 
         // Handle remainder of $p$ values for hair scale tilt
         else if (p == 1) {
-            sinThetaIp = sinThetaI * cos2kAlpha[0] - cosThetaI * sin2kAlpha[0];
-            cosThetaIp = cosThetaI * cos2kAlpha[0] + sinThetaI * sin2kAlpha[0];
+            sinThetaOp = sinThetaO * cos2kAlpha[0] + cosThetaO * sin2kAlpha[0];
+            cosThetaOp = cosThetaO * cos2kAlpha[0] - sinThetaO * sin2kAlpha[0];
         } else if (p == 2) {
-            sinThetaIp = sinThetaI * cos2kAlpha[2] - cosThetaI * sin2kAlpha[2];
-            cosThetaIp = cosThetaI * cos2kAlpha[2] + sinThetaI * sin2kAlpha[2];
+            sinThetaOp = sinThetaO * cos2kAlpha[2] + cosThetaO * sin2kAlpha[2];
+            cosThetaOp = cosThetaO * cos2kAlpha[2] - sinThetaO * sin2kAlpha[2];
         } else {
-            sinThetaIp = sinThetaI;
-            cosThetaIp = cosThetaI;
+            sinThetaOp = sinThetaO;
+            cosThetaOp = cosThetaO;
         }
 
-        // Handle out-of-range $\cos \thetai$ from scale adjustment
-        cosThetaIp = std::abs(cosThetaIp);
-        *pdf += Mp(cosThetaIp, cosThetaO, sinThetaIp, sinThetaO, v[p]) *
+        // Handle out-of-range $\cos \thetao$ from scale adjustment
+        cosThetaOp = std::abs(cosThetaOp);
+        *pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, v[p]) *
                 apPdf[p] * Np(dphi, p, s, gammaO, gammaT);
     }
     *pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) *
@@ -465,28 +467,28 @@ Float HairBSDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     Float phi = phiI - phiO;
     Float pdf = 0;
     for (int p = 0; p < pMax; ++p) {
-        // Compute $\sin \thetai$ and $\cos \thetai$ terms accounting for scales
-        Float sinThetaIp, cosThetaIp;
+        // Compute $\sin \thetao$ and $\cos \thetao$ terms accounting for scales
+        Float sinThetaOp, cosThetaOp;
         if (p == 0) {
-            sinThetaIp = sinThetaI * cos2kAlpha[1] + cosThetaI * sin2kAlpha[1];
-            cosThetaIp = cosThetaI * cos2kAlpha[1] - sinThetaI * sin2kAlpha[1];
+            sinThetaOp = sinThetaO * cos2kAlpha[1] - cosThetaO * sin2kAlpha[1];
+            cosThetaOp = cosThetaO * cos2kAlpha[1] + sinThetaO * sin2kAlpha[1];
         }
 
         // Handle remainder of $p$ values for hair scale tilt
         else if (p == 1) {
-            sinThetaIp = sinThetaI * cos2kAlpha[0] - cosThetaI * sin2kAlpha[0];
-            cosThetaIp = cosThetaI * cos2kAlpha[0] + sinThetaI * sin2kAlpha[0];
+            sinThetaOp = sinThetaO * cos2kAlpha[0] + cosThetaO * sin2kAlpha[0];
+            cosThetaOp = cosThetaO * cos2kAlpha[0] - sinThetaO * sin2kAlpha[0];
         } else if (p == 2) {
-            sinThetaIp = sinThetaI * cos2kAlpha[2] - cosThetaI * sin2kAlpha[2];
-            cosThetaIp = cosThetaI * cos2kAlpha[2] + sinThetaI * sin2kAlpha[2];
+            sinThetaOp = sinThetaO * cos2kAlpha[2] + cosThetaO * sin2kAlpha[2];
+            cosThetaOp = cosThetaO * cos2kAlpha[2] - sinThetaO * sin2kAlpha[2];
         } else {
-            sinThetaIp = sinThetaI;
-            cosThetaIp = cosThetaI;
+            sinThetaOp = sinThetaO;
+            cosThetaOp = cosThetaO;
         }
 
-        // Handle out-of-range $\cos \thetai$ from scale adjustment
-        cosThetaIp = std::abs(cosThetaIp);
-        pdf += Mp(cosThetaIp, cosThetaO, sinThetaIp, sinThetaO, v[p]) *
+        // Handle out-of-range $\cos \thetao$ from scale adjustment
+        cosThetaOp = std::abs(cosThetaOp);
+        pdf += Mp(cosThetaI, cosThetaOp, sinThetaI, sinThetaOp, v[p]) *
                apPdf[p] * Np(phi, p, s, gammaO, gammaT);
     }
     pdf += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) *
