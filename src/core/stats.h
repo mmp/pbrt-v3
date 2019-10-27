@@ -41,6 +41,7 @@
 // core/stats.h*
 #include "pbrt.h"
 #include <map>
+#include <cfloat>
 #include <chrono>
 #include <string>
 #include <functional>
@@ -296,7 +297,7 @@ void CleanupProfiler();
 
 #ifndef PBRT_HAVE_CONSTEXPR
 #define STATS_INT64_T_MIN LLONG_MAX
-#define STATS_INT64_T_MAX _I64_MIN
+#define STATS_INT64_T_MAX INT64_MIN
 #define STATS_DBL_T_MIN DBL_MAX
 #define STATS_DBL_T_MAX -DBL_MAX
 #else
