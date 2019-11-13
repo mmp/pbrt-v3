@@ -140,6 +140,16 @@ struct FourierBSDFTable {
     Float *cdf;
     Float *recip;
 
+    ~FourierBSDFTable() {
+        delete[] mu;
+        delete[] m;
+        delete[] aOffset;
+        delete[] a;
+        delete[] a0;
+        delete[] cdf;
+        delete[] recip;
+    }
+
     // FourierBSDFTable Public Methods
     static bool Read(const std::string &filename, FourierBSDFTable *table);
     const Float *GetAk(int offsetI, int offsetO, int *mptr) const {
