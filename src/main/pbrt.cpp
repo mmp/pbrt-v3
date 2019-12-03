@@ -149,13 +149,7 @@ int main(int argc, char *argv[]) {
         LOG(INFO) << "Running debug build";
         printf("*** DEBUG BUILD ***\n");
 #endif // !NDEBUG
-        printf(
-            "Copyright (c)1998-2018 Matt Pharr, Greg Humphreys, and Wenzel "
-            "Jakob.\n");
-        printf(
-            "The source code to pbrt (but *not* the book contents) is covered "
-            "by the BSD License.\n");
-        printf("See the file LICENSE.txt for the conditions of the license.\n");
+
         fflush(stdout);
     }
     pbrtInit(options);
