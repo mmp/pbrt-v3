@@ -495,6 +495,10 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 WriteImage("sppm_radius.png", rimg.get(), pixelBounds, res);
             }
         }
+
+        // Reset memory arenas
+        for (int i = 0; i < perThreadArenas.size(); ++i)
+            perThreadArenas[i].Reset();
     }
     progress.Done();
 }
