@@ -87,7 +87,9 @@ class BeckmannDistribution : public MicrofacetDistribution {
                0.0171201f * x * x * x + 0.000640711f * x * x * x * x;
     }
     BeckmannDistribution(Float alphax, Float alphay, bool samplevis = true)
-        : MicrofacetDistribution(samplevis), alphax(alphax), alphay(alphay) {}
+        : MicrofacetDistribution(samplevis),
+          alphax(std::max(Float(0.001), alphax)),
+          alphay(std::max(Float(0.001), alphay)) {}
     Float D(const Vector3f &wh) const;
     Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const;
     std::string ToString() const;
@@ -106,7 +108,9 @@ class TrowbridgeReitzDistribution : public MicrofacetDistribution {
     static inline Float RoughnessToAlpha(Float roughness);
     TrowbridgeReitzDistribution(Float alphax, Float alphay,
                                 bool samplevis = true)
-        : MicrofacetDistribution(samplevis), alphax(alphax), alphay(alphay) {}
+        : MicrofacetDistribution(samplevis),
+          alphax(std::max(Float(0.001), alphax)),
+          alphay(std::max(Float(0.001), alphay)) {}
     Float D(const Vector3f &wh) const;
     Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const;
     std::string ToString() const;
