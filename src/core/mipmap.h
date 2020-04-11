@@ -278,7 +278,7 @@ T MIPMap<T>::Lookup(const Point2f &st, Vector2f dst0, Vector2f dst1) const {
     if (doTrilinear) {
         Float width = std::max(std::max(std::abs(dst0[0]), std::abs(dst0[1])),
                                std::max(std::abs(dst1[0]), std::abs(dst1[1])));
-        return Lookup(st, 2 * width);
+        return Lookup(st, width);
     }
     ++nEWALookups;
     ProfilePhase p(Prof::TexFiltEWA);
