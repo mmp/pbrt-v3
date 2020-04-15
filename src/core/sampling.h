@@ -43,6 +43,7 @@
 #include "geometry.h"
 #include "rng.h"
 #include <algorithm>
+#include <array>
 
 namespace pbrt {
 
@@ -107,6 +108,35 @@ struct Distribution1D {
     std::vector<Float> func, cdf;
     Float funcInt;
 };
+
+// Uniform sampling of a spherical triangle [Arvo 1995]
+// Parameters:
+// v: vertices of the triangle
+// p: reference point
+// u: uniform 2D random sampling in [0,1)^2
+// pdf (out): pdf of the sampled point: 1 / the solid angle the triangle subtends from |p|.
+std::array<Float, 3> SampleSphericalTriangle(const std::array<Point3f, 3> &v,
+                                             const Point3f &p, const Point2f &u,
+                                             Float *pdf = nullptr);
+
+// Inverse of Arvo's algorithm: takes a point in the spherical triangle
+// and returns the 2D sample u that maps to that point.
+Point2f InvertSphericalTriangleSample(const std::array<Point3f, 3> &v,
+                                      const Point3f &p, const Vector3f &w);
+// Uniform sampling of a spherical quadrilteral. [Urena et al 2013]
+// Parameters:
+// pRef: reference point
+// s: corner of the quad
+// ex, ey: edges of the quad
+// u: uniform 2D sample in [0,1)^2
+// pdf (out): pdf of the sampled point, aka 1 / the solid angle the quad subtends.
+Point3f SampleSphericalQuad(const Point3f &pRef, const Point3f &s, const Vector3f &ex,
+                            const Vector3f &ey, const Point2f &u,
+                            Float *pdf);
+// Inverse of Urena et al's sampling algorithm: given a point on the spherical quad,
+// returns the 2D sample u that maps to the point.
+Point2f InvertSphericalQuadSample(const Point3f &pRef, const Point3f &s, const Vector3f &ex,
+                                  const Vector3f &ey, const Point3f &pQuad);
 
 Point2f RejectionSampleDisk(RNG &rng);
 Vector3f UniformSampleHemisphere(const Point2f &u);

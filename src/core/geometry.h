@@ -180,6 +180,8 @@ class Vector3 {
     }
     Vector3() { x = y = z = 0; }
     Vector3(T x, T y, T z) : x(x), y(y), z(z) { DCHECK(!HasNaNs()); }
+    template <typename U> Vector3(Vector3<U> v)
+        : x(v.x), y(v.y), z(v.z) { }
     bool HasNaNs() const { return isNaN(x) || isNaN(y) || isNaN(z); }
     explicit Vector3(const Point3<T> &p);
 #ifndef NDEBUG
@@ -1472,6 +1474,77 @@ inline Float SphericalTheta(const Vector3f &v) {
 inline Float SphericalPhi(const Vector3f &v) {
     Float p = std::atan2(v.y, v.x);
     return (p < 0) ? (p + 2 * Pi) : p;
+}
+
+// Equivalent to std::acos(Dot(a, b)), but more numerically stable.
+// http://www.plunk.org/~hatch/rightway.php
+template <typename T>
+inline Float AngleBetween(const Vector3<T> &a, const Vector3<T> &b) {
+    auto SafeASin = [](float x) {
+        DCHECK(x >= -1.0001 && x <= 1.0001);
+        return std::asin(Clamp(x, -1, 1));
+    };
+
+    if (Dot(a, b) < 0)
+        return Pi - 2 * SafeASin((a + b).Length() / 2);
+    else
+        return 2 * SafeASin((b - a).Length() / 2);
+}
+
+class Frame {
+ public:
+    Frame()
+        : x(1, 0, 0), y(0, 1, 0), z(0, 0, 1) {}
+    Frame(const Vector3f &x, const Vector3f &y, const Vector3f &z);
+
+    static Frame FromXZ(const Vector3f &x, const Vector3f &z);
+    static Frame FromXY(const Vector3f &x, const Vector3f &y);
+    static Frame FromZ(const Vector3f &n);
+    static Frame FromZ(const Normal3f &n);
+
+    Vector3f ToLocal(const Vector3f &v) const;
+    Vector3f FromLocal(const Vector3f &v) const {
+        return v.x * x + v.y * y + v.z * z;
+    }
+    Normal3f ToLocal(const Normal3f &n) const;
+    Normal3f FromLocal(const Normal3f &n) const {
+        return Normal3f(n.x * x + n.y * y + n.z * z);
+    }
+
+    Vector3f x, y, z;
+};
+
+inline Frame::Frame(const Vector3f &x, const Vector3f &y, const Vector3f &z)
+     : x(x), y(y), z(z) {
+     DCHECK_LT(std::abs(Dot(x, y)), 1e-4);
+     DCHECK_LT(std::abs(Dot(y, z)), 1e-4);
+     DCHECK_LT(std::abs(Dot(z, x)), 1e-4);
+}
+
+inline Frame Frame::FromXZ(const Vector3f &x, const Vector3f &z) {
+    return Frame(x, Cross(z, x), z);
+}
+
+inline Frame Frame::FromXY(const Vector3f &x, const Vector3f &y) {
+    return Frame(x, y, Cross(x, y));
+}
+
+inline Vector3f Frame::ToLocal(const Vector3f &v) const {
+    return Vector3f(Dot(v, x), Dot(v, y), Dot(v, z));
+}
+
+inline Normal3f Frame::ToLocal(const Normal3f &n) const {
+    return Normal3f(Dot(n, x), Dot(n, y), Dot(n, z));
+}
+
+inline Frame Frame::FromZ(const Vector3f &z) {
+    Vector3f x, y;
+    CoordinateSystem(z, &x, &y);
+    return Frame(x, y, z);
+}
+
+inline Frame Frame::FromZ(const Normal3f &z) {
+    return FromZ(Vector3f(z));
 }
 
 }  // namespace pbrt
