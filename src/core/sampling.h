@@ -109,6 +109,107 @@ struct Distribution1D {
     Float funcInt;
 };
 
+// Sample proportional to the function Lerp(x, a, b) over [0,1].
+inline Float SampleLinear(Float u, Float a, Float b) {
+    DCHECK(a >= 0 && b >= 0);
+    if (a == b) return u;
+    Float x = (a - std::sqrt(Lerp(u, a*a, b*b))) / (a - b);
+    return std::min(x, OneMinusEpsilon);
+}
+
+// Returns the PDF for Lerp(x, a, b) over [0,1].
+inline Float LinearPDF(Float x, Float a, Float b) {
+    DCHECK(a >= 0 && b >= 0);
+    if (x < 0 || x > 1) return 0;
+    return Lerp(x, a, b) / ((a + b) / 2);
+}
+
+// Given a point x in [0,1], returns the sample u such that
+// x=SampleLinear(u, a, b).
+inline Float InvertLinearSample(Float x, Float a, Float b) {
+    return x * (a * (2 - x) + b * x) / (a + b);
+}
+
+template <typename Float, typename C>
+constexpr Float EvaluatePolynomial(Float t, C c) {
+    return c;
+}
+
+template <typename Float, typename C, typename ...Args>
+constexpr Float EvaluatePolynomial(Float t, C c, Args... cRemaining) {
+    return std::fma(t, EvaluatePolynomial(t, cRemaining...), c);
+}
+
+// Sample the quadratic function a x^2 + b x + c == 0 over [0,1)
+Float SampleQuadratic(Float u, Float a, Float b, Float c, Float *pdf = nullptr);
+Float QuadraticPDF(Float x, Float a, Float b, Float c);
+// Inverse of SampleQuadratic(), along the lines of InvertLinearSample.
+inline Float InvertQuadraticSample(Float x, Float a, Float b, Float c) {
+    // Just evaluate the CDF...
+    Float norm = (a / 3 + b / 2 + c);
+    return EvaluatePolynomial(x, 0, c / norm, b / (2 * norm), a / (3 * norm));
+}
+
+// Sample the Bezier curve specified by the three control points cp* over
+// [0,1].
+inline Float SampleBezierCurve(Float u, Float cp0, Float cp1, Float cp2,
+                               Float *pdf) {
+    // Convert from Bezier to power basis...
+    return SampleQuadratic(u, cp0 - 2*cp1 + cp2, -2*cp0 + 2*cp1, cp0, pdf);
+}
+
+inline Float BezierCurvePDF(Float x, Float cp0, Float cp1, Float cp2) {
+    return QuadraticPDF(x, cp0 - 2*cp1 + cp2, -2*cp0 + 2*cp1, cp0);
+}
+
+inline Float InvertBezierCurveSample(Float x, Float cp0, Float cp1, Float cp2) {
+    return InvertQuadraticSample(x, cp0 - 2*cp1 + cp2, -2*cp0 + 2*cp1, cp0);
+}
+
+// v: (0,0), (1,0), (0,1), (1,1)
+inline Point2f SampleBilinear(Point2f u, std::array<Float, 4> w) {
+    Point2f p;
+    // First sample in the v dimension. Compute the endpoints of the line
+    // that's the average of the two lines at the edges at u=0 and u=1.
+    Float v0 = w[0] + w[1], v1 = w[2] + w[3];
+    // Sample along that line.
+    p[1] = SampleLinear(u[1], v0, v1);
+    // Now in sample in the u direction from the two line end points at the
+    // sampled v position.
+    p[0] = SampleLinear(u[0], Lerp(p[1], w[0], w[2]), Lerp(p[1], w[1], w[3]));
+    return p;
+}
+
+// s.t. InvertBilinearSample(SampleBilinear(u, v), v) == u
+inline Point2f InvertBilinearSample(Point2f p, std::array<Float, 4> v) {
+    // This is just evaluating the CDF at x...
+    auto InvertLinear = [](Float x, Float a, Float b) {
+        x = Clamp(x, 0, 1);
+        return x * (-a * (x - 2) + b * x) / (a + b);
+    };
+    return {InvertLinear(p[0], Lerp(p[1], v[0], v[2]), Lerp(p[1], v[1], v[3])),
+            InvertLinear(p[1], v[0] + v[1], v[2] + v[3])};
+}
+
+inline Float Bilerp(std::array<Float, 2> p, std::array<Float, 4> v) {
+    return ((1 - p[0]) * (1 - p[1]) * v[0] +
+                 p[0]  * (1 - p[1]) * v[1] +
+            (1 - p[0]) *      p[1]  * v[2] +
+                 p[0]  *      p[1]  * v[3]);
+}
+
+inline Float BilinearPDF(Point2f p, std::array<Float, 4> w) {
+    if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1) return 0;
+    if (w[0] + w[1] + w[2] + w[3] == 0) return 1;
+    return 4 * Bilerp({p[0], p[1]}, w) / (w[0] + w[1] + w[2] + w[3]);
+}
+
+// w[u][v]
+Point2f SampleBezier2D(Point2f u, std::array<std::array<Float, 3>, 3> w,
+                       Float *pdf = nullptr);
+Float Bezier2DPDF(Point2f p, std::array<std::array<Float, 3>, 3> w);
+Point2f InvertBezier2DSample(Point2f p, std::array<std::array<Float, 3>, 3> w);
+
 // Uniform sampling of a spherical triangle [Arvo 1995]
 // Parameters:
 // v: vertices of the triangle

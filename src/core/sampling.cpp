@@ -509,4 +509,144 @@ Point2f InvertSphericalQuadSample(const Point3f &pRef, const Point3f &s, const V
     return u;
 }
 
+// Solve f[x] == 0 over [x0, x1]. f should return a std::pair<FloatType,
+// FloatType>[f(x), f'(x)].
+template <typename FloatType, typename Func>
+inline FloatType NewtonBisection(FloatType x0, FloatType x1, Func f,
+                                 Float xEps = 1e-6f, Float fEps = 1e-6f) {
+    DCHECK_LT(x0, x1);
+    Float fx0 = f(x0).first, fx1 = f(x1).first;
+    if (std::abs(fx0) < fEps) return x0;
+    if (std::abs(fx1) < fEps) return x1;
+    bool startIsNegative = fx0 < 0;
+    // Implicit line equation: (y-y0)/(y1-y0) = (x-x0)/(x1-x0).
+    // Solve for y = 0 to find x for starting point.
+    FloatType xMid = x0 + (x1 - x0) * -fx0 / (fx1 - fx0);
+
+    while (true) {
+        if (!(x0 < xMid && xMid < x1))
+            // Fall back to bisection.
+            xMid = (x0 + x1) / 2;
+
+        std::pair<FloatType, FloatType> fxMid = f(xMid);
+        DCHECK(!std::isnan(fxMid.first));
+
+        if (startIsNegative == fxMid.first < 0)
+            x0 = xMid;
+        else
+            x1 = xMid;
+
+        if ((x1 - x0) < xEps || std::abs(fxMid.first) < fEps) return xMid;
+
+        // Try a Newton step.
+        xMid -= fxMid.first / fxMid.second;
+    }
+}
+
+Float SampleQuadratic(Float u, Float a, Float b, Float c, Float *pdf) {
+    // Make sure it doesn't go negative over [0,1]...
+    if (c < 0) {  // x = 0
+        c = -c;
+    }
+    if (a + b + c < 0) { // x == 1
+        c += -2 * (a + b + c);
+    }
+    // inflection point
+    if (a != 0) {
+        Float t = -b / (2 * a);
+        if (t >= 0 && t <= 1) {
+            Float v = EvaluatePolynomial(t, c, b, a);
+            if (v < 0)
+                c += -2 * v;
+        }
+    }
+
+    DCHECK(u >= 0 && u <= 1);
+    Float factor = 6 / (2 * a + 3 * b + 6 * c);
+
+    // CDF(x) = factor * (a x^3 / 3 + b x^2 / 2 + c x)
+    Float x = NewtonBisection(0., 1., [&](Float x) -> std::pair<Float, Float> {
+            return std::make_pair(EvaluatePolynomial(x, -u, factor * c, factor * b / 2, factor * a / 3),
+                                  factor * EvaluatePolynomial(x, c, b, a));
+        }, 1e-4f, 1e-4f);
+    x = std::min(x, OneMinusEpsilon);
+
+    if (pdf != nullptr)
+        //Float integ = a / 3 + b / 2 + c;  // integral over [0,1] Factor is 1/that
+        *pdf = EvaluatePolynomial(x, c, b, a) * factor;
+
+    return x;
+}
+
+Float QuadraticPDF(Float x, Float a, Float b, Float c) {
+    // Make sure it doesn't go negative over [0,1]...
+    if (c < 0) {  // x = 0
+        c = -c;
+    }
+    if (a + b + c < 0) { // x == 1
+        c += -2 * (a + b + c);
+    }
+    // inflection point
+    if (a != 0) {
+        Float t = -b / (2 * a);
+        if (t >= 0 && t <= 1) {
+            Float v = EvaluatePolynomial(t, c, b, a);
+            if (v < 0)
+                c += -2 * v;
+        }
+    }
+
+    Float integ = a / 3 + b / 2 + c;  // integral over [0,1]
+    return EvaluatePolynomial(x, c, b, a) / integ;
+}
+
+Point2f SampleBezier2D(Point2f su, std::array<std::array<Float, 3>, 3> w,
+                       Float *pdf) {
+    // Sample the marginal quadratic in v
+    Float vp[3] = { w[0][0] + w[1][0] + w[2][0], w[0][1] + w[1][1] + w[2][1],
+                    w[0][2] + w[1][2] + w[2][2] };
+    Float vPDF;
+    Float v = SampleBezierCurve(su[1], vp[0], vp[1], vp[2],
+                                pdf != nullptr ? &vPDF : nullptr);
+
+    Float up[3] = { Lerp(v, Lerp(v, w[0][0], w[0][1]), Lerp(v, w[0][1], w[0][2])),
+                    Lerp(v, Lerp(v, w[1][0], w[1][1]), Lerp(v, w[1][1], w[1][2])),
+                    Lerp(v, Lerp(v, w[2][0], w[2][1]), Lerp(v, w[2][1], w[2][2])) };
+    Float uPDF;
+    Float u = SampleBezierCurve(su[0], up[0], up[1], up[2],
+                                pdf != nullptr ? &uPDF : nullptr);
+
+    if (pdf != nullptr)
+        *pdf = uPDF * vPDF;
+
+    return {u, v};
+}
+
+Float Bezier2DPDF(Point2f p, std::array<std::array<Float, 3>, 3> w) {
+    Float vp[3] = { w[0][0] + w[1][0] + w[2][0], w[0][1] + w[1][1] + w[2][1],
+                    w[0][2] + w[1][2] + w[2][2] };
+
+    Float up[3] = { Lerp(p[1], Lerp(p[1], w[0][0], w[0][1]), Lerp(p[1], w[0][1], w[0][2])),
+                    Lerp(p[1], Lerp(p[1], w[1][0], w[1][1]), Lerp(p[1], w[1][1], w[1][2])),
+                    Lerp(p[1], Lerp(p[1], w[2][0], w[2][1]), Lerp(p[1], w[2][1], w[2][2])) };
+
+    return (BezierCurvePDF(p[0], up[0], up[1], up[2]) *
+            BezierCurvePDF(p[1], vp[0], vp[1], vp[2]));
+}
+
+Point2f InvertBezier2DSample(Point2f p, std::array<std::array<Float, 3>, 3> w) {
+    Point2f u;
+    // Marginal quadratic in v
+    Float vp[3] = { w[0][0] + w[1][0] + w[2][0], w[0][1] + w[1][1] + w[2][1],
+                    w[0][2] + w[1][2] + w[2][2] };
+    u[1] = InvertBezierCurveSample(p[1], vp[0], vp[1], vp[2]);
+
+    Float up[3] = { Lerp(p[1], Lerp(p[1], w[0][0], w[0][1]), Lerp(p[1], w[0][1], w[0][2])),
+                    Lerp(p[1], Lerp(p[1], w[1][0], w[1][1]), Lerp(p[1], w[1][1], w[1][2])),
+                    Lerp(p[1], Lerp(p[1], w[2][0], w[2][1]), Lerp(p[1], w[2][1], w[2][2])) };
+    u[0] = InvertBezierCurveSample(p[0], up[0], up[1], up[2]);
+
+    return u;
+}
+
 }  // namespace pbrt
