@@ -525,6 +525,21 @@ Interaction BilinearPatch::Sample(const Point2f &uo, Float *pdfOut) const {
     const Point3f &p11 = mesh->p[v[3]];
 
     Point2f u = uo;
+    Float pdf = 1;
+
+    if (!IsQuad()) {
+        // Approximate uniform area sampling by computing weights
+        // proportional to the differential area factor at each corner in
+        // parametric space.
+        std::array<Float, 4> w = { Cross(p10 - p00, p01 - p00).Length(),
+                                   Cross(p10 - p00, p11 - p10).Length(),
+                                   Cross(p01 - p00, p11 - p01).Length(),
+                                   Cross(p11 - p10, p11 - p01).Length() };
+
+        // Warp the original sample according to these weights.
+        u = SampleBilinear(u, w);
+        pdf = BilinearPDF(u, w);
+    }
 
     Point3f pu0 = Lerp(u[1], p00, p01), pu1 = Lerp(u[1], p10, p11);
     Vector3f dpdu = pu1 - pu0;
@@ -541,7 +556,11 @@ Interaction BilinearPatch::Sample(const Point2f &uo, Float *pdfOut) const {
     Vector3f pError = gamma(6) *
         Vector3f(Max(Max(Abs(p00), Abs(p10)), Max(Abs(p01), Abs(p11))));
 
-    *pdfOut = 1.f / Cross(dpdu, dpdv).Length();
+    // The overall PDF is the product of the PSS warp's PDF and the PDF for
+    // uniform parametric sampling of a bilinear patch,
+    // (1 / Cross(dpdu, dpdv).Length()).
+    *pdfOut = pdf / Cross(dpdu, dpdv).Length();
+
     Interaction intr(p, n, pError, Vector3f(), 0 /* time */, MediumInterface());
     intr.uv = u;
     return intr;
@@ -556,11 +575,21 @@ Float BilinearPatch::Pdf(const Interaction &intr) const {
     const Point3f &p01 = mesh->p[v[2]];
     const Point3f &p11 = mesh->p[v[3]];
 
+    Float pdf = 1;
+
+    if (!IsQuad()) {
+        std::array<Float, 4> w = { Cross(p10 - p00, p01 - p00).Length(),
+                                   Cross(p10 - p00, p11 - p10).Length(),
+                                   Cross(p01 - p00, p11 - p01).Length(),
+                                   Cross(p11 - p10, p11 - p01).Length() };
+        pdf = BilinearPDF(intr.uv, w);
+    }
+
     CHECK(!intr.uv.HasNaNs());
     Point3f pu0 = Lerp(intr.uv[1], p00, p01), pu1 = Lerp(intr.uv[1], p10, p11);
     Vector3f dpdu = pu1 - pu0;
     Vector3f dpdv = Lerp(intr.uv[0], p01, p11) - Lerp(intr.uv[0], p00, p10);
-    return 1.f / Cross(dpdu, dpdv).Length();
+    return pdf / Cross(dpdu, dpdv).Length();
 }
 
 }  // namespace pbrt
