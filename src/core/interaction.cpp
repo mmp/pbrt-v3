@@ -42,19 +42,19 @@ namespace pbrt {
 
 // SurfaceInteraction Method Definitions
 SurfaceInteraction::SurfaceInteraction(
-    const Point3f &p, const Vector3f &pError, const Point2f &uv,
+    const Point3f &p, const Vector3f &pError, const Point2f &UV,
     const Vector3f &wo, const Vector3f &dpdu, const Vector3f &dpdv,
     const Normal3f &dndu, const Normal3f &dndv, Float time, const Shape *shape,
     int faceIndex)
     : Interaction(p, Normal3f(Normalize(Cross(dpdu, dpdv))), pError, wo, time,
                   nullptr),
-      uv(uv),
       dpdu(dpdu),
       dpdv(dpdv),
       dndu(dndu),
       dndv(dndv),
       shape(shape),
       faceIndex(faceIndex) {
+    uv = UV;
     // Initialize shading geometry from true geometry
     shading.n = n;
     shading.dpdu = dpdu;

@@ -87,6 +87,7 @@
 #include "samplers/sobol.h"
 #include "samplers/stratified.h"
 #include "samplers/zerotwosequence.h"
+#include "shapes/bilinearpatch.h"
 #include "shapes/cone.h"
 #include "shapes/curve.h"
 #include "shapes/cylinder.h"
@@ -455,6 +456,9 @@ std::vector<std::shared_ptr<Shape>> MakeShapes(const std::string &name,
     else if (name == "curve")
         shapes = CreateCurveShape(object2world, world2object,
                                   reverseOrientation, paramSet);
+    else if (name == "bilinearmesh")
+        shapes = BilinearPatchMesh::Create(object2world, world2object,
+                                           reverseOrientation, paramSet);
     else if (name == "trianglemesh") {
         if (PbrtOptions.toPly) {
             int nvi;

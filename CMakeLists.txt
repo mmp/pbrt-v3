@@ -458,7 +458,19 @@ FILE ( GLOB PBRT_SOURCE
   src/lights/*
   src/materials/*
   src/samplers/*
-  src/shapes/*
+  src/shapes/bilinearpatch.cpp
+  src/shapes/cone.cpp
+  src/shapes/curve.cpp
+  src/shapes/cylinder.cpp
+  src/shapes/disk.cpp
+  src/shapes/heightfield.cpp
+  src/shapes/hyperboloid.cpp
+  src/shapes/loopsubdiv.cpp
+  src/shapes/nurbs.cpp
+  src/shapes/paraboloid.cpp
+  src/shapes/plymesh.cpp
+  src/shapes/sphere.cpp
+  src/shapes/triangle.cpp
   src/textures/*
   src/media/*
   )

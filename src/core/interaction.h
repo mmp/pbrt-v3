@@ -93,6 +93,7 @@ struct Interaction {
 
     // Interaction Public Data
     Point3f p;
+    Point2f uv;
     Float time;
     Vector3f pError;
     Vector3f wo;
@@ -135,7 +136,6 @@ class SurfaceInteraction : public Interaction {
     Spectrum Le(const Vector3f &w) const;
 
     // SurfaceInteraction Public Data
-    Point2f uv;
     Vector3f dpdu, dpdv;
     Normal3f dndu, dndv;
     const Shape *shape = nullptr;
