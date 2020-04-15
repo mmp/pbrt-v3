@@ -174,6 +174,7 @@ class BSDF {
         CHECK_LT(nBxDFs, MaxBxDFs);
         bxdfs[nBxDFs++] = b;
     }
+    bool HasTransmission() const;
     int NumComponents(BxDFType flags = BSDF_ALL) const;
     Vector3f WorldToLocal(const Vector3f &v) const {
         return Vector3f(Dot(v, ss), Dot(v, ts), Dot(v, ns));
@@ -238,6 +239,13 @@ class BxDF {
     // BxDF Public Data
     const BxDFType type;
 };
+
+inline bool BSDF::HasTransmission() const {
+    for (int i = 0; i < nBxDFs; ++i)
+        if (bxdfs[i]->type & BxDFType::BSDF_TRANSMISSION)
+            return true;
+    return false;
+}
 
 inline std::ostream &operator<<(std::ostream &os, const BxDF &bxdf) {
     os << bxdf.ToString();

@@ -37,6 +37,7 @@
 #include "paramset.h"
 #include "sampling.h"
 #include "efloat.h"
+#include "reflection.h"
 #include "ext/rply.h"
 #include <array>
 
@@ -616,12 +617,48 @@ Interaction Triangle::Sample(const Interaction &ref, const Point2f &uo,
     Float pdf = 1;
     Point2f u = uo;
 
+    if (ref.IsSurfaceInteraction()) {
+        const SurfaceInteraction &si = (const SurfaceInteraction &)ref;
+
+        // Orient the normal to the outgoing direction so that below for
+        // surfaces that only reflect and don't transmit, we can give vertices
+        // below the horizon a very low weight.
+        Normal3f rnf = Faceforward(si.shading.n, ref.wo);
+
+        // Vectors to the three vertices
+        Vector3f wi[3] = { Normalize(p0 - ref.p), Normalize(p1 - ref.p),
+                           Normalize(p2 - ref.p) };
+
+        // Arvo's spherical triangle sampling algorithm maps u=(0,0) -> p1,
+        // u=(1,0) -> p1, u=(0,1) -> p0, and u=(1,1) -> p2.  Therefore,
+        // rather than paying the computaitonal expense of warping those 4
+        // PSS points to with his algorithm, we can compute the cosine for
+        // the warp weights directly.
+        std::array<Float, 4> w;
+        if (si.bsdf && si.bsdf->HasTransmission())
+            w = std::array<Float, 4>{ std::max<Float>(0.01, AbsDot(rnf, wi[1])),
+                                      std::max<Float>(0.01, AbsDot(rnf, wi[1])),
+                                      std::max<Float>(0.01, AbsDot(rnf, wi[0])),
+                                      std::max<Float>(0.01, AbsDot(rnf, wi[2])) };
+        else
+            w = std::array<Float, 4>{ std::max<Float>(0.01, Dot(rnf, wi[1])),
+                                      std::max<Float>(0.01, Dot(rnf, wi[1])),
+                                      std::max<Float>(0.01, Dot(rnf, wi[0])),
+                                      std::max<Float>(0.01, Dot(rnf, wi[2])) };
+
+        // Now apply the warp to the provided PSS sample. (Algorithm 1).
+        u = SampleBilinear(u, w);
+        pdf *= BilinearPDF(u, w);
+    }
+
     Float triPDF;
     std::array<Float, 3> b = SampleSphericalTriangle({p0, p1, p2}, ref.p, u, &triPDF);
     if (triPDF == 0) {
         *pdfOut = 0;
         return {};
     }
+    // The overall PDF is given by the product of PDFs for both warps (see
+    // Algorithm 1).
     pdf *= triPDF;
 
     // Compute surface normal for sampled point on triangle
@@ -651,6 +688,40 @@ Float Triangle::Pdf(const Interaction &ref, const Vector3f &wi) const {
 
     Float sa = SolidAngle(ref.p);
     Float pdf = 1 / sa;
+
+    if (ref.IsSurfaceInteraction()) {
+        // Get triangle vertices in _p0_, _p1_, and _p2_
+        const Point3f &p0 = mesh->p[v[0]];
+        const Point3f &p1 = mesh->p[v[1]];
+        const Point3f &p2 = mesh->p[v[2]];
+
+        // (See comments in the above Triangle::Sample() method for
+        // information about these lines of code.)
+        const SurfaceInteraction &si = (const SurfaceInteraction &)ref;
+        Point3f rp = ref.p;
+        Normal3f rnf = Faceforward(si.shading.n, ref.wo);
+        Vector3f wit[3] = { Normalize(p0 - rp), Normalize(p1 - rp), Normalize(p2 - rp) };
+
+        std::array<Float, 4> w;
+        if (si.bsdf && si.bsdf->HasTransmission())
+            w = std::array<Float, 4>{ std::max<Float>(0.01, AbsDot(rnf, wit[1])),
+                                      std::max<Float>(0.01, AbsDot(rnf, wit[1])),
+                                      std::max<Float>(0.01, AbsDot(rnf, wit[0])),
+                                      std::max<Float>(0.01, AbsDot(rnf, wit[2])) };
+        else
+            w = std::array<Float, 4>{ std::max<Float>(0.01, Dot(rnf, wit[1])),
+                                      std::max<Float>(0.01, Dot(rnf, wit[1])),
+                                      std::max<Float>(0.01, Dot(rnf, wit[0])),
+                                      std::max<Float>(0.01, Dot(rnf, wit[2])) };
+
+        // We now apply the inverse warping to map a point in the spherical
+        // triangle back to the PSS value u that maps to it with the
+        // forward warp.  In turn, the value of the PDF at u must be
+        // included in the final PDF value. (Algorithm 2).
+        Point2f u = InvertSphericalTriangleSample({p0, p1, p2}, rp, wi);
+        pdf *= BilinearPDF(u, w);
+    }
+
     return pdf;
 }
 
