@@ -606,6 +606,54 @@ Interaction Triangle::Sample(const Point2f &u, Float *pdf) const {
     return it;
 }
 
+Interaction Triangle::Sample(const Interaction &ref, const Point2f &uo,
+                             Float *pdfOut) const {
+    // Get triangle vertices in _p0_, _p1_, and _p2_
+    const Point3f &p0 = mesh->p[v[0]];
+    const Point3f &p1 = mesh->p[v[1]];
+    const Point3f &p2 = mesh->p[v[2]];
+
+    Float pdf = 1;
+    Point2f u = uo;
+
+    Float triPDF;
+    std::array<Float, 3> b = SampleSphericalTriangle({p0, p1, p2}, ref.p, u, &triPDF);
+    if (triPDF == 0) {
+        *pdfOut = 0;
+        return {};
+    }
+    pdf *= triPDF;
+
+    // Compute surface normal for sampled point on triangle
+    Normal3f n = Normalize(Normal3f(Cross(p1 - p0, p2 - p0)));
+    // Ensure correct orientation of the geometric normal; follow the same
+    // approach as was used in Triangle::Intersect().
+    if (mesh->n) {
+        Normal3f ns(b[0] * mesh->n[v[0]] + b[1] * mesh->n[v[1]] +
+                    b[2] * mesh->n[v[2]]);
+        n = Faceforward(n, ns);
+    } else if (reverseOrientation ^ transformSwapsHandedness)
+        n *= -1;
+
+    // Compute error bounds for sampled point on triangle
+    Point3f p = b[0] * p0 + b[1] * p1 + b[2] * p2;
+    Point3f pAbsSum =
+        Abs(b[0] * p0) + Abs(b[1] * p1) + Abs(b[2] * p2);
+    Vector3f pError = gamma(6) * Vector3f(pAbsSum.x, pAbsSum.y, pAbsSum.z);
+
+    *pdfOut = pdf;
+    return Interaction(p, n, pError, Vector3f(0,0,1), ref.time, MediumInterface());
+}
+
+Float Triangle::Pdf(const Interaction &ref, const Vector3f &wi) const {
+    if (!IntersectP(ref.SpawnRay(wi)))
+        return 0;
+
+    Float sa = SolidAngle(ref.p);
+    Float pdf = 1 / sa;
+    return pdf;
+}
+
 Float Triangle::SolidAngle(const Point3f &p, int nSamples) const {
     // Project the vertices into the unit sphere around p.
     std::array<Vector3f, 3> pSphere = {
