@@ -5,6 +5,7 @@
 #include "profile.h"
 #include "rng.h"
 #include "sampling.h"
+#include "reflection.h"
 
 #include <array>
 #include <cmath>
@@ -453,6 +454,30 @@ Interaction BilinearPatch::Sample(const Interaction &ref, const Point2f &u,
         const Point3f &p01 = mesh->p[v[2]];
         const Point3f &p11 = mesh->p[v[3]];
 
+        if (ref.IsSurfaceInteraction()) {
+            // Warp the PSS sample |u| based on the BSDF at the point being shaded.
+            std::array<std::array<Float, 3>, 3> w = biquadraticBSDFWeights(ref);
+            Float pdf;
+            Point2f up = SampleBezier2D(u, w, &pdf);
+
+            // Sample a point on the quadrilateral (w.r.t. area here) using
+            // the warped point |up|.
+            Point3f p = Lerp(up[1], Lerp(up[0], p00, p10), Lerp(up[0], p01, p11));
+            Normal3f n = Normal3f(Normalize(Cross(p10 - p00, p01 - p00)));
+            Vector3f wi = Normalize(p - ref.p);
+            if (AbsDot(n, wi) == 0)
+                pdf = 0;
+            else
+                // The overall PDF is the product of the PSS warp PDF and
+                // the uniform area sampling PDF.
+                pdf *= DistanceSquared(ref.p, p) / (area * AbsDot(n, wi));
+            *pdfOut = pdf;
+
+            Interaction sampleIntr(p, ref.time, MediumInterface());
+            sampleIntr.n = n;
+            sampleIntr.uv = up;
+            return sampleIntr;
+        }
 
         Float quadPDF;
         Point3f p = SampleSphericalQuad(ref.p, p00, p10 - p00, p01 - p00, u, &quadPDF);
@@ -505,6 +530,18 @@ Float BilinearPatch::Pdf(const Interaction &ref, const Vector3f &wi) const {
         Vector3f v11 = Normalize(p11 - ref.p);
         Float quadSamplePDF = 1.f / SphericalQuadArea(v00, v10, v11, v01);
 
+        if (ref.IsSurfaceInteraction()) {
+            std::array<std::array<Float, 3>, 3> wts = biquadraticBSDFWeights(ref);
+
+            if (AbsDot(ref.n, wi) == 0) return 0;
+
+            // Algorithm 2 to compute the PDF for the sample on the light
+            // source.
+            Float quadSamplePDF = DistanceSquared(ref.p, isectLight.p) /
+                (area * AbsDot(isectLight.n, wi));
+            return Bezier2DPDF(isectLight.uv, wts) * quadSamplePDF;
+        }
+
         return quadSamplePDF;
     } else {
         // Convert light sample weight to solid angle measure
@@ -513,6 +550,46 @@ Float BilinearPatch::Pdf(const Interaction &ref, const Vector3f &wi) const {
         if (std::isinf(pdf)) pdf = 0.f;
         return pdf;
     }
+}
+
+std::array<std::array<Float, 3>, 3> BilinearPatch::biquadraticBSDFWeights(const Interaction &ref) const {
+    CHECK(ref.IsSurfaceInteraction());
+    const SurfaceInteraction *intr = (const SurfaceInteraction *)&ref;
+
+    // Get bilinear patch vertices in _p00_, _p01_, _p10_, and _p11_
+    auto mesh = GetMesh();
+    const int *v = &mesh->vertexIndices[4 * blpIndex];
+    const Point3f &p00 = mesh->p[v[0]];
+    const Point3f &p10 = mesh->p[v[1]];
+    const Point3f &p01 = mesh->p[v[2]];
+    const Point3f &p11 = mesh->p[v[3]];
+
+    const SurfaceInteraction *rintr = (const SurfaceInteraction *)&ref;
+    Normal3f nf = Faceforward(rintr->shading.n, ref.wo);
+
+    // Evaluate the BSDF * cosine term for the given point on the light
+    // source.
+    auto evalf = [&](Point3f p) -> Float {
+        Vector3f wi = p - ref.p;
+        if (Dot(nf, wi) < 0) return 0.01f;
+        wi = Normalize(wi);
+        return 0.01f + intr->bsdf->f(intr->wo, wi).MaxComponentValue() * Dot(nf, wi);
+    };
+
+    std::array<std::array<Float, 3>, 3> w;
+    w[0][0] = evalf(p00);
+    w[1][0] = evalf((p00 + p10) / 2);
+    w[2][0] = evalf(p10);
+
+    w[0][1] = evalf((p00 + p01) / 2);
+    w[1][1] = evalf((p00 + p10 + p01 + p11) / 4);
+    w[2][1] = evalf((p10 + p11) / 2);
+
+    w[0][2] = evalf(p01);
+    w[1][2] = evalf((p01 + p11) / 2);
+    w[2][2] = evalf(p11);
+
+    return w;
 }
 
 Interaction BilinearPatch::Sample(const Point2f &uo, Float *pdfOut) const {

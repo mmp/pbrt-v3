@@ -70,6 +70,8 @@ class BilinearPatch : public Shape {
                           BilinearIntersection *bi);
 
 private:
+    std::array<std::array<Float, 3>, 3> biquadraticBSDFWeights(const Interaction &ref) const;
+
     bool IsQuad() const;
 
     const BilinearPatchMesh *&GetMesh() const {
