@@ -83,10 +83,11 @@ inline Float Cos2Phi(const Vector3f &w) { return CosPhi(w) * CosPhi(w); }
 inline Float Sin2Phi(const Vector3f &w) { return SinPhi(w) * SinPhi(w); }
 
 inline Float CosDPhi(const Vector3f &wa, const Vector3f &wb) {
-    return Clamp(
-        (wa.x * wb.x + wa.y * wb.y) / std::sqrt((wa.x * wa.x + wa.y * wa.y) *
-                                                (wb.x * wb.x + wb.y * wb.y)),
-        -1, 1);
+    Float waxy = wa.x * wa.x + wa.y * wa.y;
+    Float wbxy = wb.x * wb.x + wb.y * wb.y;
+    if (waxy == 0 || wbxy == 0)
+        return 1;
+    return Clamp((wa.x * wb.x + wa.y * wb.y) / std::sqrt(waxy * wbxy), -1, 1);
 }
 
 inline Vector3f Reflect(const Vector3f &wo, const Vector3f &n) {
