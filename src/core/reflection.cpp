@@ -256,6 +256,9 @@ Spectrum MicrofacetTransmission::f(const Vector3f &wo,
     Vector3f wh = Normalize(wo + wi * eta);
     if (wh.z < 0) wh = -wh;
 
+    // Same side?
+    if (Dot(wo, wh) * Dot(wi, wh) > 0) return Spectrum(0);
+
     Spectrum F = fresnel.Evaluate(Dot(wo, wh));
 
     Float sqrtDenom = Dot(wo, wh) + eta * Dot(wi, wh);
@@ -444,6 +447,8 @@ Float MicrofacetTransmission::Pdf(const Vector3f &wo,
     // Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
     Float eta = CosTheta(wo) > 0 ? (etaB / etaA) : (etaA / etaB);
     Vector3f wh = Normalize(wo + wi * eta);
+
+    if (Dot(wo, wh) * Dot(wi, wh) > 0) return 0;
 
     // Compute change of variables _dwh\_dwi_ for microfacet transmission
     Float sqrtDenom = Dot(wo, wh) + eta * Dot(wi, wh);
