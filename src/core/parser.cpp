@@ -387,7 +387,6 @@ struct ParamListItem {
     double *doubleValues = nullptr;
     const char **stringValues = nullptr;
     size_t size = 0;
-    bool isString = false;
 };
 
 PBRT_CONSTEXPR int TokenOptional = 0;
