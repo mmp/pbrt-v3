@@ -520,8 +520,7 @@ static const char *paramTypeToName(int type) {
     }
 }
 
-static void AddParam(ParamSet &ps, const ParamListItem &item,
-                     SpectrumType spectrumType) {
+static void AddParam(ParamSet &ps, const ParamListItem &item) {
     int type;
     std::string name;
     if (lookupType(item.name, &type, name)) {
@@ -709,8 +708,7 @@ static void AddParam(ParamSet &ps, const ParamListItem &item,
 }
 
 template <typename Next, typename Unget>
-ParamSet parseParams(Next nextToken, Unget ungetToken, MemoryArena &arena,
-                     SpectrumType spectrumType) {
+ParamSet parseParams(Next nextToken, Unget ungetToken, MemoryArena &arena) {
     ParamSet ps;
     while (true) {
         string_view decl = nextToken(TokenOptional);
@@ -773,7 +771,7 @@ ParamSet parseParams(Next nextToken, Unget ungetToken, MemoryArena &arena,
             addVal(val);
         }
 
-        AddParam(ps, item, spectrumType);
+        AddParam(ps, item);
         arena.Reset();
     }
 
@@ -839,13 +837,12 @@ static void parse(std::unique_ptr<Tokenizer> t) {
     // Helper function for pbrt API entrypoints that take a single string
     // parameter and a ParamSet (e.g. pbrtShape()).
     auto basicParamListEntrypoint = [&](
-        SpectrumType spectrumType,
         std::function<void(const std::string &n, ParamSet p)> apiFunc) {
         string_view token = nextToken(TokenRequired);
         string_view dequoted = dequoteString(token);
         std::string n = toString(dequoted);
         ParamSet params =
-            parseParams(nextToken, ungetToken, arena, spectrumType);
+            parseParams(nextToken, ungetToken, arena);
         apiFunc(n, std::move(params));
     };
 
@@ -875,11 +872,9 @@ static void parse(std::unique_ptr<Tokenizer> t) {
                 else
                     syntaxError(tok);
             } else if (tok == "AreaLightSource")
-                basicParamListEntrypoint(SpectrumType::Illuminant,
-                                         pbrtAreaLightSource);
+                basicParamListEntrypoint(pbrtAreaLightSource);
             else if (tok == "Accelerator")
-                basicParamListEntrypoint(SpectrumType::Reflectance,
-                                         pbrtAccelerator);
+                basicParamListEntrypoint(pbrtAccelerator);
             else
                 syntaxError(tok);
             break;
@@ -899,22 +894,21 @@ static void parse(std::unique_ptr<Tokenizer> t) {
                 string_view n = dequoteString(nextToken(TokenRequired));
                 pbrtCoordSysTransform(toString(n));
             } else if (tok == "Camera")
-                basicParamListEntrypoint(SpectrumType::Reflectance, pbrtCamera);
+                basicParamListEntrypoint(pbrtCamera);
             else
                 syntaxError(tok);
             break;
 
         case 'F':
             if (tok == "Film")
-                basicParamListEntrypoint(SpectrumType::Reflectance, pbrtFilm);
+                basicParamListEntrypoint(pbrtFilm);
             else
                 syntaxError(tok);
             break;
 
         case 'I':
             if (tok == "Integrator")
-                basicParamListEntrypoint(SpectrumType::Reflectance,
-                                         pbrtIntegrator);
+                basicParamListEntrypoint(pbrtIntegrator);
             else if (tok == "Include") {
                 // Switch to the given file.
                 std::string filename =
@@ -939,8 +933,7 @@ static void parse(std::unique_ptr<Tokenizer> t) {
 
         case 'L':
             if (tok == "LightSource")
-                basicParamListEntrypoint(SpectrumType::Illuminant,
-                                         pbrtLightSource);
+                basicParamListEntrypoint(pbrtLightSource);
             else if (tok == "LookAt") {
                 Float v[9];
                 for (int i = 0; i < 9; ++i)
@@ -953,14 +946,11 @@ static void parse(std::unique_ptr<Tokenizer> t) {
 
         case 'M':
             if (tok == "MakeNamedMaterial")
-                basicParamListEntrypoint(SpectrumType::Reflectance,
-                                         pbrtMakeNamedMaterial);
+                basicParamListEntrypoint(pbrtMakeNamedMaterial);
             else if (tok == "MakeNamedMedium")
-                basicParamListEntrypoint(SpectrumType::Reflectance,
-                                         pbrtMakeNamedMedium);
+                basicParamListEntrypoint(pbrtMakeNamedMedium);
             else if (tok == "Material")
-                basicParamListEntrypoint(SpectrumType::Reflectance,
-                                         pbrtMaterial);
+                basicParamListEntrypoint(pbrtMaterial);
             else if (tok == "MediumInterface") {
                 string_view n = dequoteString(nextToken(TokenRequired));
                 std::string names[2];
@@ -1006,8 +996,7 @@ static void parse(std::unique_ptr<Tokenizer> t) {
 
         case 'P':
             if (tok == "PixelFilter")
-                basicParamListEntrypoint(SpectrumType::Reflectance,
-                                         pbrtPixelFilter);
+                basicParamListEntrypoint(pbrtPixelFilter);
             else
                 syntaxError(tok);
             break;
@@ -1026,10 +1015,9 @@ static void parse(std::unique_ptr<Tokenizer> t) {
 
         case 'S':
             if (tok == "Shape")
-                basicParamListEntrypoint(SpectrumType::Reflectance, pbrtShape);
+                basicParamListEntrypoint(pbrtShape);
             else if (tok == "Sampler")
-                basicParamListEntrypoint(SpectrumType::Reflectance,
-                                         pbrtSampler);
+                basicParamListEntrypoint(pbrtSampler);
             else if (tok == "Scale") {
                 Float v[3];
                 for (int i = 0; i < 3; ++i)
@@ -1067,9 +1055,7 @@ static void parse(std::unique_ptr<Tokenizer> t) {
                 n = dequoteString(nextToken(TokenRequired));
                 std::string type = toString(n);
 
-                basicParamListEntrypoint(
-                    SpectrumType::Reflectance,
-                    [&](const std::string &texName, const ParamSet &params) {
+                basicParamListEntrypoint([&](const std::string &texName, const ParamSet &params) {
                         pbrtTexture(name, type, texName, params);
                     });
             } else
