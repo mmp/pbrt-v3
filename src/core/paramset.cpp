@@ -151,7 +151,7 @@ void ParamSet::AddBlackbodySpectrum(const std::string &name,
 
 void ParamSet::AddSampledSpectrum(const std::string &name,
                                   std::unique_ptr<Float[]> values,
-                                  int nValues) {
+                                  int nValues, SpectrumType spectrumType) {
     EraseSpectrum(name);
     CHECK_EQ(nValues % 2, 0);
     nValues /= 2;
@@ -162,14 +162,15 @@ void ParamSet::AddSampledSpectrum(const std::string &name,
         v[i] = values[2 * i + 1];
     }
     std::unique_ptr<Spectrum[]> s(new Spectrum[1]);
-    s[0] = Spectrum::FromSampled(wl.get(), v.get(), nValues);
+    s[0] = Spectrum::FromSampled(wl.get(), v.get(), nValues, spectrumType);
     std::shared_ptr<ParamSetItem<Spectrum>> psi(
         new ParamSetItem<Spectrum>(name, std::move(s), 1));
     spectra.push_back(psi);
 }
 
 void ParamSet::AddSampledSpectrumFiles(const std::string &name,
-                                       const char **names, int nValues) {
+                                       const char **names, int nValues,
+                                       SpectrumType spectrumType) {
     EraseSpectrum(name);
     std::unique_ptr<Spectrum[]> s(new Spectrum[nValues]);
     for (int i = 0; i < nValues; ++i) {
@@ -197,7 +198,7 @@ void ParamSet::AddSampledSpectrumFiles(const std::string &name,
                 wls.push_back(vals[2 * j]);
                 v.push_back(vals[2 * j + 1]);
             }
-            s[i] = Spectrum::FromSampled(&wls[0], &v[0], wls.size());
+            s[i] = Spectrum::FromSampled(&wls[0], &v[0], wls.size(), spectrumType);
         }
         cachedSpectra[fn] = s[i];
     }

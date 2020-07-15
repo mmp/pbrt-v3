@@ -114,11 +114,13 @@ const Float CopperK[CopperSamples] = {
 
 MetalMaterial *CreateMetalMaterial(const TextureParams &mp) {
     static Spectrum copperN =
-        Spectrum::FromSampled(CopperWavelengths, CopperN, CopperSamples);
+        Spectrum::FromSampled(CopperWavelengths, CopperN, CopperSamples, 
+        SpectrumType::Reflectance);
     std::shared_ptr<Texture<Spectrum>> eta =
         mp.GetSpectrumTexture("eta", copperN);
     static Spectrum copperK =
-        Spectrum::FromSampled(CopperWavelengths, CopperK, CopperSamples);
+        Spectrum::FromSampled(CopperWavelengths, CopperK, CopperSamples, 
+        SpectrumType::Reflectance);
     std::shared_ptr<Texture<Spectrum>> k = mp.GetSpectrumTexture("k", copperK);
     std::shared_ptr<Texture<Float>> roughness =
         mp.GetFloatTexture("roughness", .01f);
