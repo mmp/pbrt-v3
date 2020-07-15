@@ -292,14 +292,14 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
     SampledSpectrum(Float v = 0.f) : CoefficientSpectrum(v) {}
     SampledSpectrum(const CoefficientSpectrum<nSpectralSamples> &v)
         : CoefficientSpectrum<nSpectralSamples>(v) {}
-    static SampledSpectrum FromSampled(const Float *lambda, const Float *v,
-                                       int n) {
+    static SampledSpectrum FromSampled(const Float *lambda, const Float *v, 
+                       int n, SpectrumType type = SpectrumType::Illuminant) {
         // Sort samples if unordered, use sorted for returned spectrum
         if (!SpectrumSamplesSorted(lambda, v, n)) {
             std::vector<Float> slambda(&lambda[0], &lambda[n]);
             std::vector<Float> sv(&v[0], &v[n]);
             SortSpectrumSamples(&slambda[0], &sv[0], n);
-            return FromSampled(&slambda[0], &sv[0], n);
+            return FromSampled(&slambda[0], &sv[0], n, type);
         }
         SampledSpectrum r;
         for (int i = 0; i < nSpectralSamples; ++i) {
@@ -463,13 +463,14 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
         const Float YWeight[3] = {0.212671f, 0.715160f, 0.072169f};
         return YWeight[0] * c[0] + YWeight[1] * c[1] + YWeight[2] * c[2];
     }
-    static RGBSpectrum FromSampled(const Float *lambda, const Float *v, int n) {
+    static RGBSpectrum FromSampled(const Float *lambda, const Float *v, int n, 
+                                   SpectrumType type = SpectrumType::Illuminant) {
         // Sort samples if unordered, use sorted for returned spectrum
         if (!SpectrumSamplesSorted(lambda, v, n)) {
             std::vector<Float> slambda(&lambda[0], &lambda[n]);
             std::vector<Float> sv(&v[0], &v[n]);
             SortSpectrumSamples(&slambda[0], &sv[0], n);
-            return FromSampled(&slambda[0], &sv[0], n);
+            return FromSampled(&slambda[0], &sv[0], n, type);
         }
         Float xyz[3] = {0, 0, 0};
         for (int i = 0; i < nCIESamples; ++i) {
@@ -483,6 +484,11 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
         xyz[0] *= scale;
         xyz[1] *= scale;
         xyz[2] *= scale;
+        // Apply D65 white point for reflectance
+        if (type == SpectrumType::Reflectance) {
+            xyz[0] *= 0.950470f;
+            xyz[2] *= 1.088827f;
+        }
         return FromXYZ(xyz);
     }
 };

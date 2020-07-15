@@ -674,7 +674,8 @@ static void AddParam(ParamSet &ps, const ParamListItem &item,
             ps.AddBlackbodySpectrum(name, std::move(floats), nItems);
         } else if (type == PARAM_TYPE_SPECTRUM) {
             if (item.stringValues) {
-                ps.AddSampledSpectrumFiles(name, item.stringValues, nItems);
+                ps.AddSampledSpectrumFiles(name, item.stringValues, nItems, 
+                                           spectrumType);
             } else {
                 if ((nItems % 2) != 0) {
                     Warning(
@@ -687,7 +688,8 @@ static void AddParam(ParamSet &ps, const ParamListItem &item,
                 std::unique_ptr<Float[]> floats(new Float[nItems]);
                 for (int j = 0; j < nItems; ++j)
                     floats[j] = item.doubleValues[j];
-                ps.AddSampledSpectrum(name, std::move(floats), nItems);
+                ps.AddSampledSpectrum(name, std::move(floats), nItems, 
+                                      spectrumType);
             }
         } else if (type == PARAM_TYPE_STRING) {
             std::unique_ptr<std::string[]> strings(new std::string[nItems]);
