@@ -75,11 +75,11 @@ inline Float SchlickWeight(Float cosTheta) {
 }
 
 inline Float FrSchlick(Float R0, Float cosTheta) {
-    return Lerp(SchlickWeight(cosTheta), R0, 1);
+    return Lerp(R0, SchlickWeight(cosTheta), 1);
 }
 
 inline Spectrum FrSchlick(const Spectrum &R0, Float cosTheta) {
-    return Lerp(SchlickWeight(cosTheta), R0, Spectrum(1.));
+    return Lerp(R0, SchlickWeight(cosTheta), Spectrum(1.));
 }
 
 // For a dielectric, R(0) = (eta - 1)^2 / (eta + 1)^2, assuming we're
