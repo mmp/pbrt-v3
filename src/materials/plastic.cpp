@@ -56,7 +56,7 @@ void PlasticMaterial::ComputeScatteringFunctions(
     // Initialize specular component of plastic material
     Spectrum ks = Ks->Evaluate(*si).Clamp();
     if (!ks.IsBlack()) {
-        Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);
+        Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f, 1.5f);
         // Create microfacet distribution _distrib_ for plastic material
         Float rough = roughness->Evaluate(*si);
         if (remapRoughness)
