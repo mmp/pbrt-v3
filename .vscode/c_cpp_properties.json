@@ -1,0 +1,19 @@
+
+
+{
+    "configurations": [
+        {
+            "name": "Linux",        
+            "includePath": [
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/src/core/"
+            ],
+            "defines": ["SINGLE_PRECISION", "PBRT_CONSTEXPR=constexpr", "PBRT_THREAD_LOCAL=thread_local"],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+  }

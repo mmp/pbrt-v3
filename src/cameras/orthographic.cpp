@@ -61,7 +61,8 @@ Float OrthographicCamera::GenerateRay(const CameraSample &sample,
         ray->o = Point3f(pLens.x, pLens.y, 0);
         ray->d = Normalize(pFocus - ray->o);
     }
-    ray->time = Lerp(sample.time, shutterOpen, shutterClose);
+    // This is where the randomness of ray time comes from
+    ray->time = 0.; //Lerp(sample.time, shutterOpen, shutterClose);
     ray->medium = medium;
     *ray = CameraToWorld(*ray);
     return 1;
@@ -111,7 +112,8 @@ Float OrthographicCamera::GenerateRayDifferential(const CameraSample &sample,
         ray->ryOrigin = ray->o + dyCamera;
         ray->rxDirection = ray->ryDirection = ray->d;
     }
-    ray->time = Lerp(sample.time, shutterOpen, shutterClose);
+    // This is where the randomness of ray time comes from
+    ray->time = 0.; //Lerp(sample.time, shutterOpen, shutterClose);
     ray->hasDifferentials = true;
     ray->medium = medium;
     *ray = CameraToWorld(*ray);

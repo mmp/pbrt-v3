@@ -157,8 +157,9 @@ Spectrum MLTIntegrator::L(const Scene &scene, MemoryArena &arena,
 
     // Execute connection strategy and return the radiance estimate
     sampler.StartStream(connectionStreamIndex);
+    Float dummy_time = 0.;
     return ConnectBDPT(scene, lightVertices, cameraVertices, s, t, *lightDistr,
-                       lightToIndex, *camera, sampler, pRaster) *
+                       lightToIndex, *camera, sampler, dummy_time, pRaster) *
            nStrategies;
 }
 

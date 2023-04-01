@@ -151,12 +151,20 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             ", pdfFwd " << pdfFwd << ", pdfRev " << pdfRev;
         // Trace a ray and sample the medium, if any
         SurfaceInteraction isect;
+        // After intersection, isect carries ray.time, which does not account for the travelling time from the last intersection (tMax?)
         bool foundIntersection = scene.Intersect(ray, &isect);
         if (ray.medium) beta *= ray.medium->Sample(ray, sampler, arena, &mi);
         if (beta.IsBlack()) break;
         Vertex &vertex = path[bounces], &prev = path[bounces - 1];
+        
+        // TODO: first, ray_time should be updated
+        // if (ray.time > 0.0) {
+        //     printf("Bounce = %d, Ray time is not zero: %.7f\n", bounces, ray.time);
+        // } 
+
         if (mi.IsValid()) {
             // Record medium interaction in _path_ and compute forward density
+            // Qianyue He: this medium interaction has time update
             vertex = Vertex::CreateMedium(mi, beta, pdfFwd, prev);
             if (++bounces >= maxDepth) break;
 
@@ -164,17 +172,22 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             Vector3f wi;
             pdfFwd = pdfRev = mi.phase->Sample_p(-ray.d, &wi, sampler.Get2D());
             ray = mi.SpawnRay(wi);
+            // if (bounces > 1) {
+            //     printf("Medium Bounce = [%d], Vertex time prev: %.5f, current time: %.5f, ray_time: %.5f, %.5f\n", bounces, prev.time(), vertex.time(), ray.time, ray.tMax);
+            // }
         } else {
             // Handle surface interaction for path generation
             if (!foundIntersection) {
-                // Capture escaped rays when tracing from the camera
+                // Capture escaped rays when tracing from the camera -- for inifinity light source
                 if (mode == TransportMode::Radiance) {
                     vertex = Vertex::CreateLight(EndpointInteraction(ray), beta,
                                                  pdfFwd);
                     ++bounces;
                 }
+                // This does not influence the result, we can skip the infinite light case
                 break;
             }
+            isect.time += ray.tMax;
 
             // Compute scattering functions for _mode_ and skip over medium
             // boundaries
@@ -186,6 +199,7 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
 
             // Initialize _vertex_ with surface intersection information
             vertex = Vertex::CreateSurface(isect, beta, pdfFwd, prev);
+            
             if (++bounces >= maxDepth) break;
 
             // Sample BSDF at current vertex and compute reverse probability
@@ -388,6 +402,10 @@ void BDPTIntegrator::Render(const Scene &scene) {
 
                     // Execute all BDPT connection strategies
                     Spectrum L(0.f);
+                    /**
+                     * Version 1.: we can create a local bin here will preallocated vector
+                     * and after all the possible connections are made, we use std::transform to add two vectors
+                     */
                     for (int t = 1; t <= nCamera; ++t) {
                         for (int s = 0; s <= nLight; ++s) {
                             int depth = t + s - 2;
@@ -397,10 +415,10 @@ void BDPTIntegrator::Render(const Scene &scene) {
                             // Execute the $(s, t)$ connection strategy and
                             // update _L_
                             Point2f pFilmNew = pFilm;
-                            Float misWeight = 0.f;
+                            Float misWeight = 0.f, sum_time = 0.0;
                             Spectrum Lpath = ConnectBDPT(
                                 scene, lightVertices, cameraVertices, s, t,
-                                *lightDistr, lightToIndex, *camera, *tileSampler,
+                                *lightDistr, lightToIndex, *camera, *tileSampler, sum_time,
                                 &pFilmNew, &misWeight);
                             VLOG(2) << "Connect bdpt s: " << s <<", t: " << t <<
                                 ", Lpath: " << Lpath << ", misWeight: " << misWeight;
@@ -413,10 +431,11 @@ void BDPTIntegrator::Render(const Scene &scene) {
                                 weightFilms[BufferIndex(s, t)]->AddSplat(
                                     pFilmNew, value);
                             }
-                            if (t != 1)
+                            if (t != 1) {
                                 L += Lpath;
-                            else
+                            } else {
                                 film->AddSplat(pFilmNew, Lpath);
+                            }
                         }
                     }
                     VLOG(2) << "Add film sample pFilm: " << pFilm << ", L: " << L <<
@@ -445,7 +464,7 @@ Spectrum ConnectBDPT(
     const Scene &scene, Vertex *lightVertices, Vertex *cameraVertices, int s,
     int t, const Distribution1D &lightDistr,
     const std::unordered_map<const Light *, size_t> &lightToIndex,
-    const Camera &camera, Sampler &sampler, Point2f *pRaster,
+    const Camera &camera, Sampler &sampler, Float& sum_time, Point2f *pRaster,
     Float *misWeightPtr) {
     ProfilePhase _(Prof::BDPTConnectSubpaths);
     Spectrum L(0.f);
@@ -460,6 +479,7 @@ Spectrum ConnectBDPT(
         const Vertex &pt = cameraVertices[t - 1];
         if (pt.IsLight()) L = pt.Le(scene, cameraVertices[t - 2]) * pt.beta;
         DCHECK(!L.HasNaNs());
+        if (!L.IsBlack()) sum_time = pt.time();
     } else if (t == 1) {
         // Sample a point on the camera and connect it to the light subpath
         const Vertex &qs = lightVertices[s - 1];
@@ -478,6 +498,9 @@ Spectrum ConnectBDPT(
                 // Only check visibility after we know that the path would
                 // make a non-zero contribution.
                 if (!L.IsBlack()) L *= vis.Tr(scene, sampler);
+                if (!L.IsBlack()) {
+                    sum_time = qs.time() + (vis.P0().p - vis.P1().p).Length();
+                }
             }
         }
     } else if (s == 1) {
@@ -503,6 +526,9 @@ Spectrum ConnectBDPT(
                 if (pt.IsOnSurface()) L *= AbsDot(wi, pt.ns());
                 // Only check visibility if the path would carry radiance.
                 if (!L.IsBlack()) L *= vis.Tr(scene, sampler);
+                if (!L.IsBlack()) {
+                    sum_time = pt.time() + (vis.P0().p - vis.P1().p).Length();
+                }
             }
         }
     } else {
@@ -515,6 +541,9 @@ Spectrum ConnectBDPT(
                 ", pt.f(qs): " << pt.f(qs, TransportMode::Radiance) << ", G: " << G(scene, sampler, qs, pt) <<
                 ", dist^2: " << DistanceSquared(qs.p(), pt.p());
             if (!L.IsBlack()) L *= G(scene, sampler, qs, pt);
+            if (!L.IsBlack()) {
+                sum_time = pt.time() + qs.time() + (qs.p() - pt.p()).Length();
+            }
         }
     }
 

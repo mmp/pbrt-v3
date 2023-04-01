@@ -57,7 +57,7 @@ Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
     Float t = std::min(dist / ray.d.Length(), ray.tMax);
     bool sampledMedium = t < ray.tMax;
     if (sampledMedium)
-        *mi = MediumInteraction(ray(t), -ray.d, ray.time, this,
+        *mi = MediumInteraction(ray(t), -ray.d, ray.time + t, this,       // TODO: add t will suffice Qianyue He: account for travelling time
                                 ARENA_ALLOC(arena, HenyeyGreenstein)(g));
 
     // Compute the transmittance and sampling density
