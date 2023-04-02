@@ -78,6 +78,7 @@ class Film {
     void SetImage(const Spectrum *img) const;
     void AddSplat(const Point2f &p, Spectrum v, Float cur_time = -1.0);
     void WriteImage(Float splatScale = 1);
+    void WriteTransient();
     void Clear();
 
     // Film Public Data
@@ -105,12 +106,16 @@ class Film {
     struct TransientPixel {
         AtomicFloat xyz[3];
         AtomicFloat weight_sum;
+
+        void export_xyz(Float* const arr) const {
+            for (int i = 0; i < 3; i++) arr[i] = xyz[i];
+        }
     };
 
     // We might need an extra field, which is called time bins, time bins should contain two fields
     // This might be one of the most difficult part, which is prone to have bugs
     // WARNING: this could induce memory overhead
-    // time_bin: h, w, weight_sum
+    // time_bin: h, w, weight_sum (h*w*sample_cnt)
     std::unique_ptr<TransientPixel[]> time_bins;
 
     std::unique_ptr<Pixel[]> pixels;
@@ -130,7 +135,7 @@ class Film {
     }
 
     /** Using spatial and temporal index to locate a time bin and return its reference */
-    TransientPixel &IndexTimeBin(const Point2i &p, int index) {
+    TransientPixel& IndexTimeBin(const Point2i &p, int index) {
         CHECK(InsideExclusive(p, croppedPixelBounds));
         int width = croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x;
         int offset = (p.x - croppedPixelBounds.pMin.x) +
@@ -140,12 +145,12 @@ class Film {
         return time_bins[temporal_off];
     }
 
-    TransientPixel &GetTimeBin(const Point2i &p, Float cur_time) {
-        int index = int(std::floor(cur_time - min_time) / interval);
+    TransientPixel& GetTimeBin(const Point2i &p, Float cur_time) {
+        int index = int(std::floor((cur_time - min_time) / interval));
         return IndexTimeBin(p, index);
     }
 
-    TransientPixel* const transient_ptr(const Point2i &p) {
+    TransientPixel* transient_ptr(const Point2i &p) {
         CHECK(InsideExclusive(p, croppedPixelBounds));
         int width = croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x;
         int offset = (p.x - croppedPixelBounds.pMin.x) +
@@ -156,7 +161,7 @@ class Film {
 
 // This might be the most difficult part
 class FilmTile {
-  using LocalTransients = std::unique_ptr<Spectrum []>;
+  using LocalTransients = std::unique_ptr<FilmTilePixel []>;
   public:
     // FilmTile Public Methods
     FilmTile(const Bounds2i &pixelBounds, const Vector2f &filterRadius,
@@ -222,12 +227,12 @@ class FilmTile {
                 Float weight = sampleWeight * filterWeight;
                 pixel.contribSum += L * weight;
                 pixel.filterWeightSum += filterWeight;
-                if (sample_cnt > 0 && lts) {          // local transient storage exists
+                if (sample_cnt > 0 && lts) {          // local transient storage exists and we are actually using transient rendering
                     std::vector<FilmTilePixel>& dump = GetTransient(Point2i(x, y));
                     // TODO: the correctness of this implementation should be checked
                     std::transform(dump.begin(), dump.end(), lts.get(), dump.begin(), 
-                        [weight, filterWeight](const FilmTilePixel& p1, const Spectrum& p2) {
-                        return FilmTilePixel(p1.contribSum + p2 * weight, p1.filterWeightSum + filterWeight);
+                        [weight, filterWeight](const FilmTilePixel& p1, const FilmTilePixel& p2) {
+                        return FilmTilePixel(p1.contribSum + p2.contribSum * weight, p1.filterWeightSum + filterWeight * p2.filterWeightSum);
                     });
                 }
             }
@@ -248,30 +253,15 @@ class FilmTile {
         return pixels[offset];
     }
 
-    // FIXME: maybe these two should be deleted
-    FilmTilePixel &IndexTransient(const Point2i &p, int t_idx) {
-        CHECK(InsideExclusive(p, pixelBounds));
-        int width = pixelBounds.pMax.x - pixelBounds.pMin.x;
-        int offset = (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;
-        return transients[offset][t_idx];
-    }
-
-    const FilmTilePixel &IndexTransient(const Point2i &p, int t_idx) const {
-        CHECK(InsideExclusive(p, pixelBounds));
-        int width = pixelBounds.pMax.x - pixelBounds.pMin.x;
-        int offset = (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;
-        return transients[offset][t_idx];
-    }
-
     /** Since if const-ness is only distinguished by its callee, we can't call IndexTransient directly */
-    std::vector<FilmTilePixel> &GetTransient(const Point2i &p) {
+    std::vector<FilmTilePixel>& GetTransient(const Point2i &p) {
         CHECK(InsideExclusive(p, pixelBounds));
         int width = pixelBounds.pMax.x - pixelBounds.pMin.x;
         int offset = (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;
         return transients[offset];
     }
 
-    const std::vector<FilmTilePixel> &GetTransient(const Point2i &p) const {
+    const std::vector<FilmTilePixel>& GetTransient(const Point2i &p) const {
         CHECK(InsideExclusive(p, pixelBounds));
         int width = pixelBounds.pMax.x - pixelBounds.pMin.x;
         int offset = (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;

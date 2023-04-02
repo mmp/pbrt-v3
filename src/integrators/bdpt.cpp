@@ -157,11 +157,6 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
         if (beta.IsBlack()) break;
         Vertex &vertex = path[bounces], &prev = path[bounces - 1];
         
-        // TODO: first, ray_time should be updated
-        // if (ray.time > 0.0) {
-        //     printf("Bounce = %d, Ray time is not zero: %.7f\n", bounces, ray.time);
-        // } 
-
         if (mi.IsValid()) {
             // Record medium interaction in _path_ and compute forward density
             // Qianyue He: this medium interaction has time update
@@ -172,9 +167,6 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             Vector3f wi;
             pdfFwd = pdfRev = mi.phase->Sample_p(-ray.d, &wi, sampler.Get2D());
             ray = mi.SpawnRay(wi);
-            // if (bounces > 1) {
-            //     printf("Medium Bounce = [%d], Vertex time prev: %.5f, current time: %.5f, ray_time: %.5f, %.5f\n", bounces, prev.time(), vertex.time(), ray.time, ray.tMax);
-            // }
         } else {
             // Handle surface interaction for path generation
             if (!foundIntersection) {
@@ -402,10 +394,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
 
                     // Execute all BDPT connection strategies
                     Spectrum L(0.f);
-                    /**
-                     * Version 1.: we can create a local bin here will preallocated vector
-                     * and after all the possible connections are made, we use std::transform to add two vectors
-                     */
+                    auto local_storage = std::make_unique<FilmTilePixel[]>(film->sample_cnt);
                     for (int t = 1; t <= nCamera; ++t) {
                         for (int s = 0; s <= nLight; ++s) {
                             int depth = t + s - 2;
@@ -431,16 +420,22 @@ void BDPTIntegrator::Render(const Scene &scene) {
                                 weightFilms[BufferIndex(s, t)]->AddSplat(
                                     pFilmNew, value);
                             }
+                            // TODO: main modification is not made yet, to add samples
                             if (t != 1) {
                                 L += Lpath;
+                                if (!L.IsBlack() && sum_time > film->min_time && sum_time < film->max_time) {
+                                    int local_idx = int(std::floor((sum_time - film->min_time) / film->interval));
+                                    local_storage[local_idx].contribSum += Lpath;
+                                    local_storage[local_idx].filterWeightSum += 1;
+                                }
                             } else {
-                                film->AddSplat(pFilmNew, Lpath);
+                                film->AddSplat(pFilmNew, Lpath, sum_time);
                             }
                         }
                     }
                     VLOG(2) << "Add film sample pFilm: " << pFilm << ", L: " << L <<
                         ", (y: " << L.y() << ")";
-                    filmTile->AddSample(pFilm, L);
+                    filmTile->AddSample(pFilm, L, 1.0, std::move(local_storage));
                     arena.Reset();
                 } while (tileSampler->StartNextSample());
             }
@@ -451,6 +446,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
         reporter.Done();
     }
     film->WriteImage(1.0f / sampler->samplesPerPixel);
+    film->WriteTransient();
 
     // Write buffers for debug visualization
     if (visualizeStrategies || visualizeWeights) {

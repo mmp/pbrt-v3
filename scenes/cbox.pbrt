@@ -1,19 +1,22 @@
 LookAt 2.78 2.73 -8.00  2.78 2.73 0   0 1 0
 Camera "perspective" "float fov" [39.3077]
 Accelerator "bvh"
-Sampler "random" "integer pixelsamples" [4000]
+Sampler "random" "integer pixelsamples" [1024]
 Film "image"
    "string filename" ["cornell.exr"]
    "integer xresolution" [512]
    "integer yresolution" [512]
+   "float tmin_time" [5.0]
+   "float t_interval" [0.1]
+   "integer t_samplecnt" [256]
 
-Integrator "bdpt" "integer maxdepth" [32]
+Integrator "bdpt" "integer maxdepth" [16]
 
 WorldBegin
 
 # light source
 
-LightSource "point" "rgb I" [6. 6. 6.] "point from" [2.779 3.0 -1.0]
+LightSource "point" "rgb I" [10. 10. 10.] "point from" [2.779 2.8 -1.0]
 
 # AttributeBegin
 #    AreaLightSource "diffuse" "rgb L" [1 1 1]

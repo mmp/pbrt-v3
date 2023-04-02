@@ -32,12 +32,14 @@
 
 
 // core/film.cpp*
+#include <memory>
+#include <iomanip>
 #include "film.h"
 #include "paramset.h"
 #include "imageio.h"
 #include "stats.h"
 
-#define AREA_THRESHOLD 65536 
+#define AREA_THRESHOLD 262144 
 
 // TODO: the whole file (and some related APIs, like creating film and passing parameters) should be modified
 
@@ -70,16 +72,17 @@ Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
 
     // Allocate film image storage
     int area = croppedPixelBounds.Area();
-    pixels = std::unique_ptr<Pixel[]>(new Pixel[area]);
+    pixels = std::make_unique<Pixel[]>(area);
 
     // Allocate transient film image storage
-    if (area <= AREA_THRESHOLD) {            // maximum image area allocated, bigger than this figure might introduce memory overhead that is too high
-        int64_t memory2use = area * sizeof(TransientPixel) * 2;
+    if (area <= AREA_THRESHOLD && sample_cnt > 0) {     // maximum image area allocated, bigger than this figure might introduce memory overhead that is too high
+        int64_t memory2use = area * sizeof(TransientPixel) * 2 * sample_cnt;     // estimated, since FilmTile might double the consumption
         filmPixelMemory += memory2use;
-        time_bins = std::unique_ptr<TransientPixel[]>(new TransientPixel[area]);
+        time_bins = std::make_unique<TransientPixel[]>(area * sample_cnt);
         printf("Transient blocks will be allocated. Film area = %d, estimated memory: %f MB\n", area, float(memory2use) / (1024 * 1024));
+        printf("Transient params: min_t = %.5f, max_t = %.5f, interval = %.5f, sample_cnt = %d\n", min_time, max_time, interval, sample_cnt);
     } else {
-        sample_cnt = 0;
+        sample_cnt = 0; // area greater than threshold is not allowed
     }
 
     filmPixelMemory += area * sizeof(Pixel);
@@ -119,9 +122,9 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i &sampleBounds) {
     Point2i p1 = (Point2i)Floor(floatBounds.pMax - halfPixel + filter->radius) +
                  Point2i(1, 1);
     Bounds2i tilePixelBounds = Intersect(Bounds2i(p0, p1), croppedPixelBounds);
-    return std::unique_ptr<FilmTile>(new FilmTile(
+    return std::make_unique<FilmTile>(
         tilePixelBounds, filter->radius, filterTable, filterTableWidth,
-        maxSampleLuminance, min_time, max_time, interval, sample_cnt));
+        maxSampleLuminance, min_time, max_time, interval, sample_cnt);
 }
 
 void Film::Clear() {
@@ -156,24 +159,23 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
         tilePixel.contribSum.ToXYZ(xyz);
         for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
         mergePixel.filterWeightSum += tilePixel.filterWeightSum;
-        if (sample_cnt > 0) {
+        if (time_bins && tile->transients.empty() == false) {
             // TODO: maybe we can find a SIMD STL function to use, but first, make sure this is correct
-            TransientPixel* const t_ptr = transient_ptr(pixel);
+            TransientPixel* t_ptr = transient_ptr(pixel);
             const std::vector<FilmTilePixel>& transient = tile->GetTransient(pixel);
             for (int i = 0; i < sample_cnt; i++) {
                 const FilmTilePixel& p1 = transient[i];
                 TransientPixel& p2 = t_ptr[i];
                 p1.contribSum.ToXYZ(xyz);
-                for (int i = 0; i < 3; ++i) p2.xyz[i].Add(xyz[i]);
+                for (int chid = 0; chid < 3; ++chid) p2.xyz[chid].Add(xyz[chid]);
                 p2.weight_sum.Add(p1.filterWeightSum);
             }
         }
     }
 }
 
-// FIXME: we need to extract our transient images
 void Film::SetImage(const Spectrum *img) const {
-    /** This function is not used in BDPT, therefore not modified */
+    /** This function is not used in BDPT, therefore NOT modified */
     int nPixels = croppedPixelBounds.Area();
     for (int i = 0; i < nPixels; ++i) {
         Pixel &p = pixels[i];
@@ -209,7 +211,7 @@ void Film::AddSplat(const Point2f &p, Spectrum v, Float cur_time) {
     Pixel &pixel = GetPixel(pi);
     // AddSplat is Atomic op, so we also need to use this operation
     for (int i = 0; i < 3; ++i) pixel.splatXYZ[i].Add(xyz[i]);
-    if (cur_time > min_time && cur_time < max_time) {
+    if (time_bins && cur_time > min_time && cur_time < max_time) {
         TransientPixel& tpix = GetTimeBin(pi, cur_time);
         for (int i = 0; i < 3; ++i) tpix.xyz[i].Add(xyz[i]);
         // Qianyue He: When doing add splat op, we do not consider image filtering, therefore 1.0 is used as weight
@@ -217,12 +219,13 @@ void Film::AddSplat(const Point2f &p, Spectrum v, Float cur_time) {
     }
 }
 
-// TODO: This function needs refactoring
+// FIXME: we need to extract our transient images
+// TODO: today's task (1) output transients (2) set things right in BDPT
 void Film::WriteImage(Float splatScale) {
     // Convert image to RGB and compute final pixel values
     LOG(INFO) <<
         "Converting image to RGB and computing final weighted pixel values";
-    std::unique_ptr<Float[]> rgb(new Float[3 * croppedPixelBounds.Area()]);
+    auto rgb = std::make_unique<Float[]>(3 * croppedPixelBounds.Area());
     int offset = 0;
     for (Point2i p : croppedPixelBounds) {
         // Convert pixel XYZ color to RGB
@@ -245,6 +248,10 @@ void Film::WriteImage(Float splatScale) {
         Float splatXYZ[3] = {pixel.splatXYZ[0], pixel.splatXYZ[1],
                              pixel.splatXYZ[2]};
         XYZToRGB(splatXYZ, splatRGB);
+
+        // TODO: splatRGB is not scaled by how many splat RGB values are added, but SPP
+        // This is somewhat different from my calculation method: one splat, filterSum add 1.0
+        // For transient samples, this might be true. However, this should be noted and tested.
         rgb[3 * offset] += splatScale * splatRGB[0];
         rgb[3 * offset + 1] += splatScale * splatRGB[1];
         rgb[3 * offset + 2] += splatScale * splatRGB[2];
@@ -260,6 +267,53 @@ void Film::WriteImage(Float splatScale) {
     LOG(INFO) << "Writing image " << filename << " with bounds " <<
         croppedPixelBounds;
     pbrt::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution);
+}
+
+void Film::WriteTransient() {
+    // Convert image to RGB and compute final pixel values
+    
+    if (time_bins) {            // transient images are valid
+        printf("Exporting transient profiles...\n");
+        LOG(INFO) << "Converting transient to RGB and computing final weighted transient profile";
+        std::string prefix = filename.substr(0, filename.find_last_of("."));
+        // exporting transient might take time, therefore I opt for multi-threading
+        for (size_t ti = 0; ti < sample_cnt; ti++) {
+            
+            std::ostringstream str;
+            str << std::setw(4) << std::setfill('0') << ti;
+            std::string output_name = prefix + "_" + str.str() + ".exr";
+            auto rgb = std::make_unique<Float[]>(3 * croppedPixelBounds.Area());
+            int offset = 0;
+            for (Point2i p : croppedPixelBounds) {
+                // Convert pixel XYZ color to RGB
+                const TransientPixel &pixel = IndexTimeBin(p, ti);
+
+                Float xyz[3];
+                pixel.export_xyz(xyz);
+                XYZToRGB(xyz, &rgb[3 * offset]);
+
+                // Normalize pixel with weight sum
+                Float filterWeightSum = pixel.weight_sum;
+                if (filterWeightSum != 0) {
+                    Float invWt = (Float)1 / filterWeightSum;
+                    rgb[3 * offset] = std::max((Float)0, rgb[3 * offset] * invWt);
+                    rgb[3 * offset + 1] =
+                        std::max((Float)0, rgb[3 * offset + 1] * invWt);
+                    rgb[3 * offset + 2] =
+                        std::max((Float)0, rgb[3 * offset + 2] * invWt);
+                }
+
+                // Scale pixel value by _scale_
+                rgb[3 * offset] *= scale;
+                rgb[3 * offset + 1] *= scale;
+                rgb[3 * offset + 2] *= scale;
+                ++offset;
+            }
+            pbrt::WriteImage(output_name, &rgb[0], croppedPixelBounds, fullResolution);
+        }
+    } else {
+        LOG(INFO) << "Time bin is empty, not exporting transient profile.";
+    }
 }
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
@@ -299,8 +353,12 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
     Float diagonal = params.FindOneFloat("diagonal", 35.);
     Float maxSampleLuminance = params.FindOneFloat("maxsampleluminance",
                                                    Infinity);
+    Float min_time = params.FindOneFloat("tmin_time", 0.0);
+    Float interval = params.FindOneFloat("t_interval", 0.0625);
+    int sample_cnt = params.FindOneInt("t_samplecnt", 0);
+    Float max_time = min_time + Float(sample_cnt) * interval;
     return new Film(Point2i(xres, yres), crop, std::move(filter), diagonal,
-                    filename, scale, maxSampleLuminance);
+                    filename, scale, maxSampleLuminance, min_time, max_time, interval, sample_cnt);
 }
 
 }  // namespace pbrt
