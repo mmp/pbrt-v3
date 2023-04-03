@@ -38,6 +38,8 @@
 #ifndef PBRT_CORE_FILM_H
 #define PBRT_CORE_FILM_H
 
+#define filterTableWidth 16
+
 // core/film.h*
 #include "pbrt.h"
 #include "geometry.h"
@@ -119,7 +121,6 @@ class Film {
     std::unique_ptr<TransientPixel[]> time_bins;
 
     std::unique_ptr<Pixel[]> pixels;
-    static PBRT_CONSTEXPR int filterTableWidth = 16;
     Float filterTable[filterTableWidth * filterTableWidth];
     std::mutex mutex;
     const Float scale;

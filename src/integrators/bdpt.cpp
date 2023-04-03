@@ -321,7 +321,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
     Film *film = camera->film;
     const Bounds2i sampleBounds = film->GetSampleBounds();
     const Vector2i sampleExtent = sampleBounds.Diagonal();
-    const int tileSize = 16;
+    // TODO: adjustable tile size should be implemented
+    const int tileSize = 3;
     const int nXTiles = (sampleExtent.x + tileSize - 1) / tileSize;
     const int nYTiles = (sampleExtent.y + tileSize - 1) / tileSize;
     ProgressReporter reporter(nXTiles * nYTiles, "Rendering");
