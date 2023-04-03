@@ -1,0 +1,200 @@
+LookAt 2.78 2.73 -8.00  2.78 2.73 0   0 1 0
+Camera "perspective" "float fov" [39.3077]
+Accelerator "bvh"
+Sampler "random" "integer pixelsamples" [128]
+Film "image"
+   "string filename" ["cornell.exr"]
+   "integer xresolution" [512]
+   "integer yresolution" [512]
+#   "float tmin_time" [5.0]
+#   "float t_interval" [0.1]
+#   "integer t_samplecnt" [256]
+
+Integrator "bdpt" "integer maxdepth" [16]
+
+WorldBegin
+
+# light source
+
+LightSource "collimated" "rgb L" [10. 10. 10.] "point from" [2.779 2.8 -4.0] "point to" [2.779 2.8 -3.0]
+
+# AttributeBegin
+#    AreaLightSource "diffuse" "rgb L" [1 1 1]
+#    Material "matte"
+#    "rgb Kd" [0.33333334 0.33333334 0.33333334]
+# 
+#    Shape "trianglemesh"
+#    "integer indices" [ 0 1 2  2 3 0 ]
+#    "point P" [
+#       3.430 5.487 2.270
+#       3.430 5.487 3.320
+#       2.130 5.487 3.320
+#       2.130 5.487 2.270 ]
+# AttributeEnd
+
+# world medium bound
+
+# tall box
+
+AttributeBegin
+   Material "matte"
+   "rgb Kd" [0.7372549 0.7372549 0.7372549]
+
+   Shape "trianglemesh"
+   "integer indices" [
+      3 2 0 2 1 0
+      7 6 4 6 5 4
+      11 10 8 10 9 8
+      15 14 12 14 13 12
+      19 18 16 18 17 16
+   ]
+    "point P" [
+    4.230 3.300 2.470
+    2.650 3.300 2.960
+    3.140 3.300 4.560
+    4.720 3.300 4.060
+    4.230   0.0 2.470
+    4.230 3.300 2.470
+    4.720 3.300 4.060
+    4.720   0.0 4.060
+    4.720   0.0 4.060
+    4.720 3.300 4.060
+    3.140 3.300 4.560
+    3.140   0.0 4.560
+    3.140   0.0 4.560
+    3.140 3.300 4.560
+    2.650 3.300 2.960
+    2.650   0.0 2.960
+    2.650   0.0 2.960
+    2.650 3.300 2.960
+    4.230 3.300 2.470
+    4.230   0.0 2.470]
+AttributeEnd
+
+#red wall
+
+AttributeBegin
+   Material "matte"
+   "rgb Kd" [0.8666667 0.14509805 0.14509805]
+   
+   Shape "trianglemesh"
+   "integer indices" [ 0 1 2  2 3 0 ]
+   "point P" [
+      5.528    00   0.0
+      5.496    00 5.592
+      5.560 5.488 5.592
+      5.560 5.488   0.0 ]
+AttributeEnd
+
+# green wall
+
+AttributeBegin
+   Material "matte"
+
+   "rgb Kd" [0.14509805 0.8666667 0.14509805]
+
+   Shape "trianglemesh"
+   "integer indices" [ 0 1 2  2 3 0 ]
+   "point P" [
+      0.0   0.0 5.592
+      0.0   0.0   0.0
+      0.0 5.488   0.0
+      0.0 5.488 5.592 ]
+AttributeEnd
+
+# everything else is white
+
+
+
+Material "matte"
+
+"rgb Kd" [0.7411765 0.7411765 0.7411765]
+
+#
+# floor
+#
+
+AttributeBegin
+   Shape "trianglemesh"
+   "integer indices" [ 0 1 2  2 3 0 ]
+   "point P" [
+      5.528 0.0   0.0
+      0.0 0.0   0.0
+      0.0 0.0 5.592
+    5.496 0.0 5.592 ]
+AttributeEnd
+
+
+#
+# ceiling
+#
+
+AttributeBegin
+   Shape "trianglemesh"
+   "integer indices" [ 0 1 2  2 3 0 ]
+   "point P" [
+    5.560 5.488 0.0
+    5.560 5.488 5.592
+      0.0 5.488 5.592
+      0.0 5.488   0.0 ]
+AttributeEnd
+
+
+#
+# back wall
+#
+
+AttributeBegin
+   Shape "trianglemesh"
+   "integer indices" [ 0 1 2  2 3 0 ]
+   "point P" [
+    5.496   0.0 5.592
+      0.0   0.0 5.592
+      0.0 5.488 5.592
+    5.560 5.488 5.592]
+AttributeEnd
+
+
+#
+# short block
+#
+
+# material { glass ior 1.5 r { constant spd { 1 0.95 } } }
+
+AttributeBegin
+
+   Material "matte"
+   "rgb Kd" [0.7372549 0.7372549 0.7372549]
+
+   Shape "trianglemesh"
+   "integer indices" [
+      3 2 0 2 1 0
+      7 6 4 6 5 4
+      11 10 8 10 9 8
+      15 14 12 14 13 12
+      19 18 16 18 17 16
+   ]
+   "point P" [
+    1.300 1.650 0.650
+    0.820 1.650 2.250
+    2.400 1.650 2.720
+    2.900 1.650 1.140
+    2.900   0.0 1.140
+    2.900 1.650 1.140
+    2.400 1.650 2.720
+    2.400   0.0 2.720
+    1.300   0.0 0.650
+    1.300 1.650 0.650
+    2.900 1.650 1.140
+    2.900   0.0 1.140
+    0.820   0.0 2.250
+    0.820 1.650 2.250
+    1.300 1.650 0.650
+    1.300   0.0 0.650
+    2.400   0.0 2.720
+    2.400 1.650 2.720
+    0.820 1.650 2.250
+    0.820   0.0 2.250 ]
+AttributeEnd
+
+WorldEnd

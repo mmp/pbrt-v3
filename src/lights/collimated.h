@@ -28,6 +28,9 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+    CollimatedLight light source implementation for transient rendering
+    @author: Qianyue He
+    @date: 2023-4-2
  */
 
 #if defined(_MSC_VER)
@@ -35,25 +38,24 @@
 #pragma once
 #endif
 
-#ifndef PBRT_LIGHTS_POINT_H
-#define PBRT_LIGHTS_POINT_H
+#ifndef PBRT_LIGHTS_COLLIMATED_H
+#define PBRT_LIGHTS_COLLIMATED_H
 
-// lights/point.h*
+// lights/collimated.h*
 #include "pbrt.h"
-#include "light.h"
+#include "point.h"
 #include "shape.h"
+#include "scene.h"
 
 namespace pbrt {
 
-// PointLight Declarations
-class PointLight : public Light {
+// CollimatedLight Declarations
+class CollimatedLight: public PointLight {
   public:
-    // PointLight Public Methods
-    PointLight(const Transform &LightToWorld,
-               const MediumInterface &mediumInterface, const Spectrum &I)
-        : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
-          pLight(LightToWorld(Point3f(0, 0, 0))),
-          I(I) {}
+    // CollimatedLight Public Methods
+    CollimatedLight(const Transform &LightToWorld, const Spectrum &L,
+                 const MediumInterface &mediumInterface, const Vector3f &w);
+    
     Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
                        Float *pdf, VisibilityTester *vis) const;
     Spectrum Power() const;
@@ -64,16 +66,14 @@ class PointLight : public Light {
     void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
                 Float *pdfDir) const;
 
-  protected:
-    const Point3f pLight;
-    const Spectrum I;
-    // PointLight Private Data
+  private:
+    // CollimatedLight Private Data
+    const Vector3f wLight;
 };
 
-std::shared_ptr<PointLight> CreatePointLight(const Transform &light2world,
-                                             const Medium *medium,
-                                             const ParamSet &paramSet);
+std::shared_ptr<CollimatedLight> CreateCollimatedLight(const Transform &light2world,
+                                                 const Medium *medium, const ParamSet &paramSet);
 
 }  // namespace pbrt
 
-#endif  // PBRT_LIGHTS_POINT_H
+#endif  // PBRT_LIGHTS_COLLIMATED_H
