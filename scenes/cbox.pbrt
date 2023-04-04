@@ -1,7 +1,7 @@
 LookAt 2.78 2.73 -8.00  2.78 2.73 0   0 1 0
 Camera "perspective" "float fov" [39.3077]
 Accelerator "bvh"
-Sampler "random" "integer pixelsamples" [8192]
+Sampler "random" "integer pixelsamples" [128]
 Film "image"
    "string filename" ["cornell.exr"]
    "integer xresolution" [512]

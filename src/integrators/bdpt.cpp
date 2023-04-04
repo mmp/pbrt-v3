@@ -322,7 +322,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
     const Bounds2i sampleBounds = film->GetSampleBounds();
     const Vector2i sampleExtent = sampleBounds.Diagonal();
     // TODO: adjustable tile size should be implemented
-    const int tileSize = 3;
+    const int tileSize = 2;
     const int nXTiles = (sampleExtent.x + tileSize - 1) / tileSize;
     const int nYTiles = (sampleExtent.y + tileSize - 1) / tileSize;
     ProgressReporter reporter(nXTiles * nYTiles, "Rendering");
@@ -424,12 +424,26 @@ void BDPTIntegrator::Render(const Scene &scene) {
                             // TODO: main modification is not made yet, to add samples
                             if (t != 1) {
                                 L += Lpath;
-                                if (!L.IsBlack() && sum_time > film->min_time && sum_time < film->max_time) {
+                                if (!Lpath.IsBlack() && sum_time > film->min_time && sum_time < film->max_time) {
                                     int local_idx = int(std::floor((sum_time - film->min_time) / film->interval));
                                     local_storage[local_idx].contribSum += Lpath;
                                     local_storage[local_idx].filterWeightSum += 1;
+                                    if (local_idx < 108 && local_idx > 41) {
+                                        printf("Local idx = %d, contribSum = %f, %f, %f\n", local_idx, Lpath[0], Lpath[1], Lpath[2]);
+                                    }
+                                } else if (sum_time > film->min_time && sum_time < film->max_time) {
+                                    int local_idx = int(std::floor((sum_time - film->min_time) / film->interval));
+                                    if (local_idx < 108 && local_idx > 41) {
+                                        printf("(L0) Local idx = %d, contribSum = %f, %f, %f\n", local_idx, Lpath[0], Lpath[1], Lpath[2]);
+                                    }
                                 }
                             } else {
+                                if (sum_time > film->min_time && sum_time < film->max_time) {
+                                    int local_idx = int(std::floor((sum_time - film->min_time) / film->interval));
+                                    if (local_idx < 108 && local_idx > 41) {
+                                        printf("(L0) Local idx = %d, contribSum = %f, %f, %f\n", local_idx, Lpath[0], Lpath[1], Lpath[2]);
+                                    }
+                                }
                                 film->AddSplat(pFilmNew, Lpath, sum_time);
                             }
                         }
@@ -557,6 +571,7 @@ Spectrum ConnectBDPT(
     DCHECK(!std::isnan(misWeight));
     L *= misWeight;
     if (misWeightPtr) *misWeightPtr = misWeight;
+    if (L.IsBlack()) sum_time = 0.0;
     return L;
 }
 

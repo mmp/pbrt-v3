@@ -1,0 +1,21 @@
+pbrt version 3 (built Apr  3 2023 at 11:09:40) [Detected 12 cores]
+Copyright (c)1998-2018 Matt Pharr, Greg Humphreys, and Wenzel Jakob.
+The source code to pbrt (but *not* the book contents) is covered by the BSD License.
+See the file LICENSE.txt for the conditions of the license.
+Transient blocks will be allocated. Film area = 576, estimated memory: 8.789062 MB
+Transient params: min_t = 0.00000, max_t = 0.70000, interval = 0.00140, sample_cnt = 500
+Rendering: [+++++++++++++++++++++++++++                                                                                                                    ]  (4502.6s|19511.4s)  F0403 14:24:46.143074 40388 geometry.h:252] Check failed: f != 0 (0 vs. 0) 
+*** Check failure stack trace: ***
+    @     0x563d41feea09  pbrt::ScrambledRadicalInverse()
+    @     0x563d41febc2c  pbrt::RadicalInverse()
+    @     0x563d41fef22f  pbrt::ScrambledRadicalInverse()
+    @     0x563d41d81261  _ZNK4pbrt11Hyperboloid9IntersectERKNS_3RayEPfPNS_18SurfaceInteractionEb.cold
+    @     0x563d41db5f22  pbrt::GraphicsState::GraphicsState()
+    @     0x563d41db721f  std::vector<>::operator=()
+    @     0x563d41d316a4  (unknown)
+    @     0x563d41d31ec7  (unknown)
+    @     0x7fade83eade4  (unknown)
+    @     0x7fade851a609  (unknown)
+    @     0x7fade80d7133  (unknown)
+    @              (nil)  (unknown)
+Aborted (core dumped)

@@ -5,3 +5,4 @@ src/objs
 .sconsign.dblite
 build
 build_debug
+**/__pycache__

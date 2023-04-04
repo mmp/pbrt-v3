@@ -9,7 +9,7 @@ Film "image"
    "integer xresolution" [512]
    "integer yresolution" [512]
 
-Integrator "bdpt" "integer maxdepth" [32]
+Integrator "bdpt" "integer maxdepth" [20]
 
 WorldBegin
 

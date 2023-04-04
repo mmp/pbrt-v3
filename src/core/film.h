@@ -115,8 +115,6 @@ class Film {
     };
 
     // We might need an extra field, which is called time bins, time bins should contain two fields
-    // This might be one of the most difficult part, which is prone to have bugs
-    // WARNING: this could induce memory overhead
     // time_bin: h, w, weight_sum (h*w*sample_cnt)
     std::unique_ptr<TransientPixel[]> time_bins;
 
@@ -156,7 +154,7 @@ class Film {
         int width = croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x;
         int offset = (p.x - croppedPixelBounds.pMin.x) +
                      (p.y - croppedPixelBounds.pMin.y) * width;
-        return &time_bins.get()[offset];
+        return &time_bins.get()[offset * sample_cnt];
     }
 };
 
@@ -184,7 +182,6 @@ class FilmTile {
         }
     }
 
-    /** FIXME We should add samples from a vector when everything is done, keep all the samples and time in a local vector */
     void AddSample(const Point2f &pFilm, Spectrum L,
                    Float sampleWeight = 1., LocalTransients lts = nullptr) {
         // Note that local storage have size: sample_cnt (time is converted to index beforehand)
@@ -230,7 +227,6 @@ class FilmTile {
                 pixel.filterWeightSum += filterWeight;
                 if (sample_cnt > 0 && lts) {          // local transient storage exists and we are actually using transient rendering
                     std::vector<FilmTilePixel>& dump = GetTransient(Point2i(x, y));
-                    // TODO: the correctness of this implementation should be checked
                     std::transform(dump.begin(), dump.end(), lts.get(), dump.begin(), 
                         [weight, filterWeight](const FilmTilePixel& p1, const FilmTilePixel& p2) {
                         return FilmTilePixel(p1.contribSum + p2.contribSum * weight, p1.filterWeightSum + filterWeight * p2.filterWeightSum);

@@ -160,8 +160,7 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile) {
         for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
         mergePixel.filterWeightSum += tilePixel.filterWeightSum;
         if (time_bins && tile->transients.empty() == false) {
-            // TODO: maybe we can find a SIMD STL function to use, but first, make sure this is correct
-            TransientPixel* t_ptr = transient_ptr(pixel);
+            TransientPixel* const t_ptr = transient_ptr(pixel);
             const std::vector<FilmTilePixel>& transient = tile->GetTransient(pixel);
             for (int i = 0; i < sample_cnt; i++) {
                 const FilmTilePixel& p1 = transient[i];
@@ -219,8 +218,6 @@ void Film::AddSplat(const Point2f &p, Spectrum v, Float cur_time) {
     }
 }
 
-// FIXME: we need to extract our transient images
-// TODO: today's task (1) output transients (2) set things right in BDPT
 void Film::WriteImage(Float splatScale) {
     // Convert image to RGB and compute final pixel values
     LOG(INFO) <<

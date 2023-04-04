@@ -242,15 +242,19 @@ class Vector3 {
     }
     template <typename U>
     Vector3<T> operator/(U f) const {
-        CHECK_NE(f, 0);
-        Float inv = (Float)1 / f;
+        // CHECK_NE(f, 0);
+        Float inv(0);
+        if (f != 0) inv = (Float)1 / f;
         return Vector3<T>(x * inv, y * inv, z * inv);
     }
 
     template <typename U>
     Vector3<T> &operator/=(U f) {
-        CHECK_NE(f, 0);
-        Float inv = (Float)1 / f;
+        // Once f is 0, this could lead to failed rendering (abort)
+        // remove for now?
+        // CHECK_NE(f, 0);
+        Float inv(0);
+        if (f != 0) inv = (Float)1 / f;
         x *= inv;
         y *= inv;
         z *= inv;
