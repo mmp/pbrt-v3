@@ -421,29 +421,14 @@ void BDPTIntegrator::Render(const Scene &scene) {
                                 weightFilms[BufferIndex(s, t)]->AddSplat(
                                     pFilmNew, value);
                             }
-                            // TODO: main modification is not made yet, to add samples
                             if (t != 1) {
                                 L += Lpath;
                                 if (!Lpath.IsBlack() && sum_time > film->min_time && sum_time < film->max_time) {
                                     int local_idx = int(std::floor((sum_time - film->min_time) / film->interval));
                                     local_storage[local_idx].contribSum += Lpath;
                                     local_storage[local_idx].filterWeightSum += 1;
-                                    if (local_idx < 108 && local_idx > 41) {
-                                        printf("Local idx = %d, contribSum = %f, %f, %f\n", local_idx, Lpath[0], Lpath[1], Lpath[2]);
-                                    }
-                                } else if (sum_time > film->min_time && sum_time < film->max_time) {
-                                    int local_idx = int(std::floor((sum_time - film->min_time) / film->interval));
-                                    if (local_idx < 108 && local_idx > 41) {
-                                        printf("(L0) Local idx = %d, contribSum = %f, %f, %f\n", local_idx, Lpath[0], Lpath[1], Lpath[2]);
-                                    }
-                                }
+                                } 
                             } else {
-                                if (sum_time > film->min_time && sum_time < film->max_time) {
-                                    int local_idx = int(std::floor((sum_time - film->min_time) / film->interval));
-                                    if (local_idx < 108 && local_idx > 41) {
-                                        printf("(L0) Local idx = %d, contribSum = %f, %f, %f\n", local_idx, Lpath[0], Lpath[1], Lpath[2]);
-                                    }
-                                }
                                 film->AddSplat(pFilmNew, Lpath, sum_time);
                             }
                         }
@@ -579,6 +564,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
+    int tileSize = params.FindOneInt("tileSize", 16);
     bool visualizeStrategies = params.FindOneBool("visualizestrategies", false);
     bool visualizeWeights = params.FindOneBool("visualizeweights", false);
 
@@ -587,6 +573,10 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
             "visualizestrategies/visualizeweights was enabled, limiting "
             "maxdepth to 5");
         maxDepth = 5;
+    }
+    if (tileSize <= 0) {
+        Warning("Tile size must be positive, setting to 16");
+        tileSize = 16;
     }
     int np;
     const int *pb = params.FindInt("pixelbounds", &np);
@@ -605,7 +595,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
 
     std::string lightStrategy = params.FindOneString("lightsamplestrategy",
                                                      "power");
-    return new BDPTIntegrator(sampler, camera, maxDepth, visualizeStrategies,
+    return new BDPTIntegrator(sampler, camera, maxDepth, tileSize, visualizeStrategies,
                               visualizeWeights, pixelBounds, lightStrategy);
 }
 

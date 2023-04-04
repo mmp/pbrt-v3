@@ -1,17 +1,17 @@
 LookAt 0 0 0.027  0 0 -1.0   0 1 0
 Camera "perspective" "float fov" [15.0] 
 Accelerator "bvh"
-Sampler "random" "integer pixelsamples" [64]
+Sampler "random" "integer pixelsamples" [20000]
 Film "image"
    "string filename" ["foam.exr"]
    "integer xresolution" [512]
    "integer yresolution" [512]
-   "float cropwindow" [0.474609375 0.498046875 0.474609375 0.498046875]
+   "float cropwindow" [0.4765625 0.5234375 0.4765625 0.5234375]
    "float tmin_time" [0.0]
    "float t_interval" [0.0014]
-   "integer t_samplecnt" [500]
+   "integer t_samplecnt" [600]
 
-Integrator "bdpt" "integer maxdepth" [400]
+Integrator "bdpt" "integer maxdepth" [800]
 
 WorldBegin
 
@@ -22,7 +22,7 @@ LightSource "collimated" "rgb L" [4.0 4.0 4.0] "point from" [0 0 -0.027] "point 
 AttributeBegin
    Material "none"
    MakeNamedMedium "mymedium" "string type" "homogeneous" "rgb sigma_s" [200 200 200] "rgb sigma_a" [0 0 0] "float g" 0.0
-   MediumInterface "" "mymedium"
+   MediumInterface "mymedium" ""
 
    Shape "trianglemesh"
    "integer indices" [ 
