@@ -511,6 +511,7 @@ ENDIF()
 
 SET(ALL_PBRT_LIBS
   pbrt
+  stdc++fs
   ${CMAKE_THREAD_LIBS_INIT}
   ${OPENEXR_LIBS}
   glog

@@ -130,13 +130,14 @@ class BDPTIntegrator : public Integrator {
     // BDPTIntegrator Public Methods
     BDPTIntegrator(std::shared_ptr<Sampler> sampler,
                    std::shared_ptr<const Camera> camera, int maxDepth, int tileSize,
-                   bool visualizeStrategies, bool visualizeWeights,
+                   bool useMISWeight, bool visualizeStrategies, bool visualizeWeights,
                    const Bounds2i &pixelBounds,
                    const std::string &lightSampleStrategy = "power")
         : sampler(sampler),
           camera(camera),
           maxDepth(maxDepth),
           tileSize(tileSize),
+          useMISWeight(useMISWeight),
           visualizeStrategies(visualizeStrategies),
           visualizeWeights(visualizeWeights),
           pixelBounds(pixelBounds),
@@ -149,6 +150,7 @@ class BDPTIntegrator : public Integrator {
     std::shared_ptr<const Camera> camera;
     const int maxDepth;
     const int tileSize;
+    const bool useMISWeight;
     const bool visualizeStrategies;
     const bool visualizeWeights;
     const Bounds2i pixelBounds;
@@ -440,7 +442,7 @@ Spectrum ConnectBDPT(
     const Scene &scene, Vertex *lightVertices, Vertex *cameraVertices, int s,
     int t, const Distribution1D &lightDistr,
     const std::unordered_map<const Light *, size_t> &lightToIndex,
-    const Camera &camera, Sampler &sampler, Float& sum_time, Point2f *pRaster,
+    const Camera &camera, Sampler &sampler, Float& sum_time, bool use_mis, Point2f *pRaster,
     Float *misWeight = nullptr);
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,

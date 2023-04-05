@@ -34,6 +34,8 @@
 // core/film.cpp*
 #include <memory>
 #include <iomanip>
+#include <experimental/filesystem>
+
 #include "film.h"
 #include "paramset.h"
 #include "imageio.h"
@@ -222,6 +224,12 @@ void Film::WriteImage(Float splatScale) {
     // Convert image to RGB and compute final pixel values
     LOG(INFO) <<
         "Converting image to RGB and computing final weighted pixel values";
+    std::string folder_path = filename.substr(0, filename.find_last_of("/") + 1);
+    namespace fs = std::experimental::filesystem;
+    if (!fs::exists(folder_path)) {
+        fs::create_directories(folder_path);
+        printf("Path <%s> does not exist, creating folder...\n", folder_path.c_str());
+    }
     auto rgb = std::make_unique<Float[]>(3 * croppedPixelBounds.Area());
     int offset = 0;
     for (Point2i p : croppedPixelBounds) {

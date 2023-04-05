@@ -66,6 +66,7 @@
         "bit": "cpp",
         "strstream": "cpp",
         "slist": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "filesystem": "cpp"
     }
 }

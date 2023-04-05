@@ -159,7 +159,7 @@ Spectrum MLTIntegrator::L(const Scene &scene, MemoryArena &arena,
     sampler.StartStream(connectionStreamIndex);
     Float dummy_time = 0.;
     return ConnectBDPT(scene, lightVertices, cameraVertices, s, t, *lightDistr,
-                       lightToIndex, *camera, sampler, dummy_time, pRaster) *
+                       lightToIndex, *camera, sampler, dummy_time, true, pRaster) *
            nStrategies;
 }
 

@@ -408,8 +408,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
                             Float misWeight = 0.f, sum_time = 0.0;
                             Spectrum Lpath = ConnectBDPT(
                                 scene, lightVertices, cameraVertices, s, t,
-                                *lightDistr, lightToIndex, *camera, *tileSampler, sum_time,
-                                &pFilmNew, &misWeight);
+                                *lightDistr, lightToIndex, *camera, *tileSampler, sum_time, 
+                                useMISWeight, &pFilmNew, &misWeight);
                             VLOG(2) << "Connect bdpt s: " << s <<", t: " << t <<
                                 ", Lpath: " << Lpath << ", misWeight: " << misWeight;
                             if (visualizeStrategies || visualizeWeights) {
@@ -460,7 +460,7 @@ Spectrum ConnectBDPT(
     const Scene &scene, Vertex *lightVertices, Vertex *cameraVertices, int s,
     int t, const Distribution1D &lightDistr,
     const std::unordered_map<const Light *, size_t> &lightToIndex,
-    const Camera &camera, Sampler &sampler, Float& sum_time, Point2f *pRaster,
+    const Camera &camera, Sampler &sampler, Float& sum_time, bool use_mis, Point2f *pRaster,
     Float *misWeightPtr) {
     ProfilePhase _(Prof::BDPTConnectSubpaths);
     Spectrum L(0.f);
@@ -548,9 +548,11 @@ Spectrum ConnectBDPT(
     ReportValue(pathLength, s + t - 2);
 
     // Compute MIS weight for connection strategy
-    Float misWeight =
-        L.IsBlack() ? 0.f : MISWeight(scene, lightVertices, cameraVertices,
+    Float misWeight = 1.;
+    if (use_mis) {
+        misWeight = L.IsBlack() ? 0.f : MISWeight(scene, lightVertices, cameraVertices,
                                       sampled, s, t, lightDistr, lightToIndex);
+    }
     VLOG(2) << "MIS weight for (s,t) = (" << s << ", " << t << ") connection: "
             << misWeight;
     DCHECK(!std::isnan(misWeight));
@@ -565,6 +567,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<const Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
     int tileSize = params.FindOneInt("tileSize", 16);
+    bool useMIS = params.FindOneInt("useMIS", 1) != 0;
     bool visualizeStrategies = params.FindOneBool("visualizestrategies", false);
     bool visualizeWeights = params.FindOneBool("visualizeweights", false);
 
@@ -578,6 +581,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
         Warning("Tile size must be positive, setting to 16");
         tileSize = 16;
     }
+    printf("BDPT integrator: MIS weight = %d, max depth = %d, tile size = %d\n", int(useMIS), maxDepth, tileSize);
     int np;
     const int *pb = params.FindInt("pixelbounds", &np);
     Bounds2i pixelBounds = camera->film->GetSampleBounds();
@@ -595,8 +599,8 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
 
     std::string lightStrategy = params.FindOneString("lightsamplestrategy",
                                                      "power");
-    return new BDPTIntegrator(sampler, camera, maxDepth, tileSize, visualizeStrategies,
-                              visualizeWeights, pixelBounds, lightStrategy);
+    return new BDPTIntegrator(sampler, camera, maxDepth, tileSize, useMIS,
+                visualizeStrategies, visualizeWeights, pixelBounds, lightStrategy);
 }
 
 }  // namespace pbrt
