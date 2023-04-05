@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from copy import deepcopy
 from opts import get_tdom_options
+from shot_noise_removal import shot_peaks_detection, local_median_filter
 
 colors = ("#DF7857", "#4E6E81", "#F99417")
 
@@ -86,19 +87,20 @@ if __name__ == "__main__":
 
     if opts.window_mode == 'diag_tri':
         curves /= curves.max(axis = 1, keepdims = True)
-        for i in range(3):
-            plt.scatter(xs, curves[i], s = 5, c = colors[i])
-            plt.plot(xs, curves[i], label = f'window[{i+1}]', c = colors[i])
     elif opts.window_mode == 'diag_side_mean':
         curves /= side_curves.max()
-        plt.scatter(xs, curves[0], s = 5, c = colors[0])
-        plt.plot(xs, curves[0], label = f'window 1', c = colors[0])
-        plt.scatter(xs, curves[2], s = 5, c = colors[1])
-        plt.plot(xs, curves[2], label = f'window 3', c = colors[1])
+        curves = np.float32([curves[0], curves[1]])
     else:       # whole
         curves = all_transients.mean(axis = (1, 2, 3))     # spatial average
-        plt.scatter(xs, curves, s = 5, c = colors[0])
-        plt.plot(xs, curves, label = f'whole image', c = colors[0])
+    params = {'prominence': 0.00, 'threshold': 0.08}
+    if curves.ndim == 1:
+        curves = curves[None, :]
+    for i in range(curves.shape[0]):
+        peaks = shot_peaks_detection(curves[i], params)
+        local_median_filter(curves[i], peaks)
+        # plt.scatter(xs[peaks], curves[i, peaks], s = 40, facecolors = 'none', edgecolors = colors[(i + 1) % 3])   # visualizing shot noise peaks
+        plt.scatter(xs, curves[i], s = 5, c = colors[i])
+        plt.plot(xs, curves[i], label = f'window[{i+1}]', c = colors[i])
     
     plt.legend()
     plt.xlim((0, actual_time))
