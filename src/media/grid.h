@@ -83,7 +83,7 @@ class GridDensityMedium : public Medium {
         return density[(p.z * ny + p.y) * nx + p.x];
     }
     Spectrum Sample(const Ray &ray, Sampler &sampler, MemoryArena &arena,
-                    MediumInteraction *mi) const;
+                    MediumInteraction *mi, GuidedSamplingInfo* _no_use = nullptr) const;
     Spectrum Tr(const Ray &ray, Sampler &sampler) const;
 
   private:

@@ -1,0 +1,14 @@
+{
+	"files": [
+		{
+			"path": "src/integrators/bdpt.cpp",
+			"bookmarks": [
+				{
+					"line": 595,
+					"column": 28,
+					"label": "Parameter loading"
+				}
+			]
+		}
+	]
+}

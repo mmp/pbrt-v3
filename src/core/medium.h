@@ -57,6 +57,23 @@ class PhaseFunction {
     virtual std::string ToString() const = 0;
 };
 
+class GuidedSamplingInfo {
+public:
+    /**
+     * @brief This object is used in Dwivedi sampling method (analytical path guiding)
+     * @param normal normal at the medium entry point 
+     * @param poe point of entry at the entry point
+     */
+
+    GuidedSamplingInfo(Float _nu): nu(_nu), normal(Vector3f(1, 0, 0)), poe(Point3f()) {}
+    GuidedSamplingInfo(Float _nu, const Vector3f& _normal, const Point3f& _poe):
+        nu(_nu), normal(_normal), poe(_poe) {}
+    const Float nu;
+    Vector3f normal;            // normal of the entry surface
+    Point3f poe;                // point of entry
+};
+
+
 inline std::ostream &operator<<(std::ostream &os, const PhaseFunction &p) {
     os << p.ToString();
     return os;
@@ -79,7 +96,7 @@ class Medium {
     virtual Spectrum Tr(const Ray &ray, Sampler &sampler) const = 0;
     virtual Spectrum Sample(const Ray &ray, Sampler &sampler,
                             MemoryArena &arena,
-                            MediumInteraction *mi) const = 0;
+                            MediumInteraction *mi, GuidedSamplingInfo* guide_info = nullptr) const = 0;
 };
 
 // HenyeyGreenstein Declarations

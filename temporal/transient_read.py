@@ -13,6 +13,12 @@ from shot_noise_removal import shot_peaks_detection, local_median_filter
 
 colors = ("#DF7857", "#4E6E81", "#F99417")
 
+def extract_inner_name(string: str):
+    all_parts = string.split("/")
+    if all_parts[-1]:                       # if path is xxx/yyy/, then the [-1] element is '', which is useless
+        return all_parts[-1]
+    return all_parts[-2]
+
 def median_filter(x: np.ndarray, radius = 2):
     h, w, layers = x.shape
     for layer in range(layers):

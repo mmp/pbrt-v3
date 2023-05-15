@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build_debug/pbrt",
             "stopAtEntry": true,
             "cwd": "${fileDirname}",
-            "args": ["${workspaceFolder}/scenes/foam.pbrt"],
+            "args": ["${workspaceFolder}/scenes/foam5.pbrt"],
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

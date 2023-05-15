@@ -132,7 +132,7 @@ class BDPTIntegrator : public Integrator {
                    std::shared_ptr<const Camera> camera, int maxDepth, int tileSize,
                    bool useMISWeight, bool visualizeStrategies, bool visualizeWeights,
                    const Bounds2i &pixelBounds,
-                   const std::string &lightSampleStrategy = "power")
+                   const std::string &lightSampleStrategy = "power", const Float diffusion_nu = 0)
         : sampler(sampler),
           camera(camera),
           maxDepth(maxDepth),
@@ -140,6 +140,7 @@ class BDPTIntegrator : public Integrator {
           useMISWeight(useMISWeight),
           visualizeStrategies(visualizeStrategies),
           visualizeWeights(visualizeWeights),
+          diffusion_nu(diffusion_nu),
           pixelBounds(pixelBounds),
           lightSampleStrategy(lightSampleStrategy) {}
     void Render(const Scene &scene);
@@ -153,6 +154,7 @@ class BDPTIntegrator : public Integrator {
     const bool useMISWeight;
     const bool visualizeStrategies;
     const bool visualizeWeights;
+    const Float diffusion_nu;                   // this is used in Dwivedi sampling
     const Bounds2i pixelBounds;
     const std::string lightSampleStrategy;
 };
@@ -431,13 +433,13 @@ struct Vertex {
 extern int GenerateCameraSubpath(const Scene &scene, Sampler &sampler,
                                  MemoryArena &arena, int maxDepth,
                                  const Camera &camera, const Point2f &pFilm,
-                                 Vertex *path);
+                                 Vertex *path, Float diffusion_nu = 0);
 
 extern int GenerateLightSubpath(
     const Scene &scene, Sampler &sampler, MemoryArena &arena, int maxDepth,
     Float time, const Distribution1D &lightDistr,
     const std::unordered_map<const Light *, size_t> &lightToIndex,
-    Vertex *path);
+    Vertex *path, Float diffusion_nu = 0);
 Spectrum ConnectBDPT(
     const Scene &scene, Vertex *lightVertices, Vertex *cameraVertices, int s,
     int t, const Distribution1D &lightDistr,
