@@ -54,7 +54,7 @@ class HomogeneousMedium : public Medium {
           g(g) {}
     Spectrum Tr(const Ray &ray, Sampler &sampler) const;
     Spectrum Sample(const Ray &ray, Sampler &sampler, MemoryArena &arena,
-                    MediumInteraction *mi, GuidedSamplingInfo* guide_info = nullptr) const;
+                    MediumInteraction *mi, const GuidedSamplingInfo* guide_info = nullptr) const;
 
   private:
     // HomogeneousMedium Private Data

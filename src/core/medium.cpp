@@ -212,6 +212,25 @@ Float HenyeyGreenstein::Sample_p(const Vector3f &wo, Vector3f *wi,
     return PhaseHG(cosTheta, g);
 }
 
+Float HenyeyGreenstein::DvdSample_p(Vector3f *wi, const Point2f &sample, GuidedSamplingInfo* dvd_info) const {
+    /** Dwivedi sampling 
+     * this function does not require wo as input
+    */
+    ProfilePhase _(Prof::PhaseFuncSampling);
+    Float ratio = ((dvd_info->nu - 1.f) / (dvd_info->nu + 1.f));
+    // this is w_z sample (cosTheta w.r.t slab normal)
+    Float cosTheta = dvd_info->nu - (dvd_info->nu + 1.f) * pow(ratio, sample[0]);
+    Float sinTheta = std::sqrt(std::max((Float)0, 1 - cosTheta * cosTheta));
+    Float phi = 2 * Pi * sample[1];
+    Vector3f v1, v2;
+    CoordinateSystem(dvd_info->normal, &v1, &v2);
+    // Direction of wo should be checked, wo should point
+    *wi = SphericalDirection(sinTheta, cosTheta, phi, v1, v2, dvd_info->normal);
+    // currently, Dwivedi sampling does not support anisotropic phase function 
+    // Therefore HG value is always 1. / 4pi
+    return DvdPdf(cosTheta, dvd_info);
+}
+
 Float HenyeyGreenstein::p(const Vector3f &wo, const Vector3f &wi) const {
     ProfilePhase _(Prof::PhaseFuncEvaluation);
     return PhaseHG(Dot(wo, wi), g);

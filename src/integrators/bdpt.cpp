@@ -144,8 +144,9 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
     // Declare variables for forward and reverse probability densities
     Float pdfFwd = pdf, pdfRev = 0;
     std::unique_ptr<GuidedSamplingInfo> guide_info = nullptr;
-    if (diffusion_nu > 0.) {
-        guide_info = std::make_unique<GuidedSamplingInfo>(new GuidedSamplingInfo(diffusion_nu));
+    if (diffusion_nu > 1.) {
+        // nu is meanful only when bigger than 1
+        guide_info = std::make_unique<GuidedSamplingInfo>(diffusion_nu);
     }
     while (true) {
         // Attempt to create the next subpath vertex in _path_
@@ -158,35 +159,16 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
         // After intersection, isect carries ray.time, which does not account for the travelling time from the last intersection (tMax?)
         bool foundIntersection = scene.Intersect(ray, &isect);
         if (ray.medium) {
-            beta *= ray.medium->Sample(ray, sampler, arena, &mi);
-        } else {
+            beta *= ray.medium->Sample(ray, sampler, arena, &mi, guide_info.get());
+            // 这里是否有逻辑错误? ray medium 何时会被更新？
+        } else if (guide_info) {
             // if current interaction is not medium interaction and we use dvd_sampling
-            if (guide_info) {
-                // TODO: check whether isect.n is geometry normal
-                guide_info->normal = Vector3f(isect.n);
-                guide_info->poe = isect.p;
-                // The updated values will not be used immediately
-            }
+            // The updated values will not be used immediately
+            guide_info->normal = Vector3f(isect.n);             // this is geometric normal
+            guide_info->normal /= guide_info->normal.Length();
         }
         if (beta.IsBlack()) break;
         Vertex &vertex = path[bounces], &prev = path[bounces - 1];
-
-        /**
-         * 如何确定 point of entry? 每次到边界时可以重新记录一下
-         * 出射是不会影响sampling结果的，只有入射的时候会，故出射介质
-         * 即便修改 guide_info 也不会出现什么问题
-         * 
-         * 此处存在一个问题：对于没有边界的介质，其法向量计算可能存在问题（边界会跳点），但应该还是可以求出对应的边界
-         * 
-         * 其实只需要每次 ray intersect 更新当前 guide_info 即可，有条件: 当且仅当 ray.medium 为 false 时进行记录
-         * ray.medium 为 true 时并没有边界效应。这样的一种方法是合理的，因为即使以非常小概率传播到介质的另一端时，
-         * 与另一个面发生了 ray interaction，则此时如果 photons 是穿出介质，将不会产生影响，如果是穿入，则当然需要更新。
-         * 
-         * 计算 v 的问题: (1) 计算不用求根，使用 expansion 的解析公式即可（所以对于时域解，要找对应参数的值可能会更难，但实际可以进行 precompute）
-         * 主要是 nu 如何获得，我们假设场景中只存在一种散射介质，那么 alpha 已知则 nu 已知，则对应的 nu 在 precompute 之后就可以直接当参数给
-         * 参数可以保存到 BDPT中。
-         */
-
         
         if (mi.IsValid()) {
             // Record medium interaction in _path_ and compute forward density
@@ -196,7 +178,17 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
 
             // Sample direction and compute reverse density at preceding vertex
             Vector3f wi;
-            pdfFwd = pdfRev = mi.phase->Sample_p(-ray.d, &wi, sampler.Get2D());
+            if (guide_info == nullptr) {        
+                pdfFwd = pdfRev = mi.phase->Sample_p(-ray.d, &wi, sampler.Get2D());
+            } else {                        // use analytical path guiding
+                // Forward and reverse pdf is not long symmetric
+                pdfFwd = mi.phase->DvdSample_p(&wi, sampler.Get2D(), guide_info.get());
+                // We are discussing the adjoint transportation (ray direction should be reversed)
+                pdfRev = mi.phase->dvd_p(-ray.d, guide_info.get());
+                // These two pdfs are still of solid angle measure
+                // Here we should calculate contribution / pdf, since they do not cancel each other out now.
+                beta *= Inv4Pi / pdfFwd;
+            }
             ray = mi.SpawnRay(wi);
         } else {
             // Handle surface interaction for path generation
@@ -208,6 +200,7 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
                     ++bounces;
                 }
                 // This does not influence the result, we can skip the infinite light case
+                // This won't be a problem since guide_info fields are filled before this branch
                 break;
             }
             isect.time += ray.tMax;
@@ -408,7 +401,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
                     Vertex *lightVertices = arena.Alloc<Vertex>(maxDepth + 1);
                     int nCamera = GenerateCameraSubpath(
                         scene, *tileSampler, arena, maxDepth + 2, *camera,
-                        pFilm, cameraVertices);
+                        pFilm, cameraVertices, diffusion_nu);
                     // Get a distribution for sampling the light at the
                     // start of the light subpath. Because the light path
                     // follows multiple bounces, basing the sampling
@@ -422,7 +415,7 @@ void BDPTIntegrator::Render(const Scene &scene) {
                     int nLight = GenerateLightSubpath(
                         scene, *tileSampler, arena, maxDepth + 1,
                         cameraVertices[0].time(), *lightDistr, lightToIndex,
-                        lightVertices);
+                        lightVertices, diffusion_nu);
 
                     // Execute all BDPT connection strategies
                     Spectrum L(0.f);
@@ -601,6 +594,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
     bool useMIS = params.FindOneInt("useMIS", 1) != 0;
     bool visualizeStrategies = params.FindOneBool("visualizestrategies", false);
     bool visualizeWeights = params.FindOneBool("visualizeweights", false);
+    float diffusion_nu = params.FindOneFloat("diffusion_nu", 0.0);
 
     // TODO: scene nu_0 is loaded here
 
@@ -632,8 +626,9 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
 
     std::string lightStrategy = params.FindOneString("lightsamplestrategy",
                                                      "power");
+    // TODO: light sampling strategy might be modified with Meng 2016
     return new BDPTIntegrator(sampler, camera, maxDepth, tileSize, useMIS,
-                visualizeStrategies, visualizeWeights, pixelBounds, lightStrategy);
+                visualizeStrategies, visualizeWeights, pixelBounds, lightStrategy, diffusion_nu);
 }
 
 }  // namespace pbrt

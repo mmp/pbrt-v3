@@ -61,7 +61,7 @@ Float GridDensityMedium::Density(const Point3f &p) const {
 
 Spectrum GridDensityMedium::Sample(const Ray &rWorld, Sampler &sampler,
                                    MemoryArena &arena, MediumInteraction *mi,
-                                   GuidedSamplingInfo*) const {
+                                   const GuidedSamplingInfo*) const {
     ProfilePhase _(Prof::MediumSample);
     Ray ray = WorldToMedium(
         Ray(rWorld.o, Normalize(rWorld.d), rWorld.tMax * rWorld.d.Length()));

@@ -46,16 +46,9 @@
 
 namespace pbrt {
 
-// Media Declarations
-class PhaseFunction {
-  public:
-    // PhaseFunction Interface
-    virtual ~PhaseFunction();
-    virtual Float p(const Vector3f &wo, const Vector3f &wi) const = 0;
-    virtual Float Sample_p(const Vector3f &wo, Vector3f *wi,
-                           const Point2f &u) const = 0;
-    virtual std::string ToString() const = 0;
-};
+constexpr inline Float dwivedi_normalization(Float nu) {
+  return 1.f / log((nu + 1.f) / (nu - 1.f));
+}
 
 class GuidedSamplingInfo {
 public:
@@ -65,14 +58,30 @@ public:
      * @param poe point of entry at the entry point
      */
 
-    GuidedSamplingInfo(Float _nu): nu(_nu), normal(Vector3f(1, 0, 0)), poe(Point3f()) {}
-    GuidedSamplingInfo(Float _nu, const Vector3f& _normal, const Point3f& _poe):
-        nu(_nu), normal(_normal), poe(_poe) {}
+    GuidedSamplingInfo(Float _nu): nu(_nu), norm_nu(dwivedi_normalization(_nu)), 
+        normal(Vector3f(1, 0, 0)) {}
+    GuidedSamplingInfo(Float _nu, const Vector3f& _normal):
+        nu(_nu), norm_nu(dwivedi_normalization(_nu)), normal(_normal) {}
+    
+    // FIXME: poe might be removed
     const Float nu;
+    const Float norm_nu;        // p(w_z) normalization factor
     Vector3f normal;            // normal of the entry surface
-    Point3f poe;                // point of entry
 };
 
+// Media Declarations
+class PhaseFunction {
+  public:
+    // PhaseFunction Interface
+    virtual ~PhaseFunction();
+    virtual Float p(const Vector3f &wo, const Vector3f &wi) const = 0;
+    virtual Float Sample_p(const Vector3f &wo, Vector3f *wi,
+                           const Point2f &u) const = 0;
+    virtual std::string ToString() const = 0;
+    virtual Float DvdSample_p(Vector3f *wi, const Point2f &sample,
+                    GuidedSamplingInfo* dvd_info = nullptr) const = 0;
+    virtual Float dvd_p(const Vector3f &w, GuidedSamplingInfo* dvd_info) const = 0;
+};
 
 inline std::ostream &operator<<(std::ostream &os, const PhaseFunction &p) {
     os << p.ToString();
@@ -88,6 +97,10 @@ inline Float PhaseHG(Float cosTheta, Float g) {
     return Inv4Pi * (1 - g * g) / (denom * std::sqrt(denom));
 }
 
+inline Float DvdPdf(Float cosTheta, GuidedSamplingInfo* dvd_info) {
+    return dvd_info->norm_nu / (dvd_info->nu - cosTheta) * Inv2Pi;
+}
+
 // Medium Declarations
 class Medium {
   public:
@@ -96,7 +109,7 @@ class Medium {
     virtual Spectrum Tr(const Ray &ray, Sampler &sampler) const = 0;
     virtual Spectrum Sample(const Ray &ray, Sampler &sampler,
                             MemoryArena &arena,
-                            MediumInteraction *mi, GuidedSamplingInfo* guide_info = nullptr) const = 0;
+                            MediumInteraction *mi, const GuidedSamplingInfo* guide_info = nullptr) const = 0;
 };
 
 // HenyeyGreenstein Declarations
@@ -107,6 +120,18 @@ class HenyeyGreenstein : public PhaseFunction {
     Float p(const Vector3f &wo, const Vector3f &wi) const;
     Float Sample_p(const Vector3f &wo, Vector3f *wi,
                    const Point2f &sample) const;
+
+    /**
+     * @brief Dwivedi sampling method (Dwivedi 1982, Kˇrivánek and d’Eon 2014)
+     */
+    Float DvdSample_p(Vector3f *wi, const Point2f &sample,
+                    GuidedSamplingInfo* dvd_info = nullptr) const;
+
+    Float dvd_p(const Vector3f &w, GuidedSamplingInfo* dvd_info) const {
+      // Be aware, the direction of w should be checked
+      	return DvdPdf(Dot(w / w.Length(), dvd_info->normal), dvd_info);
+    }
+
     std::string ToString() const {
         return StringPrintf("[ HenyeyGreenstein g: %f ]", g);
     }

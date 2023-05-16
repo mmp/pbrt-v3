@@ -48,14 +48,12 @@ Spectrum HomogeneousMedium::Tr(const Ray &ray, Sampler &sampler) const {
 
 Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
                                    MemoryArena &arena, MediumInteraction *mi,
-                                   GuidedSamplingInfo* guide_info) const {
+                                   const GuidedSamplingInfo* guide_info) const {
     ProfilePhase _(Prof::MediumSample);
     Spectrum scatter_t = sigma_t;
     if (guide_info != nullptr) {
       // If there is guiding info, we can rescale sigma_t for distance sampling
-      Vector3f to_poe = ray.o - guide_info->poe;
-      to_poe /= std::max(to_poe.Length(), Float(1e-5f));    // direction to poe
-      Float w_z = Dot(ray.d / ray.d.Length(), to_poe);
+      Float w_z = Dot(ray.d / ray.d.Length(), guide_info->normal);
       scatter_t *= (1.f - w_z / guide_info->nu);
     }
 
@@ -71,7 +69,8 @@ Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
 
     // Compute the transmittance and sampling density
     // Note that we can not modify the sigma_t here, since it's calculating contribution
-    Spectrum Tr = Exp(-sigma_t * std::min(t, MaxFloat) * ray.d.Length());
+    Float actual_d = std::min(t, MaxFloat) * ray.d.Length();
+    Spectrum Tr = Exp(-sigma_t * actual_d);
 
     // Return weighting factor for scattering from homogeneous medium
     Spectrum density;
@@ -80,7 +79,7 @@ Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
     } else {
       // When guiding information is used, we should use scaled u_t to calculate all parts of pdf
       // Since pdf should be in accordance with sampling method, otherwise it introduces bias
-      Spectrum Tr_pdf = Exp(-scatter_t * std::min(t, MaxFloat) * ray.d.Length());
+      Spectrum Tr_pdf = Exp(-scatter_t * actual_d);
       density = sampledMedium ? (scatter_t * Tr_pdf) : Tr_pdf;
     }
     Float pdf = 0;

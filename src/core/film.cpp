@@ -226,7 +226,7 @@ void Film::WriteImage(Float splatScale) {
         "Converting image to RGB and computing final weighted pixel values";
     std::string folder_path = filename.substr(0, filename.find_last_of("/") + 1);
     namespace fs = std::experimental::filesystem;
-    if (!fs::exists(folder_path)) {
+    if (time_bins && !fs::exists(folder_path)) {
         fs::create_directories(folder_path);
         printf("Path <%s> does not exist, creating folder...\n", folder_path.c_str());
     }

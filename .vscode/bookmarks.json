@@ -4,7 +4,7 @@
 			"path": "src/integrators/bdpt.cpp",
 			"bookmarks": [
 				{
-					"line": 595,
+					"line": 588,
 					"column": 28,
 					"label": "Parameter loading"
 				}
