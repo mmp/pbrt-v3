@@ -32,6 +32,7 @@
 
 
 // samplers/stratified.cpp*
+#include <chrono>
 #include "samplers/stratified.h"
 #include "paramset.h"
 #include "sampling.h"
@@ -70,7 +71,7 @@ void StratifiedSampler::StartPixel(const Point2i &p) {
     PixelSampler::StartPixel(p);
 }
 
-std::unique_ptr<Sampler> StratifiedSampler::Clone(int seed) {
+std::unique_ptr<Sampler> StratifiedSampler::Clone(uint64_t seed) {
     StratifiedSampler *ss = new StratifiedSampler(*this);
     ss->rng.SetSequence(seed);
     return std::unique_ptr<Sampler>(ss);
@@ -81,8 +82,11 @@ StratifiedSampler *CreateStratifiedSampler(const ParamSet &params) {
     int xsamp = params.FindOneInt("xsamples", 4);
     int ysamp = params.FindOneInt("ysamples", 4);
     int sd = params.FindOneInt("dimensions", 4);
+    int64_t seed = params.FindOneInt("seed", 0);
+    if (seed < 0)
+        seed = int64_t(std::chrono::system_clock().now().time_since_epoch().count());
     if (PbrtOptions.quickRender) xsamp = ysamp = 1;
-    return new StratifiedSampler(xsamp, ysamp, jitter, sd);
+    return new StratifiedSampler(xsamp, ysamp, jitter, sd, uint64_t(seed));
 }
 
 }  // namespace pbrt

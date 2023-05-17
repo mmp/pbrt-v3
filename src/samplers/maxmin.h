@@ -49,7 +49,7 @@ class MaxMinDistSampler : public PixelSampler {
   public:
     // MaxMinDistSampler Public Methods
     void StartPixel(const Point2i &);
-    std::unique_ptr<Sampler> Clone(int seed);
+    std::unique_ptr<Sampler> Clone(uint64_t seed);
     int RoundCount(int count) const { return RoundUpPow2(count); }
     MaxMinDistSampler(int64_t samplesPerPixel, int nSampledDimensions)
         : PixelSampler([](int64_t spp) {

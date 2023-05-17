@@ -365,7 +365,7 @@ std::vector<TestIntegrator> GetIntegrators() {
                     0., 10., 45, film, nullptr);
 
             Integrator *integrator =
-                new BDPTIntegrator(sampler.first, camera, 6, 4, true, 
+                new BDPTIntegrator(sampler.first, camera, 6, 4, true, false, 
                                 false, false, film->croppedPixelBounds);
             integrators.push_back({integrator, film,
                                    "BDPT, depth 8, Perspective, " +

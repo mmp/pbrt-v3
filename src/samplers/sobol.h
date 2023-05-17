@@ -47,7 +47,7 @@ namespace pbrt {
 class SobolSampler : public GlobalSampler {
   public:
     // SobolSampler Public Methods
-    std::unique_ptr<Sampler> Clone(int seed);
+    std::unique_ptr<Sampler> Clone(uint64_t seed);
     SobolSampler(int64_t samplesPerPixel, const Bounds2i &sampleBounds)
         : GlobalSampler(RoundUpPow2(samplesPerPixel)),
           sampleBounds(sampleBounds) {

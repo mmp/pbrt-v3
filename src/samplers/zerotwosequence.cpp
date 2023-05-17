@@ -68,7 +68,7 @@ void ZeroTwoSequenceSampler::StartPixel(const Point2i &p) {
     PixelSampler::StartPixel(p);
 }
 
-std::unique_ptr<Sampler> ZeroTwoSequenceSampler::Clone(int seed) {
+std::unique_ptr<Sampler> ZeroTwoSequenceSampler::Clone(uint64_t seed) {
     ZeroTwoSequenceSampler *lds = new ZeroTwoSequenceSampler(*this);
     lds->rng.SetSequence(seed);
     return std::unique_ptr<Sampler>(lds);

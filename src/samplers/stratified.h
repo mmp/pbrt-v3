@@ -49,13 +49,15 @@ class StratifiedSampler : public PixelSampler {
   public:
     // StratifiedSampler Public Methods
     StratifiedSampler(int xPixelSamples, int yPixelSamples, bool jitterSamples,
-                      int nSampledDimensions)
+                      int nSampledDimensions, uint64_t seed = 0)
         : PixelSampler(xPixelSamples * yPixelSamples, nSampledDimensions),
           xPixelSamples(xPixelSamples),
           yPixelSamples(yPixelSamples),
-          jitterSamples(jitterSamples) {}
+          jitterSamples(jitterSamples) {
+            rng.SetSequence(seed);
+          }
     void StartPixel(const Point2i &);
-    std::unique_ptr<Sampler> Clone(int seed);
+    std::unique_ptr<Sampler> Clone(uint64_t seed);
 
   private:
     // StratifiedSampler Private Data

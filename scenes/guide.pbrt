@@ -3,13 +3,13 @@
 LookAt 2.78 2.73 -8.00  2.78 2.73 0   0 1 0
 Camera "perspective" "float fov" [39.3077]
 Accelerator "bvh"
-Sampler "random" "integer pixelsamples" [20000]
+Sampler "random" "integer pixelsamples" [200]
 Film "image"
    "string filename" ["guide_bunny.exr"]
    "integer xresolution" [512]
    "integer yresolution" [512]
 
-Integrator "bdpt" "integer maxdepth" [256] "integer tileSize" [8] "float diffusion_nu" [0] "integer useMIS" 1
+Integrator "bdpt" "integer maxdepth" [256] "integer tileSize" [8] "float diffusion_nu" [0] "integer useMIS" 1 "integer rseed_time" 1
 
 WorldBegin
 

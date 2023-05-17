@@ -65,7 +65,7 @@ Float MLTSampler::Get1D() {
 
 Point2f MLTSampler::Get2D() { return {Get1D(), Get1D()}; }
 
-std::unique_ptr<Sampler> MLTSampler::Clone(int seed) {
+std::unique_ptr<Sampler> MLTSampler::Clone(uint64_t seed) {
     LOG(FATAL) << "MLTSampler::Clone() is not implemented";
     return nullptr;
 }

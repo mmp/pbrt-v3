@@ -31,6 +31,7 @@
  */
 
 // integrators/bdpt.cpp*
+#include <chrono>
 #include "integrators/bdpt.h"
 #include "film.h"
 #include "filters/box.h"
@@ -377,7 +378,8 @@ void BDPTIntegrator::Render(const Scene &scene) {
         ParallelFor2D([&](const Point2i tile) {
             // Render a single tile using BDPT
             MemoryArena arena;
-            int seed = tile.y * nXTiles + tile.x;
+            uint64_t seed = rseed_time ? std::chrono::system_clock().now().time_since_epoch().count() :
+                    uint64_t(tile.y * nXTiles + tile.x);
             std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
             int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
@@ -592,6 +594,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
     int maxDepth = params.FindOneInt("maxdepth", 5);
     int tileSize = params.FindOneInt("tileSize", 16);
     bool useMIS = params.FindOneInt("useMIS", 1) != 0;
+    bool rseed_time = params.FindOneInt("rseed_time", 0) != 0;
     bool visualizeStrategies = params.FindOneBool("visualizestrategies", false);
     bool visualizeWeights = params.FindOneBool("visualizeweights", false);
     float diffusion_nu = params.FindOneFloat("diffusion_nu", 0.0);
@@ -627,7 +630,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
     std::string lightStrategy = params.FindOneString("lightsamplestrategy",
                                                      "power");
     // TODO: light sampling strategy might be modified with Meng 2016
-    return new BDPTIntegrator(sampler, camera, maxDepth, tileSize, useMIS,
+    return new BDPTIntegrator(sampler, camera, maxDepth, tileSize, useMIS, rseed_time,
                 visualizeStrategies, visualizeWeights, pixelBounds, lightStrategy, diffusion_nu);
 }
 

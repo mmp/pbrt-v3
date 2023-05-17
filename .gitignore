@@ -7,4 +7,5 @@ build
 build_debug
 *.obj
 *.mtl
+results/*
 **/__pycache__

@@ -36,10 +36,11 @@
 #include "paramset.h"
 #include "sampling.h"
 #include "stats.h"
+#include <chrono>
 
 namespace pbrt {
 
-RandomSampler::RandomSampler(int ns, int seed) : Sampler(ns), rng(seed) {}
+RandomSampler::RandomSampler(int ns, uint64_t seed) : Sampler(ns), rng(seed) {}
 
 Float RandomSampler::Get1D() {
     ProfilePhase _(Prof::GetSample);
@@ -53,7 +54,7 @@ Point2f RandomSampler::Get2D() {
     return {rng.UniformFloat(), rng.UniformFloat()};
 }
 
-std::unique_ptr<Sampler> RandomSampler::Clone(int seed) {
+std::unique_ptr<Sampler> RandomSampler::Clone(uint64_t seed = -1) {
     RandomSampler *rs = new RandomSampler(*this);
     rs->rng.SetSequence(seed);
     return std::unique_ptr<Sampler>(rs);
@@ -73,7 +74,10 @@ void RandomSampler::StartPixel(const Point2i &p) {
 
 Sampler *CreateRandomSampler(const ParamSet &params) {
     int ns = params.FindOneInt("pixelsamples", 4);
-    return new RandomSampler(ns);
+    int64_t seed = params.FindOneInt("seed", 0);
+    if (seed < 0)
+        seed = std::chrono::system_clock().now().time_since_epoch().count();
+    return new RandomSampler(ns, uint64_t(seed));
 }
 
 }  // namespace pbrt

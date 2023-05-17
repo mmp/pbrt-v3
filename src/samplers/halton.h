@@ -52,7 +52,7 @@ class HaltonSampler : public GlobalSampler {
                   bool sampleAtCenter = false);
     int64_t GetIndexForSample(int64_t sampleNum) const;
     Float SampleDimension(int64_t index, int dimension) const;
-    std::unique_ptr<Sampler> Clone(int seed);
+    std::unique_ptr<Sampler> Clone(uint64_t seed);
 
   private:
     // HaltonSampler Private Data

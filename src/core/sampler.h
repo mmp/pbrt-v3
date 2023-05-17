@@ -62,7 +62,7 @@ class Sampler {
     const Float *Get1DArray(int n);
     const Point2f *Get2DArray(int n);
     virtual bool StartNextSample();
-    virtual std::unique_ptr<Sampler> Clone(int seed) = 0;
+    virtual std::unique_ptr<Sampler> Clone(uint64_t seed) = 0;
     virtual bool SetSampleNumber(int64_t sampleNum);
     std::string StateString() const {
       return StringPrintf("(%d,%d), sample %" PRId64, currentPixel.x,
