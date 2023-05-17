@@ -50,7 +50,7 @@ namespace pbrt {
 class ProgressReporter {
   public:
     // ProgressReporter Public Methods
-    ProgressReporter(int64_t totalWork, const std::string &title);
+    ProgressReporter(int64_t totalWork, const std::string &title, bool log_time2file = false);
     ~ProgressReporter();
     void Update(int64_t num = 1) {
         if (num == 0 || PbrtOptions.quiet) return;
@@ -75,6 +75,7 @@ class ProgressReporter {
     const int64_t totalWork;
     const std::string title;
     const std::chrono::system_clock::time_point startTime;
+    const bool log_time2file;
     std::atomic<int64_t> workDone;
     std::atomic<bool> exitThread;
     std::thread updateThread;

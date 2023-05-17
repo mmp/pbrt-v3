@@ -43,15 +43,19 @@
 #include <errno.h>
 #endif  // !PBRT_IS_WINDOWS
 
+#include <fstream>
+#include <experimental/filesystem>
+
 namespace pbrt {
 
 static int TerminalWidth();
 
 // ProgressReporter Method Definitions
-ProgressReporter::ProgressReporter(int64_t totalWork, const std::string &title)
+ProgressReporter::ProgressReporter(int64_t totalWork, const std::string &title, bool log_time2file)
     : totalWork(std::max((int64_t)1, totalWork)),
       title(title),
-      startTime(std::chrono::system_clock::now()) {
+      startTime(std::chrono::system_clock::now()),
+      log_time2file(log_time2file) {
     workDone = 0;
     exitThread = false;
     // Launch thread to periodically update progress bar
@@ -89,7 +93,7 @@ ProgressReporter::~ProgressReporter() {
 }
 
 void ProgressReporter::PrintBar() {
-    int barLength = TerminalWidth() - 28;
+    int barLength = TerminalWidth() - 36;
     int totalPlusses = std::max(2, barLength - (int)title.size());
     int plussesPrinted = 0;
 
@@ -106,7 +110,7 @@ void ProgressReporter::PrintBar() {
     fputs(buf.get(), stdout);
     fflush(stdout);
 
-    std::chrono::milliseconds sleepDuration(250);
+    std::chrono::milliseconds sleepDuration(200);
     int iterCount = 0;
     while (!exitThread) {
         std::this_thread::sleep_for(sleepDuration);
@@ -148,6 +152,19 @@ void ProgressReporter::PrintBar() {
 
 void ProgressReporter::Done() {
     workDone = totalWork;
+    if (log_time2file) {
+        namespace fs = std::experimental::filesystem;
+        std::string folder_path = "time.log";
+        std::ofstream out_file;
+        if (!fs::exists(folder_path)) {
+            printf("File <%s> does not exist, creating file...\n", folder_path.c_str());
+            out_file.open(folder_path, std::ios::out);
+        } else {
+            out_file.open(folder_path, std::ios::app);
+        }
+        out_file << ElapsedMS() / 1000.f << std::endl;
+        out_file.close();
+    }
 }
 
 static int TerminalWidth() {

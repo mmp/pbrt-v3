@@ -130,7 +130,7 @@ class BDPTIntegrator : public Integrator {
     // BDPTIntegrator Public Methods
     BDPTIntegrator(std::shared_ptr<Sampler> sampler,
                    std::shared_ptr<const Camera> camera, int maxDepth, int tileSize,
-                   bool useMISWeight, bool rseed_time, bool visualizeStrategies, bool visualizeWeights,
+                   bool useMISWeight, bool rseed_time, bool log_time, bool visualizeStrategies, bool visualizeWeights,
                    const Bounds2i &pixelBounds,
                    const std::string &lightSampleStrategy = "power", const Float diffusion_nu = 0)
         : sampler(sampler),
@@ -139,6 +139,7 @@ class BDPTIntegrator : public Integrator {
           tileSize(tileSize),
           useMISWeight(useMISWeight),
           rseed_time(rseed_time),
+          log_time(log_time),
           visualizeStrategies(visualizeStrategies),
           visualizeWeights(visualizeWeights),
           diffusion_nu(diffusion_nu),
@@ -154,6 +155,7 @@ class BDPTIntegrator : public Integrator {
     const int tileSize;
     const bool useMISWeight;
     const bool rseed_time;
+    const bool log_time;
     const bool visualizeStrategies;
     const bool visualizeWeights;
     const Float diffusion_nu;                   // this is used in Dwivedi sampling

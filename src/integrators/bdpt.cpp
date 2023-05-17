@@ -350,7 +350,10 @@ void BDPTIntegrator::Render(const Scene &scene) {
     const int tileSize = 2;
     const int nXTiles = (sampleExtent.x + tileSize - 1) / tileSize;
     const int nYTiles = (sampleExtent.y + tileSize - 1) / tileSize;
-    ProgressReporter reporter(nXTiles * nYTiles, "Rendering");
+    if (diffusion_nu > 1.0) {
+        printf("BDPT is using Dwivedi sampling, diffusion nu = %.5f\n", diffusion_nu);
+    }
+    ProgressReporter reporter(nXTiles * nYTiles, "Rendering", log_time);
 
     // Allocate buffers for debug visualization
     const int bufferCount = (1 + maxDepth) * (6 + maxDepth) / 2;
@@ -372,7 +375,6 @@ void BDPTIntegrator::Render(const Scene &scene) {
             }
         }
     }
-
     // Render and write the output image to disk
     if (scene.lights.size() > 0) {
         ParallelFor2D([&](const Point2i tile) {
@@ -591,10 +593,11 @@ Spectrum ConnectBDPT(
 BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera) {
-    int maxDepth = params.FindOneInt("maxdepth", 5);
-    int tileSize = params.FindOneInt("tileSize", 16);
-    bool useMIS = params.FindOneInt("useMIS", 1) != 0;
+    int maxDepth    = params.FindOneInt("maxdepth", 5);
+    int tileSize    = params.FindOneInt("tileSize", 16);
+    bool useMIS     = params.FindOneInt("useMIS", 1) != 0;
     bool rseed_time = params.FindOneInt("rseed_time", 0) != 0;
+    bool log_time   = params.FindOneInt("logTime", 1) != 0;
     bool visualizeStrategies = params.FindOneBool("visualizestrategies", false);
     bool visualizeWeights = params.FindOneBool("visualizeweights", false);
     float diffusion_nu = params.FindOneFloat("diffusion_nu", 0.0);
@@ -630,7 +633,7 @@ BDPTIntegrator *CreateBDPTIntegrator(const ParamSet &params,
     std::string lightStrategy = params.FindOneString("lightsamplestrategy",
                                                      "power");
     // TODO: light sampling strategy might be modified with Meng 2016
-    return new BDPTIntegrator(sampler, camera, maxDepth, tileSize, useMIS, rseed_time,
+    return new BDPTIntegrator(sampler, camera, maxDepth, tileSize, useMIS, rseed_time, log_time,
                 visualizeStrategies, visualizeWeights, pixelBounds, lightStrategy, diffusion_nu);
 }
 
