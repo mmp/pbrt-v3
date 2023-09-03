@@ -915,7 +915,7 @@ class RayDifferential : public Ray {
         os << "[ " << (Ray &)r << " has differentials: " <<
             (r.hasDifferentials ? "true" : "false") << ", xo = " << r.rxOrigin <<
             ", xd = " << r.rxDirection << ", yo = " << r.ryOrigin << ", yd = " <<
-            r.ryDirection;
+            r.ryDirection << " ]";
         return os;
     }
 
